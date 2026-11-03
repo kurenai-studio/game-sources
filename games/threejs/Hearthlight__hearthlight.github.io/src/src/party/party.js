@@ -1,0 +1,2566 @@
+// Party Mode: up to eight friends on one big screen, each steering their own
+// villager from a phone (or the keyboard / a gamepad). The lobby lives in the
+// village plaza; the adventure is a shared story with mini-games (story.js).
+
+import { THREE } from '../render/r3d.js';
+import { SEE, SEE_MAX } from '../render/seethrough.js';
+import { Player, Npc } from '../entities/actors.js';
+import { PartyNet } from './net.js';
+import { RemoteHost } from './remote-host.js';
+import { RemoteInput, KeyInput, PadInput, KEY_LAYOUTS } from './inputs.js';
+import { TvMenus, keyOf } from './tvmenu.js';
+import { SplitCam, Zoom, clusterize } from './camera.js';
+import { drawPlates } from './plates.js';
+import { Host, crown, copyText, splitOf } from './host.js';
+import { BigWorld } from '../world/big/bigworld.js';
+import { ZONES } from '../world/big/layout.js';
+import { ZoneRuntime } from './zones.js';
+import { Swim } from './swim.js';
+import { Vehicles } from './vehicles.js';
+import { qrCanvas } from './qr.js';
+import { PartyStory, LANTERN, CHAPTERS } from './story.js';
+import { SkyLantern } from './lantern.js';
+import { ArenaAct, ArenaSite } from './arena.js';
+import { Mounts } from './mounts.js';
+import { Encounters } from './encounters.js';
+import { Lairs } from './lairs.js';
+import { Rares } from './rares.js';
+import { Progress } from './progress.js';
+import { Travel } from './travel.js';
+import { Secrets } from './secrets.js';
+import { Races } from './races.js';
+import { drawWorldMap, drawWorldPanel, mapImage, mapBase, mapUpdate, MapView, mapRegion } from './worldmap.js';
+import { Guides } from './guide.js';
+import { Events } from './events.js';
+import { Campfires } from './camp.js';
+import { Rooms } from './rooms.js';
+import { DinoLife } from './dinos.js';
+import { weatherIcon, dayLabel, timeLabel, sunMoon, HUD_MODES, HUD_NAMES } from '../ui/hud.js';
+import { trackerLayout, drawTracker } from '../ui/questcard.js';
+import { Buddies } from './buddies.js';
+import { ExploreAct } from './explore.js';
+import { Combat } from '../combat/combat.js';
+import { CLASSES, CLASS_ORDER, padIcons } from '../combat/classes.js';
+import { ULTS } from '../combat/v4/talents.js';
+import { t, tn, onLang, getLang, setAudience } from '../i18n.js';
+import { drawClassIcon } from '../combat/icons.js';
+import { cleanLook, randomLook } from '../data/looks.js';
+import { cleanName } from '../data/nicknames.js';
+import { NPCS } from '../data/npcs.js';
+import { newState, saveSettings } from '../state.js';
+import { drawGlyph } from '../combat/v4/icons.js';
+import { drawText, measure, wrap, stripTags, visibleLength } from '../engine/font.js';
+import { panel, UI, emote as drawEmote, bubble, heart, fitText, ctl, closeButton, button, isFace, faceGlyph } from '../ui/ui.js';
+import { Dialogue } from '../ui/dialogue.js';
+import { audio } from '../engine/audio.js';
+import { TT } from '../world/tiles.js';
+import { POINTS, areaAt } from '../world/overworld.js';
+import { clamp } from '../engine/util.js';
+import { findUnstuck, stuckAt } from '../world/collision.js';
+import { Stage } from '../saga/stage.js';
+import { CHAPTERS as SAGA_CHAPTERS } from '../saga/chapters/index.js';
+import { ViewCull } from '../render/cull.js';
+import { StuckWatch, nearWater } from '../entities/stuck.js';
+import { PartyChat } from './partychat.js';
+import { drawSpeech, drawBubbles } from '../ui/chat.js';
+import { STORIES_KEY, stories, touchStory, playing } from './slots.mjs';
+import { storyTitle, storyWho, storyLevel, storyWhen } from './stories.js';
+import { Announcer, noteTime } from './announce.js';
+import { shownLevel, xpBar } from '../saga/levels.js';
+import { drawLevelTag, liftMark } from '../ui/levelbar.js';
+
+export const PARTY_COLORS = [
+  { name: 'Red', c: '#ef6479' }, { name: 'Blue', c: '#5aa8f2' }, { name: 'Yellow', c: '#f4c542' }, { name: 'Green', c: '#62c46c' },
+  { name: 'Purple', c: '#b88cf0' }, { name: 'Orange', c: '#f5954c' }, { name: 'Pink', c: '#f79bcb' }, { name: 'Teal', c: '#3ec8bc' },
+];
+const VOICES = [70, 58, 76, 64, 72, 60, 80, 66];
+export const LOBBY = { x: POINTS.fountain[0], z: POINTS.fountain[1] + 3.6 };
+// the buttons' everyday jobs, which a keyboard's or a gamepad's player knows by heart: no chip
+// under their hero for these (the special move is X's everyday job too — `x` left undefined)
+const EVERYDAY = { a: ['Attack', 'Release!', 'Wave', 'Next', 'Continue'], b: ['Jump', 'Hop'], y: ['Dodge', 'Whistle'] };
+const TOASTS = 3;                        // notes on screen at once (party.toast)
+// (all together) rides on a rail or in the sky: the invisible wall leaves them alone
+const RAILS = new Set(['zipline', 'minecart', 'sled', 'balloon', 'glider']);
+
+// The shared dialogue box: anyone’s A shows the whole page at once, then it stays the time it
+// takes to read it — eight friends hammering A for a fight never lose a line unread. An answer
+// to pick waits half a second; a letter, a little longer than a page.
+class PartyDialogue extends Dialogue {
+  readTime(c) {
+    if (c.choices && c.page >= c.pages.length - 1) return 0.5;
+    const n = c.pages ? c.total : stripTags(c.text).length;
+    return clamp(0.6 + 0.03 * n, 0.9, c.pages ? 3.2 : 5) / (this.game.settings.textSpeed || 1);
+  }
+  openTime() { return 0.12; }
+
+  // the host skips the current line (or letter)
+  skip() {
+    if (this.letter) { const L = this.letter; this.letter = null; L.resolve(); return; }
+    const c = this.cur;
+    if (!c) return;
+    c.shown = c.total;
+    if (c.choices) this.pick(c.sel || 0); else this.finish();
+  }
+}
+
+export class PartyPlayer {
+  constructor(party, slot, src) {
+    this.party = party;
+    this.slot = slot;
+    this.color = PARTY_COLORS[slot].c;
+    this.colorName = PARTY_COLORS[slot].name;
+    this.id = src.id;
+    this.kind = src.kind;
+    this.input = src.input;
+    this.name = cleanName(src.name) || `Player ${slot + 1}`;
+    this.look = cleanLook(src.look || randomLook());
+    this.ready = src.kind !== 'phone';
+    this.connected = true;
+    this.goneAt = 0;
+    this.actor = new Player(party.r3d, this.look);
+    this.actor.map = 'overworld';
+    this.stars = 0;
+    this.score = 0;
+    this.emote = null; this.emoteT = 0;
+    this.speech = null; this.speechT = 0;
+    this.frozen = false;
+    this.ctxKey = '';
+    this.portraitDue = 0.1;
+    this.who = 'p' + slot;
+    // a ring of the player’s colour on the ground: easy to find yourself
+    const ring = new THREE.Mesh(PartyPlayer.ringGeo || (PartyPlayer.ringGeo = new THREE.RingGeometry(0.3, 0.42, 24).rotateX(-Math.PI / 2)),
+      new THREE.MeshBasicMaterial({ color: this.color, transparent: true, opacity: 0.8, depthWrite: false }));
+    ring.renderOrder = 1;
+    this.ring = ring;
+  }
+  get pos() { return this.actor.pos; }
+  get vel() { return this.actor.vel || { x: 0, z: 0 }; }
+  get label() { return this.name; }
+  setEmote(k, t = 1.6) { this.emote = k; this.emoteT = t; }
+  // (tr: a quick phrase — each screen reads it in its own language: src/ui/chat.js)
+  say(text, t = 3, tr = false) { this.speech = text; this.speechT = t; this.speechTr = tr; }
+}
+
+export class Party {
+  constructor(game, options = {}) {
+    this.pendingSaves = new Map();
+    this.options = options;
+    this.resumePending = !!options.resume;
+    this.game = game;
+    this.r3d = game.r3d;
+    this.display = game.display;
+    this.lighting = game.lighting;
+    this.settings = game.settings;
+    this.net = new PartyNet();
+    this.remotePlay = new RemoteHost(this);
+    this.net.onJoin = (id) => this.onPadJoin(id);
+    this.net.onLeave = (id) => this.onPadLeave(id);
+    this.net.onRoom = () => { this.refreshQr(); this.remotePlay.dispose(); this.sendInvite(); };
+    this.net.onMsg = (id, d) => this.onPadMsg(id, d);
+    this.players = [];
+    this.byId = new Map();
+    this.seats = new Map();       // pad id -> slot, so a phone that drops out gets its seat back
+    this.cam = new SplitCam(this.r3d);
+    this.cam.bossNear = (x, z) => {
+      let best = null, bd = 22;
+      if (this.combat) for (const e of this.combat.enemies) if (e.alive && e.def.boss) { const d = Math.hypot(e.x - x, e.z - z); if (d < bd) { bd = d; best = e; } }
+      return best;
+    };
+    this.zoom = new Zoom(this);
+    this.mapView = new MapView();          // the big screen’s world map: zoomed in, or the whole world
+    this.guides = new Guides(this);        // a place chosen on a map, and an arrow that shows the way there
+    this.host = new Host(this);
+    this.tvmenus = new TvMenus(this);      // their own menu on the big screen, for players without a phone
+    this.paused = null;           // { by } while the host has paused the game
+    this.dialogue = new PartyDialogue(this);
+    this.t = 0;
+    this.toasts = [];
+    this.npcs = [];
+    this.fade = 1; this.fadeTarget = 0; this.fadeRes = null;
+    this.busy = 0;
+    this.waits = [];
+    this.prevKeys = new Set();
+    this.padsDown = new Set();
+    this.lane = new Announcer(this);       // banners, title cards & long notes, one at a time (announce.js)
+    this.npcWorld = { collisionFor: () => this.world.overCol, fx: this.world.fx, mapId: 'overworld', transferNpc() {} };
+    this.groupInput = {
+      pressed: (a) => this.anyPressed(a),
+      repeat: () => false,
+      down: () => false,
+      consume: (...a) => this.consume(...a),
+      mouse: game.input.mouse,
+      mouseIn: (...r) => game.input.mouseIn(...r),
+    };
+    this.pchat = new PartyChat(this);      // (bubbles, quick phrases & emotes from every device: partychat.js)
+  }
+
+  get world() { return this.game.world; }
+  get state() { return this.game.state; }
+  get portraits() { return this.game.portraits; }
+  get mapId() { return 'overworld'; }
+
+  // out exploring the world? (the wild lands’ systems only run then; the solo
+  // game’s Wild answers the same question for its hero)
+  exploring() { return this.actKind === 'explore' && !!this.act && !this.act.suspended && this.act instanceof ExploreAct; }
+
+  // the name of a button in texts ("{a} to ride it"): what the players press — a phone’s letter,
+  // the keyboard’s key, a gamepad’s button — both when their hands differ (« A/E »)
+  keyName(k) {
+    const names = [...new Set(this.players.filter((p) => p.connected).map((p) => keyOf(p, k)))];
+    return names.length ? names.join('/') : k.toUpperCase();
+  }
+
+  // the world’s saved progress (waystones, camps, lairs, secrets, races, zones,
+  // the map’s fog): Party Mode keeps it in this browser, the solo game in its save
+  loadSave(name, def) {
+    let v = null;
+    try { v = localStorage.getItem('hearthlight.party.' + name + '.v1'); } catch (e) { /* private mode */ }
+    if (v === null) return def;
+    try { return JSON.parse(v); } catch (e) { return v; }
+  }
+  writeSave(name, v) {
+    const raw = typeof v === 'string' ? v : JSON.stringify(v), key = 'hearthlight.party.' + name + '.v1';
+    this.pendingSaves.set(key, raw);
+    if (!this.storyHere()) return false;
+    try { localStorage.setItem(key, raw); return true; } catch (e) { this.saveFailed(); return false; }
+  }
+  // this party’s story is one of several (slots.mjs), and stories only change at the title — of
+  // this tab. Another tab of the game changed them: nothing of this party is saved any more, or
+  // its progress would land in another story’s keys
+  storyHere() {
+    let raw = null;
+    try { raw = localStorage.getItem(STORIES_KEY); } catch (e) { /* private mode */ }
+    // (the stories’ list as it was at the last look: nothing to ask again)
+    if (!this.storyGone && raw !== this.storySeen) {
+      if (playing(null, this.storyId ?? null)) this.storySeen = raw;
+      else { this.storyGone = true; this.toast(t('Another tab of the game changed stories: nothing more is saved here. Close this tab.'), '#ef6479'); }
+    }
+    if (this.storyGone) this.saveError = true;
+    return !this.storyGone;
+  }
+  // (what the lobby says of it)
+  readStory() { this.story = stories().list.find((s) => s.cur) || null; }
+  // the host menu’s « Change story… »: everything saved, the party closed, the title’s stories
+  changeStory() {
+    const g = this.game;
+    if (!this.saveNow()) return;
+    this.exit();
+    g.openPlay('story');
+  }
+  get active() { return this.players.filter((p) => p.connected || this.t - p.goneAt < 1); }
+
+  // ------------------------------------------------------------------ enter / exit
+  enter() {
+    setAudience('group');            // (French speaks to the whole party: « vous »)
+    const g = this.game, w = this.world;
+    g.mode = 'party';
+    this.display.setWorldTarget(900, 506);
+    g.state = newState({ name: 'Friends', look: {} });
+    const s = g.state;
+    Object.assign(s.flags, { bridgeFixed: true, millFixed: true, homeOpen: true, partyMode: true });
+    s.hour = 9.4; s.weather = 'sun'; s.day = 3;
+    w.clearProjects();
+    w.over.setBridge(true);
+    w.over.millSpeed = 0.55;
+    w.beam.visible = false;
+    w.festival.visible = false;
+    w.over.lighthouseLamp.lamp.emissiveIntensity = 0;
+    for (const m of Object.values(w.maps)) m.root.visible = false;
+    w.maps.overworld.root.visible = true;
+    w.forage.spawnDay(3, w.trees);
+    w.farm.refreshAll();
+    w.fx.clear();
+    // the big world around the valley (streams its ground in, owns collision)
+    this.big = new BigWorld(this);
+    this.big.attach();
+    this.zones = new ZoneRuntime(this);
+    this.swim = new Swim(this);
+    this.swim.spots = this.big.map.dives.map((d) => ({ ...d }));
+    this.swim.onFind = (p, spot) => (spot.pick ? spot.pick(p) : this.onDiveFind(p, spot));     // (a saga’s spot picks itself)
+    this.vehicles = new Vehicles(this);
+    this.mounts = new Mounts(this);
+    this.dinos = new DinoLife(this);
+    this.encounters = new Encounters(this);
+    this.lairs = new Lairs(this);
+    this.rares = new Rares(this);
+    this.progress = new Progress(this);
+    this.travel = new Travel(this);
+    this.secrets = new Secrets(this);
+    this.races = new Races(this);
+    this.events = new Events(this);
+    this.camp = new Campfires(this);
+    this.rooms = new Rooms(this);
+    this.arena = new ArenaSite(this);
+    this.setupLighting();
+    this.buddies = new Buddies(this);
+    if (!this.langHooked) {
+      this.langHooked = true;
+      onLang((l) => { if (this.arena) this.arena.relabel(); if (this.game.party === this) { this.net.broadcast({ t: 'lang', v: l }); for (const p of this.players) p.ctxKey = ''; } });
+    }
+    this.cam.bounds = this.big.bounds();
+    this.zoom.reset();
+    this.zoom.set(this.host.opts.zoom || 'auto');
+    this.phase = 'lobby';
+    this.countdown = 0;
+    this.lantern = new SkyLantern(this, LANTERN, CHAPTERS);
+    this.stage = new Stage(this);
+    this.sceneMusic = null;
+    this.act = null;
+    this.loadProfiles();
+    this.readStory();
+    for (const local of this.options.reload?.locals || []) {
+      if (local.kind === 'keys') local.layout = 'wasd';      // (one keyboard player now)
+      const id = local.kind === 'keys' ? 'keys-' + local.layout : 'pad-' + local.index;
+      if (this.byId.has(id)) continue;
+      const profile = this.profiles[id] || {};
+      const input = local.kind === 'keys' ? new KeyInput(this.game.input.keys, local.layout) : new PadInput(local.index);
+      const name = (profile.named && profile.name) || (local.kind === 'keys' ? t('Keys') : t('Pad {n}', { n: local.index + 1 }));
+      const p = this.addPlayer({ id, kind: local.kind, input, name, look: profile.look || randomLook() });
+      if (p) p.ready = true;
+    }
+    this.net.start(this.options);
+    audio.playMusic('day', { fade: 1.5 });
+    audio.setAmbient({ birds: 0.7, crickets: 0, waves: 0.35, rain: 0, wind: 0.15, fire: 0, night: 0 });
+    this.fade = 1; this.fadeTarget = 0;
+  }
+
+  exit() {
+    this.saveNow();
+    this.remotePlay?.dispose();
+    setAudience('one');
+    this.net.broadcast({ t: 'screen', s: 'message', title: t('Party over'), text: t('The big screen closed the party. Thanks for playing!') });
+    this.net.broadcast({ t: 'phase', p: 'adventure' });
+    this.net.stop();
+    this.pchat.dispose();
+    for (const p of this.players) { this.r3d.scene.remove(p.actor.model.root); this.world.over.root.remove(p.ring); }
+    for (const n of this.npcs) this.r3d.scene.remove(n.model.root);
+    if (this.act) this.act.dispose();
+    this.stopCombat();
+    this.lantern.dispose();
+    this.buddies.clear();
+    this.arena.dispose();
+    this.arena = null;
+    this.mounts.dispose(); this.mounts = null;
+    this.dinos.dispose(); this.dinos = null;
+    this.encounters.dispose(); this.encounters = null;
+    this.lairs.dispose(); this.lairs = null;
+    if (this.rares) { this.rares.dispose(); this.rares = null; }
+    this.travel.dispose(); this.travel = null;
+    this.secrets.dispose(); this.secrets = null;
+    this.races.dispose(); this.races = null;
+    this.events.dispose(); this.events = null;
+    this.camp.dispose(); this.camp = null;
+    this.rooms.dispose(); this.rooms = null;
+    this.vehicles.dispose(); this.swim.dispose();
+    this.big.detach();
+    this.big = null;
+    this.players = []; this.npcs = [];
+    this.paused = null;
+    audio.muffle(false);
+    this.zoom.reset();
+    this.display.setWorldTarget(null);
+    this.game.party = null;
+    this.game.toTitle();
+  }
+
+  setupLighting() {
+    const w = this.world, L = this.lighting;
+    L.clear();
+    for (const b of Object.values(w.over.buildings)) {
+      for (const m of b.glowMats) L.glowMats.push(m);
+      for (const l of b.lights) L.addSource(l);
+    }
+    for (const p of w.over.props) { if (p.obj && p.obj.visible === false) continue; for (const l of p.lights) L.addSource(l); }
+    if (this.arena) for (const l of this.arena.lights) L.addSource(l);
+    L.lampMats = w.overLampMats || [];
+    L.indoor = null;
+  }
+
+  async refreshQr() {
+    if (!this.net.code || this.game.party !== this) return;
+    const url = this.net.inviteUrl;
+    if (this.qr && this.qr.text === url) return;
+    try { const qr = await qrCanvas(url); if (this.net.inviteUrl === url && this.game.party === this) { this.qr = qr; this.qrError = false; } } catch (e) { this.qr = null; this.qrError = true; }
+  }
+
+  // the invitation for a phone's Invite page (one phone, or all of them)
+  sendInvite(p = null) {
+    const n = this.net;
+    if (n.status !== 'open') return;
+    const m = { t: 'invite', link: n.inviteUrl, room: n.joinUrl, code: n.code, lan: !n.remote, home: !!n.playUrl };
+    if (p) { if (p.kind === 'phone') n.send(p.id, m); } else n.broadcast(m);
+  }
+
+  // the invitation (the host menu's Invite tab): one link for everyone — whoever opens it picks
+  // the big screen (their phone as a controller) or their own screen (the game streamed, their
+  // own camera). A relay on this Wi-Fi only (the desktop app, the dev server) reaches the house.
+  inviteItems() {
+    const n = this.net, open = n.status === 'open', url = open ? n.inviteUrl : '';
+    const sub = !url ? 'Opening the room…' : !n.playUrl ? 'Scan the code with a phone: it becomes a controller. No phone? E or Enter, or A on a gamepad, plays on this screen.'
+      : n.remote ? 'Scan it here or send the link: each friend picks — in front of the big screen (their phone as a controller) or at home (the game on their own screen).'
+        : 'Scan it here or open it on another screen of the house: each friend picks — the big screen (their phone as a controller) or their own screen.';
+    return [{ id: 'inv:link', kind: 'invite', label: 'One link for everyone', url, code: n.code, sub, action: url ? 'Copy the link' : null }];
+  }
+
+  // ------------------------------------------------------------------ players
+  onPadJoin(id) {
+    const p = this.byId.get(id);
+    if (p) { p.connected = true; p.goneAt = 0; this.syncPad(p); }
+    else this.net.send(id, { t: 'who' }); // a phone we don’t know yet (e.g. after this page reloaded)
+  }
+
+  onPadLeave(id) {
+    this.remotePlay.stop(id);
+    if (this.waiting) this.waiting.delete(id);
+    const p = this.byId.get(id);
+    if (!p) return;
+    p.connected = false;
+    p.goneAt = this.t;
+    p.input.release();
+  }
+
+  onPadMsg(id, d) {
+    if (!d || typeof d !== 'object') return;
+    let p = this.byId.get(id);
+    if (d.t === 'rtc') { this.remotePlay.signal(id, d); return; }
+    if (d.t === 'hi') {
+      const remote = d.remote === true;
+      if (remote && (!this.net.remoteKey || d.key !== this.net.remoteKey)) { this.net.send(id, { t: 'remoteError', message: 'Ask the host for a new remote invitation.' }); return; }
+      if (!p) {
+        p = this.addPlayer({ id, kind: 'phone', input: new RemoteInput(), name: d.name, look: d.look, cls: d.cls });
+        if (!p) {
+          this.net.send(id, { t: 'screen', s: 'message', title: t('Party full'), text: t('Eight friends are already playing. Cheer them on!') });
+          (this.waiting = this.waiting || new Set()).add(id);     // (asked again when a seat frees up)
+          return;
+        }
+        if (this.waiting) this.waiting.delete(id);
+      } else {
+        p.connected = true; p.goneAt = 0; // a phone coming back keeps its seat (and its name)
+      }
+      // (a friend at home — play.html — watches their own camera, streamed to them: drawRemote)
+      p.remote = remote;
+      this.host.onJoin(p);
+      this.syncPad(p);
+      if (remote) this.remotePlay.start(id);
+      return;
+    }
+    if (!p) return;
+    p.connected = true;
+    p.goneAt = 0;
+    switch (d.t) {
+      case 'in': case 'b': if (!this.paused) p.input.onMsg(d); break;
+      case 'hact': this.host.onMsg(p, d); break;
+      case 'look': this.setLook(p, d.look); break;
+      case 'name': this.rename(p, d.name, { dice: d.dice === true }); break;
+      case 'ready':
+        if (this.phase !== 'lobby') break;
+        p.ready = !!d.v;
+        if (p.ready) { audio.sfx('confirm', { volume: 0.6 }); p.setEmote('heart', 1.4); this.world.fx.emit('sparkle', p.pos.x, 1.6, p.pos.z, 8, { color: p.color }); }
+        break;
+      case 'pick':
+        if (this.vote && d.id === this.vote.id) this.onVotePick(p, d);
+        else if (this.act && this.act.onPick) this.act.onPick(p, d);
+        break;
+      case 'tame': if (this.mounts) this.mounts.onTameMsg(p, d); break;
+      case 'talent': case 'talentReset': case 'gear': if (this.progress) this.progress.onMsg(p, d); break;
+      case 'mount': if (this.mounts && typeof d.v === 'string') this.mounts.choose(p, d.v); break;
+      case 'pet': this.buddies.choose(p, typeof d.v === 'string' ? d.v : null); break;
+      case 'cls': if (CLASSES[d.v]) { p.cls = d.v; this.saveProfile(p); if (this.combat) this.combat.setClass(p, d.v); this.world.fx.emit('sparkle', p.pos.x, 1.2, p.pos.z, 8, { color: CLASSES[d.v].color }); } break;
+      case 'bye': this.removePlayer(p); break;
+      // (talking: a bubble, a quick phrase, an emote, the « … » while a phone types — partychat.js)
+      case 'say': case 'quick': case 'emote': case 'typing': this.pchat.onMsg(p, d); break;
+      // the host starts the party from the lobby (nobody else does — not even "everyone’s ready")
+      case 'start': if (this.phase === 'lobby' && this.host.isHost(p) && !this.vote && !this.choosing) this.chooseActivity(); break;
+      case 'unstuck': this.unstick(p); break;
+      case 'rejoin': this.rejoin(p); break;
+      // (a place chosen on the phone's map: the way there — or « stop » on the place you're heading for)
+      case 'goto': this.guides.fromPhone(p, d); break;
+      case 'camp': if (this.camp && this.phase !== 'lobby') this.camp.build(p); break;
+      // the world map on the phone (its own screen: nobody else’s view changes)
+      case 'mapReq': {
+        // (the phone draws the map itself: the world once, then what’s changed)
+        if (d.v === 2) { const b = mapBase(this); if (b && d.base !== b.v) this.net.send(p.id, b); const u = mapUpdate(this, p); if (u) this.net.send(p.id, u); break; }
+        const src = mapImage(this, d.w, d.h, d.near ? (this.rooms ? this.rooms.mapPos(p) : p.pos) : null);
+        if (src) this.net.send(p.id, { t: 'map', src, near: !!d.near });
+        break;
+      }
+      default: break;
+    }
+  }
+
+  // "Get unstuck" (the phone’s menu, or the host’s for everyone): stuck inside
+  // something or in a little pocket → the nearest open ground; seemingly free
+  // but still asking (a ledge, an island…) → the nearest waystone. In a dungeon nobody is sent
+  // out of it: beside a friend, the one in a locked fight first (saga/dungeon.js `unstickSpot`).
+  // `all`: only the ones really stuck move.
+  unstick(p, all = false) {
+    if (!p || !p.actor || this.busy || (p.fighter && p.fighter.down)) return;
+    if (this.rooms && this.rooms.inside(p)) { if (!all) this.rooms.leave(p); return; }
+    const a = p.actor, col = this.world.overCol, B = this.combat && this.combat.bounds;
+    let s;
+    if (this.dungeons && this.dungeons.heroIn(p)) {
+      s = this.dungeons.unstickSpot(p, all);
+      if (!s) return;
+    } else {
+      const inRing = B ? (x, z) => ((x - B.x) / B.rx) ** 2 + ((z - B.z) / B.rz) ** 2 < 0.9 : null;
+      const stuck = !p.swimming && !p.vehicle && stuckAt(col, a.pos.x, a.pos.z, { ok: inRing });
+      if (!stuck && all) return;
+      if (p.vehicle && this.vehicles) this.vehicles.leave(p, true);
+      if (p.mount && this.mounts) this.mounts.dismount(p, true);
+      s = stuck || B ? findUnstuck(col, a.pos.x, a.pos.z, { ok: inRing }) : null;
+      // (all together: not to a waystone far from everyone — back beside the others)
+      if (!s && this.together() && (this.mainG || []).some((q) => q !== p && q.connected)) { this.regroup(p); if (p.stuckWatch) p.stuckWatch.reset(); return; }
+      if (!s) {
+        const T = this.travel, stones = T ? T.attuned() : [];
+        let best = null, bd = 1e9;
+        for (const st of stones) { const d = Math.hypot(st.x - a.pos.x, st.z - a.pos.z); if (d < bd) { bd = d; best = st; } }
+        s = best ? best.land || (best.land = T.openNear(best.x, best.z, 2.2, 9)) : this.spawnPoint(p.slot);
+      }
+    }
+    this.world.fx.emit('smoke', a.pos.x, 0.6, a.pos.z, 8);
+    a.pos = { x: s.x, z: s.z };
+    a.jumpY = 0; a.jumpV = 0;
+    this.world.fx.emit('sparkle', s.x, 1.2, s.z, 14, { color: p.color });
+    audio.sfx('poof', { volume: 0.6 });
+    if (p.stuckWatch) p.stuckWatch.reset();
+    p.stuckOffer = false;
+    this.toast(t('{name} got unstuck!', { name: p.name }), p.color);
+  }
+
+  addPlayer(src) {
+    let slot = src.id && this.seats.has(src.id) ? this.seats.get(src.id) : -1;
+    if (slot >= 0 && this.players.some((q) => q.slot === slot)) slot = -1;
+    if (slot < 0) for (let i = 0; i < 8; i++) if (!this.players.some((q) => q.slot === i)) { slot = i; break; }
+    if (slot < 0) return null;
+    const p = new PartyPlayer(this, slot, src);
+    p.cls = this.profileOf(p).cls || (CLASSES[src.cls] ? src.cls : CLASS_ORDER[slot % CLASS_ORDER.length]);
+    // two Alexes? call the newcomer "Alex 2"
+    const base = p.name;
+    for (let n = 2; this.players.some((q) => q.name === p.name); n++) p.name = `${base.slice(0, 10)} ${n}`;
+    this.seats.set(src.id, slot);
+    this.players.push(p);
+    this.players.sort((a, b) => a.slot - b.slot);
+    this.byId.set(src.id, p);
+    this.r3d.scene.add(p.actor.model.root);
+    this.world.over.root.add(p.ring);
+    const w = this.world;
+    p.actor.onJump = () => {
+      if (this.zones && this.zones.onJump(p)) return;
+      audio.sfx('jump', { volume: 0.45 });
+      w.fx.emit('dust', p.pos.x, 0.05, p.pos.z + 0.1, 3);
+    };
+    p.actor.onLand = () => {
+      const pp = p.pos;
+      audio.sfx('land', { volume: 0.35 });
+      w.fx.emit('dust', pp.x, 0.05, pp.z + 0.1, 3, { color: w.tileAt(pp.x, pp.z) === TT.SNOW ? '#ffffff' : undefined });
+      for (const lp of w.over.leafpiles || []) {
+        if (Math.hypot(lp.x - pp.x, lp.z - pp.z) < 0.85) { w.fx.emit('burst', lp.x, 0.3, lp.z, 18); audio.sfx('whoosh', { volume: 0.4 }); lp.squash = 1; }
+      }
+      if (this.combat) this.combat.onLand(p);
+      if (this.act) this.act.onLand(p);
+    };
+    // arrive with a pop
+    const sp = this.spawnPoint(slot);
+    p.actor.pos = { x: sp.x, z: sp.z };
+    p.actor.dir = { x: 0, z: 1 };
+    p.actor.jumpV = 4;
+    w.fx.emit('sparkle', sp.x, 1.2, sp.z, 14, { color: p.color });
+    audio.sfx('sparkle', { volume: 0.6 });
+    this.toast(t('{name} joined!', { name: p.name }), p.color);
+    p.tagT = 6;
+    // (keyboard & gamepad players: where their own menu is — talents, gear, their look…)
+    if (p.kind !== 'phone') p.say(t('My menu: {key}', { key: keyOf(p, 'm') }), 7);
+    if (this.phase !== 'lobby') p.ready = true;
+    if (this.combat) this.combat.equip(p);
+    if (this.act) this.act.onJoin(p);
+    if (this.vote) this.sendVote(p);
+    return p;
+  }
+
+  removePlayer(p) {
+    this.saveProfile(p); this.flushProfiles();
+    this.remotePlay.stop(p.id);
+    // a seat is free: phones that found the party full get asked again
+    if (this.waiting) { for (const id of this.waiting) this.net.send(id, { t: 'who' }); this.waiting.clear(); }
+    this.r3d.scene.remove(p.actor.model.root);
+    this.world.over.root.remove(p.ring);
+    this.tvmenus.close(p, true); this.tvmenus.tabs.delete(p);
+    this.pchat.close(p);
+    this.players = this.players.filter((q) => q !== p);
+    this.byId.delete(p.id);
+    this.host.onLeave(p);
+    if (this.mounts) this.mounts.onLeave(p);
+    if (this.combat) this.combat.unequip(p);
+    this.portraits.invalidate('party' + p.slot);
+    this.toast(t('{name} left the party', { name: p.name }), '#b9a2e3');
+    if (this.act) this.act.onLeave(p);
+  }
+
+  spawnPoint(slot) {
+    if (this.phase === 'lobby' || !this.players.some((q) => q.slot !== slot)) {
+      const a = (slot / 8) * Math.PI * 2 + 0.4;
+      return { x: LOBBY.x + Math.cos(a) * 2.4, z: LOBBY.z + 1.2 + Math.sin(a) * 1.3 };
+    }
+    // mid-adventure: pop in next to a friend
+    const q = this.players.find((o) => o.slot !== slot && o.connected) || this.players[0];
+    return { x: q.pos.x + 0.8, z: q.pos.z + 0.5 };
+  }
+
+  setLook(p, look) {
+    p.look = cleanLook(look);
+    p.actor.setLook(p.look);
+    p.portraitDue = 0.3;
+    if (this.phase === 'lobby') { this.world.fx.emit('sparkle', p.pos.x, 1.2, p.pos.z, 4, { color: '#fff3c4' }); this.flashTag(p, 2.5); }
+  }
+
+  // a new name for a player (a phone’s name row or its dice, the big-screen menu): cleaned, told
+  // apart from a namesake, kept in their profile (`diced`: out of the hat — « Surprise me » may
+  // roll it again), flashed over their head; their phone hears what it became
+  rename(p, name, { dice = false } = {}) {
+    const base = cleanName(name);
+    let n = base;
+    for (let k = 2; n && this.players.some((q) => q !== p && q.name === n); k++) n = `${base.slice(0, 10).trim()} ${k}`;
+    const changed = !!n && n !== p.name;
+    if (changed) {
+      p.name = n;
+      const pr = this.profileOf(p);
+      pr.named = true; pr.diced = !!dice;
+      this.saveProfile(p);
+      this.flashTag(p, 4);
+      this.host.sentKey = '';                    // (the host’s menu lists the players by name)
+    }
+    if (p.kind === 'phone') this.net.send(p.id, { t: 'you', slot: p.slot, color: p.color, name: p.name });
+    return changed;
+  }
+
+  sendPortrait(p) {
+    if (p.kind !== 'phone') return;
+    this.portraits.invalidate('party' + p.slot);
+    const c = this.portraits.get('party' + p.slot, p.look, 'happy');
+    this.net.send(p.id, { t: 'portrait', src: c.toDataURL() });
+  }
+
+  // tell a phone everything it needs to redraw from scratch
+  syncPad(p) {
+    if (p.kind !== 'phone') return;
+    this.net.send(p.id, { t: 'lang', v: getLang() });
+    this.net.send(p.id, { t: 'you', slot: p.slot, color: p.color, name: p.name });
+    this.net.send(p.id, { t: 'phase', p: this.phase === 'lobby' ? 'lobby' : 'adventure', ready: p.ready });
+    // (clears whatever the phone showed before — e.g. "party full" from an earlier try)
+    this.net.send(p.id, { t: 'screen', s: 'play' });
+    this.net.send(p.id, { t: 'cls', v: p.cls, list: CLASS_ORDER });
+    this.sendHats(p);
+    if (this.mounts) this.mounts.sendList(p);
+    this.buddies.sendList(p);
+    if (this.progress) { p.progKey = ''; this.progress.sync(p); }
+    this.host.tell(p);
+    this.sendInvite(p);
+    if (this.host.isHost(p)) this.host.sentKey = '';
+    this.net.send(p.id, { t: 'pause', v: !!this.paused, by: this.paused ? this.paused.by : '' });
+    p.ctxKey = '';
+    p.portraitDue = 0.05;
+    // (the story’s card: the saga sends it afresh — no story, no Quest page)
+    p.questKey = '';
+    if (!this.saga) this.net.send(p.id, { t: 'quest' });
+    if (this.act) this.act.syncPad(p);
+    if (this.vote) this.sendVote(p);
+    this.pchat.syncPad(p);
+  }
+
+  // What a player's buttons do here and now, in English: A, B, X & Y (null: nothing; X left
+  // undefined: the special move) and a hint — the activity's, then a boat, a swim, a mount, a
+  // campfire, a scene or a fight close by. A phone shows it all (padCtx); a keyboard's or a
+  // gamepad's player, the chips under their hero (updateChips).
+  ctxOf(p) {
+    let ctx = this.vote ? { a: null, b: null, hint: 'Vote on your phone!' }
+      : this.phase === 'lobby' ? { a: 'Wave', b: 'Hop', hint: '' }
+        : this.act ? this.act.ctxFor(p) : { a: null, b: 'Hop', hint: '' };
+    if (!this.vote && this.phase !== 'lobby' && !this.dialogue.active) {
+      const vc = this.vehicles && this.vehicles.ctxFor(p);
+      if (p.vehicle && vc) ctx = { ...vc, x: null };
+      else if (p.swimming) ctx = vc && vc.a ? { ...this.swim.ctxFor(p), a: vc.a, hint: vc.hint, vars: vc.vars } : this.swim.ctxFor(p);
+      else if (vc && vc.a) ctx = { ...ctx, a: vc.a, hint: vc.hint, vars: vc.vars };
+    }
+    if (!this.vote && !this.dialogue.active && !p.vehicle && !p.swimming && this.mounts) ctx = this.mounts.ctxFor(p, ctx) || ctx;
+    if (!this.vote && !this.dialogue.active && this.camp && this.phase !== 'lobby') ctx = this.camp.ctxFor(p, ctx) || ctx;
+    // a scene is playing: everyone watches the big screen (the host may skip it)
+    const scene = this.stage && this.stage.active;
+    if (scene && !this.vote) ctx = { a: this.dialogue.active ? 'Next' : null, b: null, x: null, y: this.host.isHost(p) ? 'Skip' : null, hint: p.remote ? 'A scene is playing — watch your screen!' : 'A scene is playing — watch the big screen!' };
+    const C = this.combat, fi = p.fighter;
+    if (C && fi && !fi.down && !p.mount && !p.vehicle && !p.swimming && !this.vote && !scene && (C.pvp || C.enemies.some((e) => e.alive && Math.hypot(e.x - p.pos.x, e.z - p.pos.z) < 9))) ctx = { ...ctx, y: 'Dodge' };
+    if (ctx.x === undefined && (this.vote || this.dialogue.active)) ctx.x = null;
+    // (a page of the dialogue being read: « Next » lights up when it can be turned)
+    if (ctx.a === 'Next' && this.dialogue.reading) ctx = { ...ctx, a: null };
+    return ctx;
+  }
+
+  // …for a phone: translated, with the buttons' pictures, your health, level, cooldowns & ultimate
+  padCtx(p, ctx) {
+    const fi = p.fighter, scene = this.stage && this.stage.active;
+    const ic = padIcons({ a: ctx.a, x: ctx.x === undefined && fi ? (fi.moves || fi.cls).special.name : ctx.x, y: ctx.y }, fi, p.mount && p.mount.D);
+    ctx = { ...ctx, a: ctx.a ? t(ctx.a) : ctx.a, b: ctx.b ? t(ctx.b) : ctx.b, x: ctx.x ? t(ctx.x) : ctx.x, y: ctx.y ? t(ctx.y) : null, hint: ctx.hint ? t(ctx.hint, ctx.vars) : '' };
+    if (ic && !(fi && fi.down)) ctx.ic = ic;
+    delete ctx.vars;
+    const f = p.fighter;
+    if (f) {
+      ctx.hp = Math.max(0, Math.round((f.hp / f.maxHp) * 20)) * 5;
+      ctx.lv = shownLevel(f.level);
+      ctx.cd = f.cd > 0 ? Math.ceil((f.cd / (f.cls.special.cd * f.mods.cdr)) * 10) * 10 : 0;
+      ctx.cls = f.clsId;
+      if (f.ultId && !f.down && !p.mount && !p.vehicle) {
+        ctx.ult = Math.floor(f.ult); ctx.uic = ULTS[f.ultId].icon;
+        // (several ultimates learned: the phone has a button each — its gauge, its picture)
+        if (f.ultIds.length > 1) ctx.ults = f.ultIds.map((id) => [Math.floor(f.ults[id]), ULTS[id].icon]);
+      }
+      if (ctx.x === undefined) ctx.x = t(f.cls.special.name);
+      if (f.down) { ctx.a = null; ctx.b = null; ctx.x = null; ctx.y = null; ctx.hint = t(this.combat.pvp ? 'Bonked! Back in a moment…' : 'Having a little nap… a friend can help you up!'); }
+    }
+    if (p.mount) { const h = p.mount; ctx.cd = h.abilCd > 0 ? Math.ceil((h.abilCd / h.D.ability.cd) * 10) * 10 : 0; }
+    if (p.stuckOffer && !scene) ctx.stuck = 1;          // (the phone offers « Get unstuck » up front)
+    return ctx;
+  }
+
+  // …for a keyboard's or a gamepad's player, who has no phone to read: the chips drawn under
+  // their hero — only what's special here and now (Board, Row, Get out, Open, Chat…), never the
+  // everyday Attack, Jump or Dodge, and none while a scene, a talk, a vote or their menu is on.
+  // They teach, then get out of the way: a new one shows for a few seconds (its first three
+  // times), then only while you stand still a moment; once you've pressed its button there,
+  // you know it — it doesn't come back this party.
+  updateChips(p, ctx, dt) {
+    const c = p.chips || (p.chips = { list: [], k: 0, ids: new Set(), fresh: 0, idle: 0, was: {}, offer: {}, used: new Set(), seen: new Map() });
+    for (const k of ['a', 'b', 'x', 'y']) {
+      const on = p.input.down(k);
+      if (on && !c.was[k] && c.offer[k]) c.used.add(c.offer[k]);
+      c.was[k] = on;
+    }
+    const f = p.fighter, S = this.stage;
+    const quiet = this.phase === 'lobby' || this.vote || this.dialogue.active || (S && (S.active || S.barK > 0)) || (this.act && this.act.overlay)
+      || p.hidden || (f && f.down) || this.tvmenus.isOpen(p);
+    const list = [], offer = {};
+    if (!quiet) for (const k of ['a', 'b', 'x', 'y']) {
+      const l = ctx[k];
+      if (!l || (EVERYDAY[k] || []).includes(l)) continue;
+      // (« Grab » and « GRAB! » are one thing to learn)
+      const id = offer[k] = k + ':' + l.toLowerCase().replace(/[^a-z]/g, '');
+      if (!c.used.has(id)) list.push({ id, key: keyOf(p, k), label: t(l) });
+    }
+    c.offer = offer;
+    if (list.some((q) => !c.ids.has(q.id))) { c.fresh = 4; for (const q of list) if (!c.ids.has(q.id)) c.seen.set(q.id, (c.seen.get(q.id) || 0) + 1); }
+    c.ids = new Set(list.map((q) => q.id));
+    c.fresh -= dt;
+    c.idle = p.input.active ? 0 : c.idle + dt;
+    const show = list.filter((q) => (c.fresh > 0 && c.seen.get(q.id) <= 3) || c.idle > 1.5);
+    // (the last ones stay drawn while they fade)
+    if (show.length) { c.list = show; c.k = Math.min(1, c.k + dt * 8); }
+    else c.k = Math.max(0, c.k - dt * (list.length ? 2.5 : 6));
+  }
+
+  sendCtx(p, ctx) {
+    if (p.kind !== 'phone') return;
+    const key = JSON.stringify(ctx);
+    if (key === p.ctxKey) return;
+    p.ctxKey = key;
+    this.net.send(p.id, { t: 'ctx', ...ctx });
+  }
+
+  // treasure hats this phone has dug up (the look editor shows them)
+  sendHats(p) { if (p.kind === 'phone') this.net.send(p.id, { t: 'hats', list: (this.profileOf(p).hats || []).map((h) => (h === 'furhat' ? 'chapka' : h)) }); }
+
+  // what a player presses for A / B / X / Y / U / their menu (M), on their own device
+  keyOf(p, k) { return keyOf(p, k); }
+
+  buzz(p, pattern = 40) {
+    if (p.kind === 'phone') this.net.send(p.id, { t: 'buzz', p: pattern });
+    else if (p.kind === 'gamepad') this.game.input.buzz(pattern, p.input.index);
+  }
+
+  // keyboard & gamepad friends on the big screen itself
+  pollLocalJoins() {
+    const keys = this.game.input.keys;
+    const edge = (codes) => codes.some((c) => keys.has(c) && !this.prevKeys.has(c));
+    for (const [lay, L] of Object.entries(KEY_LAYOUTS)) {
+      if (!edge(L.join)) continue;
+      if (this.players.some((p) => p.kind === 'keys' && p.input.layoutId === lay)) continue;
+      const pr = this.profiles['keys-' + lay] || {};
+      const p = this.addPlayer({ id: 'keys-' + lay, kind: 'keys', input: new KeyInput(keys, lay), name: (pr.named && pr.name) || t('Keys'), look: pr.look || randomLook() });
+      if (p) p.input.update();
+    }
+    this.prevKeys = new Set(keys);
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    for (const gp of pads) {
+      if (!gp) continue;
+      const on = gp.buttons[0] && gp.buttons[0].pressed;
+      const was = this.padsDown.has(gp.index);
+      if (on && !was && !this.players.some((p) => p.kind === 'gamepad' && p.input.index === gp.index)) {
+        const pr = this.profiles['pad-' + gp.index] || {};
+        // (a name they chose comes back; "Pad 2" is said in today's language)
+        const p = this.addPlayer({ id: 'pad-' + gp.index, kind: 'gamepad', input: new PadInput(gp.index), name: (pr.named && pr.name) || t('Pad {n}', { n: gp.index + 1 }), look: pr.look || randomLook() });
+        if (p) p.input.update();
+      }
+      if (on) this.padsDown.add(gp.index); else this.padsDown.delete(gp.index);
+    }
+  }
+
+  anyPressed(a) {
+    if (this.game.input.pressed(a)) return true;
+    return this.players.some((p) => p.connected && p.input.pressed(a === 'interact' ? 'a' : a));
+  }
+
+  consume(...a) {
+    this.game.input.consume(...a);
+    for (const p of this.players) p.input.edges.clear();
+  }
+
+  // ------------------------------------------------------------------ Dialogue hooks
+  npcDef(who) {
+    const p = this.playerOf(who);
+    if (p) return { name: p.name, short: p.name, voice: { pitch: VOICES[p.slot], wave: 'triangle' } };
+    return NPCS[who];
+  }
+  playerOf(who) { return typeof who === 'string' && /^p\d$/.test(who) ? this.players.find((p) => p.slot === +who[1]) : null; }
+  portraitOf(who, expr) {
+    const p = this.playerOf(who);
+    if (p) return this.portraits.get('party' + p.slot, p.look, expr);
+    const d = NPCS[who];
+    return d ? this.portraits.get(who, d.look, expr, d.scale || (d.kid ? 0.86 : 1)) : null;
+  }
+  onSpeak(who, talking) {
+    const n = this.npcs.find((x) => x.id === who);
+    if (n) { n.talking = talking || n.talking; n.speaking = talking; }
+    const p = this.playerOf(who);
+    if (p) p.actor.expr = talking ? 'talk' : null;
+  }
+  say(who, text, opts = {}) { return this.dialogue.say(who, text, opts); }
+
+  // ------------------------------------------------------------------ helpers for scripts
+  wait(sec) { return new Promise((res) => this.waits.push({ t: sec, res })); }
+  fadeTo(to, dur = 0.4) {
+    // (a new fade lets the one before it go: two scripts fading at once never wait forever)
+    if (this.fadeRes) { const r = this.fadeRes; this.fadeRes = null; r(); }
+    this.fadeTarget = to; this.fadeSpeed = 1 / Math.max(0.05, dur);
+    return new Promise((res) => { this.fadeRes = res; if (this.fade === to) { this.fadeRes = null; res(); } });
+  }
+  // show a player’s name over their head for a moment
+  flashTag(p, sec = 3) { p.tagT = Math.max(p.tagT || 0, sec); }
+
+  // The objective card (top left) slides in when the goal changes, stays a few seconds, then
+  // tucks itself away. The Adventure’s never leaves (`more.stay`): open wide for those seconds —
+  // under its quest’s title (`more.title`), with the quest’s brief when the quest is new
+  // (`more.brief`) — then small, the title and the step (ui/questcard.js lays both out; what
+  // moves at the end of the step, `more.tail`, a count or a clock, is kept in sight).
+  showObjective(text, sub = '', secs = 7, extra = '', more = null) {
+    const o = this.obj, m = more || {};
+    if (!text) { this.obj = null; return; }
+    if (o && o.text === text && o.sub === sub && o.extra === extra && o.title === (m.title || '') && o.brief === (m.brief || '') && o.t < o.secs - 0.5) { o.secs = Math.max(o.secs, o.t + secs); return; }
+    // (a card that was there already opens where it is: only a new one slides in)
+    const there = !!o && (o.stay || o.t < o.secs);
+    this.obj = { text, sub, extra, title: m.title || '', brief: m.brief || '', tail: m.tail || '', stay: !!m.stay, small: !!m.small, t: o && o.text === text && o.t < o.secs ? Math.min(o.t, 0.3) : 0, secs, on: there && m.stay ? Math.max(o.on, 0.3) : 0, aw: there ? o.aw : 0, ah: there ? o.ah : 0 };
+  }
+
+  // A note in the right-hand column: three on screen at most (the next ones wait their turn),
+  // two rows each — a longer one is read in the announcement lane instead. The same note again
+  // while it is up counts up (« ×2 ») rather than stacking; a countdown’s numbers (« 3 », « 2 »)
+  // and a count going up (« Flag 2/7 », « Flag 3/7 ») follow one another in place.
+  toast(text, color = '#fff3c4') {
+    text = String(text);
+    if (wrap(text, this.toastW()).length > 2) { this.lane.push({ kind: 'hint', title: text, color, dur: noteTime(text) }); return; }
+    const key = /^\d+$/.test(text) ? '#' : text.replace(/\d+(?=\s*\/\s*\d)/g, '#');
+    const same = this.toasts.find((q) => q.color === color && q.key === key);
+    if (same) {
+      if (same.base === text) same.text = `${text} ×${++same.n}`; else { same.text = same.base = text; same.n = 1; }
+      same.t = Math.min(same.t, 0.25);
+      return;
+    }
+    // (`late`: said while the notes wait — it is for when they come back)
+    this.toasts.push({ text, base: text, key, color, n: 1, t: 0, age: 0, late: this.toastsHeld(), life: Math.max(3.2, 1.2 + visibleLength(text) / 16) });
+    if (this.toasts.length > TOASTS + 4) this.toasts.splice(TOASTS, 1);
+  }
+  toastW() { return Math.min(Math.round(this.display.w * 0.45), 240); }
+  // The dialogue box, a letter, a vote or a scene has the screen: the notes wait. The ones that
+  // were up before it are old news once it has lasted a few seconds; the ones said meanwhile
+  // (« You get: … » in the middle of a talk) show when it is over — unless that takes too long.
+  toastsHeld() { return this.dialogue.active || !!this.vote || !!(this.stage && (this.stage.active || this.stage.barK > 0)); }
+  updateToasts(dt) {
+    if (this.toastsHeld()) {
+      this.toastWait = (this.toastWait || 0) + dt;
+      for (const q of this.toasts) q.age += dt;
+      if (this.toasts.length) this.toasts = this.toasts.filter((q) => (q.late ? q.age <= 25 : this.toastWait <= 4));
+      return;
+    }
+    this.toastWait = 0;
+    this.toasts.forEach((q, i) => { if (i < TOASTS) q.t += dt; else q.age += dt; });
+    this.toasts = this.toasts.filter((q, i) => (i < TOASTS ? q.t < q.life : q.age < 8));
+  }
+  // A banner in the announcement lane (opts.keep: it shows however long it has to wait)
+  showBanner(title, sub = '', opts = {}) { this.lane.push({ kind: 'banner', title: String(title), sub: sub ? String(sub) : '', keep: !!opts.keep }); }
+
+  spawnNpc(id, x, z, face = { x: 0, z: 1 }) {
+    let n = this.npcs.find((q) => q.id === id);
+    if (!n) {
+      n = new Npc(this.r3d, id);
+      this.npcs.push(n);
+      this.r3d.scene.add(n.model.root);
+    }
+    n.map = 'overworld';
+    n.pos = { x, z };
+    n.path = null;
+    n.restDir = face;
+    n.dir = face;
+    n.hidden = false;
+    n.activity = null;
+    return n;
+  }
+
+  removeNpc(id) {
+    const n = this.npcs.find((q) => q.id === id);
+    if (!n) return;
+    this.r3d.scene.remove(n.model.root);
+    this.npcs = this.npcs.filter((q) => q !== n);
+  }
+
+  // place everyone around a point (after cutscenes & between games)
+  gatherAt(x, z, spread = 1.1) {
+    const ps = this.players;
+    ps.forEach((p, i) => {
+      const a = (i / Math.max(1, ps.length)) * Math.PI * 2 + 0.3;
+      let px = x + Math.cos(a) * spread * (ps.length > 1 ? 1 : 0), pz = z + Math.sin(a) * spread * 0.7 * (ps.length > 1 ? 1 : 0);
+      const col = this.world.overCol;
+      if (col.blocked(px, pz, 0.26)) { px = x; pz = z; }
+      p.actor.pos = { x: px, z: pz };
+      p.actor.vel = { x: 0, z: 0 };
+      this.flashTag(p, 4);
+    });
+    this.cam.snap(this.camPlayers());
+  }
+
+  // who the big screen frames: friends at home have their own camera (unless everyone does)
+  camPlayers() {
+    const a = this.players.filter((p) => p.connected || this.t - p.goneAt < 8), here = a.filter((p) => !p.remote);
+    return here.length ? here : a.length ? a : this.players;
+  }
+  // everyone in the world, wherever they watch from (the scenery wakes up around each of them)
+  allPlayers() { const a = this.players.filter((p) => p.connected || this.t - p.goneAt < 8); return a.length ? a : this.players; }
+
+  centroid() {
+    const ps = this.camPlayers();
+    if (!ps.length) return { x: LOBBY.x, z: LOBBY.z };
+    let x = 0, z = 0;
+    for (const p of ps) { x += p.pos.x; z += p.pos.z; }
+    return { x: x / ps.length, z: z / ps.length };
+  }
+
+  // ------------------------------------------------------------------ update
+  update(dt) {
+    const g = this.game, w = this.world, s = this.state;
+    this.t += dt;
+    // (a player in their big-screen menu: the menu reads their buttons, their hero feels none)
+    for (const p of this.players) (this.tvmenus.realOf(p) || this.pchat.realOf(p) || this.guides.realOf(p) || p.input).update(dt);
+    this.host.update(dt);
+    if (g.party !== this) return;          // the host ended the party
+    this.tvmenus.update(dt);
+    this.pchat.update(dt);
+    // (French says « vous » to a party, « tu » to a lone player)
+    let n = 0;
+    for (const p of this.players) if (p.connected) n++;
+    setAudience(n > 1 ? 'group' : 'one');
+    // M on the big screen’s keyboard shows the world map (M wherever the keyboard prints it: an AZERTY's
+    // is where QWERTY has ;) — so does a click on the corner's map
+    const mKey = g.input.keys.has('KeyM') || g.input.keys.has('Semicolon');
+    if (mKey && !this.prevM && !this.host.menu) this.bigMapOpen = !this.bigMapOpen;
+    else if (!this.bigMapOpen && !this.host.menu && this.phase !== 'lobby' && this.guides.iconClicked()) this.bigMapOpen = true;
+    // (the map open: its Close button, Esc / Start on the big screen, or a local player's B, closes it — guide.js)
+    if (this.bigMapOpen && !this.host.menu) {
+      const C = this.mapCloseR, gi = g.input;
+      if (gi.pressed('cancel') || gi.pressed('pause') || (gi.mouse.pressed && C && gi.mouseIn(C.x, C.y, C.w, C.h))) {
+        this.bigMapOpen = false; gi.mouse.pressed = false; gi.consume();
+      }
+    }
+    this.prevM = mKey;
+    // (the map open: the heroes here wait, their sticks choose a place — the mouse too)
+    this.guides.mapInput(dt);
+    // (the lobby's story tag: « Change… » goes back to the title's choice of stories)
+    const SB = this.storyBtn;
+    if (SB && this.phase === 'lobby' && !this.host.menu && g.input.mouse.pressed && g.input.mouseIn(SB.x, SB.y, SB.w, SB.h)) {
+      g.input.mouse.pressed = false;
+      audio.sfx('select', { volume: 0.6 });
+      this.changeStory();
+      return;
+    }
+    // (the lobby's join card: its link copied in one click)
+    const CR = this.copyR;
+    if (CR && this.phase === 'lobby' && !this.host.menu && g.input.mouse.pressed && g.input.mouseIn(CR.x, CR.y, CR.w, CR.h)) {
+      g.input.mouse.pressed = false;
+      const url = this.net.inviteUrl;
+      copyText(url).then((ok) => { this.copiedT = ok ? 2.5 : 0; this.toast(t(ok ? 'Link copied — send it to your friends!' : 'Couldn’t copy: the link is on the screen'), '#8fd67a'); });
+      audio.sfx('select', { volume: 0.6 });
+    }
+    if (this.copiedT > 0) this.copiedT -= dt;
+    // (the map open: the mouse zooms & moves it; ± zoom it rather than the camera)
+    if (this.bigMapOpen && !this.host.menu) this.mapView.mouse(g.input, this.centroid()); else if (!this.bigMapOpen) this.mapView.reset();
+    // + / − / 0 on the big screen’s keyboard: zoom in, out, back to auto
+    const zk = ['Equal', 'NumpadAdd', 'Minus', 'NumpadSubtract', 'Digit0', 'Numpad0'].find((c) => g.input.keys.has(c)) || null;
+    if (zk && zk !== this.prevZoomKey && !this.host.menu) this.host.act(zk.startsWith('Digit0') || zk === 'Numpad0' ? 'zauto' : 'zoom', zk === 'Equal' || zk === 'NumpadAdd' ? 1 : -1);
+    this.prevZoomKey = zk;
+    // the wheel too (not over someone’s own menu, the map or the host’s menu: they scroll or zoom those)
+    this.wheelCd = Math.max(0, (this.wheelCd || 0) - dt);
+    if (g.input.mouse.wheel && !this.wheelCd && !this.bigMapOpen && !this.host.menu && !this.tvmenus.pointing()) { this.host.act('zoom', g.input.mouse.wheel < 0 ? 1 : -1); g.input.mouse.wheel = 0; this.wheelCd = 0.25; }
+    // the display: V on the big screen’s keyboard (LT on a gamepad). The corner’s minimap: a click
+    // on it puts it away, a click on the little map that comes up there under the mouse brings it back
+    this.mouseIdle = g.input.mouse.moved ? 0 : (this.mouseIdle || 0) + dt;
+    if (this.phase !== 'lobby' && !this.host.menu && !this.bigMapOpen && !this.vote) {
+      const R = this.miniRect || this.miniSpot, gi = g.input;
+      if (gi.pressed('hud')) this.cycleHud();
+      else if (R && gi.mouse.pressed && gi.mouseIn(R.x, R.y, R.w, R.h) && !this.tvmenus.pointing() && !this.dialogue.active) { gi.mouse.pressed = false; this.toggleMap(); }
+    }
+    this.saveT = (this.saveT || 0) + dt;
+    if (this.saveT >= 30) { this.saveT = 0; this.saveNow(); }
+    if (this.paused) { this.updatePaused(dt); return; }
+    w.t += dt;
+    if (this.waits.length) {
+      for (const q of this.waits) q.t -= dt;
+      const done = this.waits.filter((q) => q.t <= 0);
+      this.waits = this.waits.filter((q) => q.t > 0);
+      for (const q of done) q.res();
+    }
+    if (this.fade !== this.fadeTarget) {
+      const d = this.fadeTarget - this.fade, step = dt * (this.fadeSpeed || 2);
+      this.fade = Math.abs(d) <= step ? this.fadeTarget : this.fade + Math.sign(d) * step;
+      if (this.fade === this.fadeTarget && this.fadeRes) { const r = this.fadeRes; this.fadeRes = null; r(); }
+    }
+    if (this.vote) this.updateVote(dt);
+    this.lantern.update(dt);
+    this.profileT = (this.profileT || 0) - dt;
+    if (this.profileDirty && this.profileT <= 0) this.flushProfiles();
+
+    // free roam after the finale: L takes everyone back to the lobby
+    const L = g.input.keys.has('KeyL');
+    if (L && !this.prevL && this.act && this.act.freeRoam && !this.busy) this.backToLobby();
+    this.prevL = L;
+
+    if (this.phase === 'lobby') this.updateLobby(dt);
+    // (a gamepad picked up mid-adventure joins with A, like a phone that turns up late)
+    else if (!this.busy && !this.cinematic && !this.vote) this.pollLocalJoins();
+    if (this.dialogue.active) this.dialogue.update(dt, this.groupInput);
+    if (this.stage) this.stage.update(dt);
+    if (this.vehicles && this.phase !== 'lobby' && !this.cinematic) this.vehicles.handleInput();
+    if (this.mounts && !this.cinematic) this.mounts.handleInput();
+    if (this.camp && this.phase !== 'lobby' && !this.cinematic) this.camp.handleInput();
+    if (this.act) this.act.update(dt);
+    this.arena.update(dt);
+
+    // time drifts gently (the story moves it on between chapters)
+    if (this.phase !== 'lobby' && !this.busy && !this.dialogue.active && !(this.act && this.act.holdClock)) s.hour = Math.min(23.5, s.hour + dt / 90);
+
+    // players (a big hit freezes the action for a heartbeat)
+    const col = w.overCol;
+    const frozenAll = this.busy > 0 || this.dialogue.active || this.cinematic || !!this.vote;
+    const sdt = this.combat && this.combat.hitstop > 0 ? 0 : dt;
+    if (this.combat) this.combat.preActors(sdt);
+    // (all together: where everyone stood, and their rides — the invisible wall takes a step back there)
+    const stood = this.together() ? this.players.map((p) => [p, p.actor.pos.x, p.actor.pos.z, p.vehicle ? [p.vehicle, p.vehicle.x, p.vehicle.z] : null]) : null;
+    if (this.vehicles && !frozenAll) this.vehicles.update(sdt);
+    if (this.phase !== 'lobby') this.guides.update(dt);
+    for (const p of this.players) {
+      const a = p.actor;
+      // (the act can hold one still: a blessing picked on the big screen — its stick moves the cursor)
+      const frozen = frozenAll || p.frozen || !p.connected || !!this.act?.holds?.(p);
+      if (p.vehicle) {
+        // riding: the vehicle placed us; just pose
+        a.update(sdt, p.input, col, true);
+      } else {
+        a.baseY = (p.bedY != null ? p.bedY : w.groundY(a.pos)) + (a.sink || 0);
+        const tl = w.tileAt(a.pos.x, a.pos.z);
+        a.onIce = tl === TT.ICE || tl === TT.GLACIER;
+        if (this.swim && !frozen) this.swim.pre(p, sdt);
+        if (p.mount) this.mounts.pre(p);
+        // (on foot, any water can be waded into — you start swimming there; mounts keep their own rules)
+        a.update(sdt, p.input, p.mount ? this.mounts.colFor(p) || col : this.swim ? this.swim.swimCol : col, frozen);
+        if (this.swim) this.swim.post(p, sdt);
+        if (p.mount) this.mounts.post(p, sdt);
+      }
+      p.ring.position.set(a.pos.x, p.swimming || (p.mount && p.mount.swim) ? 0.03 : (p.mount ? p.mount.y - a.jumpY : a.baseY || 0) + 0.02, a.pos.z);
+      p.ring.visible = !p.hidden && !p.vehicle && !p.dive;
+      a.model.root.visible = !p.hidden;
+      if (p.tagT > 0) p.tagT -= dt;
+      if (p.emoteT > 0 && (p.emoteT -= dt) <= 0) p.emote = null;
+      if (p.speechT > 0 && (p.speechT -= dt) <= 0) p.speech = null;
+      if (p.portraitDue > 0 && (p.portraitDue -= dt) <= 0) this.sendPortrait(p);
+    }
+    this.separatePlayers(col);
+    if (stood) this.tether(stood, dt);
+    // (a hero pushing and going nowhere, or boxed in: « Get unstuck » comes forward — stuck.js)
+    const roam = this.exploring() && this.phase !== 'lobby';
+    for (const p of this.players) {
+      if (!p.connected) { p.stuckOffer = false; continue; }
+      const v = p.input.moveVector(), sw = p.stuckWatch || (p.stuckWatch = new StuckWatch());
+      p.stuckOffer = sw.update(dt, {
+        pushing: Math.hypot(v.x, v.y) > 0.5, pos: p.pos,
+        busy: !roam || frozenAll || p.frozen || !!p.vehicle || !!p.mount || !!p.swimming || !!p.dive || !!p.sleeping || !!(p.fighter && p.fighter.down) || this.tvmenus.isOpen(p),
+        boxedAt: () => !nearWater(this.world, p.pos.x, p.pos.z) && stuckAt(col, p.pos.x, p.pos.z, { r: 0.1, room: 12 }),
+      });
+    }
+    if (this.rooms && !frozenAll) this.rooms.update(sdt);
+    if (this.mounts && !frozenAll) this.mounts.update(sdt);
+    if (this.dinos && !frozenAll) this.dinos.update(sdt);
+    if (this.encounters && !frozenAll) this.encounters.update(sdt);
+    if (this.lairs && !frozenAll) this.lairs.update(sdt);
+    if (this.rares && !frozenAll) this.rares.update(sdt);
+    if (this.travel && !frozenAll) this.travel.update(sdt);
+    if (this.secrets && !frozenAll) this.secrets.update(sdt);
+    if (this.races && !frozenAll) this.races.update(sdt);
+    if (this.events && !frozenAll) this.events.update(sdt);
+    if (this.camp) this.camp.update(sdt, frozenAll);
+    if (this.progress) this.progress.update(dt);
+    if (this.zones && !frozenAll) this.zones.update(dt);
+    this.lastDt = dt;
+    if (this.combat && !frozenAll) this.combat.update(dt); else if (this.combat) this.combat.idle(dt);
+    this.buddies.update(sdt, frozenAll);
+    // footprints in the snow
+    for (const p of this.players) {
+      if (!p.actor.moving || p.actor.airborne || w.tileAt(p.pos.x, p.pos.z) !== TT.SNOW) continue;
+      p.printT = (p.printT || 0) - dt;
+      if (p.printT <= 0) {
+        p.printT = p.actor.running ? 0.14 : 0.2;
+        p.printSide = -(p.printSide || 1);
+        const d = p.actor.dir;
+        w.fx.emit('print', p.pos.x - d.z * 0.1 * p.printSide, 0.02, p.pos.z + d.x * 0.1 * p.printSide + 0.05, 1);
+      }
+    }
+    // villagers
+    for (const n of this.npcs) { n.baseY = n.seatY !== undefined ? n.seatY : w.groundY(n.pos) + (n.actSeat || 0); n.update(dt, this.npcWorld); }
+    // the valley around everyone
+    const focus = this.allPlayers().map((p) => p.pos);
+    if (!focus.length) focus.push(LOBBY);
+    w.updateScenery(dt, focus);
+    w.critters.update(dt, w.t, this.allPlayers().map((p) => p.actor).concat(focus.length ? [] : [{ pos: LOBBY }]), s.hour);
+    w.fx.update(dt);
+    // what everyone's buttons do here and now: on the phones' screens, and as chips under the
+    // hero of each keyboard's or gamepad's player (drawChips)
+    for (const p of this.players) {
+      if (!p.connected) continue;
+      const ctx = this.ctxOf(p);
+      if (p.kind === 'phone') this.sendCtx(p, this.padCtx(p, ctx));
+      else this.updateChips(p, ctx, dt);
+    }
+    this.updateToasts(dt);
+    if (this.obj) {
+      // (its frame grows and closes with what it says)
+      const o = this.obj, L = this.objectiveForm(), k = Math.min(1, dt * 14);
+      o.t += dt; o.on += dt;
+      o.aw = o.aw && Math.abs(L.w - o.aw) > 0.6 ? o.aw + (L.w - o.aw) * k : L.w;
+      o.ah = o.ah && Math.abs(L.h - o.ah) > 0.6 ? o.ah + (L.h - o.ah) * k : L.h;
+    }
+    this.lane.update(dt);
+    if (this.note) { this.note.t += dt; if (this.note.t > 1.8) this.note = null; }
+    this.updateAmbience(dt);
+    this.updateCamera(dt);
+  }
+
+  // ---- all together (`settings.camera`, the default): one picture for everyone, never a split
+  together() { return splitOf(this.settings) === 'together'; }
+
+  // the ones the picture follows: everyone — or, when somebody is out of reach all the same (a
+  // ride that went far…), the bigger group, the first seat’s among equals; the others are `strays`
+  mainGroup(cp) {
+    const R = this.zoom.reach();
+    const cl = cp.length > 1 ? clusterize(cp, R.w, R.h) : [{ members: cp }];
+    const first = (c) => Math.min(...c.members.map((p) => p.slot));
+    cl.sort((a, b) => b.members.length - a.members.length || first(a) - first(b));
+    this.mainG = cl.length ? cl[0].members : cp;
+    this.strays = cp.filter((p) => !this.mainG.includes(p));
+    return this.mainG;
+  }
+
+  // Nobody walks out of the picture: past what the furthest zoom holds, a step that would take a
+  // hero further from the others is not taken — an invisible wall (a step back towards them
+  // always is taken; a boat stops there too; a rail or the sky carries on). Who is out of reach
+  // anyway is brought back beside the others after a moment.
+  tether(stood, dt) {
+    const main = this.mainG || [], R = this.zoom.reach(), lw = (R.w - 1.6) * 0.97, lh = (R.h - 3.2) * 0.97;
+    const span = (skip, x, z) => {
+      let x0 = x, x1 = x, z0 = z, z1 = z;
+      for (const q of main) { if (q === skip) continue; const a = q.actor.pos; x0 = Math.min(x0, a.x); x1 = Math.max(x1, a.x); z0 = Math.min(z0, a.z); z1 = Math.max(z1, a.z); }
+      return [x1 - x0, z1 - z0];
+    };
+    const stopped = new Set();
+    if (main.length > 1 && !this.cinematic) for (const [p, ox, oz, ride] of stood) {
+      if (!main.includes(p) || !p.connected) continue;
+      const a = p.actor.pos;
+      if ((a.x === ox && a.z === oz) || (p.vehicle && RAILS.has(p.vehicle.kind))) { p.wallT = 0; continue; }
+      const [w0, h0] = span(p, ox, oz), [w1, h1] = span(p, a.x, a.z);
+      const bx = w1 > lw && w1 > w0 + 1e-4, bz = h1 > lh && h1 > h0 + 1e-4;
+      if (!bx && !bz) { p.wallT = 0; continue; }
+      if (p.vehicle && ride && ride[0] === p.vehicle) {
+        // (the whole ride stops where it was, its riders with it)
+        const v = ride[0];
+        if (!stopped.has(v)) { stopped.add(v); v.x = ride[1]; v.z = ride[2]; v.speed = 0; this.vehicles.place(v); this.vehicles.seat(v, 0); }
+      } else { if (bx) a.x = ox; if (bz) a.z = oz; }
+      // (a word over the hero who pushes against it, now and then)
+      p.wallT = (p.wallT || 0) + dt;
+      if (p.wallT > 0.35 && this.t - (p.wallSaid || -99) > 7) { p.wallSaid = this.t; p.say(t('Wait for the others!'), 1.6); this.buzz(p, 15); }
+    }
+    for (const p of this.strays || []) {
+      if (!p.connected || p.vehicle || p.dive || this.busy || this.cinematic || this.dialogue.active) { p.strayT = 0; continue; }
+      p.strayT = (p.strayT || 0) + dt;
+      if (p.strayT > 2) { p.strayT = 0; this.regroup(p); }
+    }
+  }
+
+  // the others as one group to come back to: the bigger group of them when they stand apart
+  // themselves, the first seat’s among equals
+  bigGroup(list) {
+    if (list.length < 2) return list;
+    const R = this.zoom.reach(), cl = clusterize(list, R.w, R.h), first = (c) => Math.min(...c.members.map((q) => q.slot));
+    cl.sort((a, b) => b.members.length - a.members.length || first(a) - first(b));
+    return cl[0].members;
+  }
+
+  // « Rejoin the group » (a phone’s menu, a player’s own page): separated by chance, a hero hops
+  // back beside the others, whatever the camera does. Not knocked down, nor in a race.
+  rejoin(p) {
+    if (!p || !p.actor || !p.connected || this.busy || this.cinematic || this.dialogue.active || this.vote || p.frozen || (p.fighter && p.fighter.down)) return false;
+    const race = this.races && this.races.race;
+    if (race && race.racers.has(p.slot)) { p.say(t('Not during a race!'), 1.6); return false; }
+    if (this.t - (p.rejoinedAt || -99) < 2) return false;
+    const group = this.bigGroup(this.players.filter((q) => q !== p && q.connected && q.actor)), a = p.actor.pos;
+    if (!group.length) { p.say(t('Nobody to join yet'), 1.6); return false; }
+    if (group.some((q) => Math.hypot(q.pos.x - a.x, q.pos.z - a.z) < 4)) { p.say(t('Already with the others'), 1.6); return false; }
+    p.rejoinedAt = this.t;
+    if (p.sleeping && this.camp) this.camp.wake(p);
+    if (p.vehicle && this.vehicles) this.vehicles.leave(p, true);
+    this.regroup(p, group);
+    return true;
+  }
+
+  // the host’s « Bring everyone together »: whoever is away from the bigger group comes back to it
+  gatherAll() {
+    const all = this.players.filter((q) => q.connected && q.actor && !(q.fighter && q.fighter.down));
+    if (all.length < 2 || this.busy || this.cinematic || this.dialogue.active) return;
+    const group = this.bigGroup(all), race = this.races && this.races.race;
+    for (const q of all) {
+      if (group.includes(q) || (race && race.racers.has(q.slot))) continue;
+      if (q.sleeping && this.camp) this.camp.wake(q);
+      if (q.vehicle && this.vehicles) this.vehicles.leave(q, true);
+      this.regroup(q, group);
+    }
+  }
+
+  // a hero out of everyone's reach comes back beside the nearest of the others (`group`: of these)
+  regroup(p, group = this.mainG) {
+    const main = (group || []).filter((q) => q !== p && q.connected && q.actor), a = p.actor;
+    if (!main.length || !a) return;
+    const d = (q) => Math.hypot(q.pos.x - a.pos.x, q.pos.z - a.pos.z), near = main.sort((u, v) => d(u) - d(v))[0];
+    if (p.mount && this.mounts) this.mounts.dismount(p, true);
+    const col = this.world.overCol;
+    let s = null;
+    for (let r = 1; r <= 5 && !s; r += 0.7) for (let k = 0; k < 10 && !s; k++) {
+      const ang = (k / 10) * Math.PI * 2 + r, x = near.pos.x + Math.cos(ang) * r, z = near.pos.z + Math.sin(ang) * r;
+      if (!col.blocked(x, z, 0.35)) s = { x, z };
+    }
+    s = s || { x: near.pos.x, z: near.pos.z };
+    this.world.fx.emit('smoke', a.pos.x, 0.6, a.pos.z, 8);
+    a.pos = { x: s.x, z: s.z };
+    a.vel = { x: 0, z: 0 }; a.jumpY = 0; a.jumpV = 0;
+    // (in a house or a dungeon with them: the same way out)
+    p.roomExit = near.roomExit ? { ...near.roomExit } : null;
+    p.dungeonExit = near.dungeonExit ? { ...near.dungeonExit } : null;
+    this.world.fx.emit('sparkle', s.x, 1.2, s.z, 14, { color: p.color });
+    audio.sfx('poof', { volume: 0.5 });
+    if (p.stuckWatch) p.stuckWatch.reset();
+    p.stuckOffer = false;
+    this.toast(t('{name} is back with the others', { name: p.name }), p.color);
+  }
+
+  // camera & zoom (in the lobby, look past the join card on the left)
+  updateCamera(dt) {
+    this.cam.style = splitOf(this.settings);            // (the Settings’ Big screen: all together, fixed places, or by groups)
+    // (the lobby’s join card: the heroes share the screen beside it)
+    this.cam.inset = this.phase === 'lobby' ? this.display.uiToWorld(Math.min(196, Math.round(this.display.w * 0.38)) + 12, 0).x : 0;
+    let cp = this.camPlayers();
+    if (this.together()) cp = this.mainGroup(cp); else { this.mainG = null; this.strays = null; }
+    this.zoom.update(dt, cp);
+    const card = Math.min(170, Math.round(this.display.w * 0.34)) + 12;
+    const tv = this.tvmenus.shiftTiles();
+    this.cam.shift = this.phase === 'lobby' ? { x: -((card * this.display.scale) / this.display.wscale) / 2 / this.cam.ppu, z: 0.6 } : tv ? { x: -tv, z: 0 } : null;
+    this.cam.focus = this.phase !== 'lobby' && this.act && this.act.camFocus ? this.act.camFocus() : null;
+    if (cp.length) this.cam.update(dt, cp);
+    else this.cam.update(dt, [{ pos: LOBBY, vel: { x: 0, z: 0 } }]);
+    // each friend at home: a camera of their own (a scene's camera is everyone's)
+    const views = this.cam.views.slice(), C = this.cam;
+    for (const p of this.players) {
+      if (!p.remote || !p.connected || cp.includes(p)) { p.rcam = null; continue; }
+      const rc = p.rcam || (p.rcam = new SplitCam(this.r3d));
+      Object.assign(rc, { ppu: C.ppu, bounds: C.bounds, focus: C.focus, director: C.director, roomOf: C.roomOf, bossNear: C.bossNear, shake: C.shake });
+      rc.update(dt, [p], !p.rcamT);
+      p.rcamT = (p.rcamT || 0) + dt;
+      views.push(...rc.views);
+    }
+    if (this.big) this.big.update(dt, views, this.cam.ppu, this.t);
+  }
+
+  // A friend at home (play.html) sees their own camera: the world drawn again from it into
+  // `rd` (remote-host.js's canvases, the big screen's sizes), with the shared HUD, the
+  // dialogue & the scenes — not the big screen's own menus.
+  drawRemote(p, rd) {
+    if (!p.rcam || !p.rcam.views.length) return false;
+    const cam = this.cam, d = this.display;
+    this.cam = p.rcam; this.display = rd; this.remoteFor = p;
+    try { this.draw(); } finally { this.cam = cam; this.display = d; this.remoteFor = null; }
+    return true;
+  }
+
+  // something found at the bottom of the sea
+  onDiveFind(p, spot) {
+    const w = this.world, C = this.combat;
+    const names = { pearl: 'a pearl', shell: 'a rainbow shell', relic: 'an old relic' };
+    w.fx.emit('sparkle', p.pos.x, 1.2, p.pos.z, 18, { color: spot.loot === 'relic' ? '#ffd66b' : '#dff4ff' });
+    audio.sfx(spot.loot === 'relic' ? 'shard' : 'pickup', { volume: 0.7 });
+    p.pearls = (p.pearls || 0) + (spot.loot === 'pearl' ? 1 : 0);
+    if (C && p.fighter) C.gainXp(p, spot.loot === 'relic' ? 30 : 10);
+    if (this.act && this.act.onTreasure) this.act.onTreasure(p, spot.loot);
+    this.toast(t('{name} found {thing}!', { name: p.name, thing: t(names[spot.loot]) }), p.color);
+    p.setEmote('star', 1.6);
+    this.buzz(p, [30, 40, 60]);
+  }
+
+  // where someone is: a valley place, or the big world’s zone
+  placeName(x, z) {
+    const R = this.rooms && this.rooms.near(x, z);
+    if (R) return R.def.name;
+    if (this.dungeons && this.dungeons.inside(x, z)) return this.dungeons.cur.def.name;
+    if (this.big && !this.big.inValley(x, z)) return this.big.zoneAt(x, z).name;
+    return areaAt(Math.floor(x), Math.floor(z));
+  }
+
+  // the host paused: the world holds its breath (menus, zoom & phones still work)
+  updatePaused(dt) {
+    this.updateToasts(dt);
+    if (this.note) { this.note.t += dt; if (this.note.t > 1.8) this.note = null; }
+    this.updateCamera(dt);
+  }
+
+  // ------------------------------------------------------------------ host actions
+  async restartActivity() {
+    const kind = this.actKind;
+    if (!kind || this.switching) return;
+    this.switching = true;
+    await this.fadeTo(1, 0.4);
+    this.resetActs();
+    this.gatherAt(LOBBY.x, LOBBY.z);
+    this.startAct(kind);
+    this.switching = false;
+  }
+
+  async switchActivity(kind) {
+    if (this.switching) return;
+    if (this.phase === 'lobby') {
+      if (this.vote) this.vote = null;
+      this.choosing = false;
+      for (const p of this.players) if (p.kind === 'phone') this.net.send(p.id, { t: 'screen', s: 'play' });
+      this.startAct(kind);
+      return;
+    }
+    this.switching = true;
+    await this.fadeTo(1, 0.4);
+    this.resetActs();
+    this.gatherAt(LOBBY.x, LOBBY.z);
+    this.startAct(kind);
+    this.switching = false;
+  }
+
+  // friends bump softly instead of overlapping
+  separatePlayers(col) {
+    const ps = this.players;
+    for (let i = 0; i < ps.length; i++) for (let j = i + 1; j < ps.length; j++) {
+      const a = ps[i].actor, b = ps[j].actor;
+      if (ps[i].hidden || ps[j].hidden || ps[i].vehicle || ps[j].vehicle) continue;
+      const dx = b.pos.x - a.pos.x, dz = b.pos.z - a.pos.z;
+      const d = Math.hypot(dx, dz), min = 0.52;
+      if (d >= min) continue;
+      const nx = d > 1e-4 ? dx / d : 1, nz = d > 1e-4 ? dz / d : 0;
+      const push = (min - d) / 2;
+      col.move(a.pos, -nx * push, -nz * push, a.radius);
+      col.move(b.pos, nx * push, nz * push, b.radius);
+    }
+  }
+
+  updateLobby(dt) {
+    this.pollLocalJoins();
+    const reload = this.options.reload;
+    if (reload?.activity) {
+      // Let returning phones reconnect before resuming; local players need no new join press.
+      if (this.players.some((p) => p.connected)) this.reloadT = (this.reloadT || 0) + dt;
+      if (this.reloadT >= 1) {
+        const activity = reload.activity; this.options.reload = null; this.options.resume = false;
+        this.startAct(activity); return;
+      }
+      return;
+    }
+    // drop phones that left while we were still in the lobby
+    for (const p of this.players.slice()) if (!p.connected && this.t - p.goneAt > 20) this.removePlayer(p);
+    for (const p of this.players) {
+      if (!p.input.pressed('a')) continue;
+      this.flashTag(p, 3);
+      if (p.kind === 'phone') { p.setEmote(['heart', 'note', 'star', 'sparkle'][Math.floor(Math.random() * 4)], 1.4); audio.sfx('heart', { volume: 0.35 }); }
+      else { this.setLook(p, randomLook()); this.saveProfile(p); audio.sfx('select', { volume: 0.5 }); }
+    }
+    if (this.vote || this.choosing) return;
+    const here = this.players.filter((p) => p.connected);
+    const allReady = here.length > 0 && here.every((p) => p.ready);
+    // tell the phones who’s ready (the host’s Start button shows it)
+    const H = this.hostLed();
+    const info = { t: 'lobby', ready: here.filter((p) => p.ready).length, total: here.length, host: H ? H.name : '' };
+    const key = JSON.stringify(info);
+    if (key !== this.lobbyKey) { this.lobbyKey = key; this.net.broadcast(info); }
+    if (allReady && !H) {
+      const before = Math.ceil(this.countdown);
+      this.countdown = (this.countdown || 3.99) - dt;
+      if (Math.ceil(this.countdown) !== before && this.countdown > 0) audio.sfx('tick', { volume: 0.6 });
+      if (this.countdown <= 0) this.chooseActivity();
+    } else this.countdown = 0;
+  }
+
+  // the phone wearing the crown, if it’s here: it starts the party
+  hostLed() { const h = this.host.player; return h && h.connected && h.kind === 'phone' ? h : null; }
+
+  // everyone’s ready: what shall we play? (a vote on the phones)
+  async chooseActivity() {
+    if (this.options.resume) { this.options.resume = false; this.startAct('explore'); return; }
+    this.choosing = true;
+    this.countdown = 0;
+    // (World v7: the Adventure — the saga — comes first, where the party left it)
+    const sg = this.loadSave('saga', null), ch = SAGA_CHAPTERS.find((c) => c.id === ((sg && sg.ch) || 1)) || SAGA_CHAPTERS[0];
+    const opts = [
+      { id: 'explore', label: t('The Adventure'), sub: sg && sg.q && sg.q.c1_intro ? t('Chapter {n} — {title}', { n: ch.id, title: t(ch.title) }) : t('the story begins in Marigold Cove'), color: '#ffd66b' },
+      { id: 'story', label: t('The Starfall Festival'), sub: t('a cozy story with mini-games'), color: '#8fd67a' },
+      { id: 'waves', label: t('Arena: gloom waves'), sub: t('team up against wave after wave'), color: '#b88cf0' },
+    ];
+    if (this.players.filter((p) => p.connected).length >= 2) {
+      opts.push({ id: 'brawl', label: t('Arena: brawl'), sub: t('friendly free-for-all!'), color: '#ef6479' });
+      opts.push({ id: 'king', label: t('Arena: king of the ring'), sub: t('hold the golden circle alone'), color: '#f4c542' });
+    }
+    const i = await this.ask(t('What shall we play?'), opts, 25);
+    this.choosing = false;
+    if (this.phase === 'lobby') this.startAct(opts[i].id);
+  }
+
+  startAct(kind, opts = {}) {
+    if (this.act) this.act.dispose();
+    this.act = null;
+    this.stopCombat();
+    this.actKind = kind;
+    this.phase = 'adventure';
+    this.countdown = 0;
+    audio.sfx('confirm');
+    for (const p of this.players) { p.ready = true; p.stars = p.stars || 0; this.syncPad(p); this.flashTag(p, 6); }
+    this.obj = null;
+    if (kind === 'story') {
+      this.act = new PartyStory(this);
+      if (opts.debugChapter) this.act.debugChapter(opts.debugChapter); else this.act.start();
+    } else if (kind === 'explore') {
+      this.act = new ExploreAct(this, opts);
+      this.act.start();
+    } else {
+      this.act = new ArenaAct(this, { mode: kind, ...opts });
+      this.act.start();
+    }
+  }
+
+  // (tools) jump straight into the story, or one chapter of it
+  startAdventure(debugChapter = null) { this.startAct('story', { debugChapter }); }
+
+  // ------------------------------------------------------------------ fighting
+  startCombat(opts = {}) {
+    this.stopCombat();
+    this.combat = new Combat(this, opts);
+    return this.combat;
+  }
+
+  stopCombat() {
+    if (!this.combat) return;
+    for (const p of this.players) this.saveProfile(p);
+    this.combat.dispose();
+    this.combat = null;
+    this.cam.shake = 0;
+  }
+
+  // ------------------------------------------------------------------ profiles (class & level per phone)
+  loadProfiles() {
+    try { this.profiles = JSON.parse(localStorage.getItem('hearthlight.party.v1') || '{}') || {}; } catch (e) { this.profiles = {}; }
+  }
+  profileOf(p) {
+    if (!this.profiles[p.id]) this.profiles[p.id] = { cls: null, level: 1, xp: 0, hats: [] };
+    return this.profiles[p.id];
+  }
+  saveProfile(p) {
+    const pr = this.profileOf(p);
+    pr.cls = p.cls;
+    pr.name = p.name;
+    if (p.kind !== 'phone') pr.look = p.look;       // (a phone brings its own)
+    if (p.fighter) { pr.level = p.fighter.level; pr.xp = p.fighter.xp; }
+    this.profileDirty = true;
+  }
+  flushProfiles() {
+    this.profileT = 2;
+    const raw = JSON.stringify(this.profiles); this.pendingSaves.set('hearthlight.party.v1', raw);
+    if (!this.storyHere()) return false;
+    try { localStorage.setItem('hearthlight.party.v1', raw); this.profileDirty = false; return true; } catch (e) { this.saveFailed(); return false; }
+  }
+
+  restorePositions() {
+    if (!this.resumePending) return false;
+    this.resumePending = false;
+    const positions = this.loadSave('session', {}).positions || {}, m = this.big.map;
+    let restored = false;
+    for (const p of this.players) {
+      const pos = positions[p.id];
+      if (!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.z) || pos.x < m.X0 || pos.z < m.Z0 || pos.x >= m.X0 + m.W || pos.z >= m.Z0 + m.H) continue;
+      const at = !this.world.overCol.blocked(pos.x, pos.z, 0.8) ? pos : findUnstuck(this.world.overCol, pos.x, pos.z);
+      if (at) { p.actor.pos = { x: at.x, z: at.z }; restored = true; }
+    }
+    return restored;
+  }
+
+  saveFailed() {
+    this.saveError = true;
+    if (!this.saveWarnAt || Date.now() - this.saveWarnAt > 30000) { this.saveWarnAt = Date.now(); this.toast(t('Save failed. Export a backup before leaving.'), '#ef6479'); }
+  }
+
+  saveNow() {
+    this.saveError = false;
+    for (const p of this.players) this.saveProfile(p);
+    this.flushProfiles();
+    if (this.saga) this.saga.save();
+    if (this.big?.worldMap) this.big.worldMap.save();
+    const previous = this.loadSave('session', {});
+    const positions = { ...previous.positions };
+    if (this.exploring() && !this.busy && !this.cinematic) for (const p of this.players) {
+      const pos = this.rooms ? this.rooms.mapPos(p) : p.pos;
+      if (Number.isFinite(pos.x) && Number.isFinite(pos.z)) positions[p.id] = { x: pos.x, z: pos.z };
+    }
+    // (a lobby opened and closed again isn't a game to continue: only once something was played)
+    if (this.actKind || previous.savedAt) this.writeSave('session', { savedAt: Date.now(), players: this.players.map((p) => p.name), positions, activity: this.actKind || previous.activity || 'explore' });
+    // (the stories’ list follows: this one’s chapter, its players, its heroes’ level)
+    if (!this.saveError) touchStory();
+    return !this.saveError;
+  }
+
+  // ------------------------------------------------------------------ votes (on the phones)
+  // (owner & cancel: the one who opened it can call it off at once with that option — a waystone
+  // touched by mistake doesn't hold everyone still for the whole vote)
+  ask(title, options, time = 22, { owner = null, cancel = -1 } = {}) {
+    return new Promise((resolve) => {
+      const id = (this.voteSeq = (this.voteSeq || 0) + 1);
+      this.vote = { id, title, options, picks: new Map(), t: time, time, resolve, cursor: new Map(), owner, cancel };
+      this.voteRects = null;
+      for (const p of this.players) this.sendVote(p);
+      audio.jingle('questStart');
+    });
+  }
+
+  sendVote(p) {
+    const v = this.vote;
+    if (!v || p.kind !== 'phone') return;
+    this.net.send(p.id, { t: 'screen', s: 'choice', id: v.id, title: v.title, options: v.options.map((o) => ({ label: o.label, sub: o.sub || '', color: o.color })), note: t('Vote! Majority wins') });
+    if (v.picks.has(p.slot)) this.net.send(p.id, { t: 'tally', id: v.id, counts: this.tally() });
+  }
+
+  tally() {
+    const v = this.vote, counts = v.options.map(() => 0);
+    for (const i of v.picks.values()) counts[i]++;
+    return counts;
+  }
+
+  onVotePick(p, d) {
+    const v = this.vote;
+    if (!v || d.id !== v.id || typeof d.i !== 'number' || d.i < 0 || d.i >= v.options.length) return;
+    v.picks.set(p.slot, d.i);
+    audio.sfx('select', { volume: 0.6 });
+    if (v.owner === p.slot && d.i === v.cancel) { v.called = d.i; return; }
+    const counts = this.tally();
+    for (const q of this.players) if (q.kind === 'phone' && v.picks.has(q.slot)) this.net.send(q.id, { t: 'tally', id: v.id, counts });
+  }
+
+  updateVote(dt) {
+    const v = this.vote;
+    v.t -= dt;
+    // keyboard & gamepad players vote on the big screen — the keyboard's player with the mouse too
+    const g = this.game.input, kb = this.players.find((p) => p.kind === 'keys' && p.connected && !v.picks.has(p.slot));
+    if (kb && this.voteRects && !this.host.menu && !this.bigMapOpen) for (const r of this.voteRects) if (g.mouseIn(r.x, r.y, r.w, r.h)) {
+      if (g.mouse.moved) v.cursor.set(kb.slot, r.i);
+      if (g.mouse.pressed) { g.mouse.pressed = false; this.onVotePick(kb, { id: v.id, i: r.i }); }
+    }
+    for (const p of this.players) {
+      if (p.kind === 'phone' || v.picks.has(p.slot)) continue;
+      let c = v.cursor.get(p.slot) || 0;
+      if (p.input.pressed('up') || p.input.pressed('left')) c = (c + v.options.length - 1) % v.options.length;
+      if (p.input.pressed('down') || p.input.pressed('right')) c = (c + 1) % v.options.length;
+      v.cursor.set(p.slot, c);
+      if (p.input.pressed('a')) this.onVotePick(p, { id: v.id, i: c });
+    }
+    const voters = this.players.filter((p) => p.connected);
+    const allIn = voters.length > 0 && voters.every((p) => v.picks.has(p.slot));
+    // (settled early: the leader can't be caught by the votes still to come)
+    const counts = this.tally(), left = voters.filter((p) => !v.picks.has(p.slot)).length;
+    const [top, next = 0] = [...counts].sort((a, b) => b - a);
+    const settled = top - next > left;
+    if (allIn || settled || v.called !== undefined || v.t <= 0) {
+      const max = Math.max(...counts);
+      const best = counts.map((n, i) => (n === max ? i : -1)).filter((i) => i >= 0);
+      const win = v.called !== undefined ? v.called : best[Math.floor(Math.random() * best.length)];
+      this.vote = null;
+      for (const p of this.players) if (p.kind === 'phone') this.net.send(p.id, { t: 'screen', s: 'play' });
+      audio.sfx('confirm');
+      this.toast(t('{choice}!', { choice: v.options[win].label }), v.options[win].color || '#ffd66b');
+      for (const p of this.players) p.input.edges.clear();
+      v.resolve(win);
+    }
+  }
+
+  drawVote(ctx) {
+    const W = this.display.w, H = this.display.h, v = this.vote;
+    const pw = Math.min(W - 40, 310), rows = v.options.length;
+    const ph = 44 + rows * 22;
+    const px = Math.round((W - pw) / 2), py = Math.round(H / 2 - ph / 2 - 10);
+    panel(ctx, px, py, pw, ph);
+    drawText(ctx, v.title, px + pw / 2, py + 9, { color: '#8a5234', align: 'center' });
+    // (no phone here: everyone votes on this screen)
+    const phones = this.players.some((p) => p.kind === 'phone' && p.connected), secs = Math.max(0, Math.ceil(v.t));
+    drawText(ctx, phones ? t('Vote on your phone · {n}s', { n: secs }) : t('Vote on this screen · {n}s', { n: secs }), px + pw / 2, py + 21, { color: UI.inkSoft, align: 'center' });
+    // (the keyboard's player can click an answer: it lights up under the mouse)
+    const counts = this.tally(), rects = [], gi = this.game.input;
+    const mouse = !this.remoteFor && this.players.some((p) => p.kind === 'keys' && p.connected && !v.picks.has(p.slot));
+    v.options.forEach((o, i) => {
+      const y = py + 34 + i * 22, r = { x: px + 10, y: y - 2, w: pw - 20, h: 22, i };
+      rects.push(r);
+      ctx.fillStyle = o.color || '#c9a77c'; ctx.fillRect(px + 10, y, 4, 18);
+      ctx.fillStyle = mouse && gi.mouseIn(r.x, r.y, r.w, r.h) ? '#fff3c4' : '#f3e3c3'; ctx.fillRect(px + 14, y, pw - 24, 18);
+      drawText(ctx, o.label, px + 20, y + 2, { color: UI.ink });
+      if (o.sub) drawText(ctx, o.sub, px + 20, y + 10, { color: UI.inkSoft });
+      let dx = px + pw - 16;
+      for (const p of this.players) {
+        const picked = v.picks.get(p.slot) === i;
+        const cursor = p.kind !== 'phone' && !v.picks.has(p.slot) && (v.cursor.get(p.slot) || 0) === i;
+        if (!picked && !cursor) continue;
+        ctx.fillStyle = '#3b2a2e'; ctx.fillRect(dx - 7, y + 4, 9, 9);
+        ctx.fillStyle = p.color; ctx.fillRect(dx - 6, y + 5, 7, 7);
+        if (cursor && Math.floor(this.t * 3) % 2) { ctx.fillStyle = '#fff7e6'; ctx.fillRect(dx - 4, y + 7, 3, 3); }
+        dx -= 11;
+      }
+      if (counts[i]) drawText(ctx, `${counts[i]}`, dx - 4, y + 5, { color: '#8a5234', align: 'right' });
+    });
+    if (!this.remoteFor) this.voteRects = rects;
+  }
+
+  updateAmbience(dt) {
+    this.ambT = (this.ambT || 0) - dt;
+    if (this.ambT > 0) return;
+    this.ambT = 1;
+    const s = this.state;
+    const c = this.cam.views[0] ? { x: this.cam.views[0].cx, z: this.cam.views[0].cz } : LOBBY;
+    const area = this.placeName(c.x, c.z);
+    const night = s.hour >= 20 || s.hour < 5.5;
+    const mood = this.zones && this.zones.mood();
+    const room = this.rooms && this.rooms.near(c.x, c.z);
+    const fightTrack = this.lairs && this.lairs.fight ? 'boss'
+      : this.events && this.events.invasion && this.events.invasion.phase === 'fight' ? 'battle'
+        : this.races && this.races.race && this.races.race.phase === 'run' ? 'race' : null;
+    if (this.sceneMusic) { if (audio.currentTrack !== this.sceneMusic) audio.playMusic(this.sceneMusic, { fade: 1 }); }
+    else if (fightTrack) { if (audio.currentTrack !== fightTrack) audio.playMusic(fightTrack, { fade: 1.2 }); }
+    else if (room) { const tr = room.def.music || 'interior'; if (audio.currentTrack !== tr) audio.playMusic(tr, { fade: 1.5 }); }
+    else if (this.act && this.act.music) { if (audio.currentTrack !== this.act.music) audio.playMusic(this.act.music, { fade: 2 }); }
+    else if (mood && mood.music && this.phase !== 'lobby') { if (audio.currentTrack !== mood.music) audio.playMusic(mood.music, { fade: 3 }); }
+    else {
+      const track = night ? 'night' : area === 'Turtle Isle' ? 'island' : ['Whisperwood', 'Whisperwood Camp', 'Old Oak Shrine', 'Glowcap Grove', 'Maple Hollow', 'Reedmarsh'].includes(area) ? 'forest' : area === 'Frostpine Ridge' ? 'title' : s.hour >= 17.5 ? 'evening' : 'day';
+      if (audio.currentTrack !== track) audio.playMusic(track, { fade: 3 });
+    }
+    const amb = {
+      birds: !night ? (area === 'Frostpine Ridge' ? 0.15 : 0.6) : 0, crickets: night ? 0.8 : 0, waves: 0.3,
+      rain: 0, wind: area === 'Frostpine Ridge' ? 0.5 : 0.15, fire: this.camp ? (this.camp.fireAmb || 0) * 0.7 : 0, night: night ? 0.5 : 0,
+    };
+    if (mood && mood.amb && !room) { Object.assign(amb, mood.amb); if (night) { amb.birds = 0; amb.night = 0.5; amb.crickets = Math.max(amb.crickets || 0, 0.4); } }
+    // indoors: the world outside goes quiet (a fireplace crackles)
+    if (room) Object.assign(amb, { birds: 0, crickets: night ? 0.12 : 0, waves: 0, rain: 0, wind: 0, night: 0, fire: room.room.fires.length ? 0.45 : 0 });
+    else Object.assign(amb, this.world.placeSounds(c));      // (the fountain, a saw, the café, near the first view)
+    audio.setAmbient(amb);
+    this.lighting.weatherDim = (this.act && this.act.dim) || 0;
+  }
+
+  // who’s standing behind the leaves in this view: tree crowns in front of
+  // them dither away (see render/seethrough.js)
+  fillSee(v) {
+    const S = SEE.spots.value, ppu = v.ppu || this.cam.ppu || 16, H = this.r3d.h, R = v.rect;
+    let n = 0;
+    const add = (x, y, z, r) => {
+      if (n >= SEE_MAX) return;
+      const q = v.project(x, y, z);
+      if (q.x < R.x - 30 || q.x > R.x + R.w + 30 || q.y < R.y - 30 || q.y > R.y + R.h + 30) return;
+      S[n++].set(q.x, H - q.y, q.z * 0.5 + 0.5, r * ppu);
+    };
+    for (const p of this.players) if (p.connected && !p.hidden) add(p.pos.x, 0.85 + (p.actor.baseY || 0) + (p.actor.jumpY || 0), p.pos.z, 1.15);
+    const C = this.combat;
+    if (C) for (const e of C.enemies) if (e.alive && !e.under) add(e.x, (e.y || 0) + (e.def.h || 1) * 0.5, e.z, (e.r || 0.4) + 0.5);
+    SEE.count.value = n;
+  }
+
+  // ------------------------------------------------------------------ draw
+  draw() {
+    const d = this.display, r3d = this.r3d, cam = this.cam, L = this.lighting, w = this.world;
+    const s = this.state;
+    const v0 = cam.views[0];
+    L.update(s.hour, { x: v0.cx, z: v0.cz });
+    const RM = this.rooms;
+    if (RM) RM.beginDraw(cam.views);
+    // (several views: each draws only what it can see — see render/cull.js)
+    const cull = cam.views.length > 1 ? (this.cull || (this.cull = new ViewCull(r3d.scene))) : null;
+    if (cull) cull.begin();
+    r3d.renderViews(cam.views, {
+      split: cam.layout.type === 'split' ? cam.split : null,
+      cells: cam.layout.type === 'grid' ? [cam.layout.cols, cam.layout.rows] : [1, 1],
+      rects: !!cam.layout.seats,            // (fixed places: pictures of one place, or of several)
+      prep: (v) => {
+        const inRoom = RM && RM.light(v), ppu = v.ppu || cam.ppu;
+        r3d.aimShadow(v.cx, v.cz, v.rect.w, v.rect.h, ppu);
+        if (!inRoom) L.assignPool({ x: v.cx, z: v.cz }, L.lampLevel);
+        this.fillSee(v);
+        if (cull) cull.apply(v, ppu, r3d.sunDir);
+      },
+    });
+    if (cull) cull.restore();
+    if (RM) RM.endDraw();
+    SEE.count.value = 0;
+    const wctx = d.wctx;
+    wctx.drawImage(r3d.canvas, 0, 0);
+    for (const v of cam.views) {
+      wctx.save();
+      this.clipPath(wctx, v, false);
+      const indoor = RM && RM.viewRoom(v);
+      if (!indoor) w.drawAmbientDots(wctx, v);
+      w.fx.draw(wctx, v);
+      if (this.act) this.act.drawWorld(wctx, v);
+      if (this.swim) this.swim.drawSpots(wctx, v, this.t);
+      if (this.zones && !indoor) this.zones.drawView(wctx, v, this.paused || this.remoteFor ? 0 : (this.lastDt || 1 / 60));
+      wctx.restore();
+    }
+    // falling snow / petals / leaves where the first group is
+    const drift = cam.views.length === 1 ? this.driftAt(v0) : null;
+    if (drift) w.fx.drawDrift(wctx, d.ww, d.wh, 1 / 60, drift.kind, drift.level);
+    // (a picture that has just been cut blinks, alone)
+    for (const v of cam.views) if (v.flash > 0) { wctx.fillStyle = `rgba(255,248,230,${v.flash * 0.35})`; wctx.fillRect(v.rect.x, v.rect.y, v.rect.w, v.rect.h); }
+    this.drawSeams(wctx);
+    if (cam.flash > 0) { wctx.fillStyle = `rgba(255,248,230,${cam.flash * 0.35})`; wctx.fillRect(0, 0, d.ww, d.wh); }
+    if (this.fade > 0) { wctx.fillStyle = `rgba(20,14,28,${this.fade})`; wctx.fillRect(0, 0, d.ww, d.wh); }
+    // ---- UI layer
+    const ctx = d.ctx;
+    ctx.clearRect(0, 0, d.w, d.h);
+    this.miniRect = null; this.miniSpot = null; this.noteRect = null;
+    if (this.fade < 1) {
+      for (const v of cam.views) {
+        ctx.save(); this.clipPath(ctx, v, true);
+        // (the chips first: a friend's marker, a word or a boat's key stays readable over them)
+        this.guides.drawView(ctx, v);
+        this.drawChips(ctx, v);
+        this.drawLabels(ctx, v);
+        if (this.combat) this.combat.drawLabels(ctx, v);
+        ctx.restore();
+      }
+      for (const cell of cam.spare) this.drawMapPanel(ctx, cell);
+      // whose picture is this? each player’s plate (their face, their name) in its corner
+      drawPlates(this, ctx);
+    }
+    // (a scene clears the screen for itself: bars, title cards, the dialogue)
+    const scene = this.stage && (this.stage.active || this.stage.barK > 0);
+    if (this.phase === 'lobby') this.drawLobby(ctx);
+    else if (!scene) this.drawHud(ctx);
+    if (!scene) {
+      if (this.combat) this.combat.drawUi(ctx);
+      if (this.act) this.act.drawUi(ctx);
+      if (this.races && this.phase !== 'lobby') this.races.drawUi(ctx);
+      if (this.events && this.phase !== 'lobby') this.events.drawUi(ctx);
+      if (this.camp && this.phase !== 'lobby') this.camp.drawUi(ctx);
+      this.drawObjective(ctx);
+      // (over the HUD: an arrow must never hide under the minimap)
+      if (this.fade < 1) for (const v of cam.views) this.drawOthers(ctx, v);
+    }
+    // (the chat: the corner log, and each keyboard's line or gamepad's wheel in its player's view)
+    if (!scene && this.phase !== 'lobby' && !this.remoteFor) this.pchat.drawLog(ctx, d.w, d.h);
+    if (!this.remoteFor) this.pchat.draw(ctx);
+    if (this.stage) this.stage.draw(ctx, d.w, d.h);
+    if (this.vote) this.drawVote(ctx);
+    const own = !this.remoteFor;              // (the big screen's own menus stay on the big screen)
+    if (own) this.tvmenus.draw(ctx);
+    this.dialogue.draw(ctx);
+    this.drawToasts(ctx);
+    if (own && this.bigMapOpen) this.drawBigMap(ctx);
+    if (own && this.zoom.flashT > 0 && !this.host.menu) this.drawZoomFlash(ctx);
+    else if (own && this.note && !this.host.menu) this.drawNote(ctx);
+    if (this.paused && !(own && this.host.menu)) this.drawPaused(ctx);
+    if (own && this.host.menu) this.host.drawMenu(ctx);
+  }
+
+  // a moment’s note when the host changes the zoom: "Far view", "Auto (…)"
+  drawZoomFlash(ctx) {
+    const Z = this.zoom, W = this.display.w;
+    const txt = Z.describe(), lv = Z.levels();
+    const ws = Z.mode === 'auto' ? (Z.target || Z.normal()) : Z.mode, cur = lv.findIndex((l) => l.ws === ws);
+    const w = measure(txt) + 22 + lv.length * 4, x = Math.round(W / 2 - w / 2), y = 26;
+    ctx.globalAlpha = Math.min(1, Z.flashT * 3);
+    ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 1, w + 2, 15);
+    ctx.fillStyle = '#3b2e4a'; ctx.fillRect(x, y, w, 13);
+    ctx.fillStyle = '#f6d38f';
+    ctx.fillRect(x + 5, y + 3, 3, 1); ctx.fillRect(x + 5, y + 7, 3, 1); ctx.fillRect(x + 4, y + 4, 1, 3); ctx.fillRect(x + 8, y + 4, 1, 3);
+    ctx.fillRect(x + 8, y + 7, 1, 1); ctx.fillRect(x + 9, y + 8, 1, 1); ctx.fillRect(x + 10, y + 9, 1, 1);
+    drawText(ctx, txt, x + 14, y + 3, { color: '#fff3c4' });
+    lv.forEach((l, j) => { ctx.fillStyle = j === cur ? '#f6c65b' : '#6a5a7a'; ctx.fillRect(x + w - 4 - (lv.length - j) * 4, y + 4, 3, 5); });
+    ctx.globalAlpha = 1;
+  }
+
+  drawPaused(ctx) {
+    const W = this.display.w, H = this.display.h;
+    ctx.fillStyle = 'rgba(20,14,28,0.35)'; ctx.fillRect(0, 0, W, H);
+    const title = t('Paused'), sub = t('{name} paused the game', { name: this.paused.by || '' });
+    const hint = t('the host can resume from their phone · Esc or Start on the big screen');
+    const pw = Math.max(measure(sub), measure(hint)) + 30, ph = 50;
+    const px = Math.round((W - pw) / 2), py = Math.round(H * 0.13);
+    panel(ctx, px, py, pw, ph);
+    drawText(ctx, title, W / 2, py + 8, { color: '#8a5234', align: 'center', scale: 2 });
+    drawText(ctx, sub, W / 2, py + 27, { color: UI.ink, align: 'center' });
+    drawText(ctx, hint, W / 2, py + 38, { color: UI.inkSoft, align: 'center' });
+  }
+
+  driftAt(v) {
+    const dr = this.world.biomeDrift({ x: v.cx, z: v.cz });
+    return dr && dr.level > 0 ? dr : null;
+  }
+
+  // clip to a view’s region (world-canvas px, or UI px when `ui`)
+  clipPath(ctx, v, ui) {
+    const d = this.display;
+    const pts = v.half ? halfPoly(d.ww, d.wh, v.half) : [[v.rect.x, v.rect.y], [v.rect.x + v.rect.w, v.rect.y], [v.rect.x + v.rect.w, v.rect.y + v.rect.h], [v.rect.x, v.rect.y + v.rect.h]];
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => {
+      const q = ui ? d.worldToUi(x, y) : { x, y };
+      if (i === 0) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y);
+    });
+    ctx.closePath();
+    ctx.clip();
+  }
+
+  // grid seams (the diagonal split seam is drawn by the post pass)
+  drawSeams(wctx) {
+    const cam = this.cam, d = this.display;
+    if (cam.layout.type !== 'grid') return;
+    const cells = cam.views.map((v) => v.rect).concat(cam.spare);
+    wctx.fillStyle = '#2a1d34';
+    for (const r of cells) {
+      if (r.x > 0) wctx.fillRect(r.x - 2, r.y, 4, r.h);
+      if (r.y > 0) wctx.fillRect(r.x, r.y - 2, r.w, 4);
+    }
+    wctx.fillStyle = 'rgba(255,243,210,0.55)';
+    for (const r of cells) {
+      if (r.x > 0) wctx.fillRect(r.x, r.y, 1, r.h);
+      if (r.y > 0) wctx.fillRect(r.x, r.y, r.w, 1);
+    }
+    void d;
+  }
+
+  toUi(v, x, y, z) { const p = v.project(x, y, z); return this.display.worldToUi(p.x, p.y); }
+
+  // names, emotes & speech above heads; villager bubbles; objective markers
+  drawLabels(ctx, v) {
+    const now = this.t, said = [];
+    for (const n of this.npcs) {
+      if (n.hidden) continue;
+      const u = this.toUi(v, n.pos.x, (n.def.kid ? 1.35 : 1.6) + (n.baseY || 0) + (n.jumpY || 0), n.pos.z);
+      if (n.emoteKind) drawEmote(ctx, u.x, u.y - 2, n.emoteKind, now);
+      else if (n.bubble) said.push({ x: u.x, y: u.y - 4, text: n.bubble });
+      else if (!this.busy && !this.dialogue.active && this.players.some((p) => Math.hypot(p.pos.x - n.pos.x, p.pos.z - n.pos.z) < 1.9)) {
+        const nm = t(n.def.short), tw = measure(nm) + 6;
+        ctx.fillStyle = 'rgba(30,20,36,0.6)';
+        ctx.fillRect(Math.round(u.x - tw / 2), Math.round(u.y - 12), tw, 10);
+        drawText(ctx, nm, u.x, u.y - 11, { color: '#fff7e6', align: 'center' });
+      }
+    }
+    // Above each head: just a little arrow in the player’s colour (it blinks
+    // red when health runs low). Names only show for a few seconds — when
+    // someone joins, respawns, levels up or waves — so a crowd stays readable
+    // (never during a scene: gathered in front of the actors, four names hid the stage).
+    const tags = [], speech = [], staged = !!(this.stage && this.stage.active);
+    for (const p of this.players) {
+      if (p.hidden) continue;
+      const a = p.actor;
+      const u = this.toUi(v, p.pos.x, 1.72 + (a.baseY || 0) + a.jumpY, p.pos.z);
+      const f = p.fighter;
+      const low = !!(f && !f.down && f.hp < f.maxHp * 0.3);
+      if ((!(p.tagT > 0) || staged) && p.connected) { playerPip(ctx, u.x, u.y - 1, p.color, low, now); if (p.emote) speech.push({ x: u.x, y: u.y - 9, icon: p.emote }); else drawSpeech(ctx, p, u.x, u.y - 6, now, speech); continue; }
+      tags.push({ p, x: u.x, y: u.y - 4, w: measure(p.name) + 6, ay: u.y, a: p.connected ? Math.min(1, p.tagT * 2.5) : 1 });
+    }
+    tags.sort((a, b) => b.y - a.y);
+    for (let i = 0; i < tags.length; i++) {
+      const a = tags[i];
+      for (let k = 0; k < 6; k++) {
+        const hit = tags.slice(0, i).find((b) => Math.abs(b.x - a.x) < (a.w + b.w) / 2 + 1 && Math.abs(b.y - a.y) < 10);
+        if (!hit) break;
+        a.y = hit.y - 10;
+      }
+    }
+    for (const g of tags) {
+      const p = g.p;
+      ctx.globalAlpha = g.a;
+      nameTag(ctx, g.x, g.y, p.name, p.color, !p.connected);
+      ctx.globalAlpha = 1;
+      if (p.emote) speech.push({ x: g.x, y: g.y - 10, icon: p.emote });
+      else drawSpeech(ctx, p, g.x, g.y - 11, now, speech);
+    }
+    // (what the players say & show: bubbles and emotes side by side, nudged apart — src/ui/chat.js)
+    drawBubbles(ctx, speech, 120, now, [2, this.display.w - 2]);     // (a hero at the screen’s edge keeps their words on it)
+    // villagers’ words go on top of the crowd’s name tags
+    for (const b of said) bubble(ctx, b.x, b.y, b.text, { wrapW: 150, within: [2, this.display.w - 2] });
+    // (a hero who seems stuck: how to get out, over their head)
+    // (two heroes stuck side by side: their bubbles stack rather than overlap)
+    const stuckSays = [];
+    for (const p of this.players) {
+      if (!p.stuckOffer || p.hidden || this.dialogue.active) continue;
+      const u = this.toUi(v, p.pos.x, 2.2 + (p.actor.baseY || 0), p.pos.z);
+      const say = p.kind === 'phone' ? t('Stuck? Look at your phone') : t('Stuck? {key} → Get unstuck', { key: keyOf(p, 'm') });
+      let y = u.y - 14;
+      for (const q of stuckSays) if (Math.abs(q.x - u.x) < 110 && Math.abs(q.y - y) < 24) y = q.y - 24;
+      stuckSays.push({ x: u.x, y });
+      bubble(ctx, u.x, y + Math.sin(this.t * 3) * 1.5, say, { wrapW: 180 });
+    }
+    if (this.arena) this.arena.drawLabels(ctx, v);
+    if (this.mounts) this.mounts.drawLabels(ctx, v);
+    if (this.races) this.races.drawLabels(ctx, v);
+    // (no "press A" over doors and boats while a scene plays)
+    const scene = this.stage && (this.stage.active || this.stage.barK > 0);
+    if (this.rooms && !scene) this.rooms.drawLabels(ctx, v);
+    if (this.act) this.act.drawLabels(ctx, v);
+    if (this.vehicles && !scene) this.vehicles.drawLabels(ctx, v, this);
+  }
+
+  // Under the hero of each keyboard's or gamepad's player this view follows: what their buttons
+  // do here and now (updateChips), on their own keys — [E] Row [Space] Get out, (A) Board (B) Dive.
+  // Heroes side by side get their rows stacked; a row stays inside its view.
+  drawChips(ctx, v) {
+    if (this.remoteFor || this.fade > 0.3 || (this.stage && (this.stage.active || this.stage.barK > 0)) || this.hudMode() === 'minimal') return;
+    const d = this.display, R = v.rect, a = d.worldToUi(R.x, R.y), b = d.worldToUi(R.x + R.w, R.y + R.h), rows = [];
+    for (const p of v.members) {
+      const c = p.chips;
+      if (!c || c.k <= 0 || p.kind === 'phone' || !p.connected || p.hidden) continue;
+      // (from the ground under them: the ring, which stays put when they jump, rides or swim)
+      const u = this.toUi(v, p.pos.x, p.ring.position.y, p.pos.z), pad = p.kind === 'gamepad';
+      rows.push({ p, c, pad, x: u.x, y: u.y + 6, w: chipsWidth(c.list, pad) });
+    }
+    rows.sort((q, r) => q.y - r.y);
+    rows.forEach((r, i) => {
+      for (let k = 0; k < 8; k++) {
+        const hit = rows.slice(0, i).find((q) => Math.abs(q.x - r.x) < (q.w + r.w) / 2 + 2 && Math.abs(q.y - r.y) < CHIP_H + 1);
+        if (!hit) break;
+        r.y = hit.y + CHIP_H + 1;
+      }
+    });
+    for (const r of rows) {
+      // (coming in: a little rise as it fades up)
+      ctx.globalAlpha = r.c.k;
+      chipRow(ctx, clamp(r.x - r.w / 2, a.x + 2, b.x - r.w - 2), Math.min(r.y + Math.round((1 - r.c.k) * 3), b.y - CHIP_H - 2), r.c.list, r.p.color, r.pad);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // Friends this view doesn't show (at home with their own camera, or far off): an arrow on
+  // its edge in their colour, pointing their way, with their name and how far. Friends the
+  // same way share one arrow; the minimap's corner stays clear.
+  drawOthers(ctx, v) {
+    if (this.phase === 'lobby' || (this.stage && (this.stage.active || this.stage.barK > 0)) || this.fade > 0.3) return;
+    const d = this.display, R = v.rect, a = d.worldToUi(R.x, R.y), b = d.worldToUi(R.x + R.w, R.y + R.h);
+    const own = !this.remoteFor ? this.cam.views : [v];
+    const mid = v.members.length ? this.toUi(v, v.members[0].pos.x, 1, v.members[0].pos.z) : { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const cx = Math.max(a.x + 40, Math.min(b.x - 40, mid.x)), cy = Math.max(a.y + 40, Math.min(b.y - 40, mid.y));
+    const x0 = a.x + 12, x1 = b.x - 12, y0 = a.y + 34, y1 = b.y - 30, M = this.miniRect, m0 = v.members[0];
+    const groups = [];
+    for (const p of this.players) {
+      if (!p.connected || p.hidden || own.some((w) => w.members.includes(p))) continue;
+      const pos = this.rooms ? this.rooms.mapPos(p) : p.pos, u = this.toUi(v, pos.x, 1, pos.z);
+      if (u.x > x0 && u.x < x1 && u.y > y0 && u.y < y1) continue;           // (in sight: its own pip says where)
+      const dx = u.x - cx, dy = u.y - cy, k = Math.min(dx ? ((dx > 0 ? x1 : x0) - cx) / dx : 1e9, dy ? ((dy > 0 ? y1 : y0) - cy) / dy : 1e9);
+      let X = Math.round(cx + dx * k), Y = Math.round(cy + dy * k);
+      if (M && X > M.x - 10 && Y > M.y - 16) { if (X >= x1 - 1) Y = M.y - 16; else X = M.x - 12; }
+      // (nor over a player’s plate: under it on a side edge, beside it along the top)
+      for (const q of this.plateRects || []) if (X > q.x - 10 && X < q.x + q.w + 10 && Y > q.y - 10 && Y < q.y + q.h + 10) { if (Y > y0 + 1) Y = q.y + q.h + 10; else X = q.x + q.w / 2 < (a.x + b.x) / 2 ? q.x + q.w + 12 : q.x - 12; }
+      if (v.half) { const q = d.uiToWorld(X, Y); if (!v.owns(q.x, q.y)) continue; }
+      const L = Math.hypot(dx, dy) || 1, dist = Math.round(Math.hypot(pos.x - (m0 ? m0.pos.x : v.cx), pos.z - (m0 ? m0.pos.z : v.cz)));
+      const g = groups.find((q) => Math.abs(q.X - X) < 16 && Math.abs(q.Y - Y) < 16);
+      if (g) { g.ps.push(p); g.dist = Math.min(g.dist, dist); } else groups.push({ X, Y, ux: dx / L, uy: dy / L, ps: [p], dist });
+    }
+    for (const { X, Y, ux, uy, ps, dist } of groups) {
+      // the arrow: a dark rim, the first friend's colour; the others' colours as chips behind it
+      const tri = (r, col) => { ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(X + ux * r * 1.3, Y + uy * r * 1.3); ctx.lineTo(X - ux * r * 0.7 - uy * r, Y - uy * r * 0.7 + ux * r); ctx.lineTo(X - ux * r * 0.7 + uy * r, Y - uy * r * 0.7 - ux * r); ctx.closePath(); ctx.fill(); };
+      tri(8, '#241a2e'); tri(6, ps[0].color);
+      const names = ps.length > 2 ? ps[0].name + ' +' + (ps.length - 1) : ps.map((p) => p.name).join(', ');
+      const label = names + (dist >= 12 ? ' · ' + dist + ' m' : ''), tw = measure(label) + 6 + (ps.length > 1 ? ps.length * 4 : 0);
+      // (the name beside the arrow, on the side away from the edge)
+      const across = Math.abs(ux) > Math.abs(uy);
+      const lx0 = across ? (ux > 0 ? X - 12 - tw : X + 12) : X - tw / 2, ly0 = across ? Y - 5 : uy > 0 ? Y - 21 : Y + 11;
+      const lx = Math.round(Math.max(a.x + 2, Math.min(b.x - tw - 2, lx0))), ly = Math.round(Math.max(a.y + 2, Math.min(b.y - 12, ly0)));
+      ctx.fillStyle = 'rgba(20,14,28,0.72)'; ctx.fillRect(lx, ly, tw, 10);
+      let tx = lx + 3;
+      if (ps.length > 1) for (const p of ps) { ctx.fillStyle = p.color; ctx.fillRect(tx, ly + 3, 3, 4); tx += 4; }
+      else { ctx.fillStyle = ps[0].color; ctx.fillRect(lx, ly + 9, tw, 1); }
+      drawText(ctx, label, tx + (ps.length > 1 ? 1 : 0), ly + 1, { color: '#fff7e6' });
+    }
+  }
+
+  drawMapPanel(ctx, cell) {
+    const d = this.display;
+    const a = d.worldToUi(cell.x, cell.y), b = d.worldToUi(cell.x + cell.w, cell.y + cell.h);
+    const x = Math.round(a.x), pw = Math.round(b.x - a.x);
+    // (the screen’s top right corner is the clock’s: the map starts under it)
+    const drop = a.y <= 2 && x + pw >= d.w - 2 && this.phase !== 'lobby' ? 24 : 0, y = Math.round(a.y) + drop, ph = Math.round(b.y - a.y) - drop;
+    ctx.fillStyle = '#2a1d34'; ctx.fillRect(x, y - drop, pw, ph + drop);
+    drawText(ctx, t('Where is everyone?'), x + pw / 2, y + 4, { color: '#f6d38f', align: 'center' });
+    // frame everyone (and the goal), as close as the panel allows
+    const pts = this.players.map((p) => (this.rooms ? this.rooms.mapPos(p) : p.pos)), tgt = this.act && this.act.target;
+    if (tgt) pts.push(tgt);
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (const q of pts) { x0 = Math.min(x0, q.x); x1 = Math.max(x1, q.x); z0 = Math.min(z0, q.z); z1 = Math.max(z1, q.z); }
+    const bw = pw - 12, bh = ph - 24;
+    const k = Math.max(0.35, Math.min(3, Math.min(bw / (x1 - x0 + 40), bh / (z1 - z0 + 30))));
+    this.drawWorldMap(ctx, x + 6, y + 16, bw, bh, (x0 + x1) / 2, (z0 + z1) / 2, k);
+  }
+
+  // the corner minimap: the world around the first view
+  drawMiniMap(ctx, x, y, w, h) {
+    const v = this.cam.views[0];
+    this.miniRect = { x: x - 2, y: y - 2, w: w + 4, h: h + 4 };        // (the friends' arrows keep off it)
+    ctx.fillStyle = '#2a1d34'; ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+    if (v && this.dungeons && this.dungeons.inside(v.cx, v.cz) && this.dungeons.drawMini(ctx, x, y, w, h, this.players.filter((p) => p.connected))) return;
+    const c = v ? (this.rooms && this.rooms.doorOf(v)) || { x: v.cx, z: v.cz } : LOBBY;
+    this.drawWorldMap(ctx, x, y, w, h, c.x, c.z, 1, { small: true });
+  }
+
+  // the world map in a box around (cx, cz) at k screen px per tile, with
+  // the activity’s marks, the goal and everyone on it
+  drawWorldMap(ctx, x, y, w, h, cx, cz, k, opts = {}) { return drawWorldMap(this, ctx, x, y, w, h, cx, cz, k, opts); }
+
+  // the whole world, full screen (host menu or M on the big screen)
+  drawBigMap(ctx) {
+    if (!this.big || !this.big.worldMap) return;
+    const W = this.display.w, H = this.display.h;
+    ctx.fillStyle = 'rgba(20,14,28,0.82)'; ctx.fillRect(0, 0, W, H);
+    const R = mapRegion(this);
+    drawText(ctx, R.title || t(R.id === 'dawn' ? 'The Dawnlands' : 'The Hearthlands'), W / 2, 6, { color: '#fff3c4', align: 'center', outline: '#241a2e' });
+    this.mapView.hint = t('Wheel or + / - to zoom · drag to move');
+    const r = drawWorldPanel(this, ctx, 0, 14, W, H - 14, { counts: true, view: this.mapView });
+    this.guides.drawBigMap(ctx, r);
+    this.mapCloseR = closeButton(ctx, W - 4, 1);
+  }
+
+  // The announcement lane (one banner, title card or long note at a time) and the column of
+  // notes on the right: under the clock, stepping down past whatever is there — the lane’s
+  // announcement, a race’s card, a boss’s bar, the objective (when a menu pushes them left).
+  drawToasts(ctx) {
+    // (a player’s menu open on the right: the notes & the lane keep to the screen left of it)
+    const W = this.tvmenus.open ? Math.max(140, this.display.w - this.tvmenus.width() - 10) : this.display.w;
+    this.lane.draw(ctx, W, this.display.h);
+    if (this.toastsHeld()) return;
+    const avoid = [];
+    for (const rc of [this.lane.rect, this.races && this.races.cardRect, this.events && this.events.cardRect, this.camp && this.camp.cardRect, this.combat && this.combat.barRect, this.objectiveRect && this.objectiveRect(), this.noteRect, ...(this.plateRects || [])]) if (rc) avoid.push({ x0: rc.x - 2, x1: rc.x + rc.w + 2, y0: rc.y - 2, y1: rc.y + rc.h + 2 });
+    if (this.phase === 'lobby' && this.storyRect) avoid.push({ x0: this.storyRect.x - 2, x1: this.storyRect.x + this.storyRect.w + 2, y0: this.storyRect.y - 2, y1: this.storyRect.y + this.storyRect.h + 2 });
+    avoid.sort((p, q) => p.y0 - q.y0);
+    let y = this.phase === 'lobby' ? 56 : this.clockRect ? this.clockRect.y + this.clockRect.h + 4 : 4;
+    const tw0 = this.toastW();
+    this.toasts.slice(0, TOASTS).forEach((q) => {
+      const a = Math.min(1, q.t * 4, (q.life - q.t) * 3);
+      const lines = wrap(q.text, tw0).slice(0, 2);
+      const tw = Math.max(...lines.map((l) => measure(l))) + 14, th = 3 + lines.length * 10;
+      const x = Math.round(W - tw - 6);
+      for (const r of avoid) if (x < r.x1 && x + tw > r.x0 && y < r.y1 && y + th > r.y0) y = r.y1 + 2;
+      const ty = y;
+      y += th + 2;
+      q.rect = { x, y: ty, w: tw, h: th };
+      ctx.globalAlpha = Math.max(0, a);
+      ctx.fillStyle = 'rgba(30,20,40,0.82)'; ctx.fillRect(x, ty, tw, th);
+      ctx.fillStyle = q.color; ctx.fillRect(x, ty, 3, th);
+      lines.forEach((l, k) => drawText(ctx, l, x + 8, ty + 3 + k * 10, { color: '#fff7e6' }));
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  // ------------------------------------------------------------------ lobby screen
+  drawLobby(ctx) {
+    const W = this.display.w, H = this.display.h, now = this.t, tr = t;
+    const cardH = 56;
+    // join card on the left
+    const py = 8, px = 8, card = !this.remoteFor;          // (a friend at home doesn't need the QR code)
+    const pw = card ? Math.min(196, Math.round(W * 0.38)) : -16, ph = H - cardH - 14 - py;
+    this.copyR = null; this.lobbyTip = null;
+    if (card) {
+    panel(ctx, px, py, pw, ph);
+    const net = this.net;
+    // (a gamepad plugged in but nobody's: it can join; somebody on this screen: their menu)
+    const pads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
+    const padFree = pads.some((gp) => gp && gp.connected !== false && !this.players.some((q) => q.kind === 'gamepad' && q.input.index === gp.index));
+    const local = this.players.some((q) => q.kind !== 'phone');
+    // (who has no phone: a word at the foot of the card when the code to scan leaves it room, else
+    // over the plaza — the code comes first)
+    const tipText = padFree ? t('🎮 A gamepad is here: press A to join!')
+      : local ? t('Your own menu: Select on a gamepad, Tab on the keyboard')
+        : t('No phone? Press E, Enter, or A on a gamepad');
+    const tips = wrap(tipText, pw - 16);
+    let foot = py + 18;                          // (where the card’s own things end)
+    drawText(ctx, t('Scan to play!'), px + pw / 2, py + 6, { color: '#8a5234', align: 'center' });
+    if (net.status === 'unavailable' || net.status === 'full') {
+      // (no relay here, or the online one has no room left: the desktop app has its own)
+      const why = net.status === 'full' ? t('The online party server is full right now. Try again in a few minutes — or get the desktop app: phones on your Wi-Fi join it directly.')
+        : t('Phones can’t join this copy of the game: play online or in the desktop app (or start it with python3 tools/devserver.py).');
+      const lines = wrap(why, pw - 20);
+      lines.forEach((l, i) => drawText(ctx, l, px + 10, py + 22 + i * 11, { color: '#a8483a' }));
+      foot = py + 22 + lines.length * 11;
+    } else if (!net.code || !this.qr) {
+      drawText(ctx, net.status === 'down' ? t('Reconnecting…') : t('Opening the room…'), px + pw / 2, py + 60, { color: UI.inkSoft, align: 'center' });
+      foot = py + 72;
+    } else {
+      const q = this.qr;
+      // the code to scan, as big as the card allows: under it, only the room’s code, the address
+      // and the button that copies the link
+      const m = Math.max(1, Math.floor(Math.min(pw - 14, ph - 17 - 52 - 3) / q.width));
+      const qs = q.width * m, qx = px + Math.round((pw - qs) / 2), qy = py + 17;
+      ctx.fillStyle = '#8e5d3e'; ctx.fillRect(qx - 2, qy - 2, qs + 4, qs + 4);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(q, qx, qy, qs, qs);
+      let y = qy + qs + 5;
+      const lw = measure(t('code')) + 4, cw = measure(net.code, 2);
+      const cx0 = px + Math.round((pw - lw - cw) / 2);
+      drawText(ctx, t('code'), cx0, y + 5, { color: UI.inkSoft });
+      drawText(ctx, net.code, cx0 + lw, y, { color: '#3b2a2e', scale: 2 });
+      y += 18;
+      const url = net.joinUrl.replace(/^https?:\/\//, '').replace(/#.*$/, '');
+      drawText(ctx, fitText(url, pw - 8), px + pw / 2, y, { color: '#4f73b6', align: 'center' });
+      foot = y + 22;
+      if (net.status === 'down') drawText(ctx, t('Reconnecting…'), px + pw / 2, y + 11, { color: '#a8483a', align: 'center' });
+      else {
+        // (friends far away: the whole invitation link — code included — copied in one click)
+        const lab = this.copiedT > 0 ? t('Copied! Paste it to your friends') : t('Copy the invitation link');
+        const bw = Math.min(pw - 16, measure(lab) + 16), bx = px + Math.round((pw - bw) / 2), by = y + 12;
+        const gi = this.game.input, hot = gi.mouseIn(bx, by, bw, 14);
+        button(ctx, bx, by, bw, 14, fitText(lab, bw - 8), { hot, color: this.copiedT > 0 ? '#4f955a' : null });
+        this.copyR = { x: bx - 2, y: by - 2, w: bw + 4, h: 18 };
+        foot = by + 16;
+      }
+    }
+    if (py + ph - 4 - foot >= tips.length * 10 + 2) tips.forEach((l, i) => drawText(ctx, l, px + pw / 2, py + ph - 5 - (tips.length - i) * 10, { color: padFree ? '#4f955a' : UI.inkSoft, align: 'center' }));
+    else this.lobbyTip = { text: tipText, ink: padFree ? '#a8e6b0' : '#d9c8e8' };
+    }
+
+    // player cards along the bottom
+    const n = 8, gap = 3;
+    const cw = Math.floor((W - 16 - gap * (n - 1)) / n), ch = cardH;
+    const cy = H - ch - 6;
+    for (let i = 0; i < n; i++) {
+      const cx = 8 + i * (cw + gap);
+      const p = this.players.find((q) => q.slot === i);
+      const col = PARTY_COLORS[i].c;
+      if (!p) {
+        ctx.fillStyle = 'rgba(30,20,40,0.5)'; ctx.fillRect(cx, cy, cw, ch);
+        ctx.fillStyle = col; ctx.fillRect(cx, cy, cw, 2);
+        drawText(ctx, `P${i + 1}`, cx + cw / 2, cy + 14, { color: col, align: 'center', scale: 2 });
+        drawText(ctx, Math.floor(now * 1.2 + i * 0.5) % 3 === 0 ? tr('join!') : '···', cx + cw / 2, cy + 36, { color: 'rgba(255,247,230,0.55)', align: 'center' });
+        continue;
+      }
+      panel(ctx, cx, cy, cw, ch);
+      ctx.fillStyle = col; ctx.fillRect(cx + 3, cy + 3, cw - 6, 3);
+      const pc = this.portraits.get('party' + p.slot, p.look, p.ready ? 'happy' : 'neutral');
+      const ps = 30, pxp = cx + Math.round((cw - ps) / 2);
+      ctx.fillStyle = '#efdfc0'; ctx.fillRect(pxp, cy + 7, ps, ps - 4);
+      if (pc) ctx.drawImage(pc, 4, 2, pc.width - 8, pc.height - 10, pxp, cy + 7, ps, ps - 4);
+      drawText(ctx, p.name, cx + cw / 2, cy + 35, { color: UI.ink, align: 'center', maxChars: Math.max(3, Math.floor((cw - 6) / 5)) });
+      const st = !p.connected ? [tr('away…'), '#a8483a'] : p.ready ? [tr('READY'), '#3f8a4a'] : [tr('styling…'), '#8a6a4a'];
+      // (a word that does not fit a narrow card is not cut: three dots say « not yet » as well)
+      drawText(ctx, measure(st[0]) <= cw - 4 ? st[0] : p.ready && p.connected ? '✓' : '…', cx + cw / 2, cy + 44, { color: st[1], align: 'center' });
+      // device badge
+      const dev = p.kind === 'phone' ? '' : p.kind === 'keys' ? tr('keyboard') : tr('pad');
+      if (dev) { const dw = measure(dev) + 4; ctx.fillStyle = '#5a3b2a'; ctx.fillRect(cx + cw - dw - 3, cy + 8, dw, 9); drawText(ctx, dev, cx + cw - dw - 1, cy + 9, { color: '#fff7e6' }); }
+      else if (CLASSES[p.cls]) { ctx.fillStyle = '#3b2a22'; ctx.fillRect(cx + cw - 17, cy + 7, 14, 14); ctx.fillStyle = '#f3e3c3'; ctx.fillRect(cx + cw - 16, cy + 8, 12, 12); drawClassIcon(ctx, p.cls, cx + cw - 16, cy + 8); }
+      if (p.ready && p.connected) { ctx.fillStyle = '#4f955a'; ctx.fillRect(cx + 4, cy + 8, 9, 9); drawText(ctx, '✓', cx + 8, cy + 9, { color: '#fff7e6', align: 'center' }); }
+      if (this.host.isHost(p)) crown(ctx, cx + Math.round(cw / 2) - 4, cy - 3);
+    }
+    // title & status over the plaza
+    const fx = pw + 16 + (W - pw - 16) / 2;
+    drawText(ctx, tr('Hearthlight Party'), fx, py, { color: '#fff3c4', align: 'center', scale: 2, outline: '#3b2a2e' });
+    // (one line under it — who the host is, the crown on their card and the line at the foot say)
+    const menuL = wrap(tr('{key}: the menu (invite, options…)', { key: ctl('pause') }), W - pw - 28).slice(0, 2);
+    menuL.forEach((l, i) => drawText(ctx, l, fx, py + 20 + i * 10, { color: '#d9c8e8', align: 'center', outline: '#3b2a2e' }));
+    this.drawStoryTag(ctx, fx, py + 23 + menuL.length * 10, W - pw - 36);
+    const here = this.players.filter((p) => p.connected);
+    let msg;
+    if (!here.length) msg = tr('Waiting for friends to join…');
+    else if (this.countdown > 0) msg = tr('Everyone’s ready! Starting in {n}…', { n: Math.ceil(this.countdown) });
+    else if (this.choosing) msg = here.some((p) => p.kind === 'phone') ? tr('Vote on your phone!') : tr('Vote on this screen!');
+    else {
+      const k = here.filter((p) => !p.ready).length, H = this.hostLed();
+      // (one thing at a time: who still has to press Ready, then who starts — the cards show who is here)
+      if (H && !k) msg = tr('Everyone’s ready! ♛ {name} starts the party', { name: H.name });
+      else if (k) msg = tn('{n} player still has to press Ready', '{n} players still have to press Ready', k);
+      else msg = tn('{n} friend here', '{n} friends here', here.length);
+    }
+    // (a long line — German, Spanish… — takes two)
+    const ml = wrap(msg, W - pw - 36).slice(0, 2);
+    const mw = Math.max(...ml.map((l) => measure(l))) + 16, mx = Math.round(fx - mw / 2), my = cy - 4 - ml.length * 11 - 2;
+    ctx.fillStyle = 'rgba(30,20,40,0.8)'; ctx.fillRect(mx, my, mw, ml.length * 11 + 2);
+    ml.forEach((l, i) => drawText(ctx, l, mx + mw / 2, my + 3 + i * 11, { color: this.countdown > 0 ? '#ffd66b' : '#fff7e6', align: 'center' }));
+    // (the word for who has no phone, when the join card had no room for it)
+    if (this.lobbyTip) {
+      const tl = wrap(this.lobbyTip.text, W - pw - 36).slice(0, 2), tw = Math.max(...tl.map((l) => measure(l))) + 12, ty = my - tl.length * 10 - 6;
+      ctx.fillStyle = 'rgba(30,20,40,0.6)'; ctx.fillRect(Math.round(fx - tw / 2), ty, tw, tl.length * 10 + 3);
+      tl.forEach((l, i) => drawText(ctx, l, fx, ty + 2 + i * 10, { color: this.lobbyTip.ink, align: 'center' }));
+    }
+  }
+
+  // which story is loaded, said before anyone starts it, on a paper tag under the title that nobody
+  // can miss: « New story » in big letters, or « Continuing your story » over the chapter it picks
+  // up at — its title, who played it, how far the heroes are, when it was last played. « Change… »
+  // (a click) goes back to the title’s choice of stories (`storyRect`: the toasts keep clear)
+  drawStoryTag(ctx, cx, y, maxW) {
+    const S = this.story;
+    this.storyRect = null; this.storyBtn = null;
+    if (!S) return;
+    const iw = Math.min(maxW, 300) - 22, fresh = S.blank || !S.begun;
+    const head = fresh ? '' : t('Continuing your story');
+    const big = fresh ? t('New story') : t('Chapter {n}', { n: S.ch });
+    const lab = t('Change…'), btn = !this.remoteFor, bw = btn ? measure(lab) + 12 : 0;
+    const sc = measure(big, 2) + (head ? 0 : bw + 8) <= iw ? 2 : 1;
+    const rest = storyLevel(S) + ' · ' + storyWhen(S);
+    // (the chapter’s title beside its number when the row has room for both, else under it)
+    const title = fresh ? '' : storyTitle(S), beside = !!title && measure(big, sc) + 8 + measure(title) <= iw;
+    const subs = fresh ? wrap(t('It all begins in Marigold Cove'), iw).slice(0, 2)
+      : [beside ? '' : fitText(title, iw), [storyWho(S, (x) => measure(x + ' · ' + rest) <= iw), rest].filter(Boolean).join(' · ')].filter(Boolean);
+    const w = Math.min(maxW, Math.max(head ? measure(head) + bw + 8 : measure(big, sc) + bw + 8, measure(big, sc) + (beside ? 8 + measure(title) : 0), ...subs.map((l) => measure(l))) + 22);
+    const h = 5 + (head ? 11 : 0) + (sc === 2 ? 19 : 11) + subs.length * 10 + 4, x = Math.round(cx - w / 2);
+    this.storyRect = { x, y, w, h };
+    ctx.fillStyle = 'rgba(30,18,30,0.35)'; ctx.fillRect(x + 1, y + 2, w, h);
+    ctx.fillStyle = '#3b2a22'; ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = UI.paper; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    ctx.fillStyle = fresh ? '#8fd67a' : '#ffd66b'; ctx.fillRect(x + 1, y + 1, 3, h - 2);
+    let ty = y + 5;
+    if (head) { drawText(ctx, head, x + 11, ty, { color: '#8a5234' }); ty += 11; }
+    drawText(ctx, big, x + 11, ty, { color: UI.ink, scale: sc });
+    if (beside) drawText(ctx, title, x + 11 + measure(big, sc) + 8, ty + (sc === 2 ? 7 : 0), { color: UI.inkSoft });
+    ty += sc === 2 ? 19 : 11;
+    subs.forEach((l, i) => drawText(ctx, l, x + 11, ty + i * 10, { color: UI.inkSoft }));
+    if (btn) {
+      const bx = x + w - bw - 5, by = y + 4, gi = this.game.input;
+      button(ctx, bx, by, bw, 12, lab, { hot: gi.mouseIn(bx, by, bw, 12) });
+      this.storyBtn = { x: bx - 2, y: by - 2, w: bw + 4, h: 16 };
+    }
+  }
+
+  // ---- the display (the Settings’ « Display », as in the solo game): full · compact (a small
+  // minimap, the hour alone, the chat’s last two lines) · minimal (the world to itself: no
+  // minimap, no clock, no chat log, no button chips). V on the big screen’s keyboard, LT on a
+  // gamepad, a click on the minimap, the host’s menu or a player’s own page changes it.
+  hudMode() { return HUD_MODES.includes(this.settings.hud) ? this.settings.hud : 'full'; }
+  cycleHud(dir = 1) {
+    const st = this.settings;
+    st.hud = HUD_MODES[(HUD_MODES.indexOf(this.hudMode()) + (dir < 0 ? -1 : 1) + HUD_MODES.length) % HUD_MODES.length];
+    saveSettings(st);
+    this.note = { t: 0 };
+    this.zoom.flashT = 0;
+    this.host.sentKey = '';
+    audio.sfx('select', { volume: 0.5 });
+  }
+
+  // the big screen’s minimap: put away unless the party wants it
+  mapShown() { return !!this.settings.partyMap && this.hudMode() !== 'minimal'; }
+  toggleMap() {
+    const st = this.settings, on = !this.mapShown();
+    st.partyMap = on;
+    if (on && this.hudMode() === 'minimal') st.hud = 'compact';
+    saveSettings(st);
+    this.host.sentKey = '';
+    audio.sfx('select', { volume: 0.5 });
+    this.toast(t(on ? 'Minimap shown' : 'Minimap hidden'), '#8fd6e0');
+  }
+
+  // « Display: Compact » for a moment after a change (the solo game’s words), with its three pips
+  drawNote(ctx) {
+    const n = this.note, mode = this.hudMode(), text = t('Display: {m}', { m: t(HUD_NAMES[mode]) });
+    // (in the middle of the top — left of a player’s menu, under the objective when it reaches there)
+    const W = this.tvmenus.open ? Math.max(140, this.display.w - this.tvmenus.width() - 10) : this.display.w, o = this.objectiveRect && this.objectiveRect();
+    const w = measure(text) + 40, x = Math.round(W / 2 - w / 2), y = o && x < o.x + o.w + 4 && x + w > o.x - 4 && o.y + o.h > 22 ? o.y + o.h + 5 : 26;
+    this.noteRect = { x: x - 1, y: y - 1, w: w + 2, h: 15 };
+    ctx.globalAlpha = Math.max(0, Math.min(1, n.t * 8, (1.8 - n.t) * 3));
+    ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 1, w + 2, 15);
+    ctx.fillStyle = '#3b2e4a'; ctx.fillRect(x, y, w, 13);
+    // (a little screen, as full as the display)
+    ctx.fillStyle = '#f6d38f'; ctx.fillRect(x + 4, y + 3, 9, 7);
+    ctx.fillStyle = '#3b2e4a'; ctx.fillRect(x + 5, y + 4, 7, 5);
+    ctx.fillStyle = '#f6d38f';
+    if (mode !== 'minimal') { ctx.fillRect(x + 9, y + 7, 2, 1); ctx.fillRect(x + 9, y + 5, 2, 1); }
+    if (mode === 'full') { ctx.fillRect(x + 6, y + 5, 2, 1); ctx.fillRect(x + 6, y + 7, 1, 1); }
+    drawText(ctx, text, x + 17, y + 3, { color: '#fff3c4' });
+    HUD_MODES.forEach((m, j) => { ctx.fillStyle = j < 3 - HUD_MODES.indexOf(mode) ? '#f6c65b' : '#6a5a7a'; ctx.fillRect(x + w - 4 - (3 - j) * 4, y + 4, 3, 5); });
+    ctx.globalAlpha = 1;
+  }
+
+  // the adventure HUD is drawn by the activity (charms, badges…); the
+  // objective card is shared
+  // the clock (top right): the day, the time, the sky — compact: the hour alone; minimal: none
+  drawHud(ctx) {
+    const s = this.state, W = this.display.w, mode = this.hudMode();
+    this.clockRect = null;
+    if (mode === 'minimal') return;
+    if (mode === 'compact') {
+      const txt = timeLabel(s.hour), w = measure(txt) + 22;
+      panel(ctx, W - w - 5, 4, w, 17);
+      sunMoon(ctx, W - w, 9, s.hour, s.weather);
+      drawText(ctx, txt, W - 10, 9, { color: UI.ink, align: 'right' });
+      this.clockRect = { x: W - w - 5, y: 4, w, h: 17 };
+      return;
+    }
+    const txt = dayLabel(s.day) + ' · ' + timeLabel(s.hour), w = measure(txt) + 30;
+    panel(ctx, W - w - 5, 4, w, 23);
+    weatherIcon(ctx, W - w + 1, 7, s.weather, s.hour);
+    drawText(ctx, txt, W - 11, 11, { color: UI.ink, align: 'right' });
+    this.clockRect = { x: W - w - 5, y: 4, w, h: 23 };
+  }
+
+  // The corner minimap of an activity out in the world — only when the party asks for it
+  // (`settings.partyMap`: every phone has the map, and the big one is a press away), a small one
+  // in the compact display, none in the minimal one. Without it, a little map comes up there
+  // under the mouse, to click it back. `hide`: the activity has the corner for something else.
+  drawCornerMap(ctx, hide = false) {
+    const W = this.display.w, H = this.display.h, mode = this.hudMode(), gi = this.game.input;
+    this.miniSpot = null;
+    if (hide || this.cam.layout.type === 'grid' || this.dialogue.active || this.vote || this.bigMapOpen) return;
+    const full = Math.min(110, Math.round(W * 0.2)), mw = mode === 'compact' ? Math.round(full * 0.6) : full, mh = Math.round(mw * 0.62);
+    if (this.mapShown()) { this.drawMiniMap(ctx, W - mw - 7, H - 21 - mh - 5, mw, mh); return; }
+    if (this.remoteFor) return;
+    const R = { x: W - 29, y: H - 46, w: 22, h: 20 }, m = gi.mouse;
+    this.miniSpot = R;
+    const near = (this.mouseIdle || 0) < 4 && m.x > R.x - 46 && m.y > R.y - 40;
+    this.spotA = (this.spotA || 0) + ((near ? 1 : 0) - (this.spotA || 0)) * Math.min(1, (this.lastDt || 1 / 60) * 8);
+    if (this.spotA < 0.03) return;
+    ctx.globalAlpha = this.spotA;
+    ctx.fillStyle = gi.mouseIn(R.x, R.y, R.w, R.h) ? 'rgba(20,14,28,0.8)' : 'rgba(20,14,28,0.55)'; ctx.fillRect(R.x, R.y, R.w, R.h);
+    drawGlyph(ctx, 'map', R.x + 3, R.y + 2, 1);
+    ctx.globalAlpha = 1;
+  }
+
+  // does the objective stay on the big screen? When the party asks for it (`settings.partyGoal`),
+  // or when nobody holds a phone: a phone has it always, with its Quest page and the way there.
+  // Otherwise the card comes when the step changes, small, and goes (`goalBig`: the wide card)
+  goalStays() { return this.settings.partyGoal === 'always' || !this.players.some((p) => p.connected && p.kind === 'phone'); }
+  goalBig() { return this.settings.partyGoal === 'always'; }
+
+  // what the objective card says right now, laid out — the tracker on one row in the minimal
+  // display, and whenever a boss’s bar is up (the bar sits right under it); beside a player’s
+  // menu, in the room the menu leaves
+  objectiveForm() {
+    const o = this.obj, W = this.display.w, bar = !!(this.combat && this.combat.barRect);
+    return trackerLayout(o, W, !o.stay ? 0 : bar ? 2 : this.settings.hud === 'minimal' ? 1 : 0, this.tvmenus.open ? Math.max(96, W - this.tvmenus.width() - 18) : W);
+  }
+  // where the objective card sits right now (the race & event cards, the notes, the views’ colour
+  // chips keep clear of it)
+  objectiveRect() {
+    const o = this.obj;
+    if (!o || (!o.stay && o.t >= o.secs) || this.vote || this.dialogue.active || this.phase === 'lobby') return null;
+    const L = this.objectiveForm(), w = Math.round(o.aw || L.w), h = Math.round(o.ah || L.h);
+    const k = Math.max(0, o.stay ? Math.min(1, o.on * 5) : Math.min(1, o.t * 5, (o.secs - o.t) * 4));
+    const ease = 1 - (1 - k) * (1 - k);
+    return { x: Math.round(6 - (1 - ease) * (w + 12)), y: 4, w, h, top: L.top, rows: L.rows };
+  }
+
+  // a card at the top of the screen, beside (or under) the objective card
+  topCard(w, h) {
+    const W = this.display.w, o = this.objectiveRect();
+    let x = Math.round(W / 2 - w / 2), y = 26;
+    if (o && x < o.x + o.w + 4 && y < o.y + o.h + 2) {
+      x = o.x + o.w + 6;
+      if (x + w > W - 4) { x = Math.round(W / 2 - w / 2); y = o.y + o.h + 4; }
+    }
+    return { x, y };
+  }
+
+  drawObjective(ctx) {
+    const R = this.objectiveRect();
+    if (R) drawTracker(ctx, R);
+  }
+
+  // everyone along the bottom: colour, name, a value (stars, K.O.s… — or 'level': the hero’s
+  // level over its experience bar, a notch where a talent point waits, an arrow when the land
+  // lifts them to its level or holds them down to it) and, when fighting, a health bar with
+  // the special’s gauge on top
+  drawBadges(ctx, value, valueColor = '#ffd66b') {
+    const W = this.display.w, H = this.display.h, now = this.t;
+    const ps = this.players;
+    if (!ps.length) return;
+    const fighting = ps.some((p) => p.fighter), levels = value === 'level';
+    const bh = fighting ? (levels ? 22 : 17) : 14;
+    const bw = Math.min(levels ? 76 : 62, Math.floor((W - 12) / ps.length) - 3);
+    let x = Math.round(W / 2 - (ps.length * (bw + 3) - 3) / 2);
+    const y = H - bh - 3;
+    for (const p of ps) {
+      const f = p.fighter, lv = levels && f;
+      ctx.fillStyle = 'rgba(30,20,40,0.82)'; ctx.fillRect(x, y, bw, bh);
+      ctx.fillStyle = p.color; ctx.fillRect(x, y, 3, bh);
+      const v = levels ? '' : value ? String(value(p)) : '';
+      let vw = v ? measure(v) : 0;
+      if (v) drawText(ctx, v, x + bw - 3, y + 3, { color: valueColor, align: 'right' });
+      if (lv) {
+        // (eight badges across the screen: the bar no wider than the level, the name keeps its room)
+        vw = drawLevelTag(ctx, x + bw - 3, y + 3, shownLevel(f.level), xpBar(f.level, f.xp), valueColor, bw < 64 ? 0 : 30);
+        const lift = Math.sign(shownLevel(f.eff || f.level) - shownLevel(f.level));
+        if (lift) liftMark(ctx, x + bw - 10 - vw, y + 12, lift);
+      }
+      let name = p.name;
+      while (name.length > 3 && measure(name) > bw - 9 - (vw ? vw + 2 : 0)) name = name.slice(0, -1);
+      drawText(ctx, name, x + 6, y + 3, { color: !p.connected ? '#8a7a98' : f && f.down ? '#b9a2e3' : '#fff7e6' });
+      if (f) {
+        const hx = x + 5, hw = bw - 8, hy = y + bh - 4;
+        ctx.fillStyle = '#3a2a3a'; ctx.fillRect(hx, hy, hw, 2);
+        const k = Math.max(0, f.hp / f.maxHp);
+        ctx.fillStyle = f.down ? '#8a7a98' : k > 0.5 ? '#6fd66a' : k > 0.25 ? '#f2c14e' : (Math.floor(now * 4) % 2 ? '#ff5a6a' : '#c83a4a');
+        ctx.fillRect(hx, hy, Math.round(hw * k), 2);
+        // the special’s gauge along the top edge, bright when it’s ready
+        const full = f.cls.special.cd * f.mods.cdr, g = f.cd > 0 ? 1 - f.cd / full : 1;
+        ctx.fillStyle = g >= 1 ? f.cls.color : 'rgba(143,183,255,0.55)';
+        ctx.fillRect(x + 3, y, Math.round((bw - 3) * g), 1);
+        if (f.down) drawText(ctx, 'zZ', x + bw - 3, y - 7, { color: '#b9a2e3', align: 'right', outline: '#241a2e' });
+        // the ultimate’s gauge: a thin gold line under the name (cut in two or three when the
+        // hero has as many, a gauge each), a blinking U once one is ready
+        if (f.ultId && !f.down) {
+          const n = f.ultIds.length, sw = Math.floor((hw - (n - 1)) / n);
+          f.ultIds.forEach((id, i) => {
+            const u = f.ults[id];
+            ctx.fillStyle = u >= 100 ? (Math.floor(now * 4) % 2 ? '#ffd66b' : '#fff3a6') : 'rgba(255,214,107,0.55)';
+            ctx.fillRect(x + 5 + i * (sw + 1), hy - 2, Math.round(sw * Math.min(1, u / 100)), 1);
+          });
+          if (f.ult >= 100) drawText(ctx, 'U', x + bw - 3, y - 7, { color: '#ffd66b', align: 'right', outline: '#241a2e' });
+        }
+      }
+      if (this.buddies && this.buddies.of(p)) heart(ctx, x + bw - 7, y - 5);
+      const own = p.kind !== 'phone' && p.connected, cap = own && !this.host.isHost(p);
+      if (this.host.isHost(p)) crown(ctx, x + 3, y - 6);
+      else if (cap) menuCap(ctx, x + 3, y - 9, keyOf(p, 'm'), this.tvmenus.isOpen?.(p));
+      // (no phone to tell them: a red dot by their menu’s key while a talent point waits there)
+      if (own && f && this.combat && this.combat.ups.points(p)) redDot(ctx, x + (cap ? measure(keyOf(p, 'm')) + 17 : 14), y - (cap ? 11 : 8));
+      x += bw + 3;
+    }
+  }
+
+  // ------------------------------------------------------------------ after the finale
+  resetActs() {
+    if (this.stage && this.stage.active) this.stage.end();
+    this.sceneMusic = null;
+    if (this.act) this.act.dispose();
+    this.act = null;
+    this.actKind = null;
+    // the old activity’s scripts wait on lines, timers & votes that will
+    // never come back: they just stop there
+    this.dialogue.cur = null; this.dialogue.letter = null;
+    this.lane.clear();
+    this.waits = [];
+    if (this.vote) { this.vote = null; for (const p of this.players) if (p.kind === 'phone') this.net.send(p.id, { t: 'screen', s: 'play' }); }
+    this.choosing = false;
+    this.obj = null;
+    this.stopCombat();
+    for (const n of this.npcs) this.r3d.scene.remove(n.model.root);
+    this.npcs = [];
+    this.lantern.reset();
+    this.buddies.clear();
+    for (const p of this.players) { p.stars = 0; p.frozen = false; p.hidden = false; p.carry = null; p.actor.model.setProp(null); }
+    this.state.hour = 9.4;
+    this.cinematic = false;
+    this.busy = 0;
+  }
+
+  async restartAdventure(kind = 'story') {
+    await this.fadeTo(1, 0.5);
+    this.resetActs();
+    this.gatherAt(LOBBY.x, LOBBY.z);
+    this.startAct(kind);
+  }
+
+  async backToLobby() {
+    await this.fadeTo(1, 0.5);
+    this.saveNow();
+    this.resetActs();
+    this.readStory();
+    this.phase = 'lobby';
+    this.countdown = 0;
+    for (const p of this.players) { p.ready = p.kind !== 'phone'; this.syncPad(p); }
+    this.gatherAt(LOBBY.x, LOBBY.z);
+    await this.fadeTo(0, 0.6);
+  }
+}
+
+// a small ▼ over a player’s head (their colour, outlined so it reads anywhere)
+// a keyboard or gamepad player's menu key, on a tab above their badge: ☰ Tab
+function menuCap(ctx, x, y, key, open) {
+  const w = measure(key) + 13;
+  ctx.fillStyle = '#241a2e'; ctx.fillRect(x - 1, y - 1, w + 2, 10);
+  ctx.fillStyle = open ? '#e0a526' : '#5a3b2a'; ctx.fillRect(x, y, w, 9);
+  ctx.fillStyle = '#fff7e6'; for (const k of [2, 4, 6]) ctx.fillRect(x + 2, y + k, 5, 1);
+  drawText(ctx, key, x + 10, y + 1, { color: '#fff7e6' });
+}
+// …and the red dot beside it (the phone’s own: something waits in your menu)
+function redDot(ctx, x, y) {
+  ctx.fillStyle = '#241a2e'; ctx.fillRect(x, y, 6, 6);
+  ctx.fillStyle = '#e04848'; ctx.fillRect(x + 1, y + 1, 4, 4);
+  ctx.fillStyle = '#ff9a9a'; ctx.fillRect(x + 1, y + 1, 2, 1);
+}
+
+// a row of chips under a hero: each a key (a gamepad's A B X Y as its round button) and what it
+// does, on a dark strip underlined in the player's colour; (x, y): its top left
+const CHIP_H = 13;
+const chipKeyW = (it, pad) => (pad && isFace(it.key) ? 13 : measure(it.key) + 6);
+function chipsWidth(list, pad) { return list.reduce((w, it) => w + chipKeyW(it, pad) + 3 + measure(it.label) + 7, 0) - 1; }
+function chipRow(ctx, x, y, list, color, pad) {
+  const w = chipsWidth(list, pad), X = Math.round(x), Y = Math.round(y), h = CHIP_H;
+  ctx.fillStyle = 'rgba(30,20,40,0.78)'; ctx.fillRect(X + 1, Y, w - 2, h); ctx.fillRect(X, Y + 1, w, h - 2);
+  ctx.fillStyle = color; ctx.fillRect(X + 1, Y + h - 1, w - 2, 1);
+  let cx = X + 3;
+  for (const it of list) {
+    const kw = chipKeyW(it, pad);
+    if (pad && isFace(it.key)) faceGlyph(ctx, cx + 6, Y + 6, it.key);
+    else {
+      // (a key cap: paper, with a shaded lip)
+      ctx.fillStyle = '#fff3c4'; ctx.fillRect(cx, Y + 1, kw, 9);
+      ctx.fillStyle = '#c9a77c'; ctx.fillRect(cx, Y + 10, kw, 1);
+      drawText(ctx, it.key, cx + kw / 2, Y + 2, { color: '#3b2a2e', align: 'center' });
+    }
+    drawText(ctx, it.label, cx + kw + 3, Y + 2, { color: '#fff7e6' });
+    cx += kw + 3 + measure(it.label) + 7;
+  }
+}
+
+function playerPip(ctx, x, y, color, low, t) {
+  const X = Math.round(x), Y = Math.round(y - 6 + Math.sin(t * 4 + x) * 1);
+  ctx.fillStyle = '#241a2e';
+  ctx.fillRect(X - 4, Y - 1, 9, 4); ctx.fillRect(X - 3, Y + 3, 7, 1); ctx.fillRect(X - 2, Y + 4, 5, 1); ctx.fillRect(X - 1, Y + 5, 3, 1);
+  ctx.fillStyle = low && Math.floor(t * 4) % 2 ? '#ff5a6a' : color;
+  ctx.fillRect(X - 3, Y, 7, 2); ctx.fillRect(X - 2, Y + 2, 5, 1); ctx.fillRect(X - 1, Y + 3, 3, 1);
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.fillRect(X - 3, Y, 7, 1);
+}
+
+function nameTag(ctx, x, y, text, color, away) {
+  const w = measure(text) + 6, h = 10;
+  const bx = Math.round(x - w / 2), by = Math.round(y - h);
+  ctx.fillStyle = 'rgba(20,14,28,0.55)'; ctx.fillRect(bx + 1, by + 1, w, h);
+  ctx.fillStyle = away ? '#8a7a98' : color; ctx.fillRect(bx, by, w, h);
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.fillRect(bx, by, w, 1);
+  drawText(ctx, text, x, by + 1, { color: '#241a2e', align: 'center' });
+}
+
+// the part of the screen rectangle on one side of a line (split views)
+function halfPoly(W, H, h) {
+  const pts = [[0, 0], [W, 0], [W, H], [0, H]];
+  const f = ([x, y]) => ((x - h.ox) * h.nx + (y - h.oy) * h.ny) * h.s;
+  const out = [];
+  for (let i = 0; i < 4; i++) {
+    const a = pts[i], b = pts[(i + 1) % 4], fa = f(a), fb = f(b);
+    if (fa >= 0) out.push(a);
+    if ((fa >= 0) !== (fb >= 0)) { const k = fa / (fa - fb); out.push([a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]); }
+  }
+  return out;
+}
