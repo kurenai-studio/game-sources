@@ -1,0 +1,53 @@
+local druid = require "druid.druid"
+
+local actions = {
+	"attack",
+	"defend",
+	"item",
+	"flee"
+}
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("#", "battle_disable")
+	self.druid = druid.new(self)
+end
+
+function final(self)
+	self.druid:final()
+end
+
+function update(self, dt)
+	self.druid:update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("display_message") then
+		-- code
+	elseif message_id == hash("battle_enable") then
+		self.active = true
+		msg.post("#", "enable")
+	elseif message_id == hash("battle_disable") then
+		self.active = false
+		msg.post("#", "disable")
+	end
+	self.druid:on_message(message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("click") and action.pressed and self.active then
+		for i = 1, 4 do
+			local node = gui.get_node(actions[i])
+			if gui.pick_node(node, action.x, action.y) then
+				do_action(actions[i])
+			end
+		end
+	end
+	return self.druid:on_input(action_id, action)
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

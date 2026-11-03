@@ -1,0 +1,229 @@
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   IMPERIOS 1800–2100 · export de la conversación
+   Paleta sacada del propio juego: el azul de jugador (que estuvo roto cinco
+   rondas y terminó siendo el hilo de toda la historia) como acento, el latón
+   de la Edad del Vapor para las marcas de turno, y papel FRÍO —no crema— para
+   que la lectura se parezca a un informe de medición y no a una carta.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root{
+  --papel:#eceef2;
+  --papel-2:#e3e6ec;
+  --carta:#f7f8fa;
+  --tinta:#161a20;
+  --tinta-2:#59616e;
+  --tinta-3:#8b93a1;
+  --linea:#cfd4dd;
+  --acento:#3f4fc4;
+  --acento-suave:#e6e8fa;
+  --laton:#9a7526;
+  --perdido:#a8413a;
+  --medido:#2f7a5c;
+
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+
+  /* En rem y no en ch: `ch` se resuelve contra la fuente DEL ELEMENTO, así que
+     el título en serif a 3.6rem daba una medida enorme y arrancaba pegado al
+     borde mientras el cuerpo quedaba centrado. Con rem todos comparten la
+     misma columna. ~41rem son las 65-70 letras de lectura cómoda. */
+  --medida:41rem;
+  --r:3px;
+}
+
+@media (prefers-color-scheme:dark){
+  :root{
+    --papel:#0f1218; --papel-2:#151922; --carta:#161b24;
+    --tinta:#e3e7ee; --tinta-2:#9aa3b2; --tinta-3:#6d7686;
+    --linea:#262c38; --acento:#8b96ee; --acento-suave:#1c2140;
+    --laton:#c9a24e; --perdido:#e0736a; --medido:#5cbf95;
+  }
+}
+:root[data-theme="dark"]{
+  --papel:#0f1218; --papel-2:#151922; --carta:#161b24;
+  --tinta:#e3e7ee; --tinta-2:#9aa3b2; --tinta-3:#6d7686;
+  --linea:#262c38; --acento:#8b96ee; --acento-suave:#1c2140;
+  --laton:#c9a24e; --perdido:#e0736a; --medido:#5cbf95;
+}
+:root[data-theme="light"]{
+  --papel:#eceef2; --papel-2:#e3e6ec; --carta:#f7f8fa;
+  --tinta:#161a20; --tinta-2:#59616e; --tinta-3:#8b93a1;
+  --linea:#cfd4dd; --acento:#3f4fc4; --acento-suave:#e6e8fa;
+  --laton:#9a7526; --perdido:#a8413a; --medido:#2f7a5c;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0; padding:clamp(1.6rem,4vw,4.5rem) clamp(1rem,5vw,2rem) 5rem;
+  background:var(--papel); color:var(--tinta);
+  font-family:var(--sans); font-size:16.5px; line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ───────────────────────────── cabecera ───────────────────────────── */
+
+.titulo{
+  max-width:var(--medida); margin:0 auto .3rem; text-wrap:balance;
+  font-family:var(--serif); font-weight:600; font-size:clamp(2.3rem,6vw,3.6rem);
+  line-height:1.04; letter-spacing:-.015em;
+}
+.titulo .anio{ display:block; color:var(--laton); font-size:.44em; letter-spacing:.16em; margin-top:.5rem }
+
+.bajada{
+  max-width:var(--medida); margin:0 auto 2.4rem; color:var(--tinta-2);
+  font-size:1.06rem; text-wrap:pretty;
+}
+
+.cifras{
+  max-width:var(--medida); margin:0 auto 3.4rem; padding:1.1rem 1.2rem;
+  display:grid; gap:1rem 1.6rem; grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));
+  background:var(--carta); border:1px solid var(--linea); border-radius:var(--r);
+}
+.cifras div{ display:flex; flex-direction:column; gap:.15rem }
+.cifras dt{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--tinta-3);
+}
+.cifras dd{
+  margin:0; font-family:var(--mono); font-size:1.32rem; font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;
+}
+.cifras dd.perdido{ color:var(--perdido) }
+
+/* ───────────────────────────── el hilo ───────────────────────────── */
+
+.hilo{ max-width:var(--medida); margin:0 auto; display:flex; flex-direction:column; gap:3.2rem }
+
+.turno{ position:relative; scroll-margin-top:1.5rem }
+
+.marca{
+  display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+  margin-bottom:.85rem; padding-bottom:.4rem; border-bottom:1px solid var(--linea);
+}
+.quien{
+  font-family:var(--mono); font-size:.68rem; letter-spacing:.15em; text-transform:uppercase;
+  color:var(--tinta-3);
+}
+.turno.usuario .quien{ color:var(--laton) }
+.ancla{
+  font-family:var(--mono); font-size:.68rem; color:var(--tinta-3);
+  text-decoration:none; opacity:.55;
+}
+.ancla:hover,.ancla:focus-visible{ opacity:1; color:var(--acento) }
+
+/* El turno del usuario es la CONSIGNA: se separa por fondo y filete de latón,
+   no por burbuja de chat. Es un documento, no una app de mensajería. */
+.turno.usuario .prosa{
+  background:var(--papel-2); border-left:2px solid var(--laton);
+  padding:1rem 1.2rem; border-radius:0 var(--r) var(--r) 0;
+  font-size:1.02rem;
+}
+.turno.usuario .prosa p:first-child{ margin-top:0 }
+.turno.usuario .prosa p:last-child{ margin-bottom:0 }
+
+/* ───────────────────────────── prosa ───────────────────────────── */
+
+.prosa{ text-wrap:pretty }
+.prosa p{ margin:0 0 1.05rem }
+.prosa > :last-child{ margin-bottom:0 }
+.prosa h3,.prosa h4,.prosa h5,.prosa h6{
+  font-family:var(--serif); font-weight:600; line-height:1.2; text-wrap:balance;
+  margin:1.9rem 0 .7rem; letter-spacing:-.01em;
+}
+.prosa h3{ font-size:1.42rem } .prosa h4{ font-size:1.2rem } .prosa h5{ font-size:1.05rem }
+.prosa strong{ font-weight:650 }
+.prosa a{ color:var(--acento); text-underline-offset:.18em }
+.prosa ul,.prosa ol{ margin:0 0 1.05rem; padding-left:1.35rem }
+.prosa li{ margin-bottom:.42rem }
+.prosa li::marker{ color:var(--tinta-3) }
+.prosa blockquote{
+  margin:1.2rem 0; padding:.2rem 0 .2rem 1.1rem;
+  border-left:2px solid var(--linea); color:var(--tinta-2); font-style:italic;
+}
+.prosa hr{ border:0; border-top:1px solid var(--linea); margin:2rem 0 }
+
+.prosa code{
+  font-family:var(--mono); font-size:.86em; padding:.12em .34em;
+  background:var(--papel-2); border:1px solid var(--linea); border-radius:2px;
+  overflow-wrap:anywhere;
+}
+.prosa pre{
+  margin:0 0 1.15rem; padding:.95rem 1.05rem; overflow-x:auto;
+  background:var(--carta); border:1px solid var(--linea); border-radius:var(--r);
+}
+.prosa pre code{ background:none; border:0; padding:0; font-size:.84rem; line-height:1.55 }
+
+/* ───────────────────────────── tablas ───────────────────────────── */
+
+.tabla-marco{ margin:0 0 1.2rem; overflow-x:auto; border:1px solid var(--linea); border-radius:var(--r) }
+.prosa table{ border-collapse:collapse; width:100%; font-size:.9rem }
+.prosa th,.prosa td{
+  padding:.5rem .8rem; text-align:left; border-bottom:1px solid var(--linea);
+  vertical-align:top;
+}
+.prosa th{
+  font-family:var(--mono); font-size:.66rem; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--tinta-3); font-weight:500; background:var(--carta); white-space:nowrap;
+}
+.prosa tbody tr:last-child td{ border-bottom:0 }
+.prosa td{ font-variant-numeric:tabular-nums }
+
+/* ─────────────────── registro de acciones (plegado) ─────────────────── */
+
+.ledger{
+  margin:1.15rem 0; border:1px solid var(--linea); border-radius:var(--r);
+  background:var(--carta);
+}
+.ledger summary{
+  cursor:pointer; padding:.5rem .85rem; list-style:none;
+  font-family:var(--mono); font-size:.72rem; letter-spacing:.06em;
+  color:var(--tinta-2); display:flex; align-items:center; gap:.55rem;
+}
+.ledger summary::-webkit-details-marker{ display:none }
+.ledger summary::after{ content:"▸"; margin-left:auto; color:var(--tinta-3); transition:transform .15s }
+.ledger[open] summary::after{ transform:rotate(90deg) }
+.ledger summary:hover{ color:var(--tinta) }
+.ledger summary:focus-visible{ outline:2px solid var(--acento); outline-offset:-2px }
+.cuenta{
+  font-variant-numeric:tabular-nums; background:var(--acento-suave); color:var(--acento);
+  padding:.08em .45em; border-radius:2px; font-size:.72rem;
+}
+
+.acciones{ margin:0; padding:.2rem 0 .6rem; list-style:none; counter-reset:a }
+.acciones li{
+  display:flex; gap:.7rem; align-items:baseline; padding:.24rem .85rem;
+  font-family:var(--mono); font-size:.74rem; line-height:1.5;
+}
+.acciones li:nth-child(even){ background:color-mix(in srgb,var(--papel-2) 55%,transparent) }
+.hn{ flex:0 0 auto; font-weight:600; color:var(--tinta-2) }
+.hd{ color:var(--tinta-3); overflow-wrap:anywhere }
+/* la familia de la acción se codifica en el color: shell, archivo, agentes… */
+.f-shell{ color:var(--medido) } .f-archivo{ color:var(--acento) }
+.f-agentes{ color:var(--laton) } .f-navegador{ color:var(--tinta-2) }
+.f-entrega{ color:var(--perdido) }
+
+/* ───────────────────────────── figuras ───────────────────────────── */
+
+figure{ margin:1.8rem 0; }
+figure img{
+  display:block; width:100%; height:auto; border-radius:var(--r);
+  border:1px solid var(--linea); background:var(--papel-2);
+}
+figcaption{
+  margin-top:.6rem; font-size:.84rem; line-height:1.5; color:var(--tinta-2);
+  text-wrap:pretty;
+}
+
+/* ───────────────────────────── pie ───────────────────────────── */
+
+.pie{
+  max-width:var(--medida); margin:4rem auto 0; padding-top:1.2rem;
+  border-top:1px solid var(--linea); color:var(--tinta-3); font-size:.85rem;
+}
+.pie p{ margin:0 }
+
+@media (prefers-reduced-motion:reduce){ *{ transition:none !important; animation:none !important } }
+</style>
