@@ -1,0 +1,40 @@
+{
+  "name": "backwards",
+  "version": "0.10.0",
+  "type": "module",
+  "author": "Jeremie CORPINOT",
+  "description": "A turn based game system built with Phaser",
+  "license": "MIT",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "prettier --write 'src/**/*.js'",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "ava",
+    "test:watch": "ava --watch"
+  },
+  "dependencies": {
+    "pathfinding": "0.4.18",
+    "phaser": "3.24.1"
+  },
+  "devDependencies": {
+    "@types/pathfinding": "0.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "ava": "^6.4.1",
+    "eslint": "^9.31.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "vite": "^5.4.19"
+  },
+  "ava": {
+    "extensions": {
+      "ts": "module"
+    },
+    "nodeArguments": [
+      "--loader=ts-node/esm"
+    ]
+  }
+}
