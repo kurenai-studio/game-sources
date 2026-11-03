@@ -1,0 +1,48 @@
+--------------------------------------------------
+-- Controller every timed event, wave for a level
+--------------------------------------------------
+
+go.property("asteroid_delay", 5)
+
+local wait = require("main.wait")
+
+local spawn = 10
+
+local function spawn_asteroid(self)
+	math.randomseed(os.clock())
+
+	while (spawn <= 10 and spawn > 0) do
+		local xPos = math.random(100, 1220)
+		local meteorPos = vmath.vector3(xPos, 800, 0)
+		factory.create("#asteroidfactory", meteorPos, null, { size = 1, rotation_speed = -4, meteor_type = 0, velocity = vmath.vector3(0, -1, 0) })
+		spawn = spawn - 1
+		wait.seconds(5)
+	end
+end
+
+function init(self)
+	-- Add initialization code here
+	-- Remove this function if not needed
+	self.co = coroutine.create(spawn_asteroid)
+	msg.post("@render:", "clear_color", { color = vmath.vector4(0.369, 0.247, 0.42, 1) })
+	msg.post(".", "start_wave")
+end
+
+function final(self)
+	
+end
+
+function update(self, dt)
+	wait.update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	if (message_id == hash("start_wave")) then
+		coroutine.resume(self.co)
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove this function if not needed
+end

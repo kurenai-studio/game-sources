@@ -1,0 +1,108 @@
+
+local utils   = require( 'utils.utils' )
+local globals = require( 'utils.GlobalVars' )
+
+
+function init(self)
+	msg.post( ".", "acquire_input_focus" )
+
+	--msg.post( '@render:', 'subscribe' )
+	-- assume a simple/identity transform for now (we'll catch window-resize requests later)
+	self.view = vmath.matrix4()
+	self.projection = vmath.matrix4()
+	self.width = sys.get_config( 'display.width' )
+	self.height = sys.get_config( 'display.height' )
+	self.window_width = self.width
+	self.window_height = self.height
+
+	self.back_pressed = false
+end
+
+function screen_to_world( self, x, y )
+	local inv = vmath.inv( self.projection * self.view )
+	x = (2 * x / self.width) - 1
+	y = (2 * y / self.height) - 1
+	--z = (2 * z) - 1
+	local z = -1
+	local x1 = x * inv.m00 + y * inv.m01 + z * inv.m02 + inv.m03
+	local y1 = x * inv.m10 + y * inv.m11 + z * inv.m12 + inv.m13
+	--local z1 = x * inv.m20 + y * inv.m21 + z * inv.m22 + inv.m23
+	return x1, y1
+end
+
+function on_message( self, message_id, message, sender )
+	if( message_id == hash('window_changed') ) then
+		print( 'window was changed' )
+		self.view = message.view
+		self.projection = message.projection
+		self.width = message.width
+		self.height = message.height
+		self.window_width = message.window_width
+		self.window_height = message.window_height
+		--pprint( message )
+	end
+end
+
+-- on_input should return true if input was consumed by this module
+function on_input( self, action_id, action )
+	local rtn = false
+	if( globals.input_enabled == false ) then
+		return false
+	end
+	if( action_id ~= nil ) then
+		if( action_id == hash('touch') ) then
+			-- print( 'touch', action.pressed, action.released )
+			if( action.pressed ) then
+				local tx = action.x
+				local ty = action.y
+				--local tx,ty = screen_to_world( self, action.x, action.y )
+				--print( 'input = ',action.x,action.y,'   world = ',tx,ty )
+
+				local found_obj = nil
+				local found_card = nil
+				local found_scr = nil
+				for card in globals.player_hand:cardIterator() do
+					local xtra = card:getXtraAll()
+					--print( 'is_inside_sprite', utils.is_inside_sprite(tx,ty,xtra.front_url) )
+					if( utils.is_inside_sprite(tx,ty,xtra.front_url) ) then
+						found_obj = xtra.go_id
+						found_card = card
+						found_scr = xtra.script_url
+					end
+				end
+				if( found_obj ~= nil ) then
+					print( 'found_obj', found_obj )
+					local is_ready = go.get( found_scr, 'ready' )
+					--local state = go.get( found_scr, 'state' )
+					if( is_ready ) then
+						msg.post( '/mvc#model', 'card_touch', {card_obj=found_obj} )
+						rtn = true
+					end
+				end
+				-- now check for non-card buttons
+				-- -- we cheat and move the okButton off-screen to "disable" it
+				local ok_pos = go.get_position( 'okButton' )
+				if( (ok_pos.z>-1) and (found_obj==nil) ) then
+					-- print( 'co=',co,v,v.back_id )
+					if( utils.is_inside_go(tx,ty,'okButton') ) then
+						print( 'okbutton pressed' )
+						msg.post( '/mvc#model', 'ok_button' )
+					end
+				end
+				if( utils.is_inside_go(tx,ty,'backButton') ) then
+					print( 'back button pressed' )
+					if( self.back_pressed ) then
+						msg.post( "default:/controller#proxyController", "show_menu" )
+					else
+						self.back_pressed = true
+						msg.post( 'backButton#sprite', 'play_animation', {id=hash('button_back2')} )
+					end
+				else
+					self.back_pressed = false
+					msg.post( 'backButton#sprite', 'play_animation', {id=hash('button_back')} )
+				end
+			end
+		end
+	end
+	return rtn
+end

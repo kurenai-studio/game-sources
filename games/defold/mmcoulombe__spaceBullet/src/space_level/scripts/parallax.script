@@ -1,0 +1,16 @@
+go.property("speed", 100)
+
+local bg_part = { "bg_01", "bg_02", "bg_03" }
+
+function update(self, dt)
+	for i, bg in ipairs(bg_part) do
+		local pos = go.get_position(bg)
+
+		if (pos.y <= 0) then
+			pos.y = pos.y + 800
+		end
+
+		pos.y = pos.y - self.speed * dt
+		go.set_position(pos, bg)
+	end
+end

@@ -1,0 +1,47 @@
+go.property("size", 0);
+go.property("meteor_type", 0)
+go.property("rotation_speed", -2)
+go.property("velocity", vmath.vector3(0, 0, 0))
+-- local meteor_list = {};
+
+function init(self)
+	self.speed = 100
+	self.health = 0
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- update position
+	local p = go.get_position()
+	p.x = p.x + self.speed * dt * self.velocity.x
+	p.y = p.y + self.speed * dt * self.velocity.y
+
+	-- update rotation if any
+	local r = go.get_rotation()
+	r = r * vmath.quat_rotation_z(self.rotation_speed * dt)
+	
+	go.set_position(p)
+	go.set_rotation(r)
+
+	if (p.y < -60) then
+		go.delete()
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Remove this function if not needed
+end

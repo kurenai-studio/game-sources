@@ -1,0 +1,181 @@
+
+local globals = require( 'utils.GlobalVars' )
+
+
+function set_infotext( infotext1, infotext2, infotext3 )
+	if( infotext1 == nil ) then
+		infotext1 = ''
+	end
+	if( infotext2 == nil ) then
+		infotext2 = ''
+	end
+	if( infotext3 == nil ) then
+		infotext3 = ''
+	end
+	label.set_text( '/hud#infotext_1', infotext1 )
+	label.set_text( '/hud#infotext_2', infotext2 )
+	label.set_text( '/hud#infotext_3', infotext3 )
+end
+
+function set_score( player_score, opponent_score )
+	local txt = player_score .. "\n" .. opponent_score
+	label.set_text( '/hud#score_txt', txt )
+end
+function set_gemscore( player_gems )
+	local txt = player_gems .. "\n-"
+	label.set_text( '/hud#gemscore_txt', txt )
+end
+
+function set_prevscores( prevscores )
+	for i = 1,#prevscores do
+		local prev_url = '/hud#prevdeck_'..i
+		local txt = prevscores[i].player_score .. "\n" .. prevscores[i].opponent_score
+		label.set_text( prev_url, txt )
+	end
+end
+
+function enable_infobox( enabled )
+	if( enabled ) then
+		enabled = 'enable'
+	else
+		enabled = 'disable'
+	end
+	msg.post( '/infobox', enabled )
+end
+function end_of_flashinfo( self, handle, time_elapsed )
+	print( 'end of flash-infobox' )
+	globals.input_enabled = true
+	enable_infobox( false )
+end
+function flash_infobox( num_sec )
+	print( 'flash_infobox' )
+	globals.input_enabled = false
+	enable_infobox( true )
+	timer.delay( num_sec, false, end_of_flashinfo )
+end
+
+function init( self )
+	-- set fixed size window (no stretching)
+	--msg.post("@render:", "use_fixed_projection", { near = -1, far = 1, zoom = 1 })
+	-- use fixed-fit window (no stretching)
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+	-- default is stretch projection
+	-- msg.post("@render:", "use_stretch_projection", { near = -1, far = 1 })
+		
+	sprite.set_constant( '/winOpponent#sprite', 'tint', vmath.vector4(0,0,0,0) )
+	sprite.set_constant( '/winPlayer#sprite', 'tint', vmath.vector4(0,0,0,0) )
+
+	enable_infobox( false )
+end
+
+function end_of_winnerbox( self, url, property )
+	go.animate( url, property, go.PLAYBACK_ONCE_FORWARD, vmath.vector4(0,0,0,0), go.EASING_LINEAR, 0.5 )
+end
+
+function back_to_proxy( self, handle, time_elapsed )
+	print( 'back_to_proxy called' )
+	msg.post( "default:/controller#proxyController", "show_menu" )
+end
+
+function on_message( self, message_id, message, sender )
+	if( message_id == hash('set_round') ) then
+		local info1 = 'Round '..tostring(message.round_num)
+		local info2 = ''
+		local info3 = 'Deck '..message.deck_num .. '  //  Hand '..message.hand_num
+			if( message.round_num == 3 ) then
+			info1 = 'Bonus Round'
+			info2 = 'Win by 4'
+		end
+		set_infotext( info1, info2, info3 )
+
+	elseif( message_id == hash('ok_button') ) then
+		local enable = true
+		if( message.enable ~= nil ) then
+			enable = (message.enable == true )
+		end
+		if( message.disable ~= nil ) then
+			enable = (message.disable == false )
+		end
+		print( 'ok_button', message.enable, message.disable, enable )
+		if( enable ) then
+			-- msg.post( 'okButton', 'enable' )
+			go.set( '/okButton', 'position.z', 0.5 )
+		else
+			-- go.set_position( 'okButton', 'disable' )
+			go.set( '/okButton', 'position.z', -10 )
+		end
+
+	elseif( message_id == hash('gem_score') ) then
+		if( message.gem1 ) then
+			particlefx.play( '/target1#color_splash' )
+		end
+		if( message.gem2 ) then
+			particlefx.play( '/target2#color_splash' )
+		end
+		set_gemscore( globals.player_gemscore )
+
+	elseif( message_id == hash('new_score') ) then
+		if( message.winner == 'player' ) then
+			-- sprite.set_constant( '/winPlayer#sprite', 'tint', vmath.vector4(1,1,1,1) )
+			go.animate( '/winPlayer#sprite', 'tint', go.PLAYBACK_ONCE_FORWARD, vmath.vector4(1,1,1,1), go.EASING_LINEAR, 0.5, 0.0, end_of_winnerbox )
+		elseif( message.winner == 'opponent' ) then
+			-- sprite.set_constant( '/winOpponent#sprite', 'tint', vmath.vector4(1,1,1,1) )
+			go.animate( '/winOpponent#sprite', 'tint', go.PLAYBACK_ONCE_FORWARD, vmath.vector4(1,1,1,1), go.EASING_LINEAR, 0.5, 0.0, end_of_winnerbox )
+		else
+			-- it's a tie .. no change to score
+		end
+		set_score( globals.player_score, globals.opponent_score )
+
+	elseif( message_id == hash('start_of_deck') ) then
+		local txt = ''
+		if( message.deck_num > 1 ) then
+			if( message.player_score > message.opponent_score ) then
+				label.set_text( 'infobox#header', 'Player Wins' )
+				txt = txt .. 'Player takes Deck '..(message.deck_num-1)..'\n'..message.player_score..' rounds to '..message.opponent_score
+			elseif( message.player_score < message.opponent_score ) then
+				label.set_text( 'infobox#header', 'House Wins' )
+				txt = txt .. 'House takes Deck '..(message.deck_num-1)..'\n'..message.opponent_score..' rounds to '..message.player_score
+			else
+				-- tie
+				label.set_text( 'infobox#header', 'Tied' )
+				txt = txt .. 'Deck '..(message.deck_num-1)..'is a tie\n'..message.opponent_score..' rounds each'
+			end
+		else
+			label.set_text( 'infobox#header', 'New Deck' )
+		end
+		txt = txt .. '\nNew deck .. Shuffling cards'
+		label.set_text( 'infobox#text', txt )
+		flash_infobox( 2.0 )
+
+	elseif( message_id == hash('end_of_deck') ) then
+		set_score( 0, 0 )
+		set_prevscores( globals.prev_deck_scores )
+		--msg.post( 'hud', 'new_deck', { player_score=message.player_score, opponent_score=message.opponent_score, deck_num=message.deck_num })
+
+	elseif( message_id == hash('game_over') ) then
+		set_infotext( '', 'Game Over', '' )
+
+		local hdr = ''
+		local txt = ''
+
+		if( message.winner == 'player' ) then
+			hdr = 'Player Wins !'
+			txt = 'Player won '..message.player_decks.." decks\nto House's "..message.opponent_decks.." decks"
+		elseif( message.winner == 'opponent' ) then
+			hdr = 'House Wins'
+			txt = 'House won '..message.opponent_decks.." decks\nto Player's "..message.player_decks.." decks"
+		else
+			hdr = "It's a Tie"
+			txt = 'Player and House each won\n'..message.player_decks.." decks"
+		end
+
+		txt = txt .. '\nPlayer collects '..globals.player_gemscore..' gems'
+		label.set_text( 'infobox#header', hdr )
+		label.set_text( 'infobox#text', txt )
+		flash_infobox( 5.0 )
+
+		timer.delay( 5.0, false, back_to_proxy )
+
+	end
+
+end
