@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#04060d" />
+  <meta name="description" content="NEON HORIZON 2088 — a cyberpunk 3D pinball studio built with Three.js and Cannon.js. Chrome fusion ball, plasma core bumpers, cyber security drop targets, hyper-loops and synthesised arcade audio." />
+  <title>NEON HORIZON 2088 · Cyberpunk 3D Pinball Studio</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="canonical" href="https://somphol.github.io/neon-horizon-2088/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="NEON HORIZON 2088" />
+  <meta property="og:title" content="NEON HORIZON 2088 — Cyberpunk 3D Pinball Studio" />
+  <meta property="og:description" content="A chrome fusion ball, responsive flippers, and a fully procedural neon playfield running at 120 Hz simulated physics." />
+  <meta property="og:url" content="https://somphol.github.io/neon-horizon-2088/" />
+  <meta property="og:image" content="https://somphol.github.io/neon-horizon-2088/docs/social-card.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="NEON HORIZON 2088 — Cyberpunk 3D Pinball Studio" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="NEON HORIZON 2088 — Cyberpunk 3D Pinball Studio" />
+  <meta name="twitter:description" content="A chrome fusion ball, responsive flippers, and a fully procedural neon playfield running at 120 Hz simulated physics." />
+  <meta name="twitter:image" content="https://somphol.github.io/neon-horizon-2088/docs/social-card.png" />
+  <meta name="twitter:image:alt" content="NEON HORIZON 2088 — Cyberpunk 3D Pinball Studio" />
+
+</head>
+<body>
+  <div id="stage" aria-hidden="true">
+    <canvas id="game-canvas"></canvas>
+    <div class="stage-glow stage-glow--cyan"></div>
+    <div class="stage-glow stage-glow--magenta"></div>
+    <div class="stage-scanlines"></div>
+    <div class="stage-vignette"></div>
+  </div>
+
+  <div id="boot" class="boot" role="status" aria-live="polite">
+    <div class="boot__ring"></div>
+    <p class="boot__eyebrow">NEON HORIZON BOOT SEQUENCE</p>
+    <h2 class="boot__title">SPOOLING PLASMA CORE</h2>
+    <div class="boot__bar"><span id="boot-fill"></span></div>
+    <p class="boot__hint" id="boot-hint">Linking Three.js render pipeline…</p>
+  </div>
+
+  <div class="hud" id="hud">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand__kicker"><i class="dot"></i> CYBER ARCADE · SYSTEM 2088</span>
+        <h1 class="brand__title">NEON <span>HORIZON</span></h1>
+        <span class="brand__sub">PINBALL STUDIO <b>//</b> <span id="status-pill" class="status-pill">STANDBY</span></span>
+      </div>
+
+      <div class="score-cluster" aria-live="polite">
+        <div class="metric metric--score">
+          <span class="metric__label">SCORE</span>
+          <strong class="metric__value" id="score">0</strong>
+          <span class="metric__meta">BEST <b id="best-score">0</b></span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">MULTIPLIER</span>
+          <strong class="metric__value metric__value--magenta" id="multiplier">×1</strong>
+          <span class="metric__meta">COMBO <b id="combo-count">0</b></span>
+        </div>
+        <div class="metric">
+          <span class="metric__label">BALLS</span>
+          <strong class="metric__value metric__value--cyan" id="balls">3</strong>
+          <span class="metric__meta">CREDITS <b id="credits">∞</b></span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="icon-btn icon-btn--scores" id="scores-toggle" type="button" aria-label="Toggle high scores" aria-expanded="false" title="High scores">
+          <span class="icon-btn__glyph">▤</span>
+          <span class="icon-btn__label">SCORES</span>
+        </button>
+        <button class="icon-btn" id="sound-toggle" type="button" aria-label="Mute audio" title="Toggle audio (M)">
+          <span class="icon-btn__glyph" id="sound-glyph">◉</span>
+          <span class="icon-btn__label">AUDIO</span>
+        </button>
+        <button class="neon-btn neon-btn--small" id="new-game" type="button">NEW GAME</button>
+      </div>
+    </header>
+
+    <aside class="panel panel--left" id="controls-panel">
+      <div class="panel__corner"></div>
+      <h2 class="panel__title"><span>01</span> TABLE CONTROLS</h2>
+      <ul class="key-list">
+        <li><span class="keycap">Z</span><span class="keycap">←</span><span class="key-desc">Left flipper</span></li>
+        <li><span class="keycap">/</span><span class="keycap">→</span><span class="key-desc">Right flipper</span></li>
+        <li><span class="keycap keycap--wide">SPACE</span><span class="key-desc">Hold / release plunger</span></li>
+        <li><span class="keycap">R</span><span class="key-desc">Recover stuck ball</span></li>
+        <li><span class="keycap">M</span><span class="key-desc">Mute synthesizer</span></li>
+      </ul>
+      <div class="divider"></div>
+      <h2 class="panel__title"><span>02</span> MISSION BRIEF</h2>
+      <p class="brief">Clear the <b class="cyan">Cyber Security</b> bank to raise your multiplier. Thread the <b class="violet">Hyper-Loops</b>. Overcharge the three <b class="magenta">Quantum Plasma Cores</b>.</p>
+      <div class="telemetry">
+        <div><span>TARGETS</span><b id="targets-left">4 / 4</b></div>
+        <div><span>LOOPS</span><b id="loops-hit">0</b></div>
+        <div><span>BUMPERS</span><b id="bumper-hits">0</b></div>
+      </div>
+      <div class="panel__footer"><span class="tick"></span> LIVE PHYSICS · 120 Hz</div>
+    </aside>
+
+    <aside class="panel panel--right" id="scores-panel">
+      <div class="panel__corner"></div>
+      <div class="panel__head">
+        <h2 class="panel__title"><span>03</span> HIGH SCORES</h2>
+        <span class="chip">TOP 5</span>
+      </div>
+      <ol class="leaderboard" id="leaderboard">
+        <li class="leaderboard__empty">No records yet.<br />Be the first legend.</li>
+      </ol>
+      <div class="divider"></div>
+      <div class="data-ops">
+        <button class="data-btn data-btn--rescue" id="rescue-ball" type="button" title="Recover a stuck ball to the shooter lane (R)">
+          <span>↻</span> RECOVER STUCK BALL
+        </button>
+        <button class="data-btn" id="save-scores" type="button" title="Download neon_horizon_scores.json">
+          <span>💾</span> SAVE HIGH SCORE
+        </button>
+        <button class="data-btn" id="load-scores" type="button" title="Import a score archive">
+          <span>📂</span> LOAD SCORES
+        </button>
+        <input type="file" id="score-file" accept="application/json,.json" hidden />
+      </div>
+      <p class="data-note">Archives sync across devices. Records also persist in local storage.</p>
+      <div class="panel__footer"><span class="tick"></span> <span id="sync-status">ARCHIVE LINKED</span></div>
+    </aside>
+
+    <div class="bottom-hud">
+      <div class="launch-column">
+        <div class="launch-hint" id="launch-hint">HOLD <b>SPACE</b> TO CHARGE THE RAILGUN</div>
+        <div class="charge-meter" id="charge-meter" role="meter" aria-label="Plunger charge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+          <span class="charge-meter__fill" id="charge-fill"></span>
+          <span class="charge-meter__ticks"></span>
+          <span class="charge-meter__label" id="charge-label">0%</span>
+        </div>
+      </div>
+      <button class="launch-btn" id="launch-btn" type="button" aria-label="Hold to charge, release to launch">
+        <span class="launch-btn__ring"></span>
+        <span class="launch-btn__core">LAUNCH</span>
+        <span class="launch-btn__sub">HOLD / DRAG</span>
+      </button>
+      <div class="bottom-actions">
+        <button class="icon-btn icon-btn--sm" id="help-btn" type="button" title="How to play" aria-label="How to play">?</button>
+        <button class="icon-btn icon-btn--sm" id="fullscreen-btn" type="button" title="Fullscreen" aria-label="Toggle fullscreen">⛶</button>
+      </div>
+    </div>
+
+    <div class="touch-controls" id="touch-controls">
+      <button class="flip-pad flip-pad--left" id="flip-left" type="button" aria-label="Left flipper"><span>◀</span><small>LEFT FLIP</small></button>
+      <button class="flip-pad flip-pad--right" id="flip-right" type="button" aria-label="Right flipper"><span>▶</span><small>RIGHT FLIP</small></button>
+    </div>
+  </div>
+
+  <div class="overlay overlay--start" id="start-overlay">
+    <div class="overlay__backdrop"></div>
+    <section class="hero" role="dialog" aria-modal="true" aria-labelledby="hero-title">
+      <div class="hero__grid"></div>
+      <div class="hero__halo"></div>
+      <p class="hero__eyebrow"><span></span> SECTOR 07 · NEO-KOWLOON · 2088 <span></span></p>
+      <h2 class="hero__title" id="hero-title">
+        <span class="hero__title-top">NEON</span>
+        <span class="hero__title-bottom">HORIZON<em>2088</em></span>
+      </h2>
+      <p class="hero__tagline">CYBERPUNK 3D PINBALL STUDIO</p>
+      <p class="hero__copy">A chrome fusion ball. Three overcharged plasma cores. One impossible table. Light up the grid and carve your name into the high-score archive.</p>
+
+      <div class="hero__features">
+        <div class="feature"><b>03</b><span>QUANTUM<br />CORES</span></div>
+        <div class="feature"><b>02</b><span>HYPER-<br />LOOPS</span></div>
+        <div class="feature"><b>120</b><span>PHYSICS<br />HZ</span></div>
+      </div>
+
+      <form class="hero__form" id="start-form">
+        <label class="callsign" for="callsign">
+          <span class="callsign__label">RUNNER CALLSIGN</span>
+          <input class="callsign__input" id="callsign" name="callsign" type="text" maxlength="14" autocomplete="nickname" spellcheck="false" value="RUNNER-01" />
+        </label>
+        <button class="neon-btn neon-btn--primary" id="start-btn" type="submit">
+          <span class="neon-btn__glow"></span>
+          INITIALISE TABLE
+        </button>
+      </form>
+
+      <div class="hero__foot">
+        <span><b>Z</b> / <b>/</b> flippers</span>
+        <span><b>SPACE</b> railgun</span>
+        <span>Audio synthesised in-browser</span>
+      </div>
+      <p class="hero__credit">POWERED BY <a href="https://threejs.org" target="_blank" rel="noopener">THREE.JS</a> + <a href="https://schteppe.github.io/cannon.js/" target="_blank" rel="noopener">CANNON.JS</a> · BUILT WITH <a href="https://opencode.ai" target="_blank" rel="noopener">OPENCODE</a> + DEEPSEEK V4.1 FLASH</p>
+    </section>
+  </div>
+
+  <div class="overlay overlay--modal" id="gameover-overlay" hidden>
+    <div class="overlay__backdrop"></div>
+    <section class="modal gameover" role="dialog" aria-modal="true" aria-labelledby="gameover-title">
+      <p class="modal__eyebrow">SESSION TERMINATED</p>
+      <h2 class="modal__title" id="gameover-title">GRID OVERRUN</h2>
+      <div class="gameover__score">
+        <span>FINAL SCORE</span>
+        <strong id="final-score">0</strong>
+        <em id="final-rank">UNRANKED</em>
+      </div>
+      <div class="gameover__stats">
+        <div><span>BEST COMBO</span><b id="final-mult">×1</b></div>
+        <div><span>TARGETS</span><b id="final-targets">0</b></div>
+        <div><span>LOOPS</span><b id="final-loops">0</b></div>
+        <div><span>TIME</span><b id="final-time">00:00</b></div>
+      </div>
+      <div class="modal__actions">
+        <button class="neon-btn neon-btn--primary" id="play-again" type="button">RE-INITIALISE</button>
+        <button class="neon-btn" id="gameover-save" type="button">💾 SAVE SCORE</button>
+      </div>
+      <p class="modal__note" id="gameover-note">Score archived to local memory.</p>
+    </section>
+  </div>
+
+  <div class="overlay overlay--modal" id="help-overlay" hidden>
+    <div class="overlay__backdrop"></div>
+    <section class="modal help" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <button class="modal__close" id="help-close" type="button" aria-label="Close">×</button>
+      <p class="modal__eyebrow">OPERATOR MANUAL · REV 2088.4</p>
+      <h2 class="modal__title" id="help-title">HOW TO PLAY</h2>
+      <div class="help__grid">
+        <article>
+          <h3><span>01</span> LAUNCH</h3>
+          <p>Hold <b>SPACE</b> — or press and drag the <b>LAUNCH</b> pad — to compress the railgun spring. Release to fire the ball up the shooter lane.</p>
+        </article>
+        <article>
+          <h3><span>02</span> FLIP</h3>
+          <p>Use <b>Z / ←</b> and <b>/ / →</b>. On touch screens, use the two large flip pads. A moving flipper transfers far more energy than a parked one.</p>
+        </article>
+        <article>
+          <h3><span>03</span> OVERCHARGE</h3>
+          <p>Each <b>plasma core</b> hit scores and flashes. Knock down all four <b>Cyber Security</b> nodes to raise the multiplier. Send the ball through a <b>Hyper-Loop</b> for a big bonus.</p>
+        </article>
+        <article>
+          <h3><span>04</span> SURVIVE</h3>
+          <p>Three balls per session. If a ball ever wedges in a corner, press <b>R</b> or use <b>RECOVER STUCK BALL</b> to return it to the railgun. Save your score archive from the right-hand panel and load it on any device. <b>M</b> toggles the synthesizer.</p>
+        </article>
+      </div>
+      <div class="modal__actions">
+        <button class="neon-btn neon-btn--primary" id="help-start" type="button" hidden>INITIALISE TABLE</button>
+        <button class="neon-btn" id="help-resume" type="button">RESUME</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="overlay overlay--modal" id="confirm-overlay" hidden>
+    <div class="overlay__backdrop"></div>
+    <section class="modal confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <p class="modal__eyebrow">SYSTEM OVERRIDE</p>
+      <h2 class="modal__title" id="confirm-title">ABANDON SESSION?</h2>
+      <p class="confirm__copy">Your current score will be archived before the table resets.</p>
+      <div class="modal__actions">
+        <button class="neon-btn" id="confirm-cancel" type="button">KEEP PLAYING</button>
+        <button class="neon-btn neon-btn--danger" id="confirm-ok" type="button">RESET TABLE</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+  <div class="sr-only" id="a11y-live" aria-live="polite"></div>
+
+  <noscript>
+    <div class="noscript">NEON HORIZON 2088 requires JavaScript and WebGL to render the table.</div>
+  </noscript>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
