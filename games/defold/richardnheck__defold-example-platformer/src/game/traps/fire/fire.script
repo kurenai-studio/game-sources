@@ -1,0 +1,85 @@
+-- =============================================================================
+-- Fire trap.
+--
+-- When the player steps on the trap, it triggers and then fire blasts a few
+-- momenets later.  After a short period, it turns off again.
+-- =============================================================================
+
+local const = require("game.lib.const")
+local stately = require("stately.stately")
+local audio = require("main.audio")
+
+local EV_HIT = hash("hit")
+local EV_ON = hash("on")
+local EV_OFF = hash("off")
+
+local ANIM_OFF = "fire-off"
+local ANIM_HIT = "fire-hit"
+local ANIM_ON = "fire-on"
+
+-- Time in seconds to delay before fire appears after triggering
+local DELAY_TIME = 0.5
+
+-- Time in seconds the fire is on for
+local ON_TIME = 1
+
+local SPRITE = "#sprite"
+
+local function setup_fsm(self)
+	local fsm = stately.create()
+	local s = {
+		off = fsm.state("off"),
+		hit = fsm.state("hit"),
+		on = fsm.state("on"),
+	}
+
+	fsm.transition(s.off, s.hit, EV_HIT)
+	fsm.transition(s.hit, s.on, EV_ON)
+	fsm.transition(s.on, s.off, EV_OFF)
+
+	fsm.on_enter(s.off, function()
+		sprite.play_flipbook(SPRITE, ANIM_OFF)
+	end)
+
+	fsm.on_enter(s.hit, function()
+		sprite.play_flipbook(SPRITE, ANIM_HIT)
+		audio.sound(const.AUDIO.TRIGGER)
+		-- start a timer to turn the fire on
+		timer.delay(DELAY_TIME, false, function() 
+			self.fsm.handle_event(EV_ON)
+		end)	
+	end)
+
+	fsm.on_enter(s.on, function()
+		sprite.play_flipbook(SPRITE, ANIM_ON)
+		audio.sound(const.AUDIO.FIRE)
+		-- start a timer to turn on off the fire after a period
+		timer.delay(ON_TIME, false, function() 
+			self.fsm.handle_event(EV_OFF)
+		end)	
+	end)
+
+	fsm.start(s.off)
+	self.fsm = fsm
+	self.states = s
+end
+
+function init(self)
+	setup_fsm(self)
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == const.MSG.COLLISION_RESPONSE then
+		local current_state = self.fsm.current_state()
+		
+		if message.other_group == const.GROUP.PLAYER then
+			if current_state == self.states.off.id then 
+				-- player has triggered the fire
+				self.fsm.handle_event(EV_HIT)
+			elseif current_state == self.states.on.id then
+				msg.post(message.other_id, const.MSG.KILL_PLAYER)
+			end
+		end
+	end
+end
+
