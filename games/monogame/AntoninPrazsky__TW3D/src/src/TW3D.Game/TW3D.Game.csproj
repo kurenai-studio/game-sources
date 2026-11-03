@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <RootNamespace>TW3D</RootNamespace>
+    <AssemblyName>TW3D</AssemblyName>
+    <!-- The icon of the program; the same as the icon of the Android app (src/TW3D.Android/Resources/drawable/icon.png) -->
+    <ApplicationIcon>Icon.ico</ApplicationIcon>
+    <!-- The renderer of Dear ImGui in the level editor copies its vertices by pointers -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The icon of the window: MonoGame loads it from the resource TW3D.Icon.bmp -->
+    <EmbeddedResource Include="Icon.bmp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Models built by the content pipeline into Content/ -->
+    <MonoGameContentReference Include="$(GameContentDir)Content.mgcb" Link="Content\Content.mgcb" OutputFolder="$(MSBuildProjectName)" />
+    <!-- The other shared content (precompiled fonts, levels, the catalog), copied to the output as Content/ -->
+    <None Include="$(GameContentDir)**\*" Exclude="$(ContentPipelineSources)" LinkBase="Content" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Aether.Physics2D DebugView loads its font as "DiagnosticsFont" -->
+    <None Include="..\..\content\Font.xnb" Link="Content\DiagnosticsFont.xnb" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The font of the level editor, read by ImGui from the file (the other .ttf files are sources of the content pipeline) -->
+    <None Include="$(GameContentDir)Fonts\DejaVuSans.ttf" Link="Content\Fonts\DejaVuSans.ttf" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" />
+    <PackageReference Include="MonoGame.Content.Builder.Task" />
+    <PackageReference Include="Aether.Physics2D.MG" />
+    <PackageReference Include="Aether.Physics2D.Diagnostics.MG" />
+    <!-- The user interface of the level editor (Editor/); the Android build leaves the editor out -->
+    <PackageReference Include="ImGui.NET" />
+    <ProjectReference Include="..\TW3D.Shared\TW3D.Shared.csproj" />
+    <!-- Built for the content pipeline, which loads it (content/Content.mgcb) -->
+    <ProjectReference Include="..\..\tools\ContentPipeline\ContentPipeline.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built for the target below, not referenced by the game -->
+    <ProjectReference Include="..\..\tools\CollisionGen\CollisionGen.csproj" ReferenceOutputAssembly="false" OutputItemType="CollisionGenAssembly" />
+  </ItemGroup>
+
+  <!--
+    The collision shapes of the models (content/collision.json) are generated from the models by tools/CollisionGen
+    whenever a model, the catalog or the generator changes. The file is in the repository with the models,
+    the other project (Android) takes it as it is.
+  -->
+  <Target Name="GenerateCollisionShapes" AfterTargets="ResolveProjectReferences" DependsOnTargets="FindCollisionShapeSources"
+          Inputs="@(CollisionShapeSource);@(CollisionGenAssembly)" Outputs="$(GameContentDir)collision.json">
+    <PropertyGroup>
+      <_DotNetHost>$(DOTNET_HOST_PATH)</_DotNetHost>
+      <_DotNetHost Condition="'$(_DotNetHost)' == ''">dotnet</_DotNetHost>
+    </PropertyGroup>
+    <Exec Command="&quot;$(_DotNetHost)&quot; &quot;@(CollisionGenAssembly)&quot; &quot;$(GameContentDir).&quot;" />
+  </Target>
+
+  <Target Name="FindCollisionShapeSources">
+    <ItemGroup>
+      <CollisionShapeSource Include="$(GameContentDir)**\*.obj;$(GameContentDir)catalog.json" Exclude="$(GameContentDir)bin\**;$(GameContentDir)obj\**" />
+    </ItemGroup>
+  </Target>
+
+</Project>

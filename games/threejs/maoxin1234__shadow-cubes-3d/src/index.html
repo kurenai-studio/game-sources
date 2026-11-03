@@ -1,0 +1,1211 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>影立方 3D · 三视图重构谜题</title>
+<style>
+  :root{
+    --bg:#0e1422; --panel:#161f31; --panel2:#1d293f; --line:#2a3950;
+    --text:#e6edf3; --muted:#8aa0b5;
+    --good:#4ade80; --bad:#f87171; --todo:rgba(255,255,255,.16);
+    --accent:#7fe9db; --purple:#7b5cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1200px 700px at 70% -10%, #1a2740 0%, var(--bg) 55%);
+    color:var(--text);
+    font:14px/1.5 "Segoe UI", system-ui, -apple-system, "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{padding:20px 26px 4px}
+  h1{margin:0;font-size:22px;letter-spacing:.5px}
+  h1 .en{color:var(--muted);font-weight:500;font-size:14px;margin-left:8px}
+  .tagline{color:var(--muted);margin-top:4px;max-width:820px}
+  main{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;padding:12px 26px 40px}
+  .card{
+    background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+    border:1px solid var(--line);border-radius:14px;padding:14px 16px;
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+  }
+  .card h2{margin:0 0 10px;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;font-weight:700}
+  .col{display:flex;flex-direction:column;gap:16px}
+
+  .layers{display:flex;flex-direction:column;gap:12px}
+  .layer{display:flex;align-items:center;gap:10px}
+  .layer .lbl{width:74px;color:var(--muted);font-size:12px;text-align:right;line-height:1.25}
+  .layer .lbl b{color:var(--text);font-size:13px}
+  .grid{display:grid;gap:3px;background:rgba(0,0,0,.18);padding:5px;border-radius:8px}
+  .cell{width:22px;height:22px;border-radius:5px;cursor:pointer;background:#26344b;border:1px solid #31425d;transition:background .08s}
+  .cell:hover{background:#33486a}
+  .cell.fill{background:linear-gradient(145deg,#8af0e3,#34a99c);border-color:#9ff3e8;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+
+  /* 3D 场景 */
+  .scene-wrap{position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#0a0f1c}
+  #scene{width:min(56vw,560px);height:430px;display:block}
+  .scene-hud{position:absolute;left:10px;bottom:9px;font-size:11px;color:var(--muted);
+    background:rgba(10,15,28,.55);border:1px solid var(--line);border-radius:8px;padding:5px 9px;line-height:1.5;pointer-events:none}
+  .scene-hud b{color:var(--accent)}
+  .scene-hud.flash{color:#ffd0d0;border-color:rgba(255,130,130,.55);background:rgba(58,20,28,.65);transition:background .15s,border-color .15s,color .15s}
+  .wall-tag{position:absolute;top:9px;right:10px;font-size:11px;color:#9fb0c6;background:rgba(10,15,28,.5);
+    border:1px solid var(--line);border-radius:8px;padding:3px 8px;pointer-events:none}
+  .idle-hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.94);
+    font-size:13px;color:#dff5f0;background:rgba(20,35,46,.72);border:1px solid rgba(127,233,219,.45);
+    border-radius:24px;padding:9px 18px;pointer-events:none;white-space:nowrap;opacity:0;
+    transition:opacity .5s ease, transform .5s ease}
+  .idle-hint.show{opacity:1;transform:translate(-50%,-50%) scale(1);animation:idlepulse 1.8s ease-in-out infinite}
+  @keyframes idlepulse{0%,100%{box-shadow:0 0 0 0 rgba(127,233,219,.35)}50%{box-shadow:0 0 0 10px rgba(127,233,219,0)}}
+
+  .walk-gate{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(8,12,22,.62);backdrop-filter:blur(2px);cursor:pointer;text-align:center}
+  .walk-gate .wg-box{background:rgba(20,28,46,.92);border:1px solid #3b5077;border-radius:12px;padding:16px 22px;max-width:320px}
+  .walk-gate b{color:#cbe9ff;font-size:15px}
+  .walk-gate p{color:var(--muted);font-size:12px;line-height:1.7;margin:8px 0 0}
+  .walk-gate .wg-tip{color:#ffd98a}
+  .wg-warn{color:#ffb37a;font-size:11.5px;line-height:1.6;margin:9px 0 0;padding-top:8px;border-top:1px dashed rgba(255,180,120,.3)}
+  .wg-back{display:block;margin:12px auto 0;background:rgba(123,92,255,.18);border:1px solid rgba(123,92,255,.45);
+    color:#cbb6ff;font-size:11.5px;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .wg-back:hover{background:rgba(123,92,255,.32)}
+  .walk-cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:none;
+    color:rgba(255,255,255,.65);font-size:15px;pointer-events:none;text-shadow:0 0 4px rgba(0,0,0,.6)}
+  body.walkmode .walk-gate.show{display:flex}
+  body.walkmode .walk-cross.show{display:block}
+  body.walkmode .wall-tag, body.walkmode .scene-hud{display:none}
+  .align-toast{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:none;
+    background:linear-gradient(145deg,#7b5cff,#6a48e6);color:#fff;font-weight:600;font-size:12.5px;
+    padding:8px 16px;border-radius:20px;box-shadow:0 6px 22px rgba(123,92,255,.5);white-space:nowrap}
+  .align-toast.show{display:block;animation:pop .35s ease}
+  .align-meter{position:absolute;left:50%;top:13px;transform:translateX(-50%);width:150px;height:7px;
+    border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;opacity:0;transition:opacity .25s;pointer-events:none}
+  .align-meter .am-fill{height:100%;width:0%;background:linear-gradient(90deg,#ffc46b,#ff8a5b);transition:width .12s linear}
+
+  .modebar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .modebar .modelbl{color:var(--muted);font-size:12px;letter-spacing:1px}
+  .seg{background:#1a2638;border:1px solid #33455f;color:var(--muted);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;transition:.1s}
+  .seg.active{background:linear-gradient(145deg,#7b5cff,#9a7bff);border-color:#b9a6ff;color:#fff;font-weight:600;box-shadow:0 0 16px rgba(123,92,255,.35)}
+  .seg:hover{color:var(--text)}
+
+  .controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  button{background:#22304a;color:var(--text);border:1px solid #33455f;border-radius:9px;padding:8px 12px;cursor:pointer;font-size:13px;transition:.1s}
+  button:hover{background:#2c3d5c;border-color:#46618a}
+  button.ghost{background:transparent}
+  select{background:#22304a;color:var(--text);border:1px solid #33455f;border-radius:9px;padding:8px 10px}
+  .meta{margin-top:12px;color:var(--muted);font-size:12.5px;line-height:1.7}
+  .meta b{color:var(--text)}
+
+  .hud{display:none;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;border-radius:10px;
+    background:rgba(123,92,255,.08);border:1px solid rgba(123,92,255,.3)}
+  .hud .hudlbl{color:#cbb6ff;font-size:12px}
+  .hud b{font-size:18px;color:#fff;min-width:14px;text-align:center;display:inline-block}
+  .hud sup{color:#cbb6ff;margin-right:2px}
+  .hud .hudhint{color:var(--muted);font-size:11px;margin-left:auto;max-width:180px;line-height:1.3;text-align:right}
+  #demo{display:none;background:linear-gradient(145deg,#7b5cff,#6a48e6);border-color:#9a7bff;color:#fff;font-weight:600}
+  #walkBtn{display:none;background:linear-gradient(145deg,#7fe9db,#34a99c);border-color:#9ff3e8;color:#06302b;font-weight:600}
+  body.supermode .hud{display:flex}
+  body.supermode #demo{display:inline-block}
+  body.supermode #walkBtn{display:inline-block}
+  body.supermode .scene-wrap{box-shadow:0 0 0 1px rgba(123,92,255,.4)}
+
+  .views{min-width:240px}
+  .viewset{display:flex;gap:18px;flex-wrap:wrap}
+  .view{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .view .name{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .view .name .dot{width:9px;height:9px;border-radius:50%;background:var(--todo);box-shadow:0 0 0 2px rgba(255,255,255,.06)}
+  .view.ok .name .dot{background:var(--good);box-shadow:0 0 8px var(--good)}
+  .view.ok .name b{color:var(--good)}
+  .vgrid{display:grid;gap:2px;background:rgba(0,0,0,.22);padding:4px;border-radius:7px}
+  .vc{width:18px;height:18px;border-radius:3px;background:transparent;border:1px solid transparent}
+  .vc.todo{border-color:var(--todo)}
+  .vc.on{background:var(--good);border-color:#bbf7d0}
+  .vc.bad{background:var(--bad);border-color:#fecaca}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;color:var(--muted);font-size:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .sw{width:13px;height:13px;border-radius:3px;display:inline-block}
+
+  .banner{margin-top:14px;padding:12px 14px;border-radius:10px;display:none;
+    background:linear-gradient(145deg, rgba(74,222,128,.18), rgba(74,222,128,.06));
+    border:1px solid rgba(74,222,128,.5);color:#d7ffe6}
+  .banner.show{display:block;animation:pop .4s ease}
+  @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+  .banner b{color:#fff}
+
+  details{margin:6px 26px 50px;color:var(--muted);max-width:880px}
+  details summary{cursor:pointer;color:var(--text);font-weight:600;padding:6px 0}
+  details p{margin:8px 0}
+  code{background:#0c1322;border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:#bfe9e1}
+  .kbd{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1>影立方 3D<span class="en">Shadow Cubes 3D · 三视图重构谜题</span></h1>
+  <div class="tagline">
+    在真正的 3D 空间里搭立体：<b style="color:var(--text)">左键</b>加方块、<b style="color:var(--text)">右键</b>删、<b style="color:var(--text)">拖动</b>转视角、<b style="color:var(--text)">滚轮</b>缩放。
+    三面墙上是目标的<b style="color:var(--text)">正/侧/俯视图</b>「影子」——让你的立体投影同时对上它们。
+    <div style="margin-top:6px"><b style="color:#cbb6ff">超阈限模式 ✦</b>：相机变成真实透视，<i>近小 / 远大看上去一样</i>（感知即现实）——还能 <b style="color:#7fe9db">🚶 走进场景里</b> 亲自找到那个「严丝合缝」的站位：WASD 漫游 + 一个藏在房间里的对齐谜题。</div>
+  </div>
+</header>
+
+<main>
+  <!-- 左：分层编辑器（精确输入） -->
+  <section class="card">
+    <h2>逐层微调 · Layers</h2>
+    <div class="layers" id="layers"></div>
+    <div class="meta">3D 里搭大形，<br>这里逐格精修。</div>
+  </section>
+
+  <!-- 中：3D 场景 -->
+  <section class="card preview col">
+    <div>
+      <div class="modebar">
+        <span class="modelbl">模式</span>
+        <button id="modeClassic" class="seg active">经典</button>
+        <button id="modeSuper" class="seg">超阈限 ✦</button>
+      </div>
+      <h2 id="viewTitle">三维场景 · 3D Scene</h2>
+      <div class="scene-wrap">
+        <canvas id="scene"></canvas>
+        <div class="wall-tag" id="wallTag">墙面 = 目标三视图「影子」</div>
+        <div class="scene-hud" id="sceneHud">左键<b>加</b> · 右键<b>删</b> · 拖动<b>转</b> · 滚轮<b>缩放</b></div>
+        <div class="idle-hint" id="idleHint">👆 这是活的——拖一拖、点一点试试</div>
+        <div class="walk-gate" id="walkGate">
+          <div class="wg-box">
+            <b>🚶 第一人称漫游</b>
+            <p>点击进入 → 锁定鼠标视角<br><span class="kbd">WASD</span> 走动 · 鼠标 看向 · <span class="kbd">空格</span> 上升 · <span class="kbd">Shift</span> 下降 · <span class="kbd">Esc</span> 退出</p>
+            <p class="wg-tip" id="wgTip"></p>
+            <p class="wg-warn" id="wgWarn" style="display:none"></p>
+            <button class="wg-back" id="wgBack">← 返回超阈限模式</button>
+          </div>
+        </div>
+        <div class="walk-cross" id="walkCross">+</div>
+        <div class="align-meter" id="alignMeter"><div class="am-fill" id="alignBar"></div></div>
+        <div class="align-toast" id="alignToast"></div>
+      </div>
+      <div class="hud">
+        <span class="hudlbl">投放尺寸</span>
+        <button id="kdown" class="seg">－</button>
+        <b id="ksize">1</b><sup>3</sup>
+        <button id="kup" class="seg">＋</button>
+        <span class="hudhint">［ ］改大小 · 越大越「远」· 看「视点」体会强制透视</span>
+      </div>
+      <div class="controls">
+        <button id="orbitBtn">环绕视角</button>
+        <button id="eyeBtn">👁 视点</button>
+        <button id="undoBtn" title="快捷键 Ctrl+Z">↩ 撤销</button>
+        <button id="redoBtn" title="快捷键 Ctrl+Y">↪ 重做</button>
+        <button id="soundBtn" title="切换音效">🔊 音效: 开</button>
+        <button id="clear" class="ghost">清空</button>
+        <button id="reveal">显示一个解</button>
+        <button id="demo">透视演示 ✦</button>
+        <button id="walkBtn">🚶 走进去看看</button>
+      </div>
+      <div class="meta" id="stats"></div>
+    </div>
+    <div>
+      <h2>关卡 · Puzzle</h2>
+      <div class="controls">
+        <select id="levelSel"></select>
+        <button id="nextLevelBtn" style="background:#1d463d;border-color:#2e7967;color:#7fe9db;font-weight:600">下一关 ▶</button>
+        <button id="rnd3">随机 3³</button>
+        <button id="rnd4">随机 4³</button>
+        <button id="shareBtn" title="复制当前立体生成关卡分享链接">📤 分享谜题</button>
+        <button id="importBtn" title="导入关卡代码">📥 导入</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 右：三视图实时状态 -->
+  <section class="card views col">
+    <div>
+      <h2>投影比对 · 实时</h2>
+      <div class="viewset" id="viewset"></div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--good)"></i>已对上</span>
+        <span><i class="sw" style="border:1px solid var(--todo)"></i>还需要</span>
+        <span><i class="sw" style="background:var(--bad)"></i>多余</span>
+      </div>
+    </div>
+    <div class="banner" id="banner"></div>
+  </section>
+</main>
+
+<details>
+  <summary>这道谜题背后的立体几何 + 强制透视（点开）</summary>
+  <p><b>正投影 / 三视图。</b>把立体沿三条坐标轴方向作平行投影，得到正视图（X–Z）、侧视图（Y–Z）、俯视图（X–Y）——本场景里它们就是三面墙上的「影子」。你的任务是搭一个立体，让它的三个投影同时与影子吻合。</p>
+  <p><b>重构不唯一。</b>三视图只记录「每条视线上是否至少有一个方块」，会丢信息——很多不同的立体投出同一组影子。本谜题只要求找到<i>任意一个</i>解。最稠密的解是三个「影柱」的<b>交集</b>（「显示一个解」给的就是它），它往往比原本的立体多出一些「凭空出现」的<b>幽灵方块</b>——它们各自的三个投影都被「别处的方块」凑齐了，自己却从未存在过。<br>想亲眼看这种幽灵？试试关卡<b>「挑战 · 角隅幽灵」</b>：原型只有 24 块、刻意避开了立方体的 8 个顶角，但稠密解会在全部 8 个角上凭空长出方块（24 → 32）——影子说「这里必须有方块」，可现实里它们另有所在。</p>
+  <p><b>超阈限模式 ✦：强制透视 = 投影几何的另一面。</b>灵感来自《Superliminal》的「感知即现实」。切到「👁 视点」，相机沿深度轴看过去——方块的<i>视大小</i>由它到眼睛的距离决定，于是<b>近处的小方块和远处的大方块看上去一样大</b>。这正是三视图的同一种思想：<i>你看到的投影并不能唯一决定真实的几何</i>。<br>光是「看」还不够直观？点击<b>「🚶 走进去看看」</b>亲自走进这个超阈限房间——里面飘着一近一远两个发光方块，找到让它们「严丝合缝」重叠成一个的站位，你就亲手把这句话变成了体验。</p>
+  <p>坐标：<span class="kbd">x</span> 左右 · <span class="kbd">y</span> 纵深 · <span class="kbd">z</span> 高度。</p>
+</details>
+
+<script type="importmap">
+{ "imports": { "three": "./lib/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ===================== 音效系统 (Web Audio API 纯原生合成) ===================== */
+let audioCtx = null;
+let soundEnabled = true;
+
+function initAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playSound(type) {
+  if (!soundEnabled) return;
+  initAudio();
+  if (!audioCtx) return;
+  const now = audioCtx.currentTime;
+
+  if (type === 'add') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(560, now + 0.08);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.start(now); osc.stop(now + 0.09);
+  } else if (type === 'del') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(420, now);
+    osc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.start(now); osc.stop(now + 0.09);
+  } else if (type === 'win') {
+    [523.25, 659.25, 783.99, 1046.50].forEach((f, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      o.connect(g); g.connect(audioCtx.destination);
+      const t = now + i * 0.1;
+      g.gain.setValueAtTime(0.16, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      o.start(t); o.stop(t + 0.56);
+    });
+  } else if (type === 'align') {
+    [440, 554.37, 659.25].forEach(f => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.14, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 1.2);
+      o.start(now); o.stop(now + 1.25);
+    });
+  } else if (type === 'clear') {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(70, now + 0.16);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+    osc.start(now); osc.stop(now + 0.17);
+  }
+}
+
+/* ===================== 数据模型 (12 精品关卡) ===================== */
+const LEVELS = [
+  { name:"01 入门 · 十字塔", W:3,D:3,H:3, cells:[
+    [1,0,0],[0,1,0],[1,1,0],[2,1,0],[1,2,0],[1,1,1],[1,1,2] ]},
+  { name:"02 入门 · 字母 F", W:3,D:3,H:3, cells:[
+    [0,1,0],[0,1,1],[0,1,2],[1,1,2],[2,1,2],[1,1,1] ]},
+  { name:"03 入门 · 舒适王座", W:3,D:3,H:3, gen:(s)=>{
+    for(let x=0;x<3;x++)for(let y=0;y<3;y++) s[0][y][x]=true;
+    for(let z=1;z<3;z++)for(let x=0;x<3;x++) s[z][2][x]=true;
+    s[1][0][0]=s[1][1][0]=s[1][0][2]=s[1][1][2]=true;
+  }},
+  { name:"04 进阶 · 拱门", W:3,D:3,H:3, gen:(s)=>{
+    for(let y=0;y<3;y++) for(const c of [[0,0],[0,1],[0,2],[2,0],[2,1],[2,2],[1,2]]) s[c[1]][y][c[0]]=true; }},
+  { name:"05 进阶 · 空心回字框", W:3,D:3,H:3, gen:(s)=>{
+    for(let z=0;z<3;z++)for(let y=0;y<3;y++)for(let x=0;x<3;x++){
+      let edgeCount = (x===0||x===2?1:0) + (y===0||y===2?1:0) + (z===0||z===2?1:0);
+      if(edgeCount>=2) s[z][y][x]=true;
+    }
+  }},
+  { name:"06 进阶 · 角锥阶梯", W:4,D:4,H:3, gen:(s)=>{
+    for(let z=0;z<3;z++)for(let y=0;y<4;y++)for(let x=0;x<4;x++) if(z<=x&&z<=y) s[z][y][x]=true; }},
+  { name:"07 进阶 · 悬空双天桥", W:4,D:4,H:4, gen:(s)=>{
+    for(let x=0;x<4;x++) s[1][1][x]=true;
+    s[0][1][0]=s[0][1][3]=true;
+    for(let y=0;y<4;y++) s[3][y][2]=true;
+    for(let z=0;z<3;z++){ s[z][0][2]=true; s[z][3][2]=true; }
+  }},
+  { name:"08 进阶 · 螺旋旋转柱", W:4,D:4,H:4, gen:(s)=>{
+    s[0][1][1]=s[0][1][2]=s[1][1][2]=s[1][2][2]=s[2][2][2]=s[2][2][1]=s[3][2][1]=s[3][1][1]=true;
+    s[0][0][0]=s[1][3][0]=s[2][3][3]=s[3][0][3]=true;
+  }},
+  { name:"09 进阶 · 彭罗斯错觉回廊", W:4,D:4,H:4, gen:(s)=>{
+    for(let x=0;x<3;x++) s[0][0][x]=true;
+    for(let y=0;y<3;y++) s[1][y][3]=true;
+    for(let x=1;x<4;x++) s[2][3][x]=true;
+    for(let y=1;y<4;y++) s[3][y][0]=true;
+  }},
+  { name:"10 挑战 · 角隅幽灵", W:4,D:4,H:4, gen:(s)=>{
+    const tri=(cx,cy,cz,sx,sy,sz)=>[[cx+sx,cy,cz],[cx,cy+sy,cz],[cx,cy,cz+sz]];
+    const corners=[[0,0,0,1,1,1],[3,0,0,-1,1,1],[0,3,0,1,-1,1],[0,0,3,1,1,-1],
+                   [3,3,0,-1,-1,1],[3,0,3,-1,1,-1],[0,3,3,1,-1,-1],[3,3,3,-1,-1,-1]];
+    for(const [cx,cy,cz,sx,sy,sz] of corners) for(const [x,y,z] of tri(cx,cy,cz,sx,sy,sz)) s[z][y][x]=true;
+  }},
+  { name:"11 挑战 · 三向对称星", W:4,D:4,H:4, gen:(s)=>{
+    for(let z=1;z<=2;z++)for(let y=1;y<=2;y++)for(let x=1;x<=2;x++) s[z][y][x]=true;
+    s[1][1][0]=s[2][2][3]=s[1][0][1]=s[2][3][2]=s[0][1][2]=s[3][2][1]=true;
+  }},
+  { name:"12 挑战 · 极简几何幻影", W:4,D:4,H:4, cells:[
+    [0,0,0],[1,1,3],[2,3,1],[3,2,2],[3,0,3],[0,3,2]
+  ]}
+];
+
+let W,D,H, grid, target, mode='classic', brushK=1, throws=0;
+let steps=0, levelStartTime=Date.now(), wasWon=false;
+const $ = id=>document.getElementById(id);
+function mat(rows,cols,v=false){return Array.from({length:rows},()=>Array.from({length:cols},()=>v));}
+function empty(W,D,H){return Array.from({length:H},()=>mat(D,W,false));}
+function maxK(){ return Math.max(1, Math.min(4, Math.max(W,D,H))); }
+
+function computeViews(g){
+  const front=mat(H,W), side=mat(H,D), top=mat(D,W);
+  for(let z=0;z<H;z++)for(let y=0;y<D;y++)for(let x=0;x<W;x++)
+    if(g[z][y][x]){ front[z][x]=true; side[z][y]=true; top[y][x]=true; }
+  return {front,side,top};
+}
+function countFilled(g){let n=0;for(let z=0;z<H;z++)for(let y=0;y<D;y++)for(let x=0;x<W;x++)if(g[z][y][x])n++;return n;}
+function maxSolutionCount(){let n=0;for(let z=0;z<H;z++)for(let y=0;y<D;y++)for(let x=0;x<W;x++)
+  if(target.front[z][x]&&target.side[z][y]&&target.top[y][x])n++;return n;}
+
+/* ===================== 关卡载入 ===================== */
+function loadSolid(def){
+  W=def.W; D=def.D; H=def.H;
+  const sol=empty(W,D,H);
+  if(def.gen) def.gen(sol);
+  if(def.cells) for(const [x,y,z] of def.cells) sol[z][y][x]=true;
+  target=computeViews(sol);
+  grid=empty(W,D,H);
+  throws=0; steps=0; wasWon=false; levelStartTime=Date.now();
+  undoStack=[]; redoStack=[];
+  brushK=Math.min(brushK,maxK());
+  buildLayerEditor(); buildViews(); buildStage(); resetOrbit();
+  pushState();
+  renderAll();
+}
+function loadRandom(N){
+  W=D=H=N;
+  let sol;
+  do{ sol=empty(W,D,H); const p=N===3?0.34:0.28;
+      for(let z=0;z<H;z++)for(let y=0;y<D;y++)for(let x=0;x<W;x++) if(Math.random()<p) sol[z][y][x]=true;
+  }while(countFilled(sol)<N);
+  target=computeViews(sol);
+  grid=empty(W,D,H);
+  throws=0; steps=0; wasWon=false; levelStartTime=Date.now();
+  undoStack=[]; redoStack=[];
+  brushK=Math.min(brushK,maxK());
+  buildLayerEditor(); buildViews(); buildStage(); resetOrbit();
+  pushState();
+  renderAll();
+}
+
+/* ===================== 分层编辑器 ===================== */
+let layerCells, dragging=false, paintVal=false;
+function buildLayerEditor(){
+  const root=$("layers"); root.innerHTML="";
+  layerCells=Array.from({length:H},()=>mat(D,W,null));
+  for(let z=H-1; z>=0; z--){
+    const row=document.createElement("div"); row.className="layer";
+    const lbl=document.createElement("div"); lbl.className="lbl";
+    const tag = z===H-1?" · 顶":(z===0?" · 底":"");
+    lbl.innerHTML=`<b>z = ${z}</b><br>第 ${z+1} 层${tag}`;
+    const g=document.createElement("div"); g.className="grid";
+    g.style.gridTemplateColumns=`repeat(${W},22px)`;
+    for(let y=0;y<D;y++)for(let x=0;x<W;x++){
+      const c=document.createElement("div"); c.className="cell";
+      c.addEventListener("mousedown",e=>{ if(e.button!==0)return; e.preventDefault();
+        if(mode==='super'){ placeBlock(x,y,z,true); return; }
+        dragging=true; paintVal=!grid[z][y][x]; setCell(x,y,z,paintVal); });
+      c.addEventListener("mouseover",()=>{ if(mode==='classic'&&dragging) setCell(x,y,z,paintVal); });
+      c.addEventListener("contextmenu",e=>{ e.preventDefault(); setCell(x,y,z,false); });
+      layerCells[z][y][x]=c; g.appendChild(c);
+    }
+    row.appendChild(lbl); row.appendChild(g); root.appendChild(row);
+  }
+}
+window.addEventListener("mouseup",()=>dragging=false);
+
+function setCellRaw(x,y,z,v){
+  if(x<0||y<0||z<0||x>=W||y>=D||z>=H) return false;
+  if(grid[z][y][x]===v) return false;
+  grid[z][y][x]=v; if(layerCells&&layerCells[z]&&layerCells[z][y]&&layerCells[z][y][x]) layerCells[z][y][x].classList.toggle("fill",v); return true;
+}
+function setCell(x,y,z,v){
+  if(setCellRaw(x,y,z,v)){
+    steps++;
+    playSound(v ? 'add' : 'del');
+    pushState();
+    refresh();
+  }
+}
+function placeBlock(cx,cy,cz,v){
+  const k=brushK;
+  const x0=Math.max(0,Math.min(cx,W-k)), y0=Math.max(0,Math.min(cy,D-k)), z0=Math.max(0,Math.min(cz,H-k));
+  let changed=false;
+  for(let z=z0;z<Math.min(H,z0+k);z++)for(let y=y0;y<Math.min(D,y0+k);y++)for(let x=x0;x<Math.min(W,x0+k);x++)
+    if(setCellRaw(x,y,z,v)) changed=true;
+  if(changed){
+    throws++;
+    steps++;
+    playSound(v ? 'add' : 'del');
+    pushState();
+    refresh();
+  }
+}
+
+/* ===================== 撤销 / 重做系统 ===================== */
+let undoStack = [];
+let redoStack = [];
+const MAX_HISTORY = 80;
+
+function pushState() {
+  const snap = grid.map(layer => layer.map(row => row.slice()));
+  undoStack.push(snap);
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  redoStack = [];
+  updateUndoRedoUI();
+}
+
+function undo() {
+  if (undoStack.length <= 1) return;
+  const current = undoStack.pop();
+  redoStack.push(current);
+  const prev = undoStack[undoStack.length - 1];
+  restoreSnapshot(prev);
+  playSound('del');
+  updateUndoRedoUI();
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  const next = redoStack.pop();
+  undoStack.push(next);
+  restoreSnapshot(next);
+  playSound('add');
+  updateUndoRedoUI();
+}
+
+function restoreSnapshot(snap) {
+  for (let z=0; z<H; z++)
+    for (let y=0; y<D; y++)
+      for (let x=0; x<W; x++)
+        setCellRaw(x, y, z, !!snap[z][y][x]);
+  refresh();
+}
+
+function updateUndoRedoUI() {
+  const u = $("undoBtn"), r = $("redoBtn");
+  if (u) { u.disabled = undoStack.length <= 1; u.style.opacity = undoStack.length <= 1 ? '0.45' : '1'; }
+  if (r) { r.disabled = !redoStack.length; r.style.opacity = !redoStack.length ? '0.45' : '1'; }
+}
+
+/* ===================== 关卡编解码与分享 ===================== */
+function serializePuzzle(W, D, H, g) {
+  const bits = [];
+  for (let z=0; z<H; z++) for (let y=0; y<D; y++) for (let x=0; x<W; x++) bits.push(g[z][y][x] ? 1 : 0);
+  const bytes = new Uint8Array(Math.ceil(bits.length / 8));
+  bits.forEach((b, i) => { if (b) bytes[Math.floor(i / 8)] |= (1 << (i % 8)); });
+  let bin = '';
+  bytes.forEach(byte => bin += String.fromCharCode(byte));
+  const b64 = btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${W}_${D}_${H}_${b64}`;
+}
+
+function deserializePuzzle(str) {
+  try {
+    const parts = str.split('_');
+    if (parts.length < 4) return null;
+    const pW = parseInt(parts[0], 10), pD = parseInt(parts[1], 10), pH = parseInt(parts[2], 10);
+    if (isNaN(pW) || isNaN(pD) || isNaN(pH) || pW<1 || pD<1 || pH<1 || pW>8 || pD>8 || pH>8) return null;
+    let b64 = parts[3].replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const cells = [];
+    let bitIdx = 0;
+    for (let z = 0; z < pH; z++) {
+      for (let y = 0; y < pD; y++) {
+        for (let x = 0; x < pW; x++) {
+          const byte = bytes[Math.floor(bitIdx / 8)];
+          if (byte & (1 << (bitIdx % 8))) cells.push([x, y, z]);
+          bitIdx++;
+        }
+      }
+    }
+    return { name: `自定义谜题 (${pW}×${pD}×${pH})`, W: pW, D: pD, H: pH, cells };
+  } catch (err) {
+    return null;
+  }
+}
+
+
+/* ===================== 三视图状态面板 ===================== */
+let viewCells;
+const VIEW_DEFS=[
+  {key:"front", title:"正视图", sub:"X–Z", rows:()=>H, cols:()=>W},
+  {key:"side",  title:"侧视图", sub:"Y–Z", rows:()=>H, cols:()=>D},
+  {key:"top",   title:"俯视图", sub:"X–Y", rows:()=>D, cols:()=>W},
+];
+function buildViews(){
+  const root=$("viewset"); root.innerHTML=""; viewCells={};
+  for(const def of VIEW_DEFS){
+    const rows=def.rows(), cols=def.cols();
+    const wrap=document.createElement("div"); wrap.className="view"; wrap.dataset.key=def.key;
+    const name=document.createElement("div"); name.className="name";
+    name.innerHTML=`<span class="dot"></span><b>${def.title}</b> <span style="opacity:.7">${def.sub}</span>`;
+    const g=document.createElement("div"); g.className="vgrid";
+    g.style.gridTemplateColumns=`repeat(${cols},18px)`;
+    const cells=mat(rows,cols,null);
+    const order = (def.key==="top") ? [...Array(rows).keys()] : Array.from({length:rows},(_,i)=>rows-1-i);
+    for(const r of order) for(let c=0;c<cols;c++){ const cell=document.createElement("div"); cell.className="vc"; cells[r][c]=cell; g.appendChild(cell); }
+    wrap.appendChild(name); wrap.appendChild(g); root.appendChild(wrap);
+    viewCells[def.key]=cells;
+  }
+}
+function renderViews(){
+  const cur=computeViews(grid); let allOk=true;
+  for(const def of VIEW_DEFS){
+    const t=target[def.key], v=cur[def.key], cells=viewCells[def.key]; let ok=true;
+    for(let r=0;r<def.rows();r++)for(let c=0;c<def.cols();c++){
+      const tv=t[r][c], cv=v[r][c];
+      cells[r][c].className="vc"+(tv&&cv?" on":tv&&!cv?" todo":(!tv&&cv?" bad":""));
+      if(tv!==cv) ok=false;
+    }
+    document.querySelector(`.view[data-key="${def.key}"]`).classList.toggle("ok",ok);
+    if(!ok) allOk=false;
+  }
+  if(allOk && !wasWon){
+    wasWon=true;
+    playSound('win');
+    spawnConfetti();
+  } else if(!allOk){
+    wasWon=false;
+  }
+  showBanner(allOk); return allOk;
+}
+function showBanner(win){
+  const b=$("banner");
+  if(!win){ b.classList.remove("show"); return; }
+  const n=countFilled(grid), mx=maxSolutionCount();
+  const elapsedSec = Math.max(1, Math.round((Date.now() - levelStartTime) / 1000));
+  const min = Math.floor(elapsedSec / 60);
+  const sec = elapsedSec % 60;
+  const timeStr = `${min > 0 ? min + '分' : ''}${sec}秒`;
+  let note = n===mx ? "这是方块最多的「稠密解」。"
+    : `你用了 <b>${n}</b> 块（稠密解需 ${mx} 块）—— 同一组影子有多种不同解！`;
+  if(mode==='super') note += ` 投放 <b>${throws}</b> 次。`;
+  b.innerHTML=`✅ <b>完成！</b> 完美重构目标三视图！<br>
+    <div style="font-size:12px;margin:6px 0 9px;color:#bbf7d0;line-height:1.6">
+      ⏱ 用时 <b>${timeStr}</b> &nbsp;·&nbsp; 👣 步数 <b>${steps}</b> 步<br>${note}
+    </div>
+    <button id="bannerNextBtn" style="background:#166534;border:1px solid #4ade80;color:#fff;border-radius:7px;padding:6px 15px;font-size:12.5px;font-weight:600;cursor:pointer">挑战下一关 ▶</button>`;
+  const nextBtn = $("bannerNextBtn");
+  if(nextBtn) nextBtn.onclick = goNextLevel;
+  b.classList.add("show");
+}
+function updateStats(){
+  const elapsedSec = Math.round((Date.now() - levelStartTime) / 1000);
+  const min = Math.floor(elapsedSec / 60);
+  const sec = elapsedSec % 60;
+  const timeStr = `${min > 0 ? min + '分' : ''}${sec}秒`;
+  let s=`网格 <b>${W}×${D}×${H}</b> &nbsp;·&nbsp; 方块 <b>${countFilled(grid)}</b> &nbsp;·&nbsp; 步数 <b>${steps}</b> &nbsp;·&nbsp; 用时 <b>${timeStr}</b>`;
+  if(mode==='super') s+=` &nbsp;·&nbsp; <span style="color:#cbb6ff">投放 <b style="color:#cbb6ff">${throws}</b> 次</span>`;
+  $("stats").innerHTML=s;
+}
+function updateHud(){ const e=$("ksize"); if(e) e.textContent=brushK; }
+function setBrush(k){ brushK=Math.max(1,Math.min(maxK(),k)); updateHud(); updateGhost(); }
+
+const COARSE_POINTER = matchMedia('(pointer:coarse)').matches;
+let hudFlashSeq=0;
+function hudHintHTML(){
+  return COARSE_POINTER
+    ? '轻点<b>加</b> · 长按<b>删</b> · 拖动<b>转</b> · 滚轮<b>缩放</b>'
+    : '左键<b>加</b> · 右键<b>删</b> · 拖动<b>转</b> · 滚轮<b>缩放</b>';
+}
+function flashHud(html){
+  const hud=$("sceneHud"); if(!hud) return;
+  const my=++hudFlashSeq;
+  hud.innerHTML=html; hud.classList.add('flash');
+  setTimeout(()=>{ if(my!==hudFlashSeq) return; hud.innerHTML=hudHintHTML(); hud.classList.remove('flash'); },850);
+}
+
+/* ===================== Three.js 场景 ===================== */
+const canvas=$("scene");
+const renderer=new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0c1220);
+scene.fog=new THREE.Fog(0x0c1220, 22, 55);
+const camera=new THREE.PerspectiveCamera(46, 1.4, 0.1, 200);
+
+scene.add(new THREE.AmbientLight(0xffffff,.5));
+scene.add(new THREE.HemisphereLight(0x9fb4ff,0x202830,.55));
+const dir=new THREE.DirectionalLight(0xffffff,1.05);
+dir.position.set(7,13,9); dir.castShadow=true;
+dir.shadow.mapSize.set(1024,1024);
+Object.assign(dir.shadow.camera,{near:1,far:70,left:-20,right:20,top:20,bottom:-20});
+scene.add(dir);
+
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(120,120),
+  new THREE.MeshStandardMaterial({color:0x10182a, roughness:1, metalness:0}));
+ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+const gridHelp=new THREE.GridHelper(60,60,0x223049,0x18212f); gridHelp.position.y=0.002; scene.add(gridHelp);
+
+// 共享几何/材质
+const cubeGeo=new THREE.BoxGeometry(0.94,0.94,0.94);
+const cubeMat=new THREE.MeshStandardMaterial({color:0x46c2b3, roughness:.45, metalness:.12});
+const edgeGeo=new THREE.EdgesGeometry(cubeGeo);
+const edgeMat=new THREE.LineBasicMaterial({color:0x08171d, transparent:true, opacity:.55});
+const cubeGroup=new THREE.Group(); scene.add(cubeGroup);
+let cubeMeshes=[];
+
+// 悬停虚影
+const ghost=new THREE.Mesh(new THREE.BoxGeometry(1,1,1),
+  new THREE.MeshBasicMaterial({color:0x7fe9db, transparent:true, opacity:.22, depthWrite:false}));
+ghost.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1,1,1)),
+  new THREE.LineBasicMaterial({color:0x7fe9db})));
+ghost.visible=false; scene.add(ghost);
+
+// 通关庆祝粒子 (3D Confetti)
+const confettiGroup=new THREE.Group(); scene.add(confettiGroup);
+let confettiParticles=[];
+function spawnConfetti(){
+  clearConfetti();
+  const colors=[0xffd166, 0x06d6a0, 0x118ab2, 0xef476f, 0x7b5cff, 0x7fe9db, 0xff70a6];
+  const geo=new THREE.PlaneGeometry(0.2, 0.2);
+  for(let i=0; i<85; i++){
+    const mat=new THREE.MeshBasicMaterial({
+      color: colors[Math.floor(Math.random()*colors.length)],
+      side: THREE.DoubleSide
+    });
+    const p=new THREE.Mesh(geo, mat);
+    p.position.set((Math.random()-0.5)*W*0.9, H*0.35 + Math.random()*0.6, (Math.random()-0.5)*D*0.9);
+    const ang=Math.random()*Math.PI*2;
+    const spd=2 + Math.random()*4;
+    p.userData={
+      vx: Math.cos(ang)*spd*0.75,
+      vy: 4.5 + Math.random()*4,
+      vz: Math.sin(ang)*spd*0.75,
+      rx: (Math.random()-0.5)*12,
+      ry: (Math.random()-0.5)*12,
+      rz: (Math.random()-0.5)*12,
+      life: 1.0,
+      decay: 0.28 + Math.random()*0.2
+    };
+    confettiGroup.add(p); confettiParticles.push(p);
+  }
+}
+function updateConfetti(dt){
+  if(!confettiParticles.length) return;
+  for(let i=confettiParticles.length-1; i>=0; i--){
+    const p=confettiParticles[i], u=p.userData;
+    p.position.x += u.vx*dt; p.position.y += u.vy*dt; p.position.z += u.vz*dt;
+    u.vy -= 9.5*dt;
+    p.rotation.x += u.rx*dt; p.rotation.y += u.ry*dt; p.rotation.z += u.rz*dt;
+    u.life -= u.decay*dt;
+    if(u.life<=0 || p.position.y<-0.3){
+      confettiGroup.remove(p);
+      p.geometry.dispose(); p.material.dispose();
+      confettiParticles.splice(i, 1);
+    }
+  }
+}
+function clearConfetti(){
+  while(confettiGroup.children.length){
+    const p=confettiGroup.children[0];
+    confettiGroup.remove(p);
+    p.geometry&&p.geometry.dispose(); p.material&&p.material.dispose();
+  }
+  confettiParticles=[];
+}
+
+// 笼子 + 影子墙（随关卡重建）
+let ox=0, oz=0, cage=null, walls=[];
+const wx=x=>x+0.5+ox, wy=z=>z+0.5, wz=y=>y+0.5+oz;
+
+function disposeObj(o){ if(!o) return; o.geometry&&o.geometry.dispose&&o.geometry.dispose();
+  if(o.material){ if(o.material.map) o.material.map.dispose(); o.material.dispose&&o.material.dispose(); } }
+
+function makeViewTexture(def){
+  // 在 canvas 上画目标剪影（暗色半透明 = 影子）
+  const t=target[def.key], rows=def.rows(), cols=def.cols(), CELL=46;
+  const cv=document.createElement("canvas"); cv.width=cols*CELL; cv.height=rows*CELL;
+  const c=cv.getContext("2d");
+  for(let r=0;r<rows;r++)for(let cc=0;cc<cols;cc++){
+    // 把数据(r,c)映射到画布行列（与墙面朝向匹配）
+    let rr, ccx, on;
+    if(def.key==="front"){ on=t[/*z*/rows-1-r][/*x*/cc]; rr=r; ccx=cc; }       // row顶= z=H-1
+    else if(def.key==="side"){ on=t[/*z*/rows-1-r][/*y*/cols-1-cc]; rr=r; ccx=cc; }
+    else { on=t[/*y*/r][/*x*/cc]; rr=r; ccx=cc; }                               // top: row=y
+    c.fillStyle = on ? "rgba(10,16,28,.92)" : "rgba(120,140,170,.05)";
+    c.fillRect(ccx*CELL+1, rr*CELL+1, CELL-2, CELL-2);
+  }
+  const tex=new THREE.CanvasTexture(cv); tex.colorSpace=THREE.SRGBColorSpace;
+  tex.magFilter=THREE.NearestFilter; tex.minFilter=THREE.LinearFilter;
+  return tex;
+}
+function makeWall(def, geo, pos, rotY=0, rotX=0){
+  const m=new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map:makeViewTexture(def),
+    transparent:true, side:THREE.DoubleSide, depthWrite:false}));
+  m.position.copy(pos); m.rotation.y=rotY; m.rotation.x=rotX; scene.add(m); walls.push(m); return m;
+}
+function buildStage(){
+  clearConfetti();
+  ox=-W/2; oz=-D/2;
+  if(cage){ scene.remove(cage); disposeObj(cage); }
+  cage=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(W,H,D)),
+    new THREE.LineBasicMaterial({color:0x35507a, transparent:true, opacity:.7}));
+  cage.position.set(0,H/2,0); scene.add(cage);
+  for(const w of walls){ scene.remove(w); disposeObj(w); } walls=[];
+  makeWall(VIEW_DEFS[0], new THREE.PlaneGeometry(W,H), new THREE.Vector3(0,H/2,oz-0.02));            // 后墙=正视图
+  makeWall(VIEW_DEFS[1], new THREE.PlaneGeometry(D,H), new THREE.Vector3(ox-0.02,H/2,0), Math.PI/2); // 左墙=侧视图
+  makeWall(VIEW_DEFS[2], new THREE.PlaneGeometry(W,D), new THREE.Vector3(0,0.02,0), 0, -Math.PI/2);  // 地面=俯视图
+  if(mode==='walk'){ walk.pos.set(ox+W/2, EYE_H, oz+D+2.1); setupAlignPuzzle(); }  // 换关卡→笼子坐标变了，原地重生+重建对齐谜题
+}
+
+function sync3D(){
+  while(cubeGroup.children.length) cubeGroup.remove(cubeGroup.children[0]);
+  cubeMeshes=[];
+  for(let z=0;z<H;z++)for(let y=0;y<D;y++)for(let x=0;x<W;x++) if(grid[z][y][x]){
+    const m=new THREE.Mesh(cubeGeo, cubeMat);
+    m.position.set(wx(x),wy(z),wz(y)); m.castShadow=true; m.receiveShadow=true; m.userData={x,y,z};
+    m.add(new THREE.LineSegments(edgeGeo, edgeMat));
+    cubeGroup.add(m); cubeMeshes.push(m);
+  }
+  updateGhost();
+}
+
+/* ----- 相机环绕 ----- */
+let az=Math.PI*0.28, pol=1.0, rad=14;
+const orbitTarget=new THREE.Vector3(0,2,0);
+function setSceneTitle(t){ const e=$("viewTitle"); if(e) e.textContent='三维场景 · '+t; }
+function resetOrbit(){ az=Math.PI*0.28; pol=1.0; rad=Math.max(W,D,H)*1.9+6; orbitTarget.set(0,H*0.45,0);
+  setSceneTitle(mode==='super'?'上帝视角（真实）':'3D Scene'); }
+function eyeView(){ az=Math.PI/2; pol=1.5; rad=Math.max(W,D,H)*1.6+5; orbitTarget.set(0,H*0.45,0);
+  setSceneTitle('👁 视点（感知）'); }
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ----- 第一人称漫游 ----- */
+const walk={ pos:new THREE.Vector3(0,1.7,0), yaw:Math.PI, pitch:-0.08, locked:false,
+  keys:Object.create(null), align:null, alignT:0 };
+const WALK_SPEED=4.2, EYE_H=1.7;
+function walkBounds(){ // 房间略大于关卡笼子，留出行走空间
+  const pad=2.4;
+  return { x0:ox-pad, x1:ox+W+pad, z0:oz-pad, z1:oz+D+pad, y0:0.4, y1:H+2.4 };
+}
+function enterWalk(){
+  walk.pos.set(ox+W/2, EYE_H, oz+D+2.1);
+  walk.yaw=Math.PI; walk.pitch=-0.05;
+  setupAlignPuzzle();
+  setSceneTitle('🚶 第一人称漫游');
+  $("walkGate").classList.add('show');
+  $("wgTip").textContent='提示：房间里漂着两个发光方块——一近一小、一远一大。走一走、转一转，找到让它们「严丝合缝」重叠的那个角度。';
+}
+function exitWalk(){ walk.locked=false; $("walkGate").classList.add('show'); $("walkCross").classList.remove('show');
+  if(document.pointerLockElement===canvas) document.exitPointerLock(); }
+
+/* ----- 强制透视对齐谜题（仅第一人称里出现） ----- */
+let alignGroup=null, alignSpec=null, alignHot=0, alignDone=false;
+function teardownAlignPuzzle(){
+  if(alignGroup){ scene.remove(alignGroup); alignGroup.traverse(o=>{ if(o.isMesh){ o.geometry.dispose(); o.material.dispose(); } }); alignGroup=null; }
+  alignSpec=null; alignDone=false; alignHot=0; setAlignMeter(0);
+}
+function setupAlignPuzzle(){
+  teardownAlignPuzzle();
+  const sn=1, sf=3, dn=4.6, df=dn*(sf/sn);                 // 体积边长 1:3 → 视大小相等需 距离比 1:3（精确）
+  const E0=new THREE.Vector3(ox+W+1.6, EYE_H, oz+D/2);     // 唯一精确对齐点：紧贴笼子敞开的右侧
+  const dir=new THREE.Vector3(1,0,0);                       // 向外远眺，视线不穿过笼子（不受搭建状态影响）
+  const nearPos=E0.clone().addScaledVector(dir,dn);
+  const farPos =E0.clone().addScaledVector(dir,df);
+  alignGroup=new THREE.Group();
+  const mk=(s,pos,c)=>{
+    const m=new THREE.Mesh(new THREE.BoxGeometry(s,s,s),
+      new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.5,roughness:.4}));
+    m.position.copy(pos); m.castShadow=true; m.receiveShadow=true;
+    m.add(new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry),
+      new THREE.LineBasicMaterial({color:0xfff1d9,transparent:true,opacity:.55})));
+    alignGroup.add(m); return m;
+  };
+  const near=mk(sn,nearPos,0xffc46b), far=mk(sf,farPos,0xff8a5b);
+  scene.add(alignGroup);
+  alignSpec={near,far,sn,sf};
+}
+function alignScoreAt(E){
+  if(!alignSpec) return null;
+  const {near,far,sn,sf}=alignSpec;
+  const en=near.position.clone().sub(E), ef=far.position.clone().sub(E);
+  const dn=en.length(), df=ef.length();
+  if(dn<0.05||df<0.05) return null;
+  const ang=en.clone().normalize().angleTo(ef.clone().normalize());
+  const ratio=(sn/dn)/(sf/df);                              // =1 时视大小完全相等
+  const angScore =clamp(1-ang/0.11, 0,1);
+  const sizeScore=clamp(1-Math.abs(ratio-1)/0.18, 0,1);
+  return {ang, ratio, dn, df, angScore, sizeScore, score:angScore*sizeScore};
+}
+function checkAlignment(){
+  if(!alignSpec || alignDone) return;
+  const r=alignScoreAt(camera.position);
+  if(!r) return;
+  setAlignMeter(r.score);
+  if(r.score>0.92){ alignHot+=1/60; if(alignHot>0.35) fireAlignDiscovery(); }
+  else alignHot=Math.max(0,alignHot-1/45);
+}
+function setAlignMeter(v){
+  const wrap=$("alignMeter"); if(!wrap) return;
+  wrap.style.opacity = (mode==='walk' && alignSpec && !alignDone) ? Math.max(.3,v) : 0;
+  const bar=$("alignBar"); if(bar) bar.style.width=(v*100).toFixed(0)+'%';
+}
+function fireAlignDiscovery(){
+  alignDone=true; setAlignMeter(1);
+  playSound('align');
+  const t=$("alignToast");
+  t.textContent='✨ 完美对齐 — 近 1³ 与 远 3³，此刻分毫不差：这正是「感知即现实」';
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3800);
+  [alignSpec.near,alignSpec.far].forEach(m=>m.material.emissiveIntensity=1.6);
+  setTimeout(()=>{ if(alignSpec){alignSpec.near.material.emissiveIntensity=.5; alignSpec.far.material.emissiveIntensity=.5;} },1000);
+}
+let lockWarned=false;
+function lockUnsupported(){
+  if(lockWarned) return; lockWarned=true;
+  const w=$("wgWarn");
+  if(w){ w.textContent='⚠️ 这个设备/浏览器似乎不支持「鼠标指针锁定」（触屏设备上常见）——第一人称漫游可能无法进入。建议换用桌面浏览器 + 鼠标来体验这个模式。';
+    w.style.display='block'; }
+}
+function tryEnterLock(){
+  if(mode!=='walk' || walk.locked) return;
+  if(!canvas.requestPointerLock){ lockUnsupported(); return; }
+  try{ const r=canvas.requestPointerLock(); if(r && typeof r.catch==='function') r.catch(lockUnsupported); }
+  catch(err){ lockUnsupported(); }
+}
+canvas.addEventListener('click',tryEnterLock);
+$("walkGate").addEventListener('click',tryEnterLock);
+$("wgBack").addEventListener('click',e=>{ e.stopPropagation(); switchMode('super'); });
+document.addEventListener('pointerlockerror',lockUnsupported);
+document.addEventListener('pointerlockchange',()=>{
+  walk.locked = document.pointerLockElement===canvas;
+  $("walkGate").classList.toggle('show', mode==='walk' && !walk.locked);
+  $("walkCross").classList.toggle('show', mode==='walk' && walk.locked);
+});
+document.addEventListener('mousemove',e=>{
+  if(!walk.locked) return;
+  walk.yaw   -= e.movementX*0.0024;
+  walk.pitch  = clamp(walk.pitch - e.movementY*0.0024, -1.45, 1.45);
+});
+window.addEventListener('keydown',e=>{
+  if(mode!=='walk') return;
+  walk.keys[e.code]=true;
+  if(e.code==='Escape') exitWalk();
+});
+window.addEventListener('keyup',e=>{ walk.keys[e.code]=false; });
+function stepWalk(dt){
+  if(!walk.locked) return;
+  const f=new THREE.Vector3(Math.sin(walk.yaw),0,Math.cos(walk.yaw));      // 朝向（水平投影）
+  const r=new THREE.Vector3(f.z,0,-f.x);                                   // 右手方向
+  const mv=new THREE.Vector3();
+  if(walk.keys['KeyW']||walk.keys['ArrowUp'])    mv.add(f);
+  if(walk.keys['KeyS']||walk.keys['ArrowDown'])  mv.sub(f);
+  if(walk.keys['KeyD']||walk.keys['ArrowRight']) mv.sub(r);
+  if(walk.keys['KeyA']||walk.keys['ArrowLeft'])  mv.add(r);
+  if(mv.lengthSq()>0){ mv.normalize().multiplyScalar(WALK_SPEED*dt); walk.pos.add(mv); }
+  let dy=0;
+  if(walk.keys['Space']) dy+=1;
+  if(walk.keys['ShiftLeft']||walk.keys['ShiftRight']) dy-=1;
+  walk.pos.y += dy*WALK_SPEED*0.7*dt;
+  const b=walkBounds();
+  walk.pos.x=clamp(walk.pos.x,b.x0,b.x1); walk.pos.z=clamp(walk.pos.z,b.z0,b.z1); walk.pos.y=clamp(walk.pos.y,b.y0,b.y1);
+  camera.position.copy(walk.pos);
+  const look=new THREE.Vector3(walk.pos.x+Math.sin(walk.yaw)*Math.cos(walk.pitch),
+    walk.pos.y+Math.sin(walk.pitch), walk.pos.z+Math.cos(walk.yaw)*Math.cos(walk.pitch));
+  camera.lookAt(look);
+  checkAlignment();
+}
+
+/* ----- 拾取与建造 ----- */
+const raycaster=new THREE.Raycaster(); const ndc=new THREE.Vector2();
+let hoverAdd=null, hoverRemove=null, down=null;
+function setNDC(e){ const r=canvas.getBoundingClientRect();
+  ndc.x=((e.clientX-r.left)/r.width)*2-1; ndc.y=-(((e.clientY-r.top)/r.height)*2-1); }
+function hover(){
+  raycaster.setFromCamera(ndc,camera);
+  const hits=raycaster.intersectObjects(cubeMeshes.concat(ground), false);
+  hoverAdd=null; hoverRemove=null;
+  if(hits.length){
+    const h=hits[0];
+    if(h.object===ground){
+      const gx=Math.floor(h.point.x-ox), gy=Math.floor(h.point.z-oz);
+      if(gx>=0&&gx<W&&gy>=0&&gy<D) hoverAdd={x:gx,y:gy,z:0};
+    }else{
+      const {x,y,z}=h.object.userData; hoverRemove={x,y,z};
+      const n=h.face.normal; let dx=0,dy=0,dz=0;
+      if(Math.abs(n.x)>0.5) dx=Math.sign(n.x);
+      else if(Math.abs(n.y)>0.5) dz=Math.sign(n.y);   // 世界 +Y = 高度 z
+      else dy=Math.sign(n.z);                          // 世界 +Z = 纵深 y
+      const nx=x+dx, ny=y+dy, nz=z+dz;
+      if(nx>=0&&nx<W&&ny>=0&&ny<D&&nz>=0&&nz<H) hoverAdd={x:nx,y:ny,z:nz};
+    }
+  }
+  updateGhost();
+}
+function updateGhost(){
+  if(!hoverAdd){ ghost.visible=false; return; }
+  const k=(mode==='super')?brushK:1;
+  const x0=Math.max(0,Math.min(hoverAdd.x,W-k)), y0=Math.max(0,Math.min(hoverAdd.y,D-k)), z0=Math.max(0,Math.min(hoverAdd.z,H-k));
+  ghost.position.set(x0+k/2+ox, z0+k/2, y0+k/2+oz);
+  ghost.scale.set(k*0.98,k*0.98,k*0.98); ghost.visible=true;
+}
+function doAdd(){ if(!hoverAdd) return;
+  if(mode==='super') placeBlock(hoverAdd.x,hoverAdd.y,hoverAdd.z,true);
+  else setCell(hoverAdd.x,hoverAdd.y,hoverAdd.z,true); }
+function doRemove(){ if(hoverRemove) setCell(hoverRemove.x,hoverRemove.y,hoverRemove.z,false); }
+
+canvas.addEventListener('pointerdown',e=>{
+  if(mode==='walk') return;
+  markInteracted();
+  canvas.setPointerCapture(e.pointerId);
+  down={x:e.clientX,y:e.clientY,button:e.button,moved:false,fired:false,timer:null,az,pol};
+  if(e.button===2){ setNDC(e); hover(); doRemove(); }
+  else if(e.button===0 && e.pointerType!=='mouse'){
+    // 触屏 / 触控笔没有「右键」——长按 = 删除，弥补缺失的删除手势
+    const px=e.clientX, py=e.clientY;
+    down.timer=setTimeout(()=>{
+      down.timer=null;
+      if(!down||down.moved||down.fired) return;
+      setNDC({clientX:px,clientY:py}); hover();
+      if(hoverRemove){ doRemove(); down.fired=true; flashHud('🗑 长按已删除一个方块'); }
+    },480);
+  }
+});
+canvas.addEventListener('pointermove',e=>{
+  if(mode==='walk') return;
+  setNDC(e);
+  if(down && (e.buttons&1)){
+    const dx=e.clientX-down.x, dy=e.clientY-down.y;
+    if(Math.abs(dx)+Math.abs(dy)>3){
+      down.moved=true;
+      if(down.timer){ clearTimeout(down.timer); down.timer=null; }
+    }
+    az=down.az - dx*0.01; pol=clamp(down.pol - dy*0.01, .12, 1.5);
+  }
+  hover();
+});
+canvas.addEventListener('pointerup',e=>{
+  if(mode==='walk') return;
+  if(down){
+    if(down.timer){ clearTimeout(down.timer); down.timer=null; }
+    if(e.button===0 && !down.moved && !down.fired){ setNDC(e); hover(); doAdd(); }
+  }
+  down=null;
+});
+canvas.addEventListener('pointercancel',()=>{
+  if(down && down.timer){ clearTimeout(down.timer); down.timer=null; }
+  down=null;
+});
+canvas.addEventListener('contextmenu',e=>e.preventDefault());
+canvas.addEventListener('wheel',e=>{ if(mode==='walk') return; markInteracted(); e.preventDefault(); rad=clamp(rad*(e.deltaY>0?1.1:0.9),4,90); }, {passive:false});
+
+/* ----- 首次引导：场景静止得太像一张图，用缓慢自转 + 提示「邀请」玩家动手 ----- */
+let everInteracted=false, idleSpin=0;
+function markInteracted(){
+  if(everInteracted) return;
+  everInteracted=true;
+  const hint=$("idleHint"); if(hint) hint.classList.remove('show');
+}
+setTimeout(()=>{ if(!everInteracted){ const h=$("idleHint"); if(h) h.classList.add('show'); } }, 1400);
+
+/* ----- 渲染循环 + 自适应 ----- */
+function resize(){
+  const r=canvas.getBoundingClientRect();
+  if(r.width<2||r.height<2) return;
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect=r.width/r.height; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(canvas);
+let lastTick=performance.now();
+function tick(now){
+  requestAnimationFrame(tick);
+  const dt=Math.min(0.05, ((now||performance.now())-lastTick)/1000); lastTick=now||performance.now();
+  if(mode==='walk'){
+    stepWalk(dt);
+  }else{
+    let useAz=az;
+    if(!everInteracted && !down){                 // 没人碰过场景——缓缓自转，暗示「这是活的、能转」
+      idleSpin += dt*0.16; useAz = az + idleSpin;
+    }
+    camera.position.set(
+      orbitTarget.x + rad*Math.sin(pol)*Math.cos(useAz),
+      orbitTarget.y + rad*Math.cos(pol),
+      orbitTarget.z + rad*Math.sin(pol)*Math.sin(useAz));
+    camera.lookAt(orbitTarget);
+  }
+  updateConfetti(dt);
+  renderer.render(scene,camera);
+}
+
+/* ===================== 渲染汇总 ===================== */
+function renderLayers(){ for(let z=0;z<H;z++)for(let y=0;y<D;y++)for(let x=0;x<W;x++)
+  layerCells[z][y][x].classList.toggle("fill",!!grid[z][y][x]); }
+function refresh(){ renderViews(); sync3D(); updateStats(); updateHud(); }
+function renderAll(){ renderLayers(); refresh(); }
+
+/* ===================== 模式 / 演示 ===================== */
+function switchMode(m){
+  const prev=mode;
+  mode=m;
+  markInteracted();   // 主动换模式＝已经明白这是可交互的——收起「试试看」提示
+  document.body.classList.toggle('supermode', m==='super');
+  document.body.classList.toggle('walkmode', m==='walk');
+  $("modeClassic").classList.toggle('active', m==='classic');
+  $("modeSuper").classList.toggle('active', m==='super');
+  if(prev==='walk' && m!=='walk'){ exitWalk(); $("walkGate").classList.remove('show'); teardownAlignPuzzle(); }
+  if(m==='super'){ camera.fov=46; camera.updateProjectionMatrix(); eyeView(); }
+  else if(m==='walk'){ camera.fov=74; camera.updateProjectionMatrix(); hoverAdd=hoverRemove=null; ghost.visible=false; enterWalk(); }
+  else { camera.fov=46; camera.updateProjectionMatrix(); setSceneTitle('3D Scene'); }
+  setBrush(brushK); refresh();
+}
+function dropDemo(){
+  // 精确「等视大小」演示：相机在 Z=8.5，小方块中心 Z=4.5(距4)，大方块中心 Z=-3.5(距12)
+  // 1/4 == 3/12 ⇒ 近 1³ 与 远 3³ 在视点里视大小完全相等
+  switchMode('super');
+  W=6; D=10; H=6; grid=empty(W,D,H); throws=2;
+  for(let z=1;z<4;z++)for(let y=0;y<3;y++)for(let x=2;x<5;x++) grid[z][y][x]=true;   // 远·大 3³ 中心(0.5,2.5,-3.5)
+  grid[2][9][3]=true;                                                                // 近·小 1³ 中心(0.5,2.5, 4.5)
+  target=computeViews(grid);
+  brushK=Math.min(brushK,maxK());
+  buildLayerEditor(); buildViews(); buildStage();
+  orbitTarget.set(0.5,2.5,0); az=Math.PI/2; pol=1.5; rad=8.5;                          // 精确视点相机
+  setSceneTitle('👁 视点（感知）— 近 1³ 与 远 3³ 等大');
+  renderAll();
+}
+
+function goNextLevel(){
+  const sel=$("levelSel");
+  const nextIdx=(+sel.value+1)%LEVELS.length;
+  sel.value=nextIdx;
+  loadSolid(LEVELS[nextIdx]);
+}
+
+/* ===================== 事件绑定 ===================== */
+$("clear").onclick=()=>{ grid=empty(W,D,H); throws=0; steps++; playSound('clear'); pushState(); renderAll(); };
+$("reveal").onclick=()=>{ for(let z=0;z<H;z++)for(let y=0;y<D;y++)for(let x=0;x<W;x++)
+  grid[z][y][x]=target.front[z][x]&&target.side[z][y]&&target.top[y][x]; steps++; playSound('add'); pushState(); renderAll(); };
+$("orbitBtn").onclick=resetOrbit;
+$("eyeBtn").onclick=eyeView;
+$("undoBtn").onclick=undo;
+$("redoBtn").onclick=redo;
+$("nextLevelBtn").onclick=goNextLevel;
+$("soundBtn").onclick=()=>{
+  soundEnabled=!soundEnabled;
+  $("soundBtn").textContent=soundEnabled?'🔊 音效: 开':'🔇 音效: 关';
+  if(soundEnabled) playSound('add');
+};
+$("shareBtn").onclick=()=>{
+  const code=serializePuzzle(W,D,H,grid);
+  const shareUrl=`${window.location.origin}${window.location.pathname}#puzzle=${code}`;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(shareUrl).then(()=>{
+      alert(`🎉 谜题链接已成功复制到剪贴板！\n\n您可以将链接分享给好友：\n${shareUrl}\n\n关卡代码：${code}`);
+    }).catch(()=>{ prompt('请复制关卡代码或链接：', shareUrl); });
+  } else {
+    prompt('请复制关卡代码或链接：', shareUrl);
+  }
+};
+$("importBtn").onclick=()=>{
+  const input=prompt('请输入关卡代码（如 3_3_3_xxx）或包含 #puzzle= 的分享链接：');
+  if(!input) return;
+  let code=input.trim();
+  const match=code.match(/#puzzle=([^&]+)/);
+  if(match) code=match[1];
+  const parsed=deserializePuzzle(code);
+  if(parsed){
+    loadSolid(parsed);
+    flashHud('📥 成功载入自建谜题！');
+  } else {
+    alert('⚠️ 无法解析该关卡代码，请检查格式是否正确。');
+  }
+};
+$("rnd3").onclick=()=>loadRandom(3);
+$("rnd4").onclick=()=>loadRandom(4);
+$("modeClassic").onclick=()=>switchMode('classic');
+$("modeSuper").onclick=()=>switchMode('super');
+$("walkBtn").onclick=()=>switchMode('walk');
+$("kup").onclick=()=>setBrush(brushK+1);
+$("kdown").onclick=()=>setBrush(brushK-1);
+$("demo").onclick=dropDemo;
+
+window.addEventListener('keydown',e=>{
+  if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')) return;
+  if((e.ctrlKey||e.metaKey)&&(e.key==='z'||e.key==='Z')){
+    e.preventDefault();
+    if(e.shiftKey) redo(); else undo();
+  } else if((e.ctrlKey||e.metaKey)&&(e.key==='y'||e.key==='Y')){
+    e.preventDefault(); redo();
+  }
+  if(mode!=='super')return;
+  if(e.key===']'||e.key==='+'||e.key==='=') setBrush(brushK+1);
+  else if(e.key==='['||e.key==='-'||e.key==='_') setBrush(brushK-1);
+});
+
+const sel=$("levelSel");
+LEVELS.forEach((l,i)=>{const o=document.createElement("option");o.value=i;o.textContent=l.name;sel.appendChild(o);});
+sel.onchange=()=>loadSolid(LEVELS[+sel.value]);
+
+/* ===================== 启动 ===================== */
+{ const hud=$("sceneHud"); if(hud) hud.innerHTML=hudHintHTML(); }
+function checkHashLevel(){
+  if(window.location.hash.startsWith('#puzzle=')){
+    const raw=window.location.hash.slice(8);
+    const parsed=deserializePuzzle(raw);
+    if(parsed){
+      loadSolid(parsed);
+      flashHud('📥 已载入分享谜题！');
+      return true;
+    }
+  }
+  return false;
+}
+if(!checkHashLevel()){
+  loadSolid(LEVELS[0]);
+}
+resize(); tick();
+
+// 暴露给自测（仅调试用）
+window.__SC={get grid(){return grid;}, get W(){return W;}, get D(){return D;}, get H(){return H;},
+  get cubes(){return cubeMeshes.length;}, get mode(){return mode;}, get throws(){return throws;},
+  computeViews:()=>computeViews(grid),
+  get walk(){return {pos:walk.pos.toArray(), yaw:walk.yaw, pitch:walk.pitch, locked:walk.locked};},
+  get camPos(){return camera.position.toArray();},
+  get everInteracted(){return everInteracted;},
+  get align(){ if(!alignSpec) return null; return {near:alignSpec.near.position.toArray(), sn:alignSpec.sn,
+    far:alignSpec.far.position.toArray(), sf:alignSpec.sf, done:alignDone}; },
+  alignScoreAt:(x,y,z)=>alignScoreAt(new THREE.Vector3(x,y,z)),
+  setWalkPose:(x,y,z,yaw,pitch)=>{ walk.pos.set(x,y,z); if(yaw!==undefined)walk.yaw=yaw; if(pitch!==undefined)walk.pitch=pitch;
+    camera.position.copy(walk.pos); const look=new THREE.Vector3(walk.pos.x+Math.sin(walk.yaw)*Math.cos(walk.pitch),
+    walk.pos.y+Math.sin(walk.pitch), walk.pos.z+Math.cos(walk.yaw)*Math.cos(walk.pitch)); camera.lookAt(look);
+    checkAlignment(); },
+  forceLocked:(v)=>{ walk.locked=v; },
+  fireDiscoveryNow:()=>fireAlignDiscovery(),
+};
+</script>
+</body>
+</html>
