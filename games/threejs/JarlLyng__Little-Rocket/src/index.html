@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="A tiny browser game about flying a small ship through the long dark. No score, no fail state — just stars, planets, and the slow procession of distance.">
+
+  <link rel="canonical" href="https://littlerocket.iamjarl.com/">
+
+  <meta property="og:title" content="Little Rocket">
+  <meta property="og:description" content="A tiny browser game about flying a small ship through the long dark. No score, no fail state — just stars, planets, and the slow procession of distance.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://littlerocket.iamjarl.com/">
+  <meta property="og:image" content="https://littlerocket.iamjarl.com/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Little Rocket — a small ship in the long dark">
+  <meta property="og:site_name" content="Little Rocket">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Little Rocket">
+  <meta name="twitter:description" content="A tiny browser game about flying a small ship through the long dark.">
+  <meta name="twitter:image" content="https://littlerocket.iamjarl.com/og-image.png">
+
+  <title>Little Rocket — A meditative browser space game</title>
+
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="vendor/iamjarl-tokens.css">
+  <link rel="stylesheet" href="styles/main.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Little Rocket",
+    "description": "A tiny browser game about flying a small ship through the long dark. No score, no fail state — just stars, planets, and the slow procession of distance.",
+    "url": "https://littlerocket.iamjarl.com/",
+    "image": "https://littlerocket.iamjarl.com/og-image.png",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Web Browser",
+    "genre": ["Casual", "Atmospheric", "Space"],
+    "inLanguage": "en",
+    "author": {
+      "@type": "Person",
+      "name": "Jarl Lyng",
+      "url": "https://iamjarl.com/"
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "Jarl Lyng",
+      "url": "https://iamjarl.com/"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js" } }
+  </script>
+
+  <!-- Umami: privacy-friendly analytics, no cookies, self-hosted -->
+  <script defer src="https://umami-iamjarl.vercel.app/script.js" data-website-id="e87f6fc4-7990-41bf-9f42-317caa56c993"></script>
+</head>
+<body>
+  <div id="start" class="overlay">
+    <h1>LITTLE ROCKET</h1>
+    <p class="intro-text">
+      A small ship in the long dark. The engines hum, and somewhere ahead, a star you have not named is waiting.
+    </p>
+    <p class="intro-stat" id="collective-stat" hidden></p>
+    <p class="intro-stat" id="farthest-stat" hidden></p>
+    <p class="hint hint--desktop">
+      Arrows = steer · W/S = throttle · Q/E = roll · Mouse = look · H = hide UI
+    </p>
+    <p class="hint hint--touch">
+      Drag the left half of the screen to steer · drag the right half to throttle
+    </p>
+    <button id="start-btn" class="btn-primary" type="button">Start</button>
+    <p class="credits">
+      by <a href="https://iamjarl.com/" target="_blank" rel="noopener">IAMJARL</a>
+      · <a href="https://github.com/JarlLyng/Little-Rocket" target="_blank" rel="noopener">Source on GitHub</a>
+    </p>
+  </div>
+
+  <div id="intro-overlay" hidden></div>
+
+  <div id="ui" hidden>
+    <div class="ui-row">
+      <span class="ui-label">Speed</span>
+      <span id="speed" class="ui-value">1.0</span>
+    </div>
+    <div class="ui-row">
+      <span class="ui-label">Distance</span>
+      <span id="distance" class="ui-value">0 AU</span>
+    </div>
+  </div>
+
+  <div id="hint-toast" hidden></div>
+
+  <button id="hint-button" type="button" hidden aria-label="Show controls">?</button>
+  <button id="music-button" type="button" hidden aria-label="Toggle music">♪</button>
+
+  <div id="near-miss" hidden>NEAR MISS</div>
+
+  <div id="milestone-toast" hidden aria-live="polite">
+    <span id="milestone-distance" class="milestone-distance"></span>
+    <span id="milestone-label" class="milestone-label"></span>
+  </div>
+
+  <div id="throttle-bar" hidden aria-hidden="true">
+    <div id="throttle-fill"></div>
+  </div>
+
+  <!-- Floating names pinned to passing worlds (yours + strangers'). -->
+  <div id="planet-labels" aria-hidden="true"></div>
+
+  <!-- Cue + dialog for naming a world that has drifted close. -->
+  <button id="name-cue" type="button" hidden></button>
+  <div id="name-dialog" hidden>
+    <form id="name-form">
+      <label id="name-dialog-label" for="name-input">Name this world</label>
+      <input id="name-input" type="text" maxlength="24" autocomplete="off"
+             autocapitalize="words" autocorrect="off" spellcheck="false"
+             aria-describedby="name-dialog-hint">
+      <p id="name-dialog-hint" class="name-dialog-hint">Enter to name it · Esc to let it pass</p>
+    </form>
+  </div>
+
+  <div id="story" hidden></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
