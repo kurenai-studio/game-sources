@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>PuzzleBoyCommunity</AssemblyName>
+    <RootNamespace>PuzzleBoy.Community</RootNamespace>
+    <!-- The informational version adds the commit (+sha), which the credits and the smoke test show. -->
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <!-- No MonoGame content pipeline: fonts and data are read from content/ at runtime, and graphics are drawn in code. -->
+  <ItemGroup>
+    <PackageReference Include="FontStashSharp.MonoGame" />
+    <PackageReference Include="MonoGame.Framework.DesktopGL" />
+  </ItemGroup>
+
+  <!-- The game reads content/ beside its executable, so a build or an unpacked release runs from anywhere. -->
+  <ItemGroup>
+    <None Include="..\..\content\**\*" LinkBase="content" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- The game's license and the libraries' notices travel with every build, since each build ships those libraries. -->
+  <ItemGroup>
+    <None Include="..\..\LICENSE" Link="LICENSE" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\THIRD_PARTY_NOTICES.txt" Link="THIRD_PARTY_NOTICES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Pack import and export refuse a copy of a Nocturne layout by its fingerprint, so the list travels with the game. -->
+  <ItemGroup>
+    <None Include="..\..\scripts\known-atlus-layouts.txt" Link="known-atlus-layouts.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Only Classic/ uses Nocturne and Rendering: they read and draw the player's own bundles, never at startup. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\external\puzzle-boy-engine\src\PuzzleBoy.Nocturne\PuzzleBoy.Nocturne.csproj" />
+    <ProjectReference Include="..\..\external\puzzle-boy-engine\src\PuzzleBoy.Rendering\PuzzleBoy.Rendering.csproj" />
+    <ProjectReference Include="..\..\external\puzzle-boy-engine\src\PuzzleBoy.Rules\PuzzleBoy.Rules.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PuzzleBoy.Community.Tests" />
+  </ItemGroup>
+
+</Project>
