@@ -1,0 +1,47 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.6
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MarsBaseBuilder", "MarsBaseBuilder\MarsBaseBuilder.fsproj", "{B13B3DF1-3AFE-4F15-B7B0-D0E0F422D4E1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F5BEAB85-DC67-4D5C-BD97-1E75B740A102}"
+	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		.travis.yml = .travis.yml
+		appveyor.yml = appveyor.yml
+		default.nix = default.nix
+		License.md = License.md
+		Readme.md = Readme.md
+	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MarsBaseBuilder.Tests", "MarsBaseBuilder.Tests\MarsBaseBuilder.Tests.fsproj", "{63D73C3C-918A-4917-A4D8-822BCF96FB7D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{1D07E654-8957-429B-AFE8-CEC437FBFCE1}"
+ProjectSection(SolutionItems) = preProject
+	scripts\deps-downloader.fsx = scripts\deps-downloader.fsx
+EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B13B3DF1-3AFE-4F15-B7B0-D0E0F422D4E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B13B3DF1-3AFE-4F15-B7B0-D0E0F422D4E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B13B3DF1-3AFE-4F15-B7B0-D0E0F422D4E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B13B3DF1-3AFE-4F15-B7B0-D0E0F422D4E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63D73C3C-918A-4917-A4D8-822BCF96FB7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63D73C3C-918A-4917-A4D8-822BCF96FB7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63D73C3C-918A-4917-A4D8-822BCF96FB7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63D73C3C-918A-4917-A4D8-822BCF96FB7D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1D07E654-8957-429B-AFE8-CEC437FBFCE1} = {F5BEAB85-DC67-4D5C-BD97-1E75B740A102}
+	EndGlobalSection
+EndGlobal
