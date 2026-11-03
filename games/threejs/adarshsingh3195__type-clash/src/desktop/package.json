@@ -1,0 +1,27 @@
+{
+  "name": "type-clash",
+  "version": "1.0.0",
+  "description": "Type Clash - a 3D typing combat game for Windows PC",
+  "main": "main.js",
+  "author": "Your Name",
+  "license": "MIT",
+  "scripts": {
+    "postinstall": "node copy-three.js",
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "dependencies": {
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.typeclash.game",
+    "productName": "Type Clash",
+    "files": ["main.js", "index.html", "three.min.js", "icon.png"],
+    "win": { "target": ["nsis", "portable"], "icon": "icon.png" },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+  }
+}
