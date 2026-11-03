@@ -1,0 +1,23 @@
+{
+  "name": "js13k",
+  "version": "0.0.1",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "prebuild": "mkdir -p app && cp static/* app/",
+    "build": "esbuild --bundle --minify --outdir=app src/main.js",
+    "preroll": "mkdir -p app && cp static/* app/",
+    "roll": "rollup --config",
+    "predevbuild": "mkdir -p app && cp static/* app/",
+    "devbuild": "esbuild --bundle --outdir=app src/main.js",
+    "bundle": "./bundle.sh",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.6.21",
+    "rollup": "^2.26.2",
+    "rollup-plugin-terser": "^7.0.0"
+  }
+}
