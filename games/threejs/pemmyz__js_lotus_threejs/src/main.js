@@ -1,0 +1,1417 @@
+/* ===================================================
+   AMIGA TURBO RACER - MAIN CONTROLLER & SPLIT ENGINE
+   Handles Three.js rendering, horizontal split-screen,
+   responsive scaling, mobile controls, FPS counter,
+   pitstop service (fuel, damage, tires), procedural
+   cloud system updates, pause states, HUD states,
+   and infinite Lotus Highway tactical radar & chunk cycles.
+   =================================================== */
+
+window.ATR = window.ATR || {};
+
+class Game {
+  constructor() {
+    this.canvas = document.getElementById('game-canvas');
+    this.container = document.getElementById('game-container');
+    this.screenElement = document.getElementById('screen');
+
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: this.canvas,
+      antialias: true,
+      powerPreference: 'high-performance'
+    });
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    this.pixelController = new window.ATR.PixelResolutionController(this.renderer, this.canvas, 0.25);
+
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x0a0c18);
+
+    this.cameraP1 = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.5, 2000);
+    this.cameraP2 = new THREE.PerspectiveCamera(70, window.innerWidth / (window.innerHeight / 2), 0.5, 2000);
+
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444455, 1.2);
+    hemiLight.position.set(0, 50, 0);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    sunLight.position.set(100, 150, -50);
+    this.scene.add(hemiLight, sunLight);
+
+    this.mode = 'SINGLE';
+    this.state = 'MENU';
+    this.pausedFromState = null;
+    this.seed = 849271;
+    this.mapLayout = 'ORIGINAL';
+    this.envType = 'FOREST';
+    this.totalLaps = 3;
+    this.aiCount = 3;
+    this.counterClockwise = false;
+    this.clock = new THREE.Clock();
+
+    this.fpsElement = document.getElementById('fps-counter');
+    this.frameCount = 0;
+    this.lastFpsTime = performance.now();
+
+    this.keys = {};
+    this.setupInputs();
+    this.setupMobileControls();
+
+    this.track = null;
+    this.player1 = null;
+    this.player2 = null;
+    this.aiCars = [];
+    this.allCars = [];
+    this.shakeIntensity = 0;
+    this.smokeSystem = null;
+
+    this.minimapCanvas = document.getElementById('minimap-canvas');
+    if (this.minimapCanvas) {
+      this.minimapCanvas.width = 560;
+      this.minimapCanvas.height = 560;
+    }
+    this.minimapCtx = this.minimapCanvas ? this.minimapCanvas.getContext('2d') : null;
+    this.minimapBounds = null;
+    this.minimapTrackPoints = null;
+
+    this.showcaseCar = window.ATR.CarModelFactory.createWedgeCar(0xff0044, true);
+    this.showcaseCar.position.set(0, 0, -6);
+    this.scene.add(this.showcaseCar);
+
+    this.setupUI();
+    this.setupWindowEvents();
+    this.scaleGame();
+
+    this.animate = this.animate.bind(this);
+    requestAnimationFrame(this.animate);
+  }
+
+  scaleGame() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+
+    if (this.screenElement) {
+      this.screenElement.style.transform = 'none';
+    }
+
+    if (this.pixelController) {
+      this.pixelController.update();
+    } else if (this.renderer) {
+      this.renderer.setSize(w, h);
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    }
+
+    if (this.cameraP1 && this.cameraP2) {
+      if (this.mode === 'TWO_PLAYER') {
+        this.cameraP1.aspect = w / (h / 2);
+        this.cameraP2.aspect = w / (h / 2);
+      } else {
+        this.cameraP1.aspect = w / h;
+      }
+      this.cameraP1.updateProjectionMatrix();
+      this.cameraP2.updateProjectionMatrix();
+    }
+  }
+
+  toggleFullscreen() {
+    const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    if (!isFull) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+      document.body.classList.add('mobile-mode');
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      document.body.classList.remove('mobile-mode');
+    }
+    setTimeout(() => this.scaleGame(), 100);
+  }
+
+  setupInputs() {
+    window.addEventListener('keydown', e => {
+      if (e.code === 'KeyP' || e.code === 'Escape') {
+        if (this.state === 'RACING' || this.state === 'COUNTDOWN') {
+          this.pauseGame();
+          return;
+        } else if (this.state === 'PAUSED') {
+          this.resumeGame();
+          return;
+        }
+      }
+
+      this.keys[e.code] = true;
+      if (window.ATR.Audio && !window.ATR.Audio.isStarted) {
+        window.ATR.Audio.init();
+      }
+    });
+    window.addEventListener('keyup', e => {
+      this.keys[e.code] = false;
+    });
+  }
+
+  setupMobileControls() {
+    const mobileLeft = document.getElementById('mobile-left');
+    const mobileRight = document.getElementById('mobile-right');
+    const mobileUp = document.getElementById('mobile-up');
+    const mobileDown = document.getElementById('mobile-down');
+    const mobileTurbo = document.getElementById('mobile-turbo');
+
+    const bindButton = (element, keyCodes) => {
+      if (!element) return;
+      const press = (e) => {
+        if (e.cancelable) e.preventDefault();
+        if (window.ATR.Audio && !window.ATR.Audio.isStarted) {
+          window.ATR.Audio.init();
+        }
+        keyCodes.forEach(code => { this.keys[code] = true; });
+      };
+      const release = (e) => {
+        if (e.cancelable) e.preventDefault();
+        keyCodes.forEach(code => { this.keys[code] = false; });
+      };
+
+      element.addEventListener('touchstart', press, { passive: false });
+      element.addEventListener('touchend', release, { passive: false });
+      element.addEventListener('touchcancel', release, { passive: false });
+
+      element.addEventListener('mousedown', press);
+      element.addEventListener('mouseup', release);
+      element.addEventListener('mouseleave', (e) => {
+        if (e.buttons === 1) release(e);
+      });
+    };
+
+    bindButton(mobileLeft, ['ArrowLeft', 'KeyA']);
+    bindButton(mobileRight, ['ArrowRight', 'KeyD']);
+    bindButton(mobileUp, ['ArrowUp', 'KeyW']);
+    bindButton(mobileDown, ['ArrowDown', 'KeyS']);
+    bindButton(mobileTurbo, ['ShiftRight', 'Space']);
+  }
+
+  setupWindowEvents() {
+    const onResize = () => {
+      this.scaleGame();
+    };
+
+    window.addEventListener('resize', onResize);
+    window.addEventListener('fullscreenchange', onResize);
+    window.addEventListener('webkitfullscreenchange', onResize);
+
+    window.addEventListener('blur', () => {
+      this.pauseGame();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.pauseGame();
+      }
+    });
+  }
+
+  setupUI() {
+    const bindTap = (element, callback) => {
+      if (!element) return;
+      let lastTrigger = 0;
+
+      const onTrigger = (e) => {
+        const now = Date.now();
+        if (now - lastTrigger < 300) return;
+        lastTrigger = now;
+
+        if (e.cancelable && e.type !== 'click') {
+          e.preventDefault();
+        }
+        e.stopPropagation();
+
+        if (window.ATR.Audio && !window.ATR.Audio.isStarted) {
+          window.ATR.Audio.init();
+        }
+
+        callback(e);
+      };
+
+      element.addEventListener('touchend', onTrigger, { passive: false });
+      element.addEventListener('pointerup', onTrigger);
+      element.addEventListener('click', onTrigger);
+    };
+
+    const flashButtonFeedback = (btn, flashText) => {
+      if (!btn) return;
+      const origText = btn.dataset.origText || btn.innerText;
+      btn.dataset.origText = origText;
+      btn.classList.add('btn-tapped');
+      btn.innerText = flashText;
+      setTimeout(() => {
+        btn.classList.remove('btn-tapped');
+        btn.innerText = origText;
+      }, 900);
+    };
+
+    const mobileBtn = document.getElementById('mobile-btn');
+    if (mobileBtn) {
+      bindTap(mobileBtn, () => {
+        this.toggleFullscreen();
+      });
+    }
+
+    const devPixelCheck = document.getElementById('dev-pixel-mode');
+    const optPixelCheck = document.getElementById('opt-pixel-mode');
+
+    const onPixelModeChange = (enabled) => {
+      if (this.pixelController) {
+        this.pixelController.setPixelMode(enabled);
+      }
+      if (devPixelCheck) devPixelCheck.checked = enabled;
+      if (optPixelCheck) optPixelCheck.checked = enabled;
+    };
+
+    if (devPixelCheck) devPixelCheck.addEventListener('change', (e) => onPixelModeChange(e.target.checked));
+    if (optPixelCheck) optPixelCheck.addEventListener('change', (e) => onPixelModeChange(e.target.checked));
+
+    window.ATR.devSettings = {
+      obstacleDamage: true,
+      infiniteArmor: false,
+      infiniteTires: false,
+      infiniteFuel: false,
+      disableAiCarCollisions: false,
+      disableAiEnvCollisions: false,
+      infiniteTurbo: false
+    };
+
+    const devBtn = document.getElementById('dev-menu-btn');
+    const devDropdown = document.getElementById('dev-menu-dropdown');
+    const devContainer = document.getElementById('dev-menu-container');
+
+    if (devBtn && devDropdown) {
+      bindTap(devBtn, () => {
+        devDropdown.classList.toggle('hidden');
+      });
+
+      const onDocTouch = (e) => {
+        if (devContainer && !devContainer.contains(e.target)) {
+          devDropdown.classList.add('hidden');
+        }
+      };
+      document.addEventListener('click', onDocTouch);
+      document.addEventListener('touchend', onDocTouch);
+    }
+
+    const devDamageCheck = document.getElementById('dev-obstacle-damage');
+    const optDamageCheck = document.getElementById('opt-damage');
+    const onDamageChange = (e) => {
+      window.ATR.devSettings.obstacleDamage = e.target.checked;
+      if (devDamageCheck) devDamageCheck.checked = e.target.checked;
+      if (optDamageCheck) optDamageCheck.checked = e.target.checked;
+    };
+    if (devDamageCheck) devDamageCheck.addEventListener('change', onDamageChange);
+    if (optDamageCheck) optDamageCheck.addEventListener('change', onDamageChange);
+
+    document.getElementById('dev-infinite-armor')?.addEventListener('change', (e) => {
+      window.ATR.devSettings.infiniteArmor = e.target.checked;
+      if (e.target.checked) {
+        if (this.player1) this.player1.health = 100.0;
+        if (this.player2) this.player2.health = 100.0;
+      }
+    });
+
+    document.getElementById('dev-infinite-tires')?.addEventListener('change', (e) => {
+      window.ATR.devSettings.infiniteTires = e.target.checked;
+      if (e.target.checked) {
+        if (this.player1) this.player1.tires = 100.0;
+        if (this.player2) this.player2.tires = 100.0;
+      }
+    });
+
+    document.getElementById('dev-infinite-fuel')?.addEventListener('change', (e) => {
+      window.ATR.devSettings.infiniteFuel = e.target.checked;
+      if (e.target.checked) {
+        if (this.player1) this.player1.fuel = 100.0;
+        if (this.player2) this.player2.fuel = 100.0;
+      }
+    });
+
+    document.getElementById('dev-infinite-turbo')?.addEventListener('change', (e) => {
+      window.ATR.devSettings.infiniteTurbo = e.target.checked;
+    });
+
+    document.getElementById('dev-disable-ai-cars')?.addEventListener('change', (e) => {
+      window.ATR.devSettings.disableAiCarCollisions = e.target.checked;
+    });
+
+    document.getElementById('dev-disable-ai-env')?.addEventListener('change', (e) => {
+      window.ATR.devSettings.disableAiEnvCollisions = e.target.checked;
+    });
+
+    const damageAiBtn = document.getElementById('dev-damage-ai');
+    if (damageAiBtn) {
+      bindTap(damageAiBtn, () => {
+        let count = 0;
+        this.aiCars.forEach(ctrl => {
+          ctrl.car.health = 18.0;
+          ctrl.car.tires = 15.0;
+          ctrl.car.fuel = 20.0;
+          count++;
+        });
+        flashButtonFeedback(damageAiBtn, `💥 ${count} AI DAMAGED!`);
+        if (window.ATR.Audio) window.ATR.Audio.playCrash();
+      });
+    }
+
+    const menuLapsSelect = document.getElementById('menu-laps-select');
+    const optLapsSelect = document.getElementById('opt-laps');
+
+    if (menuLapsSelect) {
+      this.totalLaps = parseInt(menuLapsSelect.value, 10);
+      menuLapsSelect.addEventListener('change', (e) => {
+        this.totalLaps = parseInt(e.target.value, 10);
+        if (optLapsSelect) optLapsSelect.value = e.target.value;
+      });
+    }
+
+    if (optLapsSelect) {
+      optLapsSelect.addEventListener('change', (e) => {
+        this.totalLaps = parseInt(e.target.value, 10);
+        if (menuLapsSelect) menuLapsSelect.value = e.target.value;
+      });
+    }
+
+    const aiSelect = document.getElementById('menu-ai-count');
+    if (aiSelect) {
+      this.aiCount = parseInt(aiSelect.value, 10);
+      aiSelect.addEventListener('change', (e) => {
+        this.aiCount = parseInt(e.target.value, 10);
+      });
+    }
+
+    const set50Btn = document.getElementById('dev-set-50-cars');
+    if (set50Btn) {
+      bindTap(set50Btn, () => {
+        this.aiCount = 50;
+
+        if (aiSelect) {
+          let opt50 = Array.from(aiSelect.options).find(o => o.value === '50');
+          if (!opt50) {
+            opt50 = document.createElement('option');
+            opt50.value = '50';
+            opt50.innerText = '50 AI (Dev Chaos)';
+            aiSelect.appendChild(opt50);
+          }
+          aiSelect.value = '50';
+        }
+
+        if (this.track && (this.state === 'RACING' || this.state === 'COUNTDOWN')) {
+          const needed = 50 - this.aiCars.length;
+          if (needed > 0) {
+            this.spawnAICars(needed);
+          }
+        }
+
+        flashButtonFeedback(set50Btn, '✔ 50 CARS SET!');
+        if (window.ATR.Audio) window.ATR.Audio.playBeep(true);
+      });
+    }
+
+    const add5Btn = document.getElementById('dev-add-5-cars');
+    if (add5Btn) {
+      bindTap(add5Btn, () => {
+        if (this.track && (this.state === 'RACING' || this.state === 'COUNTDOWN')) {
+          this.spawnAICars(5);
+          this.aiCount = this.aiCars.length;
+        } else {
+          this.aiCount = (this.aiCount || 3) + 5;
+        }
+
+        if (aiSelect) {
+          const valStr = this.aiCount.toString();
+          let opt = Array.from(aiSelect.options).find(o => o.value === valStr);
+          if (!opt) {
+            opt = document.createElement('option');
+            opt.value = valStr;
+            opt.innerText = `${valStr} AI`;
+            aiSelect.appendChild(opt);
+          }
+          aiSelect.value = valStr;
+        }
+
+        const totalActive = this.allCars.length > 0 ? this.allCars.length : (this.aiCount + 1);
+        flashButtonFeedback(add5Btn, `✔ +5 ADDED (${totalActive})`);
+        if (window.ATR.Audio) window.ATR.Audio.playBeep(true);
+      });
+    }
+
+    const mapSelect = document.getElementById('menu-map-select');
+    const envRow = document.getElementById('menu-env-row');
+    const envSelect = document.getElementById('menu-env-select');
+    const ccwCheckbox = document.getElementById('menu-counter-clockwise');
+    const ccwLabel = document.getElementById('menu-counter-clockwise-label') || document.querySelector('label[for="menu-counter-clockwise"]');
+
+    const updateMapSelection = () => {
+      this.mapLayout = mapSelect ? mapSelect.value : 'ORIGINAL';
+
+      const lapsRow = document.getElementById('menu-laps-row') || menuLapsSelect?.closest('.menu-config-row');
+      const ccwRow = document.getElementById('menu-ccw-row') || ccwCheckbox?.closest('.menu-config-row');
+
+      if (this.mapLayout === 'LOTUS') {
+        if (envRow) envRow.classList.add('hidden');
+        if (lapsRow) lapsRow.classList.add('hidden');
+        if (ccwRow) ccwRow.classList.add('hidden');
+        this.envType = 'FOREST';
+        return;
+      } else {
+        if (lapsRow) lapsRow.classList.remove('hidden');
+        if (ccwRow) ccwRow.classList.remove('hidden');
+      }
+
+      if (ccwLabel) {
+        ccwLabel.innerText = this.mapLayout === 'OVAL' ? 'REVERSED:' : 'COUNTER-CLOCKWISE:';
+      }
+
+      if (this.mapLayout === 'ORIGINAL') {
+        if (envRow) envRow.classList.remove('hidden');
+        this.envType = envSelect ? envSelect.value : 'FOREST';
+      } else {
+        if (envRow) envRow.classList.add('hidden');
+        if (this.mapLayout === 'TROPICAL') this.envType = 'TROPICAL';
+        else if (this.mapLayout === 'SERPENTINE') this.envType = 'FOREST';
+        else if (this.mapLayout === 'DUNES') this.envType = 'DESERT';
+        else if (this.mapLayout === 'ALPINE') this.envType = 'MOUNTAIN';
+        else if (this.mapLayout === 'FJORD') this.envType = 'SNOW';
+        else if (this.mapLayout === 'MIDNIGHT') this.envType = 'NIGHT';
+        else if (this.mapLayout === 'OVAL') this.envType = 'FOREST';
+      }
+    };
+
+    if (mapSelect) mapSelect.addEventListener('change', updateMapSelection);
+    if (envSelect) envSelect.addEventListener('change', updateMapSelection);
+    if (ccwCheckbox) {
+      this.counterClockwise = ccwCheckbox.checked;
+      ccwCheckbox.addEventListener('change', (e) => {
+        this.counterClockwise = e.target.checked;
+      });
+    }
+    updateMapSelection();
+
+    bindTap(document.getElementById('btn-single-player'), () => this.startRace('SINGLE'));
+    bindTap(document.getElementById('btn-two-player'), () => this.startRace('TWO_PLAYER'));
+    bindTap(document.getElementById('btn-practice'), () => this.startRace('PRACTICE'));
+    bindTap(document.getElementById('btn-random-track'), () => {
+      this.seed = Math.floor(100000 + Math.random() * 900000);
+      const seedEl = document.getElementById('menu-seed-display');
+      if (seedEl) seedEl.innerText = this.seed;
+    });
+
+    bindTap(document.getElementById('btn-options'), () => {
+      document.getElementById('main-menu').classList.add('hidden');
+      document.getElementById('options-menu').classList.remove('hidden');
+    });
+
+    bindTap(document.getElementById('btn-options-back'), () => {
+      if (this.mapLayout === 'ORIGINAL') {
+        this.envType = document.getElementById('opt-env').value;
+        if (envSelect) envSelect.value = this.envType;
+      }
+      this.totalLaps = parseInt(document.getElementById('opt-laps').value, 10);
+      if (menuLapsSelect) menuLapsSelect.value = this.totalLaps.toString();
+
+      const vol = parseInt(document.getElementById('opt-volume').value, 10) / 100;
+      window.ATR.Audio.setVolume(vol);
+
+      document.getElementById('options-menu').classList.add('hidden');
+      document.getElementById('main-menu').classList.remove('hidden');
+    });
+
+    bindTap(document.getElementById('btn-results-retry'), () => this.startRace(this.mode));
+    bindTap(document.getElementById('btn-results-new'), () => {
+      this.seed = Math.floor(100000 + Math.random() * 900000);
+      this.startRace(this.mode);
+    });
+    bindTap(document.getElementById('btn-results-menu'), () => this.returnToMenu());
+    bindTap(document.getElementById('btn-resume-race'), () => this.resumeGame());
+  }
+
+  pauseGame() {
+    if (this.state !== 'RACING' && this.state !== 'COUNTDOWN') return;
+    this.pausedFromState = this.state;
+    this.state = 'PAUSED';
+    this.clock.stop();
+    this.keys = {};
+    if (window.ATR.Audio) window.ATR.Audio.stopEngines();
+
+    const pauseOverlay = document.getElementById('pause-screen');
+    if (pauseOverlay) pauseOverlay.classList.remove('hidden');
+  }
+
+  resumeGame() {
+    if (this.state !== 'PAUSED') return;
+    this.state = this.pausedFromState || 'RACING';
+    this.pausedFromState = null;
+    this.clock.start();
+
+    const pauseOverlay = document.getElementById('pause-screen');
+    if (pauseOverlay) pauseOverlay.classList.add('hidden');
+
+    if (window.ATR.Audio) {
+      window.ATR.Audio.startEngines(this.mode === 'TWO_PLAYER');
+    }
+  }
+
+  spawnAICars(count) {
+    if (!this.track) return;
+    const currentAiCount = this.aiCars.length;
+    const isLotus = (this.mapLayout === 'LOTUS' || this.track.isInfinite);
+    const refT = this.player1 ? this.player1.trackT : (isLotus ? 25.0 : 0.04);
+
+    for (let i = 0; i < count; i++) {
+      const idx = currentAiCount + i;
+      const lane = (idx % 2 === 0 ? 0.35 : -0.35) + (Math.random() - 0.5) * 0.25;
+
+      let startT;
+      if (isLotus) {
+        startT = refT + 30.0 + (i + 1) * 16.0;
+      } else {
+        const offset = (i % 2 === 0 ? 1 : -1) * (Math.floor(i / 2) + 1) * 0.012;
+        startT = ((refT + offset) % 1.0 + 1.0) % 1.0;
+      }
+
+      const name = window.ATR.AMIGA_NAMES[idx % window.ATR.AMIGA_NAMES.length] +
+                   (idx >= window.ATR.AMIGA_NAMES.length ? ` #${Math.floor(idx / window.ATR.AMIGA_NAMES.length) + 1}` : '');
+      const color = window.ATR.AI_PALETTE[idx % window.ATR.AI_PALETTE.length];
+
+      const aiCar = new window.ATR.Car(this.scene, {
+        name,
+        isPlayer: false,
+        color,
+        startT,
+        laneOffset: Math.max(-1.15, Math.min(1.15, lane))
+      });
+
+      if (this.state === 'RACING' && this.player1) {
+        aiCar.speed = Math.max(60, this.player1.speed * (0.8 + Math.random() * 0.2));
+        aiCar.lap = this.player1.lap;
+      }
+
+      aiCar.updatePhysics(0.001, this.track);
+
+      const controller = new window.ATR.AIController(aiCar, this.track, 0.9 + Math.random() * 0.2);
+      this.aiCars.push(controller);
+      this.allCars.push(aiCar);
+    }
+
+    if (this.player1) this.updateHUD(this.player1, 'p1');
+    if (this.player2) this.updateHUD(this.player2, 'p2');
+    this.updateMinimap();
+  }
+
+  startRace(mode = 'SINGLE') {
+    this.mode = mode;
+    this.state = 'COUNTDOWN';
+
+    document.getElementById('main-menu').classList.add('hidden');
+    document.getElementById('options-menu').classList.add('hidden');
+    document.getElementById('results-screen').classList.add('hidden');
+    document.getElementById('pause-screen')?.classList.add('hidden');
+    this.showcaseCar.visible = false;
+
+    const isSplit = (mode === 'TWO_PLAYER');
+    document.body.classList.toggle('split-screen', isSplit);
+    document.getElementById('split-divider').classList.toggle('hidden', !isSplit);
+    document.getElementById('hud-p1').classList.remove('hidden');
+    document.getElementById('hud-p2').classList.toggle('hidden', !isSplit);
+    document.getElementById('hint-p2-card').classList.toggle('hidden', !isSplit);
+    document.getElementById('controls-hint').classList.remove('hidden');
+    document.getElementById('minimap-container').classList.remove('hidden');
+
+    if (this.track) {
+      if (typeof this.track.dispose === 'function') {
+        this.track.dispose();
+      }
+      if (this.track.clouds && typeof this.track.clouds.dispose === 'function') {
+        this.track.clouds.dispose();
+      }
+      if (this.track.roadMesh) this.scene.remove(this.track.roadMesh);
+      if (this.track.shoulderMesh) this.scene.remove(this.track.shoulderMesh);
+      if (this.track.terrainMesh) this.scene.remove(this.track.terrainMesh);
+      if (this.track.sceneryGroup) this.scene.remove(this.track.sceneryGroup);
+    }
+    this.allCars.forEach(c => this.scene.remove(c.mesh));
+    this.allCars = [];
+    this.aiCars = [];
+
+    if (this.smokeSystem) {
+      this.smokeSystem.clear();
+    } else if (window.ATR.SmokeParticleSystem) {
+      this.smokeSystem = new window.ATR.SmokeParticleSystem(this.scene);
+      window.ATR.smokeSystem = this.smokeSystem;
+    }
+
+    const generator = new window.ATR.TrackGenerator();
+    const trackData = generator.generate(this.seed, 'MEDIUM', this.envType, 72, this.mapLayout, this.counterClockwise);
+    this.track = new window.ATR.Track(this.scene, trackData);
+    this.initMinimapTrack();
+
+    const isLotus = (this.mapLayout === 'LOTUS' || this.track.isInfinite);
+    const pStartT = isLotus ? 25.0 : 0.04;
+
+    // Player 1
+    this.player1 = new window.ATR.Car(this.scene, {
+      name: 'PLAYER 1',
+      isPlayer: true,
+      playerNum: 1,
+      color: 0xe62222,
+      startT: pStartT,
+      laneOffset: isSplit ? -0.35 : -0.2
+    });
+    this.allCars.push(this.player1);
+
+    // Player 2
+    if (isSplit) {
+      this.player2 = new window.ATR.Car(this.scene, {
+        name: 'PLAYER 2',
+        isPlayer: true,
+        playerNum: 2,
+        color: 0x00bfff,
+        startT: pStartT,
+        laneOffset: 0.35
+      });
+      this.allCars.push(this.player2);
+    } else {
+      this.player2 = null;
+    }
+
+    // AI Racers
+    const aiSelectEl = document.getElementById('menu-ai-count');
+    const selectedAi = aiSelectEl ? parseInt(aiSelectEl.value, 10) : this.aiCount;
+    const maxAi = isSplit ? Math.min(selectedAi, 50) : selectedAi;
+    const aiCount = mode === 'PRACTICE' ? 0 : maxAi;
+
+    for (let i = 0; i < aiCount; i++) {
+      const row = Math.floor(i / 2) + 1;
+      const lane = (i % 2 === 0 ? 0.35 : -0.35);
+      const startT = isLotus ? (pStartT + row * 18.0) : ((0.04 - row * 0.007 + 1.0) % 1.0);
+      const name = window.ATR.AMIGA_NAMES[i % window.ATR.AMIGA_NAMES.length] +
+                   (i >= window.ATR.AMIGA_NAMES.length ? ` #${Math.floor(i / window.ATR.AMIGA_NAMES.length) + 1}` : '');
+      const color = window.ATR.AI_PALETTE[i % window.ATR.AI_PALETTE.length];
+
+      const aiCar = new window.ATR.Car(this.scene, {
+        name,
+        isPlayer: false,
+        color,
+        startT,
+        laneOffset: lane
+      });
+
+      const controller = new window.ATR.AIController(aiCar, this.track, 0.9 + Math.random() * 0.2);
+      this.aiCars.push(controller);
+      this.allCars.push(aiCar);
+    }
+
+    this.allCars.forEach(car => car.updatePhysics(0.001, this.track));
+
+    this.snapCameraToCar(this.cameraP1, this.player1);
+    if (this.player2) {
+      this.snapCameraToCar(this.cameraP2, this.player2);
+    }
+
+    window.ATR.Audio.startEngines(isSplit);
+    this.runCountdown();
+    this.scaleGame();
+  }
+
+  snapCameraToCar(camera, car) {
+    const roadInfo = this.track.getRoadTransformAt(car.trackT);
+    const camOffset = roadInfo.tangent.clone().multiplyScalar(-9.5).add(new THREE.Vector3(0, 3.4, 0));
+    camera.position.copy(car.mesh.position).add(camOffset);
+    const lookTarget = car.mesh.position.clone().add(roadInfo.tangent.clone().multiplyScalar(15)).add(new THREE.Vector3(0, 1.2, 0));
+    camera.lookAt(lookTarget);
+    camera.userData.lookTarget = lookTarget.clone();
+  }
+
+  runCountdown() {
+    const banner = document.getElementById('countdown-banner');
+    const text = document.getElementById('countdown-text');
+    banner.classList.remove('hidden');
+
+    let count = 3;
+    text.innerText = count;
+    window.ATR.Audio.playBeep(false);
+
+    const timer = setInterval(() => {
+      count--;
+      if (count > 0) {
+        text.innerText = count;
+        window.ATR.Audio.playBeep(false);
+      } else if (count === 0) {
+        text.innerText = 'GO!';
+        window.ATR.Audio.playBeep(true);
+        this.state = 'RACING';
+      } else {
+        clearInterval(timer);
+        banner.classList.add('hidden');
+      }
+    }, 1000);
+  }
+
+  handlePlayerInput(player, delta) {
+    if (!player || this.state !== 'RACING') return;
+
+    const isP1 = (player.playerNum === 1);
+
+    const upKey    = isP1 ? 'ArrowUp' : 'KeyW';
+    const downKey  = isP1 ? 'ArrowDown' : 'KeyS';
+    const leftKey  = isP1 ? 'ArrowLeft' : 'KeyA';
+    const rightKey = isP1 ? 'ArrowRight' : 'KeyD';
+    const turboKey = isP1 ? 'ShiftRight' : 'Space';
+
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const pad = gamepads[player.playerNum - 1];
+
+    let accel = this.keys[upKey];
+    let brake = this.keys[downKey];
+    let steerL = this.keys[leftKey];
+    let steerR = this.keys[rightKey];
+    let turbo = this.keys[turboKey];
+
+    if (pad) {
+      if (pad.buttons[7] && pad.buttons[7].pressed) accel = true;
+      if (pad.buttons[6] && pad.buttons[6].pressed) brake = true;
+      if (pad.buttons[0] && pad.buttons[0].pressed) turbo = true;
+      if (pad.axes[0] < -0.2) steerL = true;
+      if (pad.axes[0] > 0.2) steerR = true;
+    }
+
+    if (accel) player.accelerate(delta);
+    if (brake) player.brake(delta);
+    if (steerL) player.steer(-1, delta);
+    if (steerR) player.steer(1, delta);
+    if (turbo) player.activateTurbo();
+
+    if (this.track.pitZone) {
+      const pDist = player.mesh.position.distanceTo(this.track.pitZone.center);
+      const inPitArea = pDist < 16.0;
+      const isStopped = player.speed < 20.0;
+      const pitTag = document.getElementById(isP1 ? 'p1-pit-msg' : 'p2-pit-msg');
+
+      if (pitTag) {
+        if (inPitArea) {
+          pitTag.classList.remove('hidden');
+          if (!isStopped) {
+            pitTag.className = 'hud-center-msg';
+            pitTag.innerText = 'STOP FOR PITSTOP';
+          } else {
+            const needsFuel = player.fuel < 100;
+            const needsArmor = player.health < 100;
+            const needsTires = player.tires < 100;
+
+            if (needsFuel || needsArmor || needsTires) {
+              pitTag.className = 'hud-center-msg pit-servicing';
+              pitTag.innerText = 'PIT SERVICING (TIRES & FUEL)...';
+              player.fuel = Math.min(100, player.fuel + 45 * delta);
+              player.health = Math.min(100, player.health + 40 * delta);
+              player.tires = Math.min(100, player.tires + 50 * delta);
+              if (window.ATR.Audio) window.ATR.Audio.playRepair();
+            } else {
+              pitTag.className = 'hud-center-msg pit-complete';
+              pitTag.innerText = 'SERVICE COMPLETE! GO!';
+            }
+          }
+        } else {
+          pitTag.classList.add('hidden');
+        }
+      }
+    }
+
+    const speedRatio = player.speed / player.maxSpeed;
+    window.ATR.Audio.updateEngine(player.playerNum, speedRatio, accel);
+  }
+
+  handleCarCollisions(delta) {
+    const cars = this.allCars;
+    const count = cars.length;
+
+    for (let i = 0; i < count; i++) {
+      const a = cars[i];
+      for (let j = i + 1; j < count; j++) {
+        const b = cars[j];
+
+        if (window.ATR?.devSettings?.disableAiCarCollisions && (!a.isPlayer || !b.isPlayer)) {
+          continue;
+        }
+
+        const dist = a.mesh.position.distanceTo(b.mesh.position);
+        if (dist < 2.8) {
+          const laneDiff = a.laneOffset - b.laneOffset;
+          const pushDir = Math.abs(laneDiff) > 0.04 ? Math.sign(laneDiff) : (Math.random() > 0.5 ? 1 : -1);
+          a.laneOffset = Math.max(-1.25, Math.min(1.25, a.laneOffset + pushDir * 0.16));
+          b.laneOffset = Math.max(-1.25, Math.min(1.25, b.laneOffset - pushDir * 0.16));
+
+          if (a.collisionCooldown <= 0 || b.collisionCooldown <= 0) {
+            const slowFactor = 0.82;
+            a.speed = Math.max(0, a.speed * slowFactor);
+            b.speed = Math.max(0, b.speed * slowFactor);
+
+            a.collisionCooldown = 0.35;
+            b.collisionCooldown = 0.35;
+
+            if (a.isPlayer || b.isPlayer) {
+              if (this.shakeIntensity < 0.85) this.shakeIntensity = 0.85;
+              if (window.ATR.Audio) window.ATR.Audio.playCrash();
+            }
+
+            if (window.ATR.smokeSystem) {
+              const mid = a.mesh.position.clone().add(b.mesh.position).multiplyScalar(0.5);
+              window.ATR.smokeSystem.emit({
+                position: mid,
+                velocity: new THREE.Vector3((Math.random() - 0.5) * 2.5, 1.2, (Math.random() - 0.5) * 2.5),
+                startSize: 0.6,
+                endSize: 2.0,
+                startOpacity: 0.8,
+                maxLife: 0.45,
+                color: 0xffddaa
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  checkObstacleCollisions() {
+    if (!this.track || !this.track.obstacles) return;
+
+    for (let car of this.allCars) {
+      if (window.ATR?.devSettings?.disableAiEnvCollisions && !car.isPlayer) {
+        continue;
+      }
+
+      for (let obs of this.track.obstacles) {
+        const dist = car.mesh.position.distanceTo(obs.position);
+        if (dist < obs.radius) {
+          car.hitHazard(obs.type);
+          if (car.isPlayer) {
+            this.shakeIntensity = obs.type === 'OIL' ? 0.5 : 1.3;
+          }
+        }
+      }
+    }
+  }
+
+  updateCamera(camera, car, aspect, delta) {
+    if (!car) return;
+
+    const roadInfo = this.track.getRoadTransformAt(car.trackT);
+    const camOffset = roadInfo.tangent.clone().multiplyScalar(-9.5).add(new THREE.Vector3(0, 3.4, 0));
+    const targetCamPos = car.mesh.position.clone().add(camOffset);
+
+    if (this.shakeIntensity > 0) {
+      targetCamPos.x += (Math.random() - 0.5) * this.shakeIntensity;
+      targetCamPos.y += (Math.random() - 0.5) * this.shakeIntensity;
+      this.shakeIntensity = Math.max(0, this.shakeIntensity - delta * 1.5);
+    }
+
+    const isLotus = !!(this.track && this.track.isInfinite);
+    const lookTarget = car.mesh.position.clone().add(roadInfo.tangent.clone().multiplyScalar(15)).add(new THREE.Vector3(0, 1.2, 0));
+
+    if (isLotus) {
+      // Responsive horizontal tracking
+      const horizLerp = 1.0 - Math.exp(-14.0 * delta);
+      camera.position.x += (targetCamPos.x - camera.position.x) * horizLerp;
+      camera.position.z += (targetCamPos.z - camera.position.z) * horizLerp;
+
+      // Soft vertical dampening to absorb rapid road cresting/dips
+      const vertLerp = 1.0 - Math.exp(-3.5 * delta);
+      camera.position.y += (targetCamPos.y - camera.position.y) * vertLerp;
+
+      if (!camera.userData.lookTarget) {
+        camera.userData.lookTarget = lookTarget.clone();
+      } else {
+        camera.userData.lookTarget.x += (lookTarget.x - camera.userData.lookTarget.x) * horizLerp;
+        camera.userData.lookTarget.z += (lookTarget.z - camera.userData.lookTarget.z) * horizLerp;
+        camera.userData.lookTarget.y += (lookTarget.y - camera.userData.lookTarget.y) * vertLerp;
+      }
+      camera.lookAt(camera.userData.lookTarget);
+    } else {
+      camera.position.lerp(targetCamPos, 0.2);
+      camera.lookAt(lookTarget);
+    }
+
+    const speedRatio = car.speed / car.maxSpeed;
+
+    let baseFov = 70;
+    if (aspect < 1.0) {
+      baseFov = 92;
+    } else if (aspect < 1.45) {
+      baseFov = 78;
+    }
+
+    camera.fov = baseFov + speedRatio * 10.0;
+    camera.aspect = aspect;
+    camera.updateProjectionMatrix();
+  }
+
+  formatTime(seconds) {
+    if (!seconds || seconds <= 0) return '00:00.00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 100);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+  }
+
+  updateHUD(player, hudPrefix) {
+    if (!player) return;
+
+    const spdEl = document.getElementById(`${hudPrefix}-speed`);
+    if (spdEl) spdEl.innerText = Math.round(player.speed).toString().padStart(3, '0');
+
+    const sorted = [...this.allCars].sort((a, b) => {
+      if (b.lap !== a.lap) return b.lap - a.lap;
+      return b.trackT - a.trackT;
+    });
+    const rank = sorted.indexOf(player) + 1;
+    const posEl = document.getElementById(`${hudPrefix}-pos`);
+    if (posEl) posEl.innerText = `${rank.toString().padStart(2, '0')}/${this.allCars.length.toString().padStart(2, '0')}`;
+
+    const lapEl = document.getElementById(`${hudPrefix}-lap`);
+    const lapLabel = document.getElementById(`${hudPrefix}-lap-label`);
+    if (lapEl) {
+      if (this.track && this.track.isInfinite) {
+        if (lapLabel) lapLabel.innerText = 'STAGE';
+        const stageNum = Math.floor((player.trackT || 0) / 1500) + 1;
+        const distKm = ((player.trackT || 0) / 1000).toFixed(1);
+        lapEl.innerText = `${stageNum} (${distKm}k)`;
+      } else {
+        if (lapLabel) lapLabel.innerText = 'LAP';
+        lapEl.innerText = `${Math.min(player.lap, this.totalLaps)}/${this.totalLaps}`;
+      }
+    }
+
+    const timeEl = document.getElementById(`${hudPrefix}-time`);
+    if (timeEl) {
+      timeEl.innerText = this.formatTime(player.currentLapTime);
+    }
+
+    const healthBar = document.getElementById(`${hudPrefix}-health-bar`);
+    if (healthBar) {
+      healthBar.style.width = `${Math.max(0, player.health)}%`;
+      healthBar.classList.toggle('low-health', player.health < 25);
+    }
+
+    const tireBar = document.getElementById(`${hudPrefix}-tire-bar`);
+    if (tireBar) {
+      tireBar.style.width = `${Math.max(0, player.tires)}%`;
+      tireBar.classList.toggle('low-tires', player.tires < 25);
+    }
+
+    const fuelBar = document.getElementById(`${hudPrefix}-fuel-bar`);
+    if (fuelBar) {
+      fuelBar.style.width = `${player.fuel}%`;
+      fuelBar.classList.toggle('low-fuel', player.fuel < 22);
+    }
+
+    const turboBar = document.getElementById(`${hudPrefix}-turbo-bar`);
+    if (turboBar) turboBar.style.width = `${player.turbo}%`;
+
+    if (!this.track.isInfinite && player.lap > this.totalLaps && !player.finished) {
+      player.finished = true;
+      if (this.state === 'RACING') {
+        this.finishRace();
+      }
+    }
+  }
+
+  initMinimapTrack() {
+    if (!this.track || !this.track.spline) {
+      this.minimapTrackPoints = null;
+      this.minimapBounds = null;
+      return;
+    }
+    const samples = 140;
+    const pts = [];
+    let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+
+    for (let i = 0; i <= samples; i++) {
+      const p = this.track.spline.getPointAt(i / samples);
+      pts.push({ x: p.x, z: p.z });
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.z < minZ) minZ = p.z;
+      if (p.z > maxZ) maxZ = p.z;
+    }
+
+    this.minimapTrackPoints = pts;
+    this.minimapBounds = { minX, maxX, minZ, maxZ };
+  }
+
+  updateMinimap() {
+    if (!this.minimapCtx) return;
+
+    // Lotus Endless Highway Tactical Radar Scanner
+    if (this.track && this.track.isInfinite && this.player1) {
+      const ctx = this.minimapCtx;
+      const w = this.minimapCanvas.width;
+      const h = this.minimapCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const pS = this.player1.trackT;
+      const pInfo = this.track.getRoadTransformAt(pS);
+      const pCenter = pInfo.center;
+
+      // Calculate player's forward and right vectors on the ground plane (XZ)
+      const fwdLen = Math.hypot(pInfo.tangent.x, pInfo.tangent.z) || 1;
+      const dirFwdX = pInfo.tangent.x / fwdLen;
+      const dirFwdZ = pInfo.tangent.z / fwdLen;
+      const dirRightX = -dirFwdZ;
+      const dirRightZ = dirFwdX;
+
+      const originX = w * 0.5;
+      const originY = h * 0.82;
+      const scale = 1.15; // Pixels per meter
+
+      // Helper to project any 3D world position into player-relative radar screen space
+      const toRadar = (wx, wz) => {
+        const dx = wx - pCenter.x;
+        const dz = wz - pCenter.z;
+        const forwardDist = dx * dirFwdX + dz * dirFwdZ;
+        const rightDist = dx * dirRightX + dz * dirRightZ;
+        return {
+          x: originX + rightDist * scale,
+          y: originY - forwardDist * scale,
+          forwardDist,
+          rightDist
+        };
+      };
+
+      // 1. Draw Road Ribbon & Curbs
+      const samples = [];
+      for (let step = -45; step <= 360; step += 12) {
+        const info = this.track.getRoadTransformAt(pS + step);
+        samples.push(toRadar(info.center.x, info.center.z));
+      }
+
+      // Outer Road Bed
+      ctx.beginPath();
+      for (let i = 0; i < samples.length; i++) {
+        if (i === 0) ctx.moveTo(samples[i].x, samples[i].y);
+        else ctx.lineTo(samples[i].x, samples[i].y);
+      }
+      ctx.strokeStyle = 'rgba(28, 36, 52, 0.9)';
+      ctx.lineWidth = 22;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Road Surface Ribbon
+      ctx.strokeStyle = 'rgba(70, 160, 240, 0.85)';
+      ctx.lineWidth = 14;
+      ctx.stroke();
+
+      // Center Dash Guide
+      ctx.strokeStyle = 'rgba(255, 230, 0, 0.6)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 8]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 2. Pit Stop Indicator (if approaching service oasis)
+      if (this.track.pitZone) {
+        const pitDist = this.track.pitZone.distance - pS;
+        if (pitDist > -40 && pitDist < 360) {
+          const pitPos = toRadar(this.track.pitZone.center.x, this.track.pitZone.center.z);
+          ctx.fillStyle = '#00ff66';
+          ctx.beginPath();
+          ctx.arc(pitPos.x, pitPos.y, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      // 3. Draw AI & Opponent Cars (accurately placed along the curved route)
+      for (let car of this.allCars) {
+        if (car === this.player1) continue;
+
+        const carPos = toRadar(car.mesh.position.x, car.mesh.position.z);
+        if (carPos.forwardDist >= -50 && carPos.forwardDist <= 365) {
+          ctx.fillStyle = car.isPlayer ? '#00c3ff' : '#ffe600';
+          ctx.beginPath();
+          ctx.arc(carPos.x, carPos.y, 6.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
+
+      // 4. Draw Player 1 (Radar Origin)
+      ctx.fillStyle = '#ff2244';
+      ctx.beginPath();
+      ctx.arc(originX, originY, 9, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      return;
+    }
+
+    if (!this.minimapBounds || !this.minimapTrackPoints) return;
+    const ctx = this.minimapCtx;
+    const w = this.minimapCanvas.width;
+    const h = this.minimapCanvas.height;
+    const pad = 36;
+
+    ctx.clearRect(0, 0, w, h);
+
+    const { minX, maxX, minZ, maxZ } = this.minimapBounds;
+    const spanX = maxX - minX || 1;
+    const spanZ = maxZ - minZ || 1;
+
+    const toMap = (x, z) => ({
+      x: pad + ((x - minX) / spanX) * (w - pad * 2),
+      y: pad + ((z - minZ) / spanZ) * (h - pad * 2)
+    });
+
+    ctx.beginPath();
+    const first = toMap(this.minimapTrackPoints[0].x, this.minimapTrackPoints[0].z);
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < this.minimapTrackPoints.length; i++) {
+      const pt = toMap(this.minimapTrackPoints[i].x, this.minimapTrackPoints[i].z);
+      ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.closePath();
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+    ctx.lineWidth = 16;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(70, 160, 240, 0.85)';
+    ctx.lineWidth = 7;
+    ctx.stroke();
+
+    const finishPos = toMap(this.track.spline.getPointAt(0.01).x, this.track.spline.getPointAt(0.01).z);
+    ctx.fillStyle = '#ff0055';
+    ctx.beginPath();
+    ctx.arc(finishPos.x, finishPos.y, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    for (let i = 0; i < this.aiCars.length; i++) {
+      const car = this.aiCars[i].car;
+      const pos = toMap(car.mesh.position.x, car.mesh.position.z);
+      ctx.fillStyle = 'rgba(210, 220, 230, 0.85)';
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 6.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (this.player2) {
+      const p2Pos = toMap(this.player2.mesh.position.x, this.player2.mesh.position.z);
+      ctx.fillStyle = '#00c3ff';
+      ctx.beginPath();
+      ctx.arc(p2Pos.x, p2Pos.y, 11, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    if (this.player1) {
+      const p1Pos = toMap(this.player1.mesh.position.x, this.player1.mesh.position.z);
+      ctx.fillStyle = '#ff2244';
+      ctx.beginPath();
+      ctx.arc(p1Pos.x, p1Pos.y, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+  }
+
+  finishRace() {
+    this.state = 'FINISHED';
+    window.ATR.Audio.stopEngines();
+
+    const results = document.getElementById('results-screen');
+    const board = document.getElementById('results-board');
+    results.classList.remove('hidden');
+
+    const sorted = [...this.allCars].sort((a, b) => {
+      if (b.lap !== a.lap) return b.lap - a.lap;
+      return b.trackT - a.trackT;
+    });
+
+    let html = '';
+    sorted.slice(0, 10).forEach((c, idx) => {
+      const isP1 = (c === this.player1);
+      const isP2 = (c === this.player2);
+      const rowClass = isP1 ? 'p1-row' : (isP2 ? 'p2-row' : '');
+      const timeStr = c.bestLapTime ? `BEST: ${this.formatTime(c.bestLapTime)}` : (c.finished ? 'FINISHED' : 'LAP ' + Math.min(c.lap, this.totalLaps));
+      html += `
+        <div class="results-row ${rowClass}">
+          <span>${idx + 1}. ${c.name}</span>
+          <span>${timeStr}</span>
+        </div>
+      `;
+    });
+    board.innerHTML = html;
+  }
+
+  returnToMenu() {
+    this.state = 'MENU';
+    document.getElementById('results-screen').classList.add('hidden');
+    document.getElementById('pause-screen')?.classList.add('hidden');
+    document.getElementById('hud-p1').classList.add('hidden');
+    document.getElementById('hud-p2').classList.add('hidden');
+    document.getElementById('split-divider').classList.add('hidden');
+    document.getElementById('minimap-container').classList.add('hidden');
+    document.getElementById('main-menu').classList.remove('hidden');
+
+    window.ATR.Audio.stopEngines();
+    if (this.smokeSystem) {
+      this.smokeSystem.clear();
+    }
+
+    if (this.track) {
+      if (typeof this.track.dispose === 'function') {
+        this.track.dispose();
+      }
+      if (this.track.clouds && typeof this.track.clouds.dispose === 'function') {
+        this.track.clouds.dispose();
+      }
+      if (this.track.roadMesh) this.scene.remove(this.track.roadMesh);
+      if (this.track.shoulderMesh) this.scene.remove(this.track.shoulderMesh);
+      if (this.track.terrainMesh) this.scene.remove(this.track.terrainMesh);
+      if (this.track.sceneryGroup) this.scene.remove(this.track.sceneryGroup);
+      this.track = null;
+    }
+
+    this.allCars.forEach(c => this.scene.remove(c.mesh));
+    this.allCars = [];
+    this.aiCars = [];
+
+    this.showcaseCar.visible = true;
+  }
+
+  animate() {
+    requestAnimationFrame(this.animate);
+
+    const delta = Math.min(this.clock.getDelta(), 0.1);
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Real-Time Arcade FPS Counter update
+    this.frameCount++;
+    const now = performance.now();
+    if (now - this.lastFpsTime >= 500) {
+      const fps = Math.round((this.frameCount * 1000) / (now - this.lastFpsTime));
+      if (this.fpsElement) this.fpsElement.innerText = `FPS: ${fps}`;
+      this.frameCount = 0;
+      this.lastFpsTime = now;
+    }
+
+    // Update procedural clouds across all active tracks
+    if (this.track && this.track.clouds && typeof this.track.clouds.update === 'function') {
+      this.track.clouds.update(delta);
+    }
+
+    // Update infinite Lotus Highway procedural generation & chunk recycling
+    if (this.track && this.track.isInfinite) {
+      this.track.update(this.player1, this.allCars, delta);
+    }
+
+    if (this.state === 'MENU') {
+      this.showcaseCar.rotation.y += delta * 0.8;
+      this.renderer.setViewport(0, 0, width, height);
+      this.renderer.setScissorTest(false);
+      this.cameraP1.position.set(0, 2.4, 4.5);
+      this.cameraP1.lookAt(0, 0.4, -6);
+      this.renderer.render(this.scene, this.cameraP1);
+      return;
+    }
+
+    if (this.state === 'PAUSED') {
+      if (this.mode === 'TWO_PLAYER' && this.player2) {
+        const halfH = Math.floor(height / 2);
+        this.renderer.setScissorTest(true);
+        this.renderer.setViewport(0, halfH, width, halfH);
+        this.renderer.setScissor(0, halfH, width, halfH);
+        this.renderer.render(this.scene, this.cameraP1);
+
+        this.renderer.setViewport(0, 0, width, halfH);
+        this.renderer.setScissor(0, 0, width, halfH);
+        this.renderer.render(this.scene, this.cameraP2);
+        this.renderer.setScissorTest(false);
+      } else {
+        this.renderer.setViewport(0, 0, width, height);
+        this.renderer.setScissorTest(false);
+        this.renderer.render(this.scene, this.cameraP1);
+      }
+      return;
+    }
+
+    this.handlePlayerInput(this.player1, delta);
+    if (this.player2) this.handlePlayerInput(this.player2, delta);
+
+    if (this.state === 'RACING') {
+      if (this.player1 && !this.player1.finished) this.player1.currentLapTime += delta;
+      if (this.player2 && !this.player2.finished) this.player2.currentLapTime += delta;
+      for (let ai of this.aiCars) {
+        if (!ai.car.finished) ai.car.currentLapTime += delta;
+      }
+    }
+
+    for (let ai of this.aiCars) {
+      ai.update(delta, this.allCars);
+    }
+
+    if (this.player1) this.player1.updatePhysics(delta, this.track);
+    if (this.player2) this.player2.updatePhysics(delta, this.track);
+
+    this.handleCarCollisions(delta);
+    this.checkObstacleCollisions();
+
+    if (this.smokeSystem) {
+      this.smokeSystem.update(delta);
+    }
+
+    this.updateHUD(this.player1, 'p1');
+    if (this.player2) this.updateHUD(this.player2, 'p2');
+    this.updateMinimap();
+
+    if (this.mode === 'TWO_PLAYER' && this.player2) {
+      const halfH = Math.floor(height / 2);
+      this.renderer.setScissorTest(true);
+
+      // Top Half: Player 1
+      this.renderer.setViewport(0, halfH, width, halfH);
+      this.renderer.setScissor(0, halfH, width, halfH);
+      this.updateCamera(this.cameraP1, this.player1, width / halfH, delta);
+      this.renderer.render(this.scene, this.cameraP1);
+
+      // Bottom Half: Player 2
+      this.renderer.setViewport(0, 0, width, halfH);
+      this.renderer.setScissor(0, 0, width, halfH);
+      this.updateCamera(this.cameraP2, this.player2, width / halfH, delta);
+      this.renderer.render(this.scene, this.cameraP2);
+
+      this.renderer.setScissorTest(false);
+    } else {
+      // Fullscreen Single Player
+      this.renderer.setViewport(0, 0, width, height);
+      this.renderer.setScissorTest(false);
+      this.updateCamera(this.cameraP1, this.player1, width / height, delta);
+      this.renderer.render(this.scene, this.cameraP1);
+    }
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  window.gameApp = new Game();
+});
