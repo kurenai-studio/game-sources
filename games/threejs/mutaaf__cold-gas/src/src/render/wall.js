@@ -1,0 +1,656 @@
+// The Wall at night: a board-formed concrete curl that rises from the slab into a vertical wall
+// and over into the ledge, edged in red LED, a white line up the middle, a gunmetal lattice truss
+// behind it, and searchlights fanning into a black sky. Every surface the car can touch is
+// sampled from `wallProfile` (src/sim/courses.js), so the picture is the physics to the
+// centimetre.
+import * as THREE from 'three';
+import { WALL, wallProfile, FIXTURES } from '../sim/courses.js';
+import { sliver, spreadAxes, spreadThin, spreadRing, setSliverAttributes, DECAL, LAYER } from './sliver.js';
+
+const W = WALL.width, T = WALL.slab, L = WALL.length;
+const HK = WALL.lip.y / 19.8;   // lights were aimed on a 19.8 m lip; they follow the real height
+const SEAM = 1.2;          // board-form pour seams along the curve (m)
+const TILE = SEAM * 4;     // texture repeat along the curve (m)
+
+// --- Procedural materials ---------------------------------------------------------------------
+function rng(seed) { return () => ((seed = (seed * 16807) % 2147483647) / 2147483647); }
+
+// Board-formed concrete: plank grain across the deck, a pour seam every 1.2 m, form-tie holes,
+// water streaks running down the curl, and a polished wheel path. Colour, roughness and bump.
+function deckTextures() {
+  const S = 1024;
+  const rnd = rng(19);
+  const mk = () => { const c = document.createElement('canvas'); c.width = c.height = S; return [c, c.getContext('2d')]; };
+  const [cc, cx] = mk(), [rc, rx] = mk(), [bc, bx] = mk();
+  // Base colour with fine grain.
+  cx.fillStyle = '#8c8d8f'; cx.fillRect(0, 0, S, S);
+  const img = cx.getImageData(0, 0, S, S);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const n = (rnd() - 0.5) * 22;
+    img.data[i] += n; img.data[i + 1] += n; img.data[i + 2] += n + 1;
+  }
+  cx.putImageData(img, 0, 0);
+  bx.fillStyle = '#808080'; bx.fillRect(0, 0, S, S);
+  // Plank grain: thin horizontal streaks (boards ran across the width).
+  for (let y = 0; y < S; y += 3) {
+    const a = 0.02 + rnd() * 0.05;
+    cx.fillStyle = `rgba(${rnd() < 0.5 ? '60,60,62' : '170,170,172'},${a})`;
+    cx.fillRect(0, y, S, 1 + (rnd() < 0.2 ? 1 : 0));
+    bx.fillStyle = `rgba(${rnd() < 0.5 ? '0,0,0' : '255,255,255'},${a * 1.5})`;
+    bx.fillRect(0, y, S, 1);
+  }
+  // Board edges every ~15 cm, then the pour seams every 1.2 m (4 per tile).
+  const per = S / 4;
+  for (let k = 0; k < 4; k++) {
+    for (let b = 1; b < 8; b++) {
+      const y = k * per + (b * per) / 8 + (rnd() - 0.5) * 2;
+      cx.fillStyle = 'rgba(40,40,42,0.10)'; cx.fillRect(0, y, S, 1.5);
+      bx.fillStyle = 'rgba(0,0,0,0.25)'; bx.fillRect(0, y, S, 1.5);
+    }
+    const y = k * per;
+    cx.fillStyle = 'rgba(25,25,27,0.32)'; cx.fillRect(0, y, S, 3);
+    cx.fillStyle = 'rgba(200,200,202,0.18)'; cx.fillRect(0, y + 3, S, 1);
+    bx.fillStyle = '#000'; bx.fillRect(0, y - 1, S, 4);
+    // Form-tie holes: a row just past each seam.
+    for (let i = 0; i < 6; i++) {
+      const hx = (i + 0.5) * (S / 6), hy = y + per * 0.5;
+      const g = cx.createRadialGradient(hx, hy, 0, hx, hy, 7);
+      g.addColorStop(0, 'rgba(20,20,22,0.85)'); g.addColorStop(0.6, 'rgba(40,40,42,0.5)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      cx.fillStyle = g; cx.beginPath(); cx.arc(hx, hy, 7, 0, Math.PI * 2); cx.fill();
+      bx.fillStyle = '#202020'; bx.beginPath(); bx.arc(hx, hy, 4, 0, Math.PI * 2); bx.fill();
+    }
+  }
+  // Water streaks running down the curve, and soft blotches.
+  for (let i = 0; i < 26; i++) {
+    const sx = rnd() * S, w = 6 + rnd() * 30, a = 0.03 + rnd() * 0.06;
+    const g = cx.createLinearGradient(0, 0, 0, S);
+    g.addColorStop(0, `rgba(30,30,32,${a})`); g.addColorStop(1, 'rgba(30,30,32,0)');
+    cx.fillStyle = g; cx.fillRect(sx, 0, w, S);
+  }
+  for (let i = 0; i < 70; i++) {
+    const r = 20 + rnd() * 110, gx = rnd() * S, gy = rnd() * S, a = rnd() * 0.07;
+    const g = cx.createRadialGradient(gx, gy, 0, gx, gy, r);
+    g.addColorStop(0, `rgba(${rnd() < 0.5 ? '50,50,52' : '170,170,170'},${a})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+    cx.fillStyle = g; cx.fillRect(gx - r, gy - r, r * 2, r * 2);
+  }
+  // Roughness (green channel): matte concrete, polished where tyres run (track ±0.86 m).
+  rx.fillStyle = 'rgb(0,225,0)'; rx.fillRect(0, 0, S, S);
+  for (const tx of [-0.86, 0.86]) {
+    const cxp = (0.5 + tx / W) * S, half = (0.42 / W) * S;
+    const g = rx.createLinearGradient(cxp - half, 0, cxp + half, 0);
+    g.addColorStop(0, 'rgba(0,225,0,0)'); g.addColorStop(0.5, 'rgba(0,120,0,1)'); g.addColorStop(1, 'rgba(0,225,0,0)');
+    rx.fillStyle = g; rx.fillRect(cxp - half, 0, half * 2, S);
+    // Rubber: a faint darkening in the colour map too.
+    const d = cx.createLinearGradient(cxp - half, 0, cxp + half, 0);
+    d.addColorStop(0, 'rgba(20,20,22,0)'); d.addColorStop(0.5, 'rgba(20,20,22,0.16)'); d.addColorStop(1, 'rgba(20,20,22,0)');
+    cx.fillStyle = d; cx.fillRect(cxp - half, 0, half * 2, S);
+  }
+  const tex = (c, srgb) => {
+    const t = new THREE.CanvasTexture(c);
+    if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+    return t;
+  };
+  return { map: tex(cc, true), roughnessMap: tex(rc, false), bumpMap: tex(bc, false) };
+}
+
+// Derivative bump mapping turns to noise once a pixel spans many bump texels: each pixel's
+// forward difference lands on a different board line, so a distant deck sparkles as it moves.
+// Fade the bump out between 4 and 16 texels per pixel (the title and chase cameras sit under 4,
+// so up close the deck is unchanged).
+function fadeBump(mat, size) {
+  const chunk = THREE.ShaderChunk.bumpmap_pars_fragment
+    .replace('float Hll = bumpScale *', `float bumpK = bumpScale * ( 1.0 - smoothstep( 4.0, 16.0, max( length( dSTdx ), length( dSTdy ) ) * ${size.toFixed(1)} ) );
+		float Hll = bumpK *`)
+    .replace('float dBx = bumpScale *', 'float dBx = bumpK *')
+    .replace('float dBy = bumpScale *', 'float dBy = bumpK *');
+  mat.onBeforeCompile = (sh) => { sh.fragmentShader = sh.fragmentShader.replace('#include <bumpmap_pars_fragment>', chunk); };
+  mat.customProgramCacheKey = () => `fadeBump:${size}`;
+}
+
+// A wet slab (the night after rain, as launch nights so often are): puddles from a world-space
+// noise, smoother where wet, and on the high tier a planar reflection of the stage mixed in by
+// Fresnel (src/render/film.js renders the mirror; until it arrives the lookup reads a black texel,
+// so the program never changes after the first load). Returns the uniforms film.js drives.
+const BLACK = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
+BLACK.needsUpdate = true;
+export function wetSlab(mat, planar) {
+  const U = { tReflect: { value: BLACK }, uReflMat: { value: new THREE.Matrix4() }, uReflK: { value: 0 } };
+  mat.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vWetWp;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvWetWp = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;');
+    sh.fragmentShader = (planar ? '#define WET_PLANAR\n' : '') + sh.fragmentShader
+      .replace('#include <common>', `#include <common>
+varying vec3 vWetWp;
+uniform sampler2D tReflect; uniform mat4 uReflMat; uniform float uReflK;
+float wetHash( vec2 p ) { vec3 q = fract( vec3( p.xyx ) * 0.1031 ); q += dot( q, q.yzx + 33.33 ); return fract( ( q.x + q.y ) * q.z ); }
+float wetNoise( vec2 p ) {
+  vec2 i = floor( p ), f = fract( p ); f = f * f * ( 3.0 - 2.0 * f );
+  return mix( mix( wetHash( i ), wetHash( i + vec2( 1, 0 ) ), f.x ), mix( wetHash( i + vec2( 0, 1 ) ), wetHash( i + vec2( 1, 1 ) ), f.x ), f.y );
+}
+// Puddles: broad patches with ragged edges; the fine detail fades out once a pixel covers it, so
+// the far slab doesn't sparkle.
+float wetMask( vec2 p ) {
+  float fw = length( fwidth( p ) );
+  float n = wetNoise( p * 0.07 ) * 0.62 + wetNoise( p * 0.29 + 7.1 ) * 0.28;
+  n += ( wetNoise( p * 1.1 + 3.7 ) - 0.5 ) * 0.2 * ( 1.0 - smoothstep( 0.3, 1.2, fw ) );
+  float e = 0.1 + fw * 0.05;
+  return smoothstep( 0.42 - e, 0.42 + e, n );
+}`)
+      .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
+float wet = 0.6 + 0.4 * wetMask( vWetWp.xz );   // damp everywhere, standing water in places
+diffuseColor.rgb *= 1.0 - 0.12 * wet;            // water darkens concrete
+roughnessFactor = mix( roughnessFactor, max( roughnessFactor * 0.55, 0.2 ), wet );`)
+      .replace('#include <opaque_fragment>', `#ifdef WET_PLANAR
+if ( uReflK > 0.0 ) {
+  vec4 rc = uReflMat * vec4( vWetWp, 1.0 );
+  vec3 vd = normalize( cameraPosition - vWetWp );
+  float fres = 0.03 + 0.97 * pow( 1.0 - clamp( vd.y, 0.0, 1.0 ), 5.0 );
+  // Wet concrete smears a reflection along the view (the micro-ripples are stretched by the
+  // grazing angle): five taps down the mirror image, wider where it's only damp.
+  vec2 ruv = rc.xy / rc.w;
+  float lod = mix( 2.2, 0.8, wet );
+  vec2 dv = vec2( 0.0, mix( 9.0, 3.0, wet ) ) / vec2( textureSize( tReflect, 0 ) );
+  vec3 refl = textureLod( tReflect, ruv, lod ).rgb * 0.3
+    + ( textureLod( tReflect, ruv + dv, lod ).rgb + textureLod( tReflect, ruv - dv, lod ).rgb ) * 0.22
+    + ( textureLod( tReflect, ruv + dv * 2.3, lod + 0.6 ).rgb + textureLod( tReflect, ruv - dv * 2.3, lod + 0.6 ).rgb ) * 0.13;
+  outgoingLight += refl * uReflK * fres * wet * wet * 0.7;
+}
+#endif
+#include <opaque_fragment>`);
+  };
+  mat.customProgramCacheKey = () => `wetSlab:${planar}`;
+  return U;
+}
+
+// Dark slab and approach asphalt for the ground.
+function groundTexture(seed, base) {
+  const S = 512, rnd = rng(seed);
+  const c = document.createElement('canvas'); c.width = c.height = S;
+  const x = c.getContext('2d');
+  x.fillStyle = base; x.fillRect(0, 0, S, S);
+  const img = x.getImageData(0, 0, S, S);
+  for (let i = 0; i < img.data.length; i += 4) { const n = (rnd() - 0.5) * 14; img.data[i] += n; img.data[i + 1] += n; img.data[i + 2] += n; }
+  x.putImageData(img, 0, 0);
+  for (let i = 0; i < 50; i++) {
+    const r = 10 + rnd() * 70, gx = rnd() * S, gy = rnd() * S;
+    const g = x.createRadialGradient(gx, gy, 0, gx, gy, r);
+    g.addColorStop(0, `rgba(0,0,0,${rnd() * 0.12})`); g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g; x.fillRect(gx - r, gy - r, r * 2, r * 2);
+  }
+  x.strokeStyle = 'rgba(0,0,0,0.5)'; x.lineWidth = 2;
+  x.beginPath(); x.moveTo(0, 1); x.lineTo(S, 1); x.moveTo(1, 0); x.lineTo(1, S); x.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8;
+  return t;
+}
+
+// --- Geometry helpers ------------------------------------------------------------------------------
+// Profile samples, denser on the curves.
+function samples(n = 360) {
+  const out = [];
+  const p = { z: 0, y: 0, nz: 0, ny: 0, tz: 0, ty: 0 };
+  for (let i = 0; i <= n; i++) {
+    const s = (i / n) * L;
+    wallProfile(s, p);
+    out.push({ s, z: p.z, y: p.y, nz: p.nz, ny: p.ny });
+  }
+  return out;
+}
+
+// The deck: riding surface, back face, two side faces and the lip cap, as one indexed mesh.
+function deckGeometry(S) {
+  const pos = [], nor = [], uv = [], idx = [];
+  const quadStrip = (getA, getB, nA, uA, uB) => {
+    const base = pos.length / 3;
+    for (let i = 0; i < S.length; i++) {
+      const a = getA(S[i]), b = getB(S[i]), n = nA(S[i]);
+      pos.push(...a, ...b); nor.push(...n, ...n);
+      uv.push(uA, S[i].s / TILE, uB, S[i].s / TILE);
+    }
+    for (let i = 0; i < S.length - 1; i++) {
+      const a = base + i * 2, b = a + 1, c = a + 2, d = a + 3;
+      idx.push(a, c, b, b, c, d);
+    }
+  };
+  const top = (x) => (p) => [x, p.y, p.z];
+  const back = (x) => (p) => [x, p.y - p.ny * T, p.z - p.nz * T];
+  // Riding surface (normal toward free space). Winding so front faces face the normal.
+  quadStrip(top(W / 2), top(-W / 2), (p) => [0, p.ny, p.nz], 1, 0);
+  // Back face.
+  quadStrip(back(-W / 2), back(W / 2), (p) => [0, -p.ny, -p.nz], 0, 1);
+  // Side faces.
+  quadStrip(back(W / 2), top(W / 2), () => [1, 0, 0], 0, T / W);
+  quadStrip(top(-W / 2), back(-W / 2), () => [-1, 0, 0], 0, T / W);
+  // Lip cap.
+  const e = S[S.length - 1], base = pos.length / 3;
+  const tz = -e.ny, ty = e.nz; // tangent direction at the end, pointing off the lip
+  const cap = [[W / 2, e.y, e.z], [-W / 2, e.y, e.z], [W / 2, e.y - e.ny * T, e.z - e.nz * T], [-W / 2, e.y - e.ny * T, e.z - e.nz * T]];
+  for (const c of cap) { pos.push(...c); nor.push(0, ty, tz); }
+  uv.push(0, 0, 1, 0, 0, T / TILE, 1, T / TILE);
+  idx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  // Make sure every face faces its own normal: flip triangles that disagree.
+  const p = g.attributes.position.array, ix = g.index.array;
+  const v = (i) => new THREE.Vector3(p[i * 3], p[i * 3 + 1], p[i * 3 + 2]);
+  const nn = g.attributes.normal.array;
+  for (let t = 0; t < ix.length; t += 3) {
+    const a = v(ix[t]), b = v(ix[t + 1]), c = v(ix[t + 2]);
+    const fn = b.clone().sub(a).cross(c.clone().sub(a));
+    const want = new THREE.Vector3(nn[ix[t] * 3], nn[ix[t] * 3 + 1], nn[ix[t] * 3 + 2]);
+    if (fn.dot(want) < 0) { const k = ix[t + 1]; ix[t + 1] = ix[t + 2]; ix[t + 2] = k; }
+  }
+  return g;
+}
+
+// A ribbon lying on the riding surface between x0 and x1, lifted `lift` along the normal.
+function ribbon(S, x0, x1, lift, from = 0) {
+  const pos = [], uv = [], idx = [], spread = [], side = [], h = (x1 - x0) / 2;
+  for (let i = 0; i < S.length; i++) {
+    const p = S[i];
+    if (p.s < from) continue;
+    const y = p.y + p.ny * lift, z = p.z + p.nz * lift;
+    pos.push(x0, y, z, x1, y, z);
+    spread.push(-h, 0, 0, h, 0, 0);   // across the ribbon from its centre line (src/render/sliver.js)
+    side.push(-1, 1);
+    uv.push(0, p.s, 1, p.s);
+  }
+  const n = pos.length / 6;
+  for (let i = 0; i < n - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  setSliverAttributes(g, spread, side);
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+// A band on the deck's outer side face at x, from depth d0 to d1 below the riding surface.
+function sideBand(S, x, d0, d1) {
+  const pos = [], idx = [], spread = [], side = [], h = (d1 - d0) / 2;
+  for (const p of S) {
+    pos.push(x, p.y - p.ny * d0, p.z - p.nz * d0, x, p.y - p.ny * d1, p.z - p.nz * d1);
+    spread.push(0, p.ny * h, p.nz * h, 0, -p.ny * h, -p.nz * h);
+    side.push(1, -1);
+  }
+  for (let i = 0; i < S.length - 1; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  setSliverAttributes(g, spread, side);
+  g.setIndex(idx);
+  return g;
+}
+
+// A tube along the deck edge (LED strip), offset along the normal.
+function edgeTube(S, x, lift, depth, radius) {
+  const pts = S.map((p) => new THREE.Vector3(x, p.y + p.ny * lift - p.ny * depth, p.z + p.nz * lift - p.nz * depth));
+  return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), S.length, radius, 6, false);
+}
+
+// --- Truss -------------------------------------------------------------------------------------------
+// Instanced unit boxes, one per member: chords, struts, diagonals, gussets, footings.
+function truss(tier) {
+  const members = [];   // [ax, ay, az, bx, by, bz, thickness]
+  const m = (a, b, t) => members.push([...a, ...b, t]);
+  const back = (s) => { const p = wallProfile(s); return [p.z - p.nz * T, p.y - p.ny * T]; };
+
+  // The tower behind the curl (as at the reveal): 4 chords in a 3.4 × 3.0 m footprint, rising
+  // past the ledge; a cantilever truss off its top carries the inverted ledge out to the lip.
+  const zA = WALL.r1 + T + 0.35, zB = zA + 3.0, xs = [-1.7, 1.7];
+  const top = WALL.lip.y + T + 1.6;
+  const step = 2.4;
+  for (const x of xs) for (const z of [zA, zB]) m([x, 0, z], [x, top, z], 0.3);
+  for (let y = step; y <= top + 0.01; y += step) {
+    m([xs[0], y, zA], [xs[1], y, zA], 0.15); m([xs[0], y, zB], [xs[1], y, zB], 0.15);
+    for (const x of xs) m([x, y, zA], [x, y, zB], 0.15);
+  }
+  // X bracing on every face, alternating.
+  for (let y = 0, k = 0; y < top - 0.01; y += step, k++) {
+    const y1 = Math.min(top, y + step);
+    const f = k % 2 ? 1 : -1;
+    m([xs[0], y, zA], [xs[1], y1, zA], 0.11); m([xs[1], y, zA], [xs[0], y1, zA], 0.11);
+    m([xs[0], y, zB], [xs[1], y1, zB], 0.11); m([xs[1], y, zB], [xs[0], y1, zB], 0.11);
+    for (const x of xs) m([x, y, f > 0 ? zA : zB], [x, y1, f > 0 ? zB : zA], 0.11);
+  }
+  // Horizontal ties from the tower face to the back of the upper curl.
+  const arcLen = WALL.arcLength || WALL.r1 * Math.PI / 2;
+  for (let s = WALL.r1 * (Math.PI / 3); s <= arcLen - 0.5; s += 1.6) {
+    const [bz, by] = back(s);
+    if (by > top - 0.5 || bz > zA) continue;
+    for (const x of xs) m([x, by, bz], [x, by, zA], 0.13);
+    m([xs[0], by, bz], [xs[1], by, zA], 0.07);
+  }
+  // Cantilever: top chords from the tower out over the ledge, a lower chord, hangers to the deck.
+  const zEnd = WALL.lip.z - 0.6;
+  for (const x of xs) {
+    m([x, top, zB], [x, top, zEnd], 0.26);
+    m([x, top - step, zA], [x, top - 0.25, zEnd + 0.8], 0.14);
+  }
+  for (let s = arcLen * 0.82; s <= L + 0.01; s += 1.3) {
+    const [bz, by] = back(s);
+    if (bz > zA) continue;
+    for (const x of xs) {
+      m([x, by, bz], [x, top, bz], 0.12);
+      m([x, by, bz], [x, top, Math.min(bz + 1.3, zA)], 0.08);
+    }
+    m([xs[0], top, bz], [xs[1], top, bz], 0.12);
+  }
+  // Under-frame for the lower curve: posts from the slab to the back of the arc.
+  for (let z = 6.2; z <= WALL.r1 + 0.3; z += 1.45) {
+    const y = WALL.r1 - Math.sqrt(Math.max(0, (WALL.r1 + T) ** 2 - z * z));
+    if (y < 0.35) continue;
+    for (const x of [-1.9, 0, 1.9]) m([x, 0, z], [x, y, z], 0.18);
+    m([-1.9, 0, z], [1.9, y * 0.95, z], 0.08);
+  }
+  // Footings and gussets.
+  const boxes = [];
+  for (const x of xs) for (const z of [zA, zB]) boxes.push([x, 0.2, z, 1.1, 0.4, 1.1]);
+  for (let y = step; y <= top + 0.01; y += step) for (const x of xs) for (const z of [zA, zB]) boxes.push([x, y, z, 0.42, 0.42, 0.42]);
+
+  // Members are unit boxes stretched along y: kept at least a pixel thick in the distance.
+  const geo = spreadAxes(new THREE.BoxGeometry(1, 1, 1), [1, 0, 1]);
+  const mat = sliver(new THREE.MeshStandardMaterial({ color: 0x2b2e33, metalness: 0.85, roughness: 0.42, envMapIntensity: 1.2 }), { minPx: 1, dim: false, maxK: 4, rough: 8 });
+  const total = members.length + boxes.length;
+  const mesh = new THREE.InstancedMesh(geo, mat, total);
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), d = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  const q = new THREE.Quaternion(), sc = new THREE.Vector3(), mtx = new THREE.Matrix4();
+  let i = 0;
+  for (const mm of members) {
+    a.set(mm[0], mm[1], mm[2]); b.set(mm[3], mm[4], mm[5]);
+    d.subVectors(b, a); const len = d.length(); d.normalize();
+    q.setFromUnitVectors(up, d);
+    sc.set(mm[6], len, mm[6]);
+    mtx.compose(a.clone().add(b).multiplyScalar(0.5), q, sc);
+    mesh.setMatrixAt(i++, mtx);
+  }
+  q.identity();
+  for (const bb of boxes) { sc.set(bb[3], bb[4], bb[5]); mtx.compose(a.set(bb[0], bb[1], bb[2]), q, sc); mesh.setMatrixAt(i++, mtx); }
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.castShadow = tier !== 'low'; mesh.receiveShadow = true;
+  return mesh;
+}
+
+// --- Searchlights ---------------------------------------------------------------------------------
+const beamVS = `varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+  void main(){ vUv = uv; vN = normalize(normalMatrix * normal); vec4 mv = modelViewMatrix * vec4(position,1.); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`;
+const beamFS = `uniform vec3 uColor; uniform float uPower; varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+  void main(){
+    float along = clamp(vUv.y, 0., 1.);   // 0 at the lamp, 1 at the far end
+    float edge = pow(abs(dot(normalize(vN), normalize(vV))), 1.6);
+    float a = uPower * edge * pow(1. - along, 1.7) * smoothstep(0., 0.02, along);
+    gl_FragColor = vec4(uColor * a, a);
+  }`;
+
+function searchlights(tier) {
+  const g = new THREE.Group();
+  // The drums are solid (src/sim/courses.js FIXTURES), so every tier draws them; the low tier drops
+  // only the beams.
+  const beams = [], noBeams = tier === 'low';
+  const geo = new THREE.CylinderGeometry(5.2, 0.22, 130, 32, 1, true);
+  geo.translate(0, 65, 0);        // lamp at the origin, beam up +y
+  const fixtureMat = new THREE.MeshStandardMaterial({ color: 0x15161a, metalness: 0.7, roughness: 0.4 });
+  const lensMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.1, 1.3, 1.6) });
+  const S = FIXTURES.searchlights, spots = S.at;
+  spots.forEach(([x, z, tilt, lean], i) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, S.y, z);
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: beamVS, fragmentShader: beamFS, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+      uniforms: { uColor: { value: new THREE.Color(0.62, 0.78, 1.0) }, uPower: { value: 0.16 } },
+    });
+    const beam = new THREE.Mesh(geo, mat);
+    beam.frustumCulled = false;
+    beam.visible = !noBeams;
+    pivot.add(beam);
+    const head = new THREE.Mesh(new THREE.CylinderGeometry(S.rTop, S.r, S.h, 20), fixtureMat);
+    pivot.add(head);
+    const lens = new THREE.Mesh(new THREE.CircleGeometry(0.48, 24), lensMat);
+    lens.rotation.x = -Math.PI / 2; lens.position.y = 0.26;
+    pivot.add(lens);
+    g.add(pivot);
+    beams.push({ pivot, tilt, lean, phase: i * 1.7, speed: 0.11 + (i % 3) * 0.03 });
+  });
+  return {
+    group: g,
+    lamps: spots.map(([x, z]) => new THREE.Vector3(x, 0.6, z)),
+    update(t) {
+      for (const b of beams) {
+        b.pivot.rotation.z = -b.tilt * 0.55 + Math.sin(t * b.speed + b.phase) * 0.18;
+        b.pivot.rotation.x = b.lean + Math.cos(t * b.speed * 0.8 + b.phase) * 0.12;
+      }
+    },
+  };
+}
+
+// --- Markings, approach, pad ---------------------------------------------------------------------
+function approach(P, tier) {
+  const g = new THREE.Group();
+  const z0 = WALL.runout.zMin, z1 = 0, len = z1 - z0;
+  const map = groundTexture(23, '#1b1c1f'); map.repeat.set(2, len / 8);
+  const stripMat = new THREE.MeshStandardMaterial({ map, color: 0x9a9ca0, roughness: 0.62, metalness: 0, envMapIntensity: 0.5, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
+  g.userData.wet = wetSlab(stripMat, tier === 'high');
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(9, len), stripMat);
+  strip.rotation.x = -Math.PI / 2; strip.position.set(0, 0.002, (z0 + z1) / 2); strip.receiveShadow = true;
+  g.add(strip);
+  // Paint on the strip (DECAL: the strip's own slope-scaled offset used to beat these lines at
+  // grazing angles, and they vanished in stripes), kept at least a pixel wide at range.
+  const paint = (opacity) => sliver(new THREE.MeshBasicMaterial({ color: 0xdfe3e8, transparent: true, opacity, depthWrite: false, ...DECAL }), { dim: 'alpha', maxK: 64 });
+  const white = paint(0.55), faint = paint(0.2);
+  const flat = (geo, mat, x, z, y = 0.006, order = LAYER.paint) => { const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.renderOrder = order; g.add(m); return m; };
+  for (const sx of [-1, 1]) flat(spreadThin(new THREE.PlaneGeometry(0.1, len)), white, sx * 4.2, (z0 + z1) / 2);
+  for (let z = z0 + 3; z < -1; z += 6) flat(spreadThin(new THREE.PlaneGeometry(0.08, 2.6)), faint, 0, z);
+  // Distance-to-wall markers every 25 m: a bar and a number, painted on the slab.
+  for (let d = 25; d <= -z0 - 5; d += 25) {
+    flat(spreadThin(new THREE.PlaneGeometry(1.4, 0.08)), white, 5.5, -d);
+    const c = document.createElement('canvas'); c.width = 128; c.height = 64;
+    const x = c.getContext('2d'); x.fillStyle = 'rgba(223,227,232,0.75)'; x.font = '500 40px "Geist Mono", monospace'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(d), 64, 34);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const num = flat(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false, ...DECAL }), 7.1, -d);
+    num.rotation.z = Math.PI;
+  }
+  // Landing target.
+  flat(new THREE.CircleGeometry(P.rings.at(-1) + 0.8, 96), new THREE.MeshBasicMaterial({ color: 0x050607, transparent: true, opacity: 0.45, depthWrite: false, ...DECAL }), P.x, P.z, 0.004, LAYER.pad);
+  for (const r of P.rings) flat(spreadRing(new THREE.RingGeometry(r - 0.025, r + 0.025, 192), r), white, P.x, P.z, 0.007);
+  flat(spreadThin(new THREE.PlaneGeometry(0.05, 3.4)), white, P.x, P.z, 0.008);
+  flat(spreadThin(new THREE.PlaneGeometry(3.4, 0.05)), white, P.x, P.z, 0.008);
+  return g;
+}
+
+// Additive glow decal on the slab (the red base glow, light pools).
+function glowDecal(color, r, x, z, power) {
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false, ...DECAL,
+    uniforms: { uC: { value: new THREE.Color(color) }, uP: { value: power } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: 'uniform vec3 uC; uniform float uP; varying vec2 vUv; void main(){ float d = length(vUv - 0.5) * 2.; float a = uP * pow(max(0., 1. - d), 2.2); gl_FragColor = vec4(uC * a, a); }',
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), mat);
+  m.rotation.x = -Math.PI / 2; m.position.set(x, 0.012, z); m.renderOrder = LAYER.glow;
+  return m;
+}
+
+// --- Night sky and environment -------------------------------------------------------------------------
+// Stars: one cell in a few hundred of a grid over the sky. Each star used to fill its whole cell,
+// a square about a pixel and a half across, so it lit one, two or four pixels as the camera
+// drifted and the sky twinkled. Now each is a round dot with a soft edge one pixel wide (from the
+// cell's screen footprint), so it slides instead of popping. Same stars, much the same brightness.
+export const STARS = `
+  float hash(vec3 p){ p = fract(p*0.3183099+.1); p*=17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
+  vec3 starField(vec3 dir, float cells, float keep, float h0, bool vary){
+    vec3 q = dir * cells, sp = floor(q);
+    float on = step(keep, hash(sp)) * smoothstep(h0, h0 < 0.2 ? 0.5 : 0.7, dir.y);
+    float aa = max(length(fwidth(q)), 1e-4);
+    float d = length(fract(q) - 0.5);
+    float disc = 1.0 - smoothstep(0.32 - aa * 0.5, 0.32 + aa * 0.5, d);
+    return vec3(on * disc * 1.6) * (vary ? 0.35 + 0.65 * hash(sp + 3.1) : 1.0);
+  }`;
+export function nightSkyMaterial() {
+  return new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize((modelMatrix * vec4(position,1.)).xyz - cameraPosition); gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position,1.); gl_Position.z = gl_Position.w; }',
+    fragmentShader: `varying vec3 vDir;
+      ${STARS}
+      void main(){
+        float h = clamp(vDir.y, -1., 1.);
+        vec3 c = mix(vec3(0.010, 0.013, 0.022), vec3(0.0015, 0.002, 0.004), smoothstep(0.0, 0.5, h));
+        c += vec3(0.02, 0.022, 0.03) * exp(-abs(h) * 22.);
+        c += starField(vDir, 520., 0.9982, 0.08, true);
+        if (h < 0.0) c = vec3(0.004, 0.005, 0.007);
+        gl_FragColor = vec4(c, 1.);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+  });
+}
+
+// Night studio for reflections: black, three long softboxes, a red strip low, a cool rim.
+export function bakeNightEnvironment(renderer) {
+  const env = new THREE.Scene();
+  env.background = new THREE.Color(0x010102);
+  const panel = (w, h, x, y, z, color, k) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(color).multiplyScalar(k), side: THREE.DoubleSide }));
+    m.position.set(x, y, z); m.lookAt(0, 0, 0); env.add(m);
+  };
+  panel(34, 1.4, 0, 18, -4, 0xffffff, 2.6);
+  panel(20, 2.2, -26, 7, -8, 0xfff2e6, 1.6);
+  panel(20, 1.6, 26, 6, 10, 0xdfe9ff, 1.1);
+  panel(14, 0.5, 18, 9, 16, 0xff2030, 0.7);
+  panel(2.4, 9, -30, 5, -1, 0xe6ecff, 0.45);   // the floodlit vehicle on the horizon (src/render/rocket.js)
+  panel(10, 10, 0, -20, 0, 0x0b0c0f, 1);
+  const pm = new THREE.PMREMGenerator(renderer);
+  const rt = pm.fromScene(env, 0.03);
+  pm.dispose();
+  return rt.texture;
+}
+
+// --- The whole look ------------------------------------------------------------------------------------
+// A generator, so the first load can build it in slices between frames (src/render/scene.js
+// `lookFor`): the first value is the look itself (empty group, camera pose, lighting), every
+// later `yield` is a safe place to hand the main thread back.
+export function* buildWall(tier, pad = WALL.pad) {
+  const group = new THREE.Group();
+  group.name = 'course:wall';
+  let beams = null;
+  const look = {
+    group,
+    wet: [],     // the slab's wetSlab uniforms (src/render/film.js)
+    glows: [],   // lamps that light the air around them: { pos, color } (src/render/film.js)
+    titlePose: { x: 0, z: -11, yaw: 0 },
+    look: { exposure: 1.18, bloom: { strength: 0.62, radius: 0.55, threshold: 0.82 }, fog: new THREE.FogExp2(0x020305, 0.0032) },
+    keyLight: { color: 0xdfe6ff, intensity: 1.7, offset: new THREE.Vector3(-18, 30, -22) },
+    update(t) { beams?.update(t); },
+  };
+  yield look;
+  const S = samples(tier === 'low' ? 200 : 380);
+
+  // Deck.
+  const tex = deckTextures();
+  const deckMat = new THREE.MeshStandardMaterial({
+    map: tex.map, roughnessMap: tex.roughnessMap, bumpMap: tex.bumpMap, bumpScale: 1.2,
+    color: 0x8f9196, roughness: 1, metalness: 0, envMapIntensity: 0.3,
+  });
+  fadeBump(deckMat, 1024);
+  const deck = new THREE.Mesh(deckGeometry(S), deckMat);
+  deck.castShadow = tier !== 'low'; deck.receiveShadow = true;
+  group.add(deck);
+  yield;
+
+  // Centreline: painted, matte white.
+  const line = new THREE.Mesh(ribbon(S, -0.065, 0.065, 0.006), new THREE.MeshStandardMaterial({
+    color: 0xe9e9e6, roughness: 0.55, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+  }));
+  line.receiveShadow = true;
+  group.add(line);
+
+  // Red LED strips on both top edges (HDR so bloom catches them), a dimmer pair on the back edges.
+  // Each strip is a flat band on the deck edge plus a band down the outer face, wide enough
+  // (7 cm) to stay continuous at stadium distance.
+  // Slivers (src/render/sliver.js): at range a strip stays a pixel and a half wide and dims to
+  // match, instead of popping in and out of the bloom.
+  const led = sliver(new THREE.MeshBasicMaterial({ color: new THREE.Color(5.5, 0.26, 0.36), fog: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }), { minPx: 1.5 });
+  const ledDim = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.4, 0.05, 0.08), fog: false });
+  for (const sx of [-1, 1]) {
+    for (const geo of [ribbon(S, sx * (W / 2 - 0.1), sx * (W / 2 - 0.01), 0.008), sideBand(S, sx * (W / 2 + 0.006), 0.0, 0.07)]) {
+      const strip = new THREE.Mesh(geo, led);
+      strip.renderOrder = LAYER.light;
+      group.add(strip);
+    }
+    group.add(new THREE.Mesh(edgeTube(S, sx * (W / 2 + 0.005), 0, T - 0.02, 0.016), ledDim));
+  }
+  // Faint red spill on the concrete next to each strip.
+  const spill = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+    polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3,
+    uniforms: { uC: { value: new THREE.Color(1.0, 0.07, 0.1) } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: 'uniform vec3 uC; varying vec2 vUv; void main(){ float a = 0.12 * pow(clamp(vUv.x, 0.0, 1.0), 4.0); gl_FragColor = vec4(uC * a, a); }',
+  });
+  group.add(new THREE.Mesh(ribbon(S, W / 2 - 0.85, W / 2, 0.004), spill));
+  const spillL = new THREE.Mesh(ribbon(S, -W / 2 + 0.85, -W / 2, 0.004), spill);
+  group.add(spillL);
+  yield;
+
+  // Truss.
+  group.add(truss(tier));
+  yield;
+
+  // Ground: a dark polished slab, the approach and the target.
+  const gmap = groundTexture(41, '#141518'); gmap.repeat.set(70, 70);
+  const groundMat = new THREE.MeshStandardMaterial({
+    map: gmap, color: 0x8c8f94, roughness: 0.5, metalness: 0.05, envMapIntensity: 0.55,
+    polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 2,
+  });
+  look.wet.push(wetSlab(groundMat, tier === 'high'));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(1400, 1400), groundMat);
+  ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
+  group.add(ground);
+  yield;
+  const ap = approach(pad, tier);
+  group.add(ap);
+  look.wet.push(ap.userData.wet);
+  group.add(glowDecal(0xff1828, 8, 0, 1.0, 0.26));
+  group.add(glowDecal(0x8fb6ff, 7, -2.5, -5, 0.12));
+  group.add(glowDecal(0x8fb6ff, 7, 2.5, -5, 0.12));
+
+  // Lights. Physically based (candela); decay 2.
+  const lights = new THREE.Group();
+  const hemi = new THREE.HemisphereLight(0x22324a, 0x050506, 0.35);
+  lights.add(hemi);
+  const wash = new THREE.SpotLight(0xfff0e0, 5200 * HK * HK, 0, 0.36, 0.65, 2);
+  wash.position.set(-15, 6, -30); wash.target.position.set(1, 12 * HK, 8);
+  lights.add(wash, wash.target);
+  const wash2 = new THREE.SpotLight(0xdfe8ff, 4200 * HK * HK, 0, 0.32, 0.7, 2);
+  wash2.position.set(16, 4, -26); wash2.target.position.set(0, 14 * HK, 9);
+  lights.add(wash2, wash2.target);
+  // Uplights at the base, raking up the curl (the reference's bright lower deck).
+  const uplights = [];
+  for (const [ux, uz] of FIXTURES.uplights.at) {
+    const sx = Math.sign(ux), [uw, uh, ud] = FIXTURES.uplights.size;
+    const up = new THREE.SpotLight(0xe9f1ff, 1100 * HK * HK, 0, 0.42, 0.55, 2);
+    up.position.set(ux, 0.25, uz + 0.2); up.target.position.set(sx * 0.5, 13 * HK, 10.5);
+    lights.add(up, up.target);
+    uplights.push(up);
+    const fx = new THREE.Mesh(new THREE.BoxGeometry(uw, uh, ud), new THREE.MeshStandardMaterial({ color: 0x111215, metalness: 0.6, roughness: 0.4 }));
+    fx.position.set(ux, uh / 2, uz); group.add(fx);
+    const lens = new THREE.Mesh(spreadThin(new THREE.PlaneGeometry(0.62, 0.18)), sliver(new THREE.MeshBasicMaterial({ color: new THREE.Color(2.4, 2.6, 3) }), { minPx: 1.5 }));
+    lens.position.set(sx * 2.4, 0.2, -5.44); lens.rotation.x = -0.5; lens.renderOrder = LAYER.light; group.add(lens);
+    look.glows.push({ pos: new THREE.Vector3(sx * 2.4, 0.35, -5.3), color: new THREE.Color(0.12, 0.13, 0.15), radius: 1.5 });
+  }
+  const red = new THREE.PointLight(0xff1a28, 35, 18, 2);
+  red.position.set(0, 1.2, 1.5);
+  lights.add(red);
+  look.glows.push({ pos: new THREE.Vector3(0, 0.5, 1.0), color: new THREE.Color(0.25, 0.012, 0.02), radius: 3.5 });
+  group.add(lights);
+  yield;
+
+  beams = searchlights(tier);
+  group.add(beams.group);
+  for (const p of beams.lamps) look.glows.push({ pos: p, color: new THREE.Color(0.1, 0.13, 0.17), radius: 1.6 });
+}

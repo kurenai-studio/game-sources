@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en" style="background:#05070c">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>COLD GAS</title>
+  <meta name="description" content="Ten cold-gas thrusters. One roll. Stick the landing. A minimal 3D stunt game judged by an AI panel." />
+  <meta name="theme-color" content="#05070c" />
+  <meta name="color-scheme" content="dark" />
+  <!-- Installed (0081): the manifest names it, the icons are brand/icon.svg rendered by scripts/brand.mjs.
+       iOS reads its own tags: the home-screen title, the icon (180, no transparency) and a status bar
+       the game draws under (it keeps clear of it with --safe-*). The first paint is #05070c (the
+       html style above), so a launch never flashes white. -->
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+  <link rel="icon" href="./favicon-16.png" type="image/png" sizes="16x16" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="COLD GAS" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="application-name" content="COLD GAS" />
+  <!-- Installed (0112): :root[data-installed] before the first layout, so the canvas bleeds under the home indicator from
+       the first frame. iOS's home-screen app also says so as navigator.standalone (src/styles.css #stage). -->
+  <script>if (navigator.standalone || matchMedia('(display-mode: standalone), (display-mode: fullscreen)').matches) document.documentElement.setAttribute('data-installed', '');</script>
+  <!-- Link previews: scrapers need absolute URLs; %VITE_CG_SITE% is the production address (vite.config.js). -->
+  <link rel="canonical" href="%VITE_CG_SITE%" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="COLD GAS" />
+  <meta property="og:url" content="%VITE_CG_SITE%" />
+  <meta property="og:title" content="COLD GAS" />
+  <meta property="og:description" content="Ten cold-gas thrusters, one roll, a row of parked cars beneath you. Stick the landing." />
+  <meta property="og:image" content="%VITE_CG_SITE%og.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="A silver roadster leaving the top of a curved steel wall upside down at night, red light along the wall’s edges, beside the COLD GAS wordmark." />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="COLD GAS" />
+  <meta name="twitter:description" content="Ten cold-gas thrusters, one roll, a row of parked cars beneath you. Stick the landing." />
+  <meta name="twitter:image" content="%VITE_CG_SITE%og.png" />
+  <meta name="twitter:image:alt" content="A silver roadster leaving the top of a curved steel wall upside down at night, red light along the wall’s edges, beside the COLD GAS wordmark." />
+</head>
+<body>
+  <canvas id="stage" aria-label="3D view of the test range"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="brand" aria-label="COLD GAS">COLD&nbsp;GAS</div>
+    <div class="top-actions">
+      <button class="quick quick-home" data-home aria-label="Home (H)" title="Home (H)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5" /><path d="M6.5 10v9h11v-9" /></svg><kbd>H</kbd></button>
+      <button class="quick quick-retry" data-again aria-label="Retry (R)" title="Retry from the start (R)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95" /><path d="M19 4.5V8h-3.5" /></svg><span>Retry</span><kbd>R</kbd></button>
+      <!-- Pause (0098): one tap from a run on any device (a phone has no Escape, P or Start); hidden off a run. -->
+      <button class="quick quick-pause" data-pause aria-label="Pause (P)" title="Pause (P)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6.5v11M15 6.5v11" /></svg><kbd>P</kbd></button>
+      <button class="chip ai-chip" data-ai-open title="Choose who writes the judges’ words: free Cloudflare Edge, or your own Anthropic, OpenAI, xAI or Gemini key">Judges</button>
+      <button class="chip tier-chip" data-tier="assist" aria-haspopup="dialog" aria-label="Assist: on. Choose the flight tier">Assist</button>
+      <!-- On a touch screen the three icon-only controls fold into one labelled Menu whose rows say
+           what they do and whether they are on (0073); on a fine pointer the sheet is display: contents
+           and they stay the bar's icon buttons. The rows are the same [data-nerds] / [data-ghost] / [data-mute]. -->
+      <div class="more" data-more>
+        <button type="button" class="more-toggle" data-more-toggle aria-label="Menu" aria-expanded="false" aria-controls="more-sheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg><span>Menu</span></button>
+        <div class="more-sheet" id="more-sheet" role="group" aria-label="Menu">
+          <button type="button" class="icon-btn" data-ghost aria-pressed="true" aria-label="Ghost: your best run alongside (G)" title="Ghost: your best run rides alongside (G)"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="14" cy="12" r="5" /><circle data-echo cx="9" cy="12" r="5" stroke-dasharray="2 2.4" /></svg><span class="m-txt" aria-hidden="true"><b>Ghost</b> your best run alongside</span><span class="m-state" aria-hidden="true"></span></button>
+          <button type="button" class="icon-btn" data-mute aria-pressed="true" aria-label="Sound" title="Sound on or off"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path data-wave d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" /></svg><span class="m-txt" aria-hidden="true"><b>Sound</b></span><span class="m-state" aria-hidden="true"></span></button>
+          <button type="button" class="icon-btn nerds-btn" data-nerds aria-pressed="false" aria-label="For nerds: engineering readout (`)" title="For nerds: the physics, engine, tyres, determinism and renderer, live (`)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5c-2 0-2.5 1-2.5 3s-.5 3-2 4c1.5 1 2 2 2 4s.5 3 2.5 3" /><path d="M16 5c2 0 2.5 1 2.5 3s.5 3 2 4c-1.5 1-2 2-2 4s-.5 3-2.5 3" /><circle cx="12" cy="12" r="1.2" /></svg><span class="m-txt" aria-hidden="true"><b>For nerds</b> engineering readout</span><span class="m-state" aria-hidden="true"></span></button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Title -->
+  <section class="title" data-screen="title">
+    <p class="eyebrow">Test stand · Night</p>
+    <h1 class="wordmark">COLD<br /> GAS</h1>
+    <p class="tagline">Ten thrusters. One roll. Stick the landing.</p>
+    <!-- The title's hierarchy (audit, 2026-10-30): pick the event (its one line under the picker, your best
+         beside it), then one dominant Jump; the reference, Practice and the board one row under it; the
+         settings condensed into one quiet strip; Free Drive and the Sandbox behind "More ways to play". -->
+    <div class="courses" role="radiogroup" aria-label="Event" aria-describedby="course-line">
+      <button type="button" role="radio" class="course-btn" data-course="show" aria-checked="true" data-desc="Up the Wall · let go · boost over five parked EVs"><b>The Show</b></button>
+      <button type="button" role="radio" class="course-btn" data-course="wall" aria-checked="false" data-desc="28 m curl · 46 kN suction · inverted"><b>The Wall</b></button>
+      <button type="button" role="radio" class="course-btn" data-course="lineup" aria-checked="false" data-desc="No ramp · lift over five EVs · 360° roll"><b>The Lineup</b></button>
+    </div>
+    <p class="course-line" id="course-line"><span class="cl-desc" data-course-desc>Up the Wall · let go · boost over five parked EVs</span><span class="cl-pb" data-title-pb hidden>Your best <b data-title-pb-v></b></span></p>
+    <div class="cta">
+      <button class="btn primary jump-btn" data-start><span class="jb-v">Jump</span><span class="jb-e" data-start-event>The Show</span></button>
+      <div class="cta-row">
+        <button class="btn ghost" data-reveal>Watch the reference</button>
+        <button class="btn ghost" data-practice-open>Practice</button>
+        <button class="btn ghost" data-board-open aria-haspopup="dialog">Board</button>
+      </div>
+      <!-- Mount point for the daily challenge card (another builder's): stays empty, takes no room while empty. -->
+        <!-- Settings, one quiet strip: this device's controls (touch) or driving level (keyboard), the flight tier
+           (Assist, labelled in words, 0079: a tap opens the tier picker), and how to fly. -->
+      <div class="cta-set" role="group" aria-label="Settings">
+        <button class="set-cell touch-only" data-controls-open aria-haspopup="dialog"><span class="ctl-k">Controls</span> <span data-controls-label>One-thumb</span></button>
+        <button class="set-cell fine-only" data-driving-open aria-haspopup="dialog"><span class="ctl-k">Driving</span> <span data-driving-label>Standard</span></button>
+        <button type="button" class="set-cell assist-ctl" data-assist-open aria-haspopup="dialog"><span class="ac-top"><span class="ac-k">Assist</span><b class="ac-state" data-assist-state>On</b></span><span class="ac-sub" data-assist-sub>rolls you out, levels and brakes</span></button>
+        <button class="set-cell howto-link" data-howto-open aria-haspopup="dialog"><span class="ctl-k">Learn</span> <span>How to fly</span></button>
+      </div>
+      <details class="play-more" data-play-more>
+        <summary><span>More<span class="pm-rest"> ways to play</span></span></summary>
+        <div class="drive-row">
+          <button type="button" class="course-btn drive-btn" data-drive-open aria-haspopup="dialog"><b>Free Drive</b><span>Stelvio · Transfăgărășan · Big Sur · Atlantic Road · Endless</span></button>
+          <button type="button" class="course-btn drive-btn" data-sandbox-open><b>Sandbox</b><span>Build ramps and loops · power-ups · AI side quests</span></button>
+        </div>
+      </details>
+    </div>
+    <!-- [comeback] a challenge someone sent, else today's daily jump and the streak (src/comeback.js) -->
+    <div class="title-extra" data-title-extra></div>
+    <dl class="spec">
+      <div><dt>Thrusters</dt><dd>10</dd></div>
+      <div><dt>Gas</dt><dd data-u-src="297 kg · 690 bar" data-units title="Tap to switch units">655 lb · 10,008 psi</dd></div>
+      <div><dt>Suction</dt><dd data-u-src="46 kN" data-units title="Tap to switch units">10,341 lbf</dd></div>
+      <div><dt>Power</dt><dd data-u-src="1,000 kW" data-units title="Tap to switch units">1,341 hp</dd></div>
+    </dl>
+    <p class="fineprint">Inspired by the October 2026 roadster reveal. An independent fan game, not affiliated with any automaker.</p>
+  </section>
+
+  <!-- Live HUD: one instrument system (src/ui.js, src/hud-landing.js). A 12-column grid with the
+       mission clock and the phase timeline on top, the primary instrument (speed, or the descent
+       with its predictor) and the telemetry strip at the bottom, attitude on the right, the
+       thruster array on the left. Colour means state only: nominal ink, caution amber, warning red. -->
+  <section class="hud" data-screen="hud" hidden>
+    <div class="h-scrim h-scrim-top" aria-hidden="true"></div>
+    <div class="h-scrim h-scrim-bot" aria-hidden="true"></div>
+    <header class="h-mission" data-hud-box="mission">
+      <div class="h-clock h-tap" data-inst="splits" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Mission clock: show the phase splits"><span class="h-t">T</span><b data-clock>−00:03.0</b></div>
+      <ol class="h-timeline h-tap" data-timeline data-inst="splits" aria-label="Flight phase"></ol>
+    </header>
+    <div class="h-primary" data-hud-box="primary">
+      <div class="speed h-big h-tap" data-big="speed" data-units role="button" tabindex="0" aria-label="Speed: switch units (U)"><span class="h-lbl">Speed</span><b data-speed-big>0</b><span class="h-unit" data-u="speed">mph</span><span class="h-alt" data-2="speedBig">0 km/h</span></div>
+      <!-- The landing predictor (src/hud-landing.js): sink in its band, the descent tape with the BRAKE line. -->
+      <div class="descent" data-descent data-status="green" hidden>
+        <div class="d-main">
+          <div class="d-sink h-big h-tap" data-units role="button" tabindex="0" aria-label="Sink rate: switch units (U)"><span class="h-lbl"><span class="w-eng">Sink</span><span class="w-plain">Falling</span></span><b data-d-sink>0.0</b><span class="h-unit" data-u="rate">ft/s</span><span class="h-alt" data-2="dsink">0.0 m/s</span></div>
+          <div class="d-meta">
+            <span class="d-state" data-d-state>Nominal</span>
+            <span class="d-row"><span class="h-lbl">Limit</span><i data-d-target>9.0</i><span class="h-unit" data-u="rate" data-units>ft/s</span><span class="h-alt" data-2="dtarget" data-units>2.7 m/s</span></span>
+            <span class="d-row"><span class="h-lbl">Ground</span><i data-d-ttg>2.0</i><span class="h-unit">s</span></span>
+          </div>
+        </div>
+        <svg class="d-tape" viewBox="-30 -12 90 164" aria-label="Altitude and the brake-by line">
+          <line class="d-axis" x1="8" y1="0" x2="8" y2="140" />
+          <g class="d-ticks"><line x1="4" x2="12" y1="0" y2="0" /><line x1="6" x2="10" y1="23.3" y2="23.3" /><line x1="4" x2="12" y1="46.7" y2="46.7" /><line x1="6" x2="10" y1="70" y2="70" /><line x1="4" x2="12" y1="93.3" y2="93.3" /><line x1="6" x2="10" y1="116.7" y2="116.7" /><line x1="2" x2="14" y1="140" y2="140" /></g>
+          <text class="d-scale" data-d-top x="16" y="4">100</text><text class="d-scale" data-d-zero x="16" y="144">0 ft</text>
+          <rect class="d-fill" data-d-fill x="6" y="140" width="4" height="0" />
+          <line class="d-brake" data-d-brake x1="0" x2="58" y1="70" y2="70" />
+          <text class="d-brake-lbl" data-d-brake-lbl x="16" y="65">BRAKE</text>
+          <g class="d-car" data-d-car transform="translate(0 0)"><path d="M7 0 l-8 -5 v10z" /><text data-d-car-lbl x="-4" y="4">27</text></g>
+        </svg>
+      </div>
+    </div>
+    <div class="h-strip" data-hud-box="strip" role="group" aria-label="Telemetry">
+      <div class="h-cell h-tap" data-ch="spd" data-units role="button" tabindex="0" aria-label="Speed: switch units (U)"><span class="h-lbl"><span class="w-eng">Spd</span><span class="w-plain">Speed</span></span><b data-speed>0</b><span class="h-unit" data-u="speed">mph</span><span class="h-alt" data-2="speed">0 km/h</span></div>
+      <div class="h-cell h-tap" data-ch="alt" data-units role="button" tabindex="0" aria-label="Altitude: switch units (U)"><span class="h-lbl"><span class="w-eng">Alt</span><span class="w-plain">Height</span></span><b data-alt>0.0</b><span class="h-unit" data-u="len">ft</span><span class="h-alt" data-2="alt">0.0 m</span></div>
+      <div class="h-cell r-sink h-tap" data-ch="sink" data-units role="button" tabindex="0" aria-label="Sink rate: switch units (U)"><span class="h-lbl"><span class="w-eng">Sink</span><span class="w-plain">Fall</span></span><b data-sink>0.0</b><span class="h-unit" data-u="rate">ft/s</span><span class="h-alt" data-2="sink">0.0 m/s</span></div>
+      <div class="h-cell h-tap" data-ch="g" data-inst="g" role="button" tabindex="0" aria-haspopup="dialog" aria-label="G load: show the peak"><span class="h-lbl">G</span><b data-g>1.0</b><span class="h-unit">g</span></div>
+      <!-- The damage sensor on the compact line (0072): only once the car is hurt, in G's place; the state word, then the %. -->
+      <div class="h-cell r-dmg h-tap" data-ch="dmg" data-inst="damage" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Damage map: open the full view"><span class="h-lbl" data-dmg-word2>Intact</span><b data-dmg-pct2>0</b><span class="h-unit">%</span></div>
+      <!-- N₂: mass left and tank pressure (adiabatic blowdown from 690 bar); REG while the regulator holds line pressure. -->
+      <div class="h-cell tank h-tap" data-ch="n2" data-tank data-inst="gas" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Gas: show the burn time left"><span class="h-lbl"><span class="w-eng">N₂</span><span class="w-plain">Gas</span> <i class="n2-st" data-n2-state>Reg</i></span><b data-air>655</b><span class="h-unit" data-u="mass" data-units>lb</span>
+        <span class="n2-bar"><span class="h-alt" data-2="kg" data-units>297 kg</span><span class="n2-sep"> · </span><span data-tank-bar>10.0k</span> <i data-u="press" data-units>psi</i> <span class="h-alt" data-2="bar" data-units>690&nbsp;bar</span></span>
+        <div class="bar" aria-hidden="true"><span data-air-bar></span><i class="need" data-air-need></i></div></div>
+      <div class="h-cell h-pitch h-tap" data-ch="pitch" data-inst="att" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Pitch: show the rotation so far"><span class="h-lbl">Pitch</span><b data-pitch>0</b><span class="h-unit">°</span></div>
+      <div class="h-cell r-fan h-tap" data-ch="fan" data-units role="button" tabindex="0" aria-label="Fan suction: switch units (U)"><span class="h-lbl">Fan</span><b data-fan>0</b><i class="h-unit" data-u="kgf">lbf</i><span class="h-alt" data-2="fan">0 kgf</span></div>
+      <!-- The handle (src/hud-mode.js): compact, the end of the one slim line; full, a tab on the strip. -->
+      <button type="button" class="h-handle" data-hud-toggle aria-expanded="true" aria-label="Show fewer instruments (I)" title="Instruments (I)"><span class="hh-w hh-more">More</span><span class="hh-w hh-less">Less</span><svg class="hh-chev" viewBox="0 0 12 8" aria-hidden="true"><path d="M1.5 1.75 6 6.25l4.5-4.5" /></svg></button>
+    </div>
+    <div class="h-att adi-wrap h-tap" data-hud-box="att" data-inst="att" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Attitude: show the rotation so far">
+      <svg class="dial adi" data-adi viewBox="0 0 120 120" aria-label="Attitude, and the roll so far round the rim">
+        <defs><clipPath id="adi-clip"><circle cx="60" cy="60" r="43" /></clipPath></defs>
+        <g transform="rotate(90 60 60)">
+          <g clip-path="url(#adi-clip)">
+            <g data-adi-horizon>
+              <rect class="adi-sky" x="-80" y="-140" width="280" height="200" />
+              <rect class="adi-ground" x="-80" y="60" width="280" height="200" />
+              <line class="adi-hz" x1="-80" y1="60" x2="200" y2="60" />
+              <line class="adi-ladder" x1="48" x2="72" y1="51" y2="51" /><line class="adi-ladder" x1="48" x2="72" y1="69" y2="69" />
+              <line class="adi-ladder" x1="42" x2="78" y1="42" y2="42" /><line class="adi-ladder" x1="42" x2="78" y1="78" y2="78" />
+            </g>
+          </g>
+          <g class="adi-car" data-car-glyph><rect x="38" y="59.2" width="44" height="1.6" /><rect x="58" y="52" width="4" height="8" /><circle cx="60" cy="60" r="1.6" /></g>
+        </g>
+        <circle class="ring" cx="60" cy="60" r="50" />
+        <circle class="arc" data-roll-arc cx="60" cy="60" r="50" pathLength="360"><title>Rolled so far (fills at 360°)</title></circle>
+        <g data-ticks></g>
+      </svg>
+      <div class="adi-roll"><span class="h-lbl">Roll</span><b data-roll>0</b><span class="h-unit">°</span></div>
+      <div class="roll-cue" data-roll-cue aria-live="off"></div>
+    </div>
+    <!-- The vehicle: the thruster array and the damage sensor (src/sim/damage.js), both top-down, nose up. -->
+    <div class="h-vehicle" data-hud-box="vehicle">
+      <div class="h-array h-tap" data-inst="thrust" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Thruster array: show the valves and thrust">
+        <svg class="nozzles" viewBox="0 0 120 200" aria-label="Thruster array">
+          <rect class="body" x="22" y="16" width="76" height="168" rx="34" />
+          <g data-nz></g>
+        </svg>
+      </div>
+      <div class="dmg h-tap" data-dmg data-state="ok" data-inst="damage" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Damage map: open the full view">
+        <svg viewBox="0 0 44 80" aria-label="Damage by zone">
+          <rect class="z" data-z="floor" x="9" y="10" width="26" height="60" rx="9" />
+          <path class="z" data-z="nose" d="M11 14 Q22 2 33 14 L33 18 L11 18 Z" />
+          <path class="z" data-z="tail" d="M11 62 L33 62 L33 66 Q22 76 11 66 Z" />
+          <rect class="z" data-z="left" x="6" y="20" width="5" height="40" rx="2" />
+          <rect class="z" data-z="right" x="33" y="20" width="5" height="40" rx="2" />
+          <rect class="z" data-z="roof" x="15" y="28" width="14" height="20" rx="4" />
+          <g class="z susp" data-z="susp"><circle cx="5" cy="21" r="3" /><circle cx="39" cy="21" r="3" /><circle cx="5" cy="59" r="3" /><circle cx="39" cy="59" r="3" /></g>
+          <g class="dmg-trail" data-dmg-trail></g>
+          <g class="dmg-fx" data-dmg-fx><circle class="fx-ring" r="4" /><circle class="fx-dot" r="1.6" /><path class="fx-arrow" d="M0 -14 L0 -6 M-2.6 -9 L0 -5.6 L2.6 -9" /></g>
+        </svg>
+        <div class="dmg-read"><span class="h-lbl">Damage</span><span class="dmg-v"><b data-dmg-pct>0</b><span class="h-unit">%</span></span><span class="dmg-word" data-dmg-word>Intact</span></div>
+      </div>
+    </div>
+  </section>
+  <div class="cue" data-cue aria-live="polite"></div>
+  <div class="count" data-count aria-live="assertive"></div>
+
+  <!-- Touch, classic: a steer/attitude stick for the left thumb and up to three buttons on the right
+       thumb's arc (slot A under the thumb, B and C either side). Each phase shows only what it uses. -->
+  <div class="touch" data-touch data-phase="ground" data-scheme="classic" hidden>
+    <div class="stick" data-stick><div class="knob" data-knob></div><span class="stick-hint" data-stick-hint>Steer</span></div>
+    <div class="buttons">
+      <button class="tbtn lift" data-btn-lift><span data-lift-label>Lift</span></button>
+      <button class="tbtn land t-air" data-btn-land>Land</button>
+      <button class="tbtn brake" data-btn-brake aria-label="Brake">Brake</button>
+      <button class="tbtn go" data-btn-go aria-label="Accelerate"><span data-go-label>Go</span></button>
+    </div>
+    <!-- One-thumb Assist (src/onethumb.js): one control, hold / tap / hold. -->
+    <button class="thumb" data-onethumb data-stage="climb" aria-label="One-thumb control">
+      <svg class="thumb-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="tr-bg" cx="50" cy="50" r="47" /><circle class="tr-arc" data-thumb-arc cx="50" cy="50" r="47" pathLength="100" /></svg>
+      <span class="thumb-verb" data-thumb-verb>Hold</span><span class="thumb-act" data-thumb-act>Climb</span>
+    </button>
+  </div>
+
+  <!-- Advanced on a phone: the nozzle pad, a car seen from above with a pad on every nozzle (src/valves.js) -->
+  <div class="nozzle-pad" data-nozzle-pad hidden>
+    <svg viewBox="0 0 300 380" aria-label="Nozzle pad: hold a pad to open that valve">
+      <rect class="np-car" x="56" y="20" width="188" height="330" rx="70" />
+      <path class="np-nose" d="M110 20 q40 -12 80 0" />
+    </svg>
+  </div>
+
+  <!-- Practice: the drill bar while a drill runs -->
+  <div class="drill-bar" data-drill-bar hidden>
+    <span class="db-tag">Practice · not scored</span>
+    <b data-drill-name>On the ledge</b><b class="db-n" data-drill-n>01</b>
+    <span class="db-goal" data-drill-goal></span>
+    <button class="chip" data-drill-retry title="Retry from the same start (R)"><span class="tl">Retry</span><span class="ts">↻</span> <kbd>R</kbd></button>
+    <button class="chip" data-drill-slow title="Slow motion (T)">1×</button>
+    <button class="chip" data-view title="Camera: broadcast or pilot view (L)">View</button>
+    <button class="chip" data-drill-exit>Done</button>
+  </div>
+
+  <!-- Controls on this device: driving (src/driving.js: Easy / Standard / Advanced, every mode, every
+       device) and, on touch, the scheme, the hand, tilt steering, haptics (src/touch-settings.js). -->
+  <section class="controls" data-screen="controls" hidden>
+    <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="ctl-title">
+      <p class="eyebrow">Controls · this device</p>
+      <h2 id="ctl-title">Controls</h2>
+      <div class="ctl-drive" data-driving>
+        <div class="ctl-row"><span class="ctl-k" id="drv-k">Driving</span>
+          <div class="seg" role="radiogroup" aria-labelledby="drv-k" data-drive-levels><button type="button" role="radio" data-drive-level="easy" aria-checked="false">Easy</button><button type="button" role="radio" data-drive-level="standard" aria-checked="true">Standard</button><button type="button" role="radio" data-drive-level="advanced" aria-checked="false">Advanced</button></div></div>
+        <p class="ctl-note" data-drive-note>Assist driving: speed-sensitive steering, stability and traction control.</p>
+        <div class="ctl-row" data-drive-adv hidden><span class="ctl-k" id="drv-tc">Traction control</span>
+          <div class="seg" role="radiogroup" aria-labelledby="drv-tc" data-drive-tcs><button type="button" role="radio" data-drive-tc="on" aria-checked="true">On</button><button type="button" role="radio" data-drive-tc="sport" aria-checked="false">Sport</button><button type="button" role="radio" data-drive-tc="off" aria-checked="false">Off</button></div></div>
+        <div class="ctl-row" data-drive-adv hidden><span class="ctl-k">ABS</span>
+          <button type="button" class="switch" role="switch" data-drive-abs aria-checked="true" aria-label="ABS"><i></i></button></div>
+        <div class="ctl-row"><span class="ctl-k" id="ctl-adapt-k">Adapt to me</span>
+          <button type="button" class="switch" role="switch" data-adapt aria-checked="true" aria-labelledby="ctl-adapt-k" aria-describedby="ctl-adapt-note"><i></i></button></div>
+        <p class="ctl-note" id="ctl-adapt-note" data-adapt-note>On: three crashes in a row on Pro or Advanced step you down a tier (more assist) for the next run (Undo on the results); clean landings offer a harder step. Never mid-run.</p>
+      </div>
+      <!-- Every key (a keyboard): the pause sheet shows the four that matter and links here. -->
+      <div class="keys ctl-keys" data-ctl-keys>
+        <p><b>Ground</b> ↑ throttle · ↓ brake · ← → steer · Space lift / release · Shift boost</p>
+        <p><b>Air</b> ← → roll · ↑ ↓ pitch · Q E yaw · Space lift · F boost · Shift land</p>
+        <p><b>Advanced</b> Q E Z C the down-jets · W S A D a pair · Space all four · V B N M the rear row · F all four · 1 3 fender jets · Shift half open</p>
+        <p><b>Any time</b> G ghost · L pilot view · I instruments · U units · Practice: R retry · T slow motion</p>
+      </div>
+      <div class="ctl-touch">
+      <div class="ctl-group" role="radiogroup" aria-label="Scheme">
+        <button type="button" role="radio" class="ctl-opt" data-scheme-opt="thumb" aria-checked="true"><b>One-thumb</b><span>Assist. Hold to climb, tap to let go, hold to land. The computer rolls you out and brakes.</span></button>
+        <button type="button" role="radio" class="ctl-opt" data-scheme-opt="classic" aria-checked="false"><b>Classic</b><span>A stick and the pedals. Roll, boost and land by hand. Every tier.</span></button>
+      </div>
+      <div class="ctl-row"><span class="ctl-k">Hand</span>
+        <div class="seg" role="radiogroup" aria-label="Hand"><button type="button" role="radio" data-hand="right" aria-checked="true">Right</button><button type="button" role="radio" data-hand="left" aria-checked="false">Left</button></div></div>
+      <div class="ctl-row"><span class="ctl-k">Tilt to steer</span>
+        <div class="ctl-tilt"><button type="button" class="chip" data-tilt-calibrate hidden>Calibrate</button>
+        <button type="button" class="switch" role="switch" data-tilt aria-checked="false" aria-label="Tilt to steer"><i></i></button></div></div>
+      <p class="ctl-note" data-tilt-note>Off. Steer by tilting the phone; hold it how you play and press Calibrate.</p>
+      <div class="ctl-row" data-haptics-row><span class="ctl-k">Haptics</span>
+        <button type="button" class="switch" role="switch" data-haptics aria-checked="true" aria-label="Haptics"><i></i></button></div>
+      </div>
+      <div class="actions"><button class="btn primary" data-controls-close>Done</button></div>
+    </div>
+  </section>
+
+  <!-- How to fly (0079, src/pointer.js howtoRows): this device's controls, per phase. On the first Jump
+       (skippable, remembered) and any time from the title or the pause sheet. A newcomer's Jump on one thumb gets
+       step 01 alone (0127), with All four steps to open the rest in place. -->
+  <section class="controls howto" data-screen="howto" hidden>
+    <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="howto-title" aria-describedby="howto-rows">
+      <p class="eyebrow">How to fly · <span data-howto-device>Keyboard</span></p>
+      <h2 id="howto-title">Four things to know</h2>
+      <ol class="howto-rows" id="howto-rows" data-howto-rows></ol>
+      <button class="howto-all" data-howto-all aria-controls="howto-rows" aria-expanded="false" hidden>All four steps</button>
+      <p class="howto-assist" data-howto-assist></p>
+      <div class="actions"><button class="btn primary" data-howto-go>Got it</button><button class="btn ghost" data-howto-skip>Skip</button></div>
+    </div>
+  </section>
+
+  <!-- Assist: the flight tier for the next run, each one explained in words (0079). Never mid-run. -->
+  <section class="controls assist" data-screen="assist" hidden>
+    <div class="sheet narrow" role="dialog" aria-modal="true" aria-labelledby="assist-title">
+      <p class="eyebrow">Flight tier · from the next run</p>
+      <h2 id="assist-title">Assist</h2>
+      <div class="ctl-group" role="radiogroup" aria-labelledby="assist-title" data-tier-opts>
+        <button type="button" role="radio" class="ctl-opt" data-tier-opt="assist" aria-checked="true"><b>Assist · On <i>×1.00</i></b><span data-tier-long="assist"></span></button>
+        <button type="button" role="radio" class="ctl-opt" data-tier-opt="pro" aria-checked="false"><b>Pro · assist off <i>×1.08</i></b><span data-tier-long="pro"></span></button>
+        <button type="button" role="radio" class="ctl-opt" data-tier-opt="advanced" aria-checked="false"><b>Advanced · no computer <i>×1.15</i></b><span data-tier-long="advanced"></span></button>
+      </div>
+      <div class="ctl-row"><span class="ctl-k" id="tier-adapt-k">Adapt to me</span>
+        <button type="button" class="switch" role="switch" data-adapt aria-checked="true" aria-labelledby="tier-adapt-k" aria-describedby="tier-adapt-note"><i></i></button></div>
+      <p class="ctl-note" id="tier-adapt-note" data-adapt-note>On: three crashes in a row on Pro or Advanced step you down a tier (more assist) for the next run (Undo on the results); clean landings offer a harder step. Never mid-run.</p>
+      <div class="actions"><button class="btn primary" data-assist-close>Done</button></div>
+    </div>
+  </section>
+
+  <!-- Practice: pick a drill -->
+  <section class="practice" data-screen="practice" hidden>
+    <div class="sheet narrow">
+      <p class="eyebrow">Practice · not scored, never posted</p>
+      <h2>Drills</h2>
+      <p class="lede">Start anywhere in the flight. <kbd>R</kbd> retries from the same start, instantly. The reference rides alongside as a ghost.</p>
+      <ol class="drills" data-drills></ol>
+      <div class="pr-opts">
+        <span>Slow motion</span>
+        <div class="seg" data-slow-seg><button data-slow="1" aria-pressed="true">1×</button><button data-slow="0.5" aria-pressed="false">½×</button><button data-slow="0.25" aria-pressed="false">¼×</button></div>
+      </div>
+      <div class="actions"><button class="btn ghost" data-practice-close>Close</button></div>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="results" data-screen="results" hidden>
+    <div class="sheet">
+      <p class="eyebrow" data-r-headline>The panel</p>
+      <div class="total-row">
+        <h2 class="verdict" data-r-verdict>Stuck it</h2>
+        <div class="total"><b data-r-total>0.0</b><span>/ 100</span></div>
+      </div>
+      <!-- 0121 medals (src/medals.js): bronze · silver · gold for this event and tier, and the next target -->
+      <div class="medals" data-medals hidden></div>
+      <p class="tier-line" data-r-tier></p>
+      <div class="drill-card" data-drill-card hidden>
+        <ul class="facts" data-drill-stats></ul>
+        <div class="actions"><button class="btn primary" data-drill-again>Retry <kbd>R</kbd></button><button class="btn ghost" data-drill-next>Next drill</button><button class="btn link" data-drill-menu>All drills</button></div>
+      </div>
+      <div class="runline" data-runline>
+        <span class="run-n" data-r-attempt>Run 1</span>
+        <span class="pb" data-r-pb></span>
+      </div>
+      <!-- The panel's call, live (src/ai/theatre.js onLive → ui.liveCall): the model, the tokens so far, Watch the
+           call; then its receipt in a line. The score above never waits for it. -->
+      <div class="call-strip" data-call hidden role="group" aria-label="The panel’s call"></div>
+      <!-- [comeback] the challenge's and the daily's one-line results (src/comeback.js) -->
+      <div class="daily-result" data-daily-result role="status" aria-live="polite"></div>
+      <!-- The coach's pointer (0079, src/pointer.js): the one fix, in this device's controls -->
+      <div class="pointer" data-pointer hidden><span class="pt-better" data-pointer-better></span><span class="pt-k">Next run</span><b class="pt-text" data-pointer-text></b></div>
+      <div class="r-assist"><button type="button" class="assist-ctl" data-assist-open aria-haspopup="dialog"><span class="ac-top"><span class="ac-k">Assist</span><b class="ac-state" data-assist-state>On</b></span><span class="ac-sub" data-assist-sub>rolls you out, levels and brakes</span></button></div>
+      <div class="actions top-actions-row">
+        <button class="btn primary retry-btn" data-again><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95" /><path d="M19 4.5V8h-3.5" /></svg>Retry<kbd>R</kbd></button>
+        <button class="btn ghost" data-home>Home<kbd>H</kbd></button>
+        <button class="btn ghost" data-replay>Replay</button>
+        <button class="btn ghost" data-share>Share</button>
+        <!-- Post to the board, beside Retry (src/post.js): "Post · ABC" once initials are remembered, the three
+             letters right here the first time; the rank inline once it's on. A board-eligible jump only. -->
+        <form class="r-post" data-r-submit data-r-post hidden autocomplete="off">
+          <label class="r-post-field" data-r-post-field><span class="vh">Initials</span><input id="initials" name="initials" maxlength="3" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAA" enterkeyhint="send" /></label>
+          <button class="btn r-post-btn" type="submit" data-r-post-btn>Post<span class="r-post-ini" data-r-post-ini></span></button>
+          <button class="btn link r-post-edit" type="button" data-r-post-edit hidden aria-label="Change initials">Change</button>
+          <span class="submit-msg r-post-msg" data-r-submit-msg role="status"></span>
+        </form>
+      </div>
+      <!-- Rookie mode (0074, src/rookie.js): after three crashes in a row, one tap to Easy + Assist and go -->
+      <div class="rookie" data-rookie hidden>
+        <button class="btn rookie-btn" data-rookie-go aria-describedby="rookie-why">Rookie mode<span>easier car · auto-land</span></button>
+        <p class="rookie-why" id="rookie-why" data-rookie-why>Three crashes in a row. Easy driving and Assist flying land it for you; switch back in Controls.</p>
+      </div>
+      <!-- Adapt to me (0079, src/adapt.js): the tier stepped down after crashes (with Undo), or a harder step offered -->
+      <div class="adapt" data-adapt-box hidden>
+        <div class="adapt-down" data-adapt-down hidden role="status"><p data-adapt-why></p><button type="button" class="btn ghost adapt-undo" data-adapt-undo>Undo</button></div>
+        <div class="adapt-up" data-adapt-up hidden><button type="button" class="btn rookie-btn adapt-btn" data-adapt-go aria-describedby="adapt-up-why"><b data-adapt-label>Ready for Pro? ×1.08</b><span data-adapt-sub></span></button>
+          <p class="rookie-why" id="adapt-up-why" data-adapt-up-why></p></div>
+      </div>
+      <div class="coach" data-coach hidden>
+        <p class="eyebrow">What happened</p>
+        <ol class="coach-items" data-coach-items></ol>
+      </div>
+      <!-- Opt-in rewarded ad (src/ads.js): shown only when the slot can fill; fresh words, same score -->
+      <button type="button" class="btn ghost reroll-btn" data-reroll hidden>Watch an ad · ask the panel again</button>
+      <ol class="judges" data-r-judges></ol>
+      <!-- The call's full receipt (model, where, tokens, time, cost; Replay and Inspect the call), under the words it
+           wrote; its one-line form rides the strip at the top -->
+      <div class="receipt" data-receipt hidden></div>
+      <div class="cats" data-r-cats></div>
+      <ul class="facts" data-r-facts></ul>
+
+    </div>
+    <!-- Replay on a phone (0068): the sheet folds down to this peek while the replay plays above it; a tap
+         on it, Scores, Esc or the replay's end brings the sheet back as it was -->
+    <div class="peek" data-peek hidden role="group" aria-label="Replay">
+      <p class="peek-line"><span class="peek-verdict" data-p-verdict></span><span class="peek-total"><b data-p-total></b> / 100</span></p>
+      <div class="peek-actions">
+        <button class="btn primary" data-again>Retry</button>
+        <button class="btn ghost" data-home>Home</button>
+        <button class="btn ghost" data-peek-back>Scores</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- For nerds: the live engineering readout (src/nerds.js, a lazy chunk) -->
+  <aside data-nerds-root hidden></aside>
+
+  <!-- The judges' theatre: every AI call, visible (src/ai/theatre.js) -->
+  <section class="theatre" data-theatre hidden aria-live="polite"></section>
+
+  <!-- Leaving an unposted board jump (src/post.js): asked once, inline, over the sheet or the theatre -->
+  <div class="leave" data-leave hidden role="alertdialog" aria-labelledby="leave-q">
+    <p id="leave-q">Leave without posting?</p>
+    <div class="leave-actions"><button type="button" class="btn ghost" data-leave-go>Leave</button><button type="button" class="btn primary" data-leave-post>Post</button></div>
+  </div>
+
+  <!-- The judges' brain: provider and key settings (src/ai/settings.js) -->
+  <section class="ai-modal" data-ai-modal hidden></section>
+
+  <!-- Board -->
+  <section class="board" data-screen="board" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="board-title">
+      <div class="board-head">
+        <h2 id="board-title">Today’s board</h2>
+        <div class="seg"><button data-board="today" aria-pressed="true">Today</button><button data-board="all" aria-pressed="false">All time</button></div>
+      </div>
+      <div class="seg board-courses" role="group" aria-label="Event"><button data-board-course="show" aria-pressed="true">The Show</button><button data-board-course="wall" aria-pressed="false">The Wall</button><button data-board-course="lineup" aria-pressed="false">The Lineup</button></div>
+      <ol class="rows" data-board-rows><li class="empty">Loading…</li></ol>
+      <button class="btn ghost" data-board-close>Close</button>
+    </div>
+  </section>
+
+  <!-- Pause -->
+  <section class="pause" data-screen="pause" hidden>
+    <!-- The actions first, so Resume and Home are on the glass at any size (0092: a landscape phone hid
+         all five under the key lists); the controls follow and scroll. A keyboard gets its key lists; a
+         touch screen or a pad gets its own controls (src/pointer.js pauseRows), drawn by src/main.js. -->
+    <div class="sheet narrow" role="dialog" aria-modal="true" aria-label="Paused">
+      <h2>Paused</h2>
+      <div class="actions">
+        <button class="btn primary" data-resume>Resume</button>
+        <button class="btn ghost" data-restart>Restart <kbd>R</kbd></button>
+        <button class="btn ghost" data-controls-open aria-haspopup="dialog">Controls</button>
+        <button class="btn ghost" data-howto-open aria-haspopup="dialog">How to fly</button>
+        <button class="btn ghost" data-home>Home <kbd>H</kbd></button>
+      </div>
+      <!-- The four that matter for the tier and the device in use (src/pointer.js pauseRows), drawn by src/main.js;
+           a keyboard's full key lists are one tap away in the Controls sheet (All controls). -->
+      <div class="keys" data-pause-keys="device"></div>
+      <button type="button" class="btn link all-controls" data-all-controls aria-haspopup="dialog" hidden>All controls</button>
+    </div>
+  </section>
+
+  <!-- Free Drive: the road picker, the driving HUD and its pause sheet (src/drive/, a lazy chunk) -->
+  <section class="fd-picker" data-drive-picker hidden></section>
+  <section class="fd-hud" data-drive-hud hidden></section>
+  <section class="fd-pause" data-drive-pause hidden>
+    <div class="sheet narrow" role="dialog" aria-modal="true" aria-label="Paused">
+      <h2>Paused</h2>
+      <div class="keys">
+        <p><b>Drive</b> ↑ throttle · ↓ brake, hold to reverse · ← → steer · Shift boost · Space lift</p>
+        <p><b>Air</b> ← → roll · ↑ ↓ pitch · Space lift · Shift land</p>
+        <p><b>Any time</b> O AI drive on / off · R back on the road · C camera · T day / dusk · X suction fan</p>
+      </div>
+      <div class="actions">
+        <button class="btn primary" data-dp-resume>Resume</button>
+        <button class="btn ghost" data-dp-reset>Back on the road</button>
+        <button class="btn ghost" data-dp-restart>From the start</button>
+        <button class="btn ghost" data-driving-open aria-haspopup="dialog">Driving · <span data-driving-label>Standard</span></button>
+        <button class="btn ghost" data-dp-roads>Another road</button>
+        <button class="btn link" data-dp-exit>Title</button>
+      </div>
+    </div>
+  </section>
+
+  <noscript><p class="noscript">COLD GAS needs JavaScript and WebGL.</p></noscript>
+  <!-- Boot watchdog (0040): if the game hasn't wired the title in 15 s (a chunk that never came, a
+       throw while src/main.js evaluated, before the self-heal is installed), offer a reload rather
+       than leave dead buttons. Offline it says so instead of reloading into the browser's error page.
+       Gone the moment the game is up (window.__coldgas). -->
+  <script>
+    (function () {
+      var shown = null, waited = 0;
+      function up() { return !!(window.__coldgas && window.__coldgas.S); }
+      function offer(why) {
+        if (shown || up()) return;
+        var d = document.createElement('div');
+        d.setAttribute('role', 'alert');
+        d.setAttribute('data-boot-watchdog', '');
+        d.style.cssText = 'position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;max-width:calc(100vw - 32px);box-sizing:border-box;padding:14px 18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;background:#0b0f17;color:#e9edf3;border:1px solid rgba(233,237,243,.22);border-radius:10px;font:14px/1.4 system-ui,sans-serif;text-align:center';
+        var p = document.createElement('span');
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = 'Reload';
+        b.style.cssText = 'font:inherit;font-weight:600;padding:8px 16px;border-radius:8px;border:0;background:#e9edf3;color:#05070c;cursor:pointer;min-height:40px';
+        function say() { p.textContent = navigator.onLine === false ? 'You are offline. Reconnect, then reload.' : why; b.disabled = navigator.onLine === false; b.style.opacity = b.disabled ? '.5' : '1'; }
+        b.addEventListener('click', function () { if (navigator.onLine !== false) location.reload(); else say(); });
+        addEventListener('online', say); addEventListener('offline', say);
+        say();
+        d.appendChild(p); d.appendChild(b);
+        document.body.appendChild(d);
+        shown = d;
+      }
+      // A throw before the title is wired: offer it after a short grace (late chunks may still land).
+      addEventListener('error', function () { if (!up()) setTimeout(function () { offer('COLD GAS hit a problem while starting.'); }, 3000); }, true);
+      var iv = setInterval(function () {
+        waited += 1000;
+        if (up()) { clearInterval(iv); if (shown) { shown.remove(); shown = null; } return; }
+        if (waited >= 15000) offer('COLD GAS is taking longer than it should to start.');
+      }, 1000);
+    })();
+  </script>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
