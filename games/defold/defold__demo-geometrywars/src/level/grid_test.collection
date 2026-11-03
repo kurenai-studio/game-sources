@@ -1,0 +1,14 @@
+name: "default"
+instances {
+  id: "level"
+  prototype: "/level/level.go"
+}
+scale_along_z: 0
+embedded_instances {
+  id: "go"
+  data: "components {\n"
+  "  id: \"script\"\n"
+  "  component: \"/level/grid_test.script\"\n"
+  "}\n"
+  ""
+}
