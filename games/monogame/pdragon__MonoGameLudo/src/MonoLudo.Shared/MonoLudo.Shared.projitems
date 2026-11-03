@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>6efba8a9-a407-4029-bdd0-651d22a87386</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>MonoLudo.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\AutoMoveAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\BackToBaseAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\DiceAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\GameOverSceneAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\SelectObjectAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\TimerAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Config.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\ActionQueue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\IGameAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Main.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\Render.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Helpers\Utils.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Init.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Scenes\Game\Board.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Scenes\Game\Dice.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Scenes\Game\Game.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Scenes\Game\MainGameScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Scenes\Game\Player.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Scenes\Game\Token.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Utils.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Content\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Scenes\Menu\" />
+    <Folder Include="$(MSBuildThisFileDirectory)Scenes\GameOver\" />
+  </ItemGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
+    <None Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)Content\background.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\settings.xml" />
+  </ItemGroup>
+</Project>
