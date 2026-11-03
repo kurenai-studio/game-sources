@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Renders images of track blocks for the block catalog (docs/catalog), see README.md -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RollForward>Major</RollForward>
+    <RootNamespace>TW3D.CatalogRender</RootNamespace>
+    <AssemblyName>CatalogRender</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The lighting of the 2016 version, shared with the game and the level editor -->
+    <Compile Include="..\..\src\TW3D.Game\Graphics\Lighting.cs" Link="Lighting.cs" />
+    <Compile Include="..\..\src\TW3D.Game\Graphics\SkyLook.cs" Link="SkyLook.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Models built by the content pipeline into Content/ (the tool uses the blocks and the selector of the level editor) -->
+    <MonoGameContentReference Include="$(GameContentDir)Content.mgcb" Link="Content\Content.mgcb" OutputFolder="$(MSBuildProjectName)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" />
+    <PackageReference Include="MonoGame.Content.Builder.Task" />
+    <ProjectReference Include="..\..\src\TW3D.Shared\TW3D.Shared.csproj" />
+    <!-- Built for the content pipeline, which loads it (content/Content.mgcb) -->
+    <ProjectReference Include="..\ContentPipeline\ContentPipeline.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>
