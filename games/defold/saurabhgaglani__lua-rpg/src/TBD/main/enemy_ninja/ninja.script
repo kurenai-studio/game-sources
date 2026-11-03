@@ -1,0 +1,51 @@
+go.property("max_damage", 50) 
+
+local function play_animation(self, animation)
+	if self.current_animation ~= animation then
+		self.current_animation = animation
+		sprite.play_flipbook("#sprite", animation)
+	end
+end
+
+function init(self)
+	self.current_damage = 0
+	self.current_animation = nil 
+end
+
+function update(self, dt)
+	if self.current_damage >= self.max_damage then
+		play_animation(self, "ninja_death")
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("animation_done") then
+		go.delete()
+	end
+	if message_id == hash("trigger_response") then    
+		if message.other_group == hash("weapon") then
+			if message.enter then
+				particlefx.play("#bloody")
+				self.current_damage = self.current_damage + 10
+			end
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end

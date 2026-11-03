@@ -1,0 +1,129 @@
+sequence = require "ludobits/sequence"
+
+go.property("speed", 50) -- the speed of movement
+
+-- play animation unless the same animation is already playing
+local function play_animation(self, animation)
+	if self.current_animation ~= animation then
+		self.current_animation = animation
+		sprite.play_flipbook("#sprite", animation)
+
+	end
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.direction = vmath.vector3(0, 0, 0) -- the current direction of movement
+	self.actions = {} -- mapping of input states (action_id mapped to pressed state)
+	self.current_animation = nil -- the current animation
+	self.attacking = false
+end
+
+function final(self)
+	msg.post(".", "release_input_focus")
+end
+
+function update(self, dt)
+	if self.actions[hash("Right")] then
+		play_animation(self, hash("player_movement_right"))
+		sprite.set_hflip("#sprite", false)
+		self.direction.x = self.speed
+	elseif self.actions[hash("Left")] then
+		play_animation(self, hash("player_movement_right"))
+		sprite.set_hflip("#sprite", true)
+		self.direction.x = -self.speed
+	else
+		self.direction.x = 0
+	end
+
+	if self.actions[hash("Up")] then
+		play_animation(self, hash("player_movement_up"))
+		self.direction.y = self.speed
+	elseif self.actions[hash("Down")] then
+		play_animation(self, hash("player_movement_down"))
+		self.direction.y = -self.speed
+	else
+		self.direction.y = 0
+	end
+
+	if self.direction.x == 0 and self.direction.y == 0 then
+		if(self.current_animation == hash("player_movement_up")) then
+			play_animation(self, hash("player_idle_up"))
+		elseif self.actions[hash("Attack")] and self.current_animation == hash("player_idle_up") and self.attacking == false then
+			self.attacking = true
+			sequence.run_once(function()
+				-- Run animations one after another
+				sequence.sprite_play_flipbook("#sprite", hash("player_attack_up"))
+				sequence.sprite_play_flipbook("#sprite", hash("player_idle_up"))
+			end)
+			local angle = math.atan2(1, self.direction.x)    
+			local rot = vmath.quat_rotation_z(angle)            
+			local props = { dir = vmath.vector3(0,1,0) }                    
+			factory.create("#arrow_factory", nil, rot, props)   
+		
+		elseif(self.current_animation == hash("player_movement_right")) then
+			play_animation(self, hash("player_idle_right"))
+		elseif self.actions[hash("Attack")] and self.current_animation == hash("player_idle_right") and self.attacking == false then
+			self.attacking = true
+			sequence.run_once(function()
+				-- Run animations one after another
+				sequence.sprite_play_flipbook("#sprite", hash("player_attack_right"))
+				sequence.sprite_play_flipbook("#sprite", hash("player_idle_right"))
+			end)
+			local angle = math.atan2(self.direction.y, 1)    
+			local rot = vmath.quat_rotation_z(angle)            
+			local props = { dir = vmath.vector3(1,0,0) }        
+			factory.create("#arrow_factory", nil, rot, props)   
+			
+		elseif(self.current_animation == hash("player_movement_down")) then
+			play_animation(self, hash("player_idle"))
+		elseif self.actions[hash("Attack")] and self.current_animation == hash("player_idle") and self.attacking == false then
+			self.attacking = true
+			sequence.run_once(function()
+				-- Run animations one after another
+				sequence.sprite_play_flipbook("#sprite", hash("player_attack_down"))
+				sequence.sprite_play_flipbook("#sprite", hash("player_idle"))
+			end)
+			local angle = math.atan2(-1, self.direction.x)    
+			local rot = vmath.quat_rotation_z(angle)            
+			local props = { dir = vmath.vector3(0,-1,0) }                     
+			factory.create("#arrow_factory", nil, rot, props)   
+			sprite.set_hflip("#sprite", false)
+		end
+	end
+
+	go.set_position(go.get_position() + self.direction * dt)
+
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("trigger_response") then
+		if message.other_group == hash("npc") then
+			if message.enter then
+				msg.post("/knight_card#knight_card", "enable_text")
+			else
+				msg.post("/knight_card#knight_card", "disable_text")
+			end
+		elseif message.other_group == hash("cutscene_npc") then
+			if message.enter then
+				msg.post("/cutscene#cutscene_card", "enable_cutscene")
+			else
+				msg.post("/cutscene#cutscene_card", "disable_cutscene")
+			end
+		end
+	end
+	if message_id == hash("arrow_destroyed") then
+		self.attacking = false
+	end
+end
+
+
+function on_input(self, action_id, action)
+	if action_id then
+		if action.pressed then
+			self.actions[action_id] = true
+		elseif action.released then
+			self.actions[action_id] = false
+		end
+	end
+end

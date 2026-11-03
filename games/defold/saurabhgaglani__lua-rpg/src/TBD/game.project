@@ -1,0 +1,28 @@
+[project]
+title = War battles tutorial
+version = 0.1
+custom_resources = /assets/dialogue/project_settings.json
+compress_archive = 1
+dependencies#0 = https://github.com/britzl/ludobits/archive/refs/tags/7.2.0.tar.gz
+
+[bootstrap]
+main_collection = /main/main.collectionc
+
+[input]
+game_binding = /input/game.input_bindingc
+
+[display]
+width = 1000
+height = 1000
+fullscreen = 0
+
+[physics]
+scale = 0.02
+debug = 0
+
+[script]
+shared_state = 1
+
+[tilemap]
+max_tile_count = 10000
+
