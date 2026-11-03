@@ -1,0 +1,47 @@
+local json = require("libs.json")
+local LoadFile = {}
+
+local cache = {}
+
+--- @param path string
+--- @param force boolean?
+--- @return table?
+function LoadFile:Json(path, force)
+    if not path then return nil end
+
+    if cache[path] and not force then
+        return cache[path]
+    end
+
+    local raw, err = love.filesystem.read(path)
+    if not raw then
+        error("Failed to load " .. path .. ": " .. tostring(err))
+    end
+
+    local content = json.decode(raw)
+    cache[path] = content
+
+    return content
+end
+
+--- @param path string
+--- @param force boolean?
+--- @return string?
+function LoadFile:Bin(path, force)
+    if not path then return nil end
+
+    if cache[path] and not force then
+        return cache[path]
+    end
+
+    local raw, sizeOrErr = love.filesystem.read(path)
+    if not raw then
+        error("Failed to load " .. path .. ": " .. tostring(sizeOrErr))
+    end
+
+    cache[path] = raw
+
+    return raw
+end
+
+return LoadFile
