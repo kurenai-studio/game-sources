@@ -1,0 +1,42 @@
+{
+  "name": "squirm",
+  "version": "1.17.0",
+  "private": true,
+  "description": "A cozy turn-based worm puzzle in a little 3D garden, built with three.js. Handmade patches, an endless meadow and a daily patch; installable and fully offline.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/farzinmirzaie/squirm.git"
+  },
+  "homepage": "https://farzinmirzaie.github.io/squirm/",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node tools/build.js",
+    "build:debug": "node tools/build.js --debug",
+    "serve": "node tools/serve.js dist",
+    "test": "npm run test:unit && npm run verify && npm run build",
+    "test:unit": "node --test test/*.test.js",
+    "smoke": "node test/smoke.js",
+    "check": "npm test && npm run smoke",
+    "verify": "node tools/verify-levels.js",
+    "analyze": "node tools/analyze.js",
+    "curate": "node tools/curate.js",
+    "harden": "node tools/harden.js",
+    "shots": "node .claude/skills/ui-check/store-shots.js"
+  },
+  "devDependencies": {
+    "@fontsource/baloo-2": "5.2.6",
+    "playwright": "1.64.1",
+    "three": "0.128.0"
+  },
+  "keywords": [
+    "game",
+    "puzzle",
+    "pwa",
+    "threejs",
+    "offline",
+    "worm"
+  ]
+}
