@@ -1,0 +1,67 @@
+{
+  "routes": { "wing": "left", "drumstick": "right", "nugget": "center" },
+  "pay_per_tray": 10,
+  "strikes_allowed": 3,
+  "estops": 3,
+  "estop_seconds": 2.5,
+  "hour_seconds": 75,
+  "note_seconds": 4,
+  "clean_hour_bonus": 100,
+  "stamp_chance": 0.3,
+  "swing_seconds": 0.12,
+  "coffee_factor": 0.8,
+  "shop": [
+    { "id": "coffee", "name": "Coffee", "price": 150, "text": "Next hour the belt runs 20% slower and trays come 20% less often." },
+    { "id": "mate", "name": "Mate's Help", "price": 250, "text": "Your mate covers your next strike. Lasts until used." },
+    { "id": "earplugs", "name": "Earplugs", "price": 100, "text": "Next hour you can't hear the PA, so it can't distract you." }
+  ],
+  "pa": {
+    "from_hour": 2,
+    "every": [9, 16],
+    "seconds": 3.5,
+    "lines": [
+      "ATTENTION: will the owner of a blue hatchback please move it. It's blocking the fryer.",
+      "Reminder: the vending machine is NOT a chicken. Stop sorting it.",
+      "Night shift karaoke is cancelled. Again. You know who you are.",
+      "Whoever keeps clucking on the intercom: we can hear you.",
+      "Lost: one hard hat, chicken-sized. Answers to Gerald.",
+      "The fire drill is at 4 AM. It is not a real fire. Probably.",
+      "Please stop high-fiving the drumsticks.",
+      "Today's safety tip: the belt does not stop for snacks."
+    ]
+  },
+  "hours": [
+    {
+      "speed": [100, 150], "interval": [2.6, 2.0],
+      "note": { "text": "Welcome to nights. Wings LEFT, drumsticks RIGHT, nuggets STRAIGHT on. Don't make me come down there." }
+    },
+    {
+      "speed": [130, 180], "interval": [2.2, 1.7],
+      "note": { "text": "Nuggets now go RIGHT. Same box as the drumsticks. Don't ask.", "route": { "nugget": "right" } }
+    },
+    {
+      "speed": [150, 200], "interval": [1.9, 1.5],
+      "note": { "text": "Red-stamped trays go STRAIGHT to the bin. Doesn't matter what's on them.", "stamp": { "red": "center" } }
+    },
+    {
+      "speed": [170, 220], "interval": [1.7, 1.3],
+      "note": { "text": "Tenders are on tonight. Tenders go LEFT.", "route": { "tender": "left" } }
+    },
+    {
+      "speed": [190, 240], "interval": [1.5, 1.2],
+      "note": { "text": "Maintenance swapped the chutes. Everything that went LEFT goes RIGHT, and RIGHT goes LEFT.", "swap": ["left", "right"] }
+    },
+    {
+      "speed": [210, 255], "interval": [1.3, 1.05],
+      "note": { "text": "Blue stamp means VIP order. Blue goes LEFT, whatever's on it.", "stamp": { "blue": "left" } }
+    },
+    {
+      "speed": [225, 270], "interval": [1.15, 0.95],
+      "note": { "text": "Wing shortage upstairs. Wings go STRAIGHT now.", "route": { "wing": "center" } }
+    },
+    {
+      "speed": [240, 280], "interval": [1.05, 0.9],
+      "note": { "text": "Red stamps were a printer error. Red trays go wherever their chicken goes.", "stamp": { "red": null } }
+    }
+  ]
+}
