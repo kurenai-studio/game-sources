@@ -1,0 +1,24 @@
+{
+  "name": "game-project",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Juego desarrollado con KDD y GAME Protocol",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/triangular-sphere-core.test.mjs tests/puzzle-state.test.mjs tests/target-labels.test.mjs",
+    "ui:check": "node --check src/ui/app.mjs && node --check scripts/serve.mjs",
+    "dev": "node scripts/serve.mjs",
+    "pages:build": "node scripts/build-pages.mjs",
+    "game:lint": "node scripts/check-game.mjs lint",
+    "game:build": "node scripts/check-game.mjs build",
+    "game:check": "node scripts/check-game.mjs check",
+    "game:protocol:test": "npm --prefix vendor/game-protocol test",
+    "kdd:check": "python scripts/validate_contracts.py knowledge/contracts && python scripts/validate_specs.py specs && python scripts/validate_okf.py knowledge",
+    "check": "npm run game:check && npm run kdd:check"
+  },
+  "dependencies": {
+    "three": "^0.178.0"
+  }
+}

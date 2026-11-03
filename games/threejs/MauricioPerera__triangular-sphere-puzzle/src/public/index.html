@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#070b18">
+    <title>Rompecabezas esférico triangular</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; overflow: hidden; background: #070b18; }
+      #app { height: 100%; }
+      canvas { display: block; touch-action: none; }
+      .hud {
+        position: fixed; z-index: 2; top: 20px; left: 20px; max-width: 330px;
+        padding: 18px 20px; border: 1px solid #ffffff22; border-radius: 16px;
+        background: #0d1426dd; box-shadow: 0 16px 45px #0008; backdrop-filter: blur(12px);
+      }
+      h1 { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; font-size: 1.15rem; letter-spacing: .02em; }
+      #panel-toggle { display: none; width: 34px; min-height: 34px; margin: 0; padding: 0; border: 1px solid #ffffff33; color: #e8efff; background: #ffffff12; font-size: 1.2rem; line-height: 1; }
+      #hud-content { display: block; }
+      p { margin: 7px 0; color: #aab7d4; font-size: .88rem; line-height: 1.4; }
+      .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+      .stat { padding: 9px 10px; border-radius: 10px; background: #ffffff0d; }
+      .label { display: block; color: #7584a6; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
+      .value { display: block; margin-top: 3px; font-weight: 700; }
+      #selection { color: #8ce9ff; }
+      .target-row { display: flex; align-items: center; gap: 8px; }
+      #target-swatch {
+        display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+        border: 1px solid #ffffff88; background: transparent;
+      }
+      .objective { margin-top: 10px; padding: 11px 12px; border-radius: 10px; background: #ffffff0d; }
+      .objective-title { color: #7584a6; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
+      .match { margin-top: 6px; font-size: .8rem; }
+      .match.correct { color: #72f2a2; }
+      .match.incorrect { color: #ff8f9b; }
+      .match.pending { color: #aab7d4; }
+      #move-warning { margin: 9px 0 0; color: #ffd166; font-size: .76rem; line-height: 1.35; }
+      .border-legend { margin: 9px 0 0; color: #8392b2; font-size: .72rem; line-height: 1.35; }
+      button {
+        width: 100%; margin-top: 12px; padding: 10px 12px; border: 0;
+        border-radius: 10px; color: #07101a; background: #8ce9ff;
+        font: inherit; font-weight: 800; cursor: pointer;
+      }
+      button:hover { background: #b6f2ff; }
+      button:disabled { cursor: not-allowed; opacity: .45; }
+      button:disabled:hover { background: #8ce9ff; }
+      .difficulty-label { display: block; margin-top: 12px; color: #7584a6; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; }
+      select {
+        width: 100%; margin-top: 5px; padding: 9px 10px; border: 1px solid #ffffff22;
+        border-radius: 10px; color: #e8efff; background: #151d35; font: inherit;
+      }
+      select:disabled { cursor: not-allowed; opacity: .45; }
+      @media (max-width: 700px) {
+        .hud {
+          top: auto; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom));
+          width: auto; max-width: none; max-height: 44vh; overflow-y: auto;
+          padding: 12px 14px; border-radius: 14px;
+        }
+        h1 { margin-bottom: 5px; font-size: 1rem; }
+        #panel-toggle { display: block; flex: 0 0 auto; }
+        .hud.collapsed { max-height: none; }
+        .hud.collapsed #hud-content { display: none; }
+        p { margin: 5px 0; font-size: .8rem; }
+        .stats { margin-top: 9px; gap: 6px; }
+        .stat { padding: 7px 9px; }
+        .objective { margin-top: 7px; padding: 9px 10px; }
+        .difficulty-label { margin-top: 8px; }
+        button, select { min-height: 44px; }
+        .hint, .border-legend { font-size: .7rem; }
+      }
+      @media (max-width: 380px) {
+        .hud { max-height: 48vh; padding: 10px 12px; }
+        .objective { padding: 8px 9px; }
+        #move-warning { font-size: .7rem; }
+      }
+      .hint { margin-top: 13px; font-size: .76rem; color: #8392b2; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "/node_modules/three/build/three.module.js",
+          "three/addons/": "/node_modules/three/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <section class="hud" aria-live="polite">
+      <h1>Esfera triangular <button id="panel-toggle" type="button" aria-label="Contraer panel" aria-expanded="true">−</button></h1>
+      <div id="hud-content">
+        <p>Rompecabezas basado en las 20 caras del icosaedro, con color y número independientes.</p>
+        <div class="stats">
+          <div class="stat"><span class="label">Movimientos</span><span class="value" id="move-count">0</span></div>
+          <div class="stat"><span class="label">Selección</span><span class="value" id="selection">ninguna</span></div>
+        </div>
+        <div class="objective">
+          <div class="objective-title">Objetivo seleccionado</div>
+          <div class="value target-row"><span id="target-swatch"></span><span id="target-info">Selecciona una cara</span></div>
+          <div id="color-match" class="match pending">Color: —</div>
+          <div id="number-match" class="match pending">Número: —</div>
+          <p id="move-warning"></p>
+          <p class="border-legend">Borde neón: verde = ambos · amarillo = uno · rojo = ninguno · blanco = hueco</p>
+        </div>
+        <label class="difficulty-label" for="difficulty">Dificultad</label>
+        <select id="difficulty">
+          <option value="easy">Fácil · 10 movimientos</option>
+          <option value="medium" selected>Medio · 25 movimientos</option>
+          <option value="hard">Difícil · 40 movimientos</option>
+          <option value="expert">Experto · 60 movimientos</option>
+        </select>
+        <p id="status">Tablero resuelto · selecciona una cara y luego otra para mover</p>
+        <button id="shuffle-button" type="button">Desordenar puzzle</button>
+        <p class="hint">Arrastra para rotar · rueda para acercar · clic en dos caras para mover</p>
+      </div>
+    </section>
+    <script type="module" src="/src/ui/app.mjs"></script>
+  </body>
+</html>
