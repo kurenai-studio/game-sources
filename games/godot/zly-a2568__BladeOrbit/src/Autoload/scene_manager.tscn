@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://b1cekilll2o8l"]
+
+[ext_resource type="Script" uid="uid://lwmhlfs144h8" path="res://Autoload/scene_manager.gd" id="1_b72hn"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_aqfuc"]
+
+[node name="SceneManager" type="CanvasLayer" unique_id=1344781897]
+process_mode = 3
+layer = 50
+script = ExtResource("1_b72hn")
+
+[node name="Mask" type="TextureRect" parent="." unique_id=1661787998]
+modulate = Color(0, 0, 0, 0)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("CanvasTexture_aqfuc")

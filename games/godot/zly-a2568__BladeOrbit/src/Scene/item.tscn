@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://biqu7yu622j6t"]
+
+[ext_resource type="Script" uid="uid://brd5o27darqmh" path="res://Scene/item.gd" id="1_m1cbo"]
+[ext_resource type="Texture2D" uid="uid://c0aytl0h30g44" path="res://Resource/Tiles/Item.png" id="2_b638g"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b8xra"]
+
+[node name="Item" type="Area2D" unique_id=983201301]
+collision_layer = 32
+collision_mask = 2
+script = ExtResource("1_m1cbo")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1454734792]
+shape = SubResource("RectangleShape2D_b8xra")
+
+[node name="Texture" type="Sprite2D" parent="." unique_id=644894901]
+position = Vector2(1, 0)
+texture = ExtResource("2_b638g")
+hframes = 7
+vframes = 4
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
