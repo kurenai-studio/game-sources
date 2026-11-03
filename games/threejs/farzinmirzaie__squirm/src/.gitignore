@@ -1,0 +1,26 @@
+# dependencies and build output
+node_modules/
+dist/
+# candidate levels written by tools/curate.js
+gen/
+
+# logs
+npm-debug.log*
+*.log
+
+# Playwright output, if run with its test runner or traces
+test-results/
+playwright-report/
+
+# editors and OS
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Claude Code: worktrees of helper agents, personal settings, and shoot.js's default output folder
+.claude/worktrees/
+.claude/settings.local.json
+shots/
