@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://dnu0xaqvb1u87"]
+
+[ext_resource type="Script" uid="uid://c224tnof0necl" path="res://Scene/axe.gd" id="1_fl5hb"]
+[ext_resource type="Texture2D" uid="uid://curwtqf7qepy7" path="res://Resource/Tiles/Axe.png" id="1_fsch6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_b8xra"]
+size = Vector2(60.765614, 9.839111)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fsch6"]
+size = Vector2(27.57446, 18.862255)
+
+[node name="Axe" type="CharacterBody2D" unique_id=1071413341]
+scale = Vector2(0.7, 0.7)
+collision_layer = 4
+collision_mask = 8
+script = ExtResource("1_fl5hb")
+
+[node name="Axe" type="Sprite2D" parent="." unique_id=104189120]
+texture = ExtResource("1_fsch6")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=298513704]
+position = Vector2(2.9927058, 0.020907164)
+rotation = 0.7994029
+scale = Vector2(0.9999999, 0.9999999)
+shape = SubResource("RectangleShape2D_b8xra")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="." unique_id=109034753]
+position = Vector2(-17.33483, -4.0432053)
+rotation = 0.7994029
+scale = Vector2(0.9999999, 0.9999999)
+shape = SubResource("RectangleShape2D_fsch6")
+
+[node name="Detector" type="Area2D" parent="." unique_id=477590820]
+collision_layer = 4
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Detector" unique_id=1038064608]
+position = Vector2(2.9927058, 0.020907164)
+rotation = 0.7994029
+scale = Vector2(0.9999999, 0.9999999)
+shape = SubResource("RectangleShape2D_b8xra")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="Detector" unique_id=949134890]
+position = Vector2(-17.33483, -4.0432053)
+rotation = 0.7994029
+scale = Vector2(0.9999999, 0.9999999)
+shape = SubResource("RectangleShape2D_fsch6")
+
+[connection signal="body_entered" from="Detector" to="." method="_on_detector_body_entered"]
