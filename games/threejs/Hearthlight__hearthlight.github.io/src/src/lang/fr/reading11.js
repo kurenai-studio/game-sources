@@ -1,0 +1,18 @@
+// French: reading comfort: the dialogue box, announcements, the display modes of the big screen.
+export const READING11_FR = {
+  // (the host menu’s « Display » row: what its three displays show)
+  'everything · the hour alone, less chat · just the world': 'tout · l’heure seule, moins de discussion · le monde seul',
+  // (the big screen’s minimap, put away unless the party asks for it: the host menu’s row and its note)
+  'Shown': 'Affichée',
+  'Hidden': 'Masquée',
+  'Minimap shown': 'Mini-carte affichée',
+  'Minimap hidden': 'Mini-carte masquée',
+  'in a corner of the big screen · every phone has the map': 'dans un coin du grand écran · chaque téléphone a la carte',
+  // (the objective on the big screen: there when it changes, or always — the host menu’s row)
+  'Objective on screen': 'Objectif à l’écran',
+  'Always': 'Toujours',
+  'When it changes': 'Quand il change',
+  'every phone has it: its Quest page': 'chaque téléphone l’a : sa page Quête',
+  __group: {
+  },
+};
