@@ -1,0 +1,25 @@
+<Project>
+  <!-- NuGet package versions are managed centrally in one place -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="MonoGame.Framework.DesktopGL" Version="3.8.6" />
+    <PackageVersion Include="MonoGame.Framework.Android" Version="3.8.6" />
+    <!-- Content pipeline (content/Content.mgcb); runs the dotnet-mgcb tool of the same version (.config/dotnet-tools.json) -->
+    <PackageVersion Include="MonoGame.Content.Builder.Task" Version="3.8.6" />
+    <!-- tools/ContentPipeline: the extension of the content pipeline, for the same version of the tool -->
+    <PackageVersion Include="MonoGame.Framework.Content.Pipeline" Version="3.8.6" />
+    <PackageVersion Include="Aether.Physics2D.MG" Version="2.2.0" />
+    <PackageVersion Include="Aether.Physics2D.Diagnostics.MG" Version="2.2.0" />
+    <!-- tools/CollisionGen: the same physics engine without MonoGame, and polygon clipping -->
+    <PackageVersion Include="Aether.Physics2D" Version="2.2.0" />
+    <PackageVersion Include="Clipper2" Version="2.0.0" />
+    <!-- The level editor in the game (src/TW3D.Game/Editor): the user interface of Dear ImGui -->
+    <PackageVersion Include="ImGui.NET" Version="1.91.6.1" />
+    <!-- tests/TW3D.Tests -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+</Project>

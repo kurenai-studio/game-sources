@@ -1,0 +1,385 @@
+/* Free Drive: the road picker and the driving HUD. Loaded with the drive chunk only. Same voice
+   as the stunts: hairlines, glass, Michroma for names, mono for numbers. */
+
+/* --- Picker --- */
+.fd-picker { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; pointer-events: auto;
+  background: radial-gradient(120% 90% at 30% 100%, rgba(5, 7, 12, 0.55), rgba(5, 7, 12, 0.92)); backdrop-filter: blur(6px);
+  animation: fd-in 0.5s var(--ease) both; overflow-y: auto; }
+@keyframes fd-in { from { opacity: 0; } to { opacity: 1; } }
+.fd-sheet { width: min(1120px, calc(100vw - 32px)); padding: calc(64px + var(--safe-t)) 0 calc(28px + var(--safe-b)); }
+.fd-head h2 { margin: 0; font: 400 clamp(26px, 3.4vw, 40px)/1.05 var(--display); letter-spacing: 0.02em; }
+.fd-lede { margin: 12px 0 26px; max-width: 620px; color: var(--ink-2); font-weight: 300; font-size: 16px; }
+.fd-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.fd-card, .fd-endless { position: relative; display: grid; align-content: start; gap: 6px; text-align: left; padding: 14px 16px 16px; border-radius: 16px;
+  border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px); transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+  animation: rise 0.9s var(--ease) both; }
+.fd-card:nth-child(2) { animation-delay: 0.06s; } .fd-card:nth-child(3) { animation-delay: 0.12s; } .fd-card:nth-child(4) { animation-delay: 0.18s; }
+.fd-card:hover, .fd-endless:hover { border-color: rgba(255, 255, 255, 0.34); transform: translateY(-2px); }
+.fd-card[aria-checked='true'], .fd-endless[aria-checked='true'] { border-color: var(--ice); box-shadow: 0 0 0 3px rgba(191, 230, 255, 0.12), 0 24px 60px rgba(0, 0, 0, 0.35); }
+.fd-card:focus-visible, .fd-endless:focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; }
+.fd-sil { width: 100%; height: 96px; margin-bottom: 4px; }
+.fd-sil path { fill: none; stroke: var(--ink); stroke-width: 1.15; stroke-linejoin: round; stroke-linecap: round; opacity: 0.86; }
+.fd-card[aria-checked='true'] .fd-sil path, .fd-endless[aria-checked='true'] .fd-sil path { stroke: #fff; opacity: 1; }
+.fd-sil .a { fill: var(--ink); } .fd-sil .b { fill: var(--signal); }
+.fd-name { font: 400 15px/1.15 var(--display); letter-spacing: 0.04em; }
+.fd-local { font-size: 12px; color: var(--ink-2); }
+.fd-country { font: 500 10px/1 var(--text); letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-3); }
+.fd-cstats { font: 400 11.5px/1.5 var(--mono); color: var(--ink-2); margin-top: 6px; }
+.fd-cstats b { font-weight: 400; color: var(--ink); }
+.fd-prof { width: 100%; height: 28px; }
+.fd-prof path { fill: rgba(191, 230, 255, 0.16); stroke: rgba(191, 230, 255, 0.55); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.fd-blurb { font-size: 12px; color: var(--ink-3); line-height: 1.45; }
+/* Endless: a full-width card under the real roads, with its seed. */
+.fd-endless { grid-column: 1 / -1; grid-template-columns: 132px 1fr; column-gap: 18px; row-gap: 4px; align-items: center; cursor: pointer; animation-delay: 0.24s; }
+.fd-endless .fd-sil { grid-row: 1 / span 5; height: 84px; margin: 0; }
+.fd-endless .fd-sil .far { stroke: rgba(191, 230, 255, 0.35); stroke-dasharray: 2 3; }
+.fd-seed { display: flex; align-items: center; gap: 8px; margin-top: 6px; font: 500 10px/1 var(--text); letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-3); }
+.fd-seed label { display: flex; align-items: center; gap: 8px; }
+.fd-seed input { width: 15ch; height: 30px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--hair); background: rgba(5, 7, 12, 0.35); color: var(--ink);
+  font: 400 13px/1 var(--mono); letter-spacing: 0.02em; text-transform: none; }
+.fd-seed input:focus-visible { outline: 2px solid var(--ice); outline-offset: 1px; }
+.fd-reseed { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--hair); font-size: 15px; letter-spacing: 0; color: var(--ink-2); cursor: pointer; }
+.fd-reseed:hover, .fd-reseed:focus-visible { color: var(--ink); border-color: rgba(255, 255, 255, 0.34); outline: none; }
+.fd-seedchip { pointer-events: auto; padding: 0; border: 0; background: none; font: inherit; color: var(--ink-2); text-decoration: underline dotted rgba(245, 246, 248, 0.4); text-underline-offset: 3px; cursor: pointer; }
+.fd-seedchip:hover, .fd-seedchip:focus-visible { color: var(--ink); }
+.fd-mini .ahead { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.fd-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 22px; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 20px; border: 1px solid var(--hair); background: var(--glass); }
+.fd-tod button { height: 38px; padding: 0 16px; border: 0; border-radius: 17px; background: none; font: 500 12px/1 var(--text); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); }
+.fd-tod button[aria-checked='true'] { background: rgba(245, 246, 248, 0.14); color: var(--ink); }
+.fd-loading { display: grid; gap: 8px; margin-top: 18px; max-width: 420px; font: 500 11px/1 var(--text); letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-2); }
+.fd-loading i { display: block; height: 1px; background: var(--hair); overflow: hidden; }
+.fd-loading b { display: block; height: 1px; background: var(--ink); transform-origin: left; transform: scaleX(0); transition: transform 0.25s var(--ease); }
+.fd-credit { margin: 26px 0 0; font-size: 11px; color: var(--ink-3); max-width: 760px; }
+
+/* --- Driving HUD --- */
+body.driving .ai-chip, body.driving [data-ghost], body.driving [data-assist] { display: none; }
+/* The driving HUD speaks the same instrument language as the Show's (src/styles.css, .hud): Geist
+   labels at 11 px, Geist Mono numbers with their units, hairlines, ink for nominal, a scrim under
+   each band so labels hold 4.5:1 over sky and snow. */
+.fd-hud { position: fixed; inset: 0; pointer-events: none; z-index: 3; font-variant-numeric: tabular-nums; --lbl: rgba(245, 246, 248, 0.82); --line: rgba(245, 246, 248, 0.22);
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.85), 0 1px 10px rgba(0, 0, 0, 0.55); }
+.fd-hud::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(150px + var(--safe-t)); background: linear-gradient(rgba(3, 5, 9, 0.7), rgba(3, 5, 9, 0.42) 60%, rgba(3, 5, 9, 0)); pointer-events: none; }
+.fd-hud::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 240px; background: linear-gradient(rgba(3, 5, 9, 0), rgba(3, 5, 9, 0.5) 50%, rgba(3, 5, 9, 0.78)); pointer-events: none; }
+.fd-hud > * { z-index: 1; }
+.fd-hud .chip { pointer-events: auto; color: var(--ink); }
+.fd-road { position: absolute; left: calc(24px + var(--safe-l)); top: calc(58px + var(--safe-t)); }
+.fd-road p { margin: 0; }
+.fd-road-name { font: 400 clamp(15px, 1.6vw, 20px)/1.1 var(--display); letter-spacing: 0.06em; }
+.fd-road-sub { margin-top: 6px !important; font-size: 13px; color: var(--lbl); }
+.fd-ctl { position: absolute; right: calc(24px + var(--safe-r)); top: calc(62px + var(--safe-t)); display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; }
+.fd-ctl [data-h-fan][aria-pressed='true'] { color: #07090d; background: var(--ink); border-color: var(--ink); }
+/* AI drive (0109): one tap, always on screen, a switch and a line saying what it does. Ink on glass like the
+   chips; the switch carries the state (filled: on). A 44 px target. */
+.fd-ai { position: absolute; left: calc(24px + var(--safe-l)); top: calc(156px + var(--safe-t)); pointer-events: auto; display: grid; grid-template-columns: auto auto 1fr;
+  align-items: center; column-gap: 9px; row-gap: 3px; min-height: 44px; max-width: min(340px, calc(100vw - 48px - var(--safe-l) - var(--safe-r))); padding: 6px 16px 6px 11px; border-radius: 22px;
+  border: 1px solid var(--hair); background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: var(--ink); text-align: left; text-shadow: none; cursor: pointer;
+  font: 500 12px/1 var(--text); letter-spacing: 0.12em; text-transform: uppercase; transition: background-color 0.18s var(--ease), color 0.18s var(--ease); }
+.fd-ai b { font-weight: 500; white-space: nowrap; }
+.fd-ai-st { justify-self: end; font: 400 11px/1 var(--mono); letter-spacing: 0.06em; }
+.fd-ai small { grid-column: 2 / -1; font: 400 11px/1.3 var(--text); letter-spacing: 0.01em; text-transform: none; color: rgba(245, 246, 248, 0.86); }
+.fd-ai-sw { position: relative; grid-row: 1 / span 2; width: 28px; height: 16px; border-radius: 8px; border: 1px solid currentColor; }
+.fd-ai-sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: 50%; background: currentColor; transition: transform 0.18s var(--ease); }
+.fd-ai[aria-checked='true'] { border-color: rgba(245, 246, 248, 0.5); }
+.fd-ai[aria-checked='true'] .fd-ai-sw { background: var(--ink); border-color: var(--ink); }
+.fd-ai[aria-checked='true'] .fd-ai-sw::after { transform: translateX(12px); background: #07090d; }
+.fd-ai[aria-checked='false'] .fd-ai-st, .fd-ai[aria-checked='false'] small { color: var(--lbl); }
+/* Offered after a crash or two (src/drive/index.js offerAi): a ring that says "here". */
+.fd-ai[data-offer] { box-shadow: 0 0 0 2px var(--ink), 0 0 0 6px rgba(245, 246, 248, 0.22); }
+.fd-ai:focus-visible { outline: 2px solid var(--ice); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .fd-ai, .fd-ai-sw::after { transition: none; } }
+.fd-timer { position: absolute; left: 50%; top: calc(20px + var(--safe-t)); transform: translateX(-50%); display: grid; justify-items: center; gap: 5px; opacity: 0.86; transition: opacity 0.4s var(--ease); }
+/* Waiting to start, the clock reads at a label's weight (0.86, as --lbl), not 0.6: over a day sky at
+   the top of an iPad's frame 0:00.0 measured 4.28:1 at 0.6 (0087); 0.86 holds 6:1 there. */
+.fd-timer.running, .fd-timer.finished { opacity: 1; }
+.fd-timer b { font: 400 16px/1 var(--mono); letter-spacing: 0.02em; }
+.fd-timer span { font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--lbl); }
+.fd-timer.finished b { text-decoration: underline 1px; text-underline-offset: 4px; }
+.fd-speed { position: absolute; left: 50%; bottom: calc(34px + var(--safe-b)); transform: translateX(-50%); display: grid; justify-items: center; }
+.fd-speed b { font: 200 64px/0.88 var(--text); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.fd-speed span { margin-top: 6px; font: 400 13px/1 var(--mono); text-transform: none; color: var(--lbl); }
+.fd-stats { position: absolute; left: calc(24px + var(--safe-l)); bottom: calc(40px + var(--safe-b)); margin: 0; display: grid; gap: 0;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(5, 7, 12, 0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.fd-stats div { display: grid; gap: 6px; padding: 9px 14px 8px; }
+.fd-stats div + div { border-top: 1px solid var(--line); }
+.fd-stats dt { font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--lbl); }
+.fd-stats dd { margin: 0; font: 400 11px/1 var(--mono); color: var(--lbl); }
+.fd-stats dd b { font-weight: 400; font-size: 17px; color: var(--ink); }
+.fd-map { position: absolute; right: calc(24px + var(--safe-r)); bottom: calc(40px + var(--safe-b)); width: 168px; padding: 9px; border-radius: 6px; border: 1px solid var(--line);
+  background: rgba(5, 7, 12, 0.5); backdrop-filter: blur(10px); display: grid; gap: 6px; }
+.fd-mini { width: 150px; height: 150px; display: block; }
+.fd-mini .route { fill: none; stroke: rgba(245, 246, 248, 0.42); stroke-width: 1.3; stroke-linejoin: round; }
+.fd-mini .done { fill: none; stroke: var(--ink); stroke-width: 1.6; stroke-linejoin: round; }
+.fd-mini .a { fill: var(--ink-2); } .fd-mini .b { fill: var(--ink); }
+.fd-mini [data-h-car] circle { fill: rgba(245, 246, 248, 0.22); stroke: var(--ink); stroke-width: 1.2; }
+.fd-mini [data-h-car] path { fill: var(--ink); }
+.fd-profile { width: 150px; height: 34px; display: block; }
+.fd-profile path { fill: rgba(245, 246, 248, 0.12); stroke: rgba(245, 246, 248, 0.5); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.fd-profile line { stroke: var(--ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.fd-fine { position: absolute; left: calc(24px + var(--safe-l)); right: calc(24px + var(--safe-r)); bottom: calc(10px + var(--safe-b)); margin: 0; font-size: 11px; line-height: 1.35;
+  color: rgba(245, 246, 248, 0.88); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.fd-pause { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; background: rgba(5, 7, 12, 0.55); backdrop-filter: blur(8px); pointer-events: auto; }
+.fd-pause .sheet { height: auto; border-radius: 18px; border: 1px solid var(--hair); padding: 28px; }
+.fd-pause .keys p { margin: 6px 0; font-size: 13px; color: var(--ink-2); }
+.fd-pause .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+
+@media (max-width: 900px) {
+  .fd-cards { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .fd-sheet { padding-top: calc(56px + var(--safe-t)); }
+  .fd-lede { font-size: 14px; margin-bottom: 16px; }
+  .fd-cards { grid-template-columns: 1fr; gap: 8px; }
+  .fd-card, .fd-endless { grid-template-columns: 84px 1fr; column-gap: 12px; row-gap: 3px; padding: 10px 12px; }
+  .fd-sil { grid-row: 1 / span 4; height: 64px; margin: 0; }
+  .fd-endless { grid-template-columns: 84px 1fr; }
+  .fd-endless .fd-sil { height: 64px; }
+  .fd-prof, .fd-blurb { display: none; }
+  .fd-cstats { font-size: 10.5px; }
+}
+/* Phones: the thumbs own the bottom of the screen, so the HUD lives up top. */
+@media (pointer: coarse) {
+  .fd-stats dd { white-space: nowrap; }
+  .fd-speed b { font-size: 44px; }
+  .fd-stats dd b { font-size: 14px; }
+  .fd-mini { width: 84px; height: 84px; }
+  .fd-profile { width: 84px; height: 22px; }
+  .fd-map { width: auto; padding: 6px; bottom: auto; }
+  .fd-fine { white-space: normal; font-size: 11px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .fd-stats { gap: 0; }
+  .fd-stats div + div { border-top: 0; border-left: 1px solid var(--line); }
+  .fd-stats div { padding: 8px 12px 7px; }
+}
+@media (pointer: coarse) and (orientation: portrait) {
+  .fd-road { top: calc(56px + var(--safe-t)); }
+  .fd-road-sub { max-width: 60vw; }
+  .fd-fine { top: calc(106px + var(--safe-t)); bottom: auto; right: auto; max-width: 62vw; }
+  .fd-timer { top: calc(60px + var(--safe-t)); left: auto; right: calc(16px + var(--safe-r)); transform: none; justify-items: end; }
+  .fd-speed { bottom: auto; top: calc(140px + var(--safe-t)); }
+  .fd-stats { bottom: auto; top: calc(204px + var(--safe-t)); left: 50%; transform: translateX(-50%); grid-auto-flow: column; gap: 0; }
+  .fd-ctl { top: calc(264px + var(--safe-t)); right: 50%; transform: translateX(50%); max-width: 96vw; flex-wrap: nowrap; gap: 6px; }
+  .fd-ctl .chip { padding: 0 10px; }
+  .fd-map { top: calc(312px + var(--safe-t)); right: calc(14px + var(--safe-r)); }
+  .fd-hud::before { height: calc(330px + var(--safe-t)); }
+  body.driving .cue { --cue-top: 470px; }
+  /* AI drive: on the left, under the chips and the dock and over the cue line; compact (below), in the
+     chips' row. */
+  .fd-ai { left: calc(16px + var(--safe-l)); top: calc(392px + var(--safe-t)); max-width: min(256px, calc(100vw - 134px - var(--safe-l) - var(--safe-r))); }   /* clear of the map (98 px with its padding) */
+}
+@media (pointer: coarse) and (orientation: landscape) {
+  .fd-speed { bottom: auto; top: calc(54px + var(--safe-t)); }
+  .fd-stats { bottom: auto; top: calc(112px + var(--safe-t)); left: 50%; transform: translateX(-50%); grid-auto-flow: column; gap: 0; }
+  /* Centred between the chips (left) and the map (right), so a notch inset can't push them together. */
+  .fd-stats { left: calc(250px + var(--safe-l)); right: calc(150px + var(--safe-r)); width: fit-content; margin: 0 auto; transform: none; }
+  .fd-ctl { top: calc(104px + var(--safe-t)); bottom: auto; left: calc(24px + var(--safe-l)); right: auto; transform: none; max-width: 210px; flex-wrap: wrap; justify-content: flex-start; }
+  .fd-fine { top: auto; bottom: calc(6px + var(--safe-b)); left: calc(168px + var(--safe-l)); right: calc(271px + var(--safe-r)); transform: none; max-width: none; text-align: center; }
+  .fd-map { top: calc(52px + var(--safe-t)); right: calc(14px + var(--safe-r)); padding: 5px; }
+  .fd-mini { width: 62px; height: 62px; }
+  .fd-profile { display: none; }
+  .fd-timer { top: calc(20px + var(--safe-t)); }
+  .fd-road { top: calc(56px + var(--safe-t)); }
+  /* The cue line under the stats, narrow enough to clear the right thumb's slots, and stopping short of
+     their arc (LIFT in slot C reaches 271 px in from the edge: the arrival title sat on it at 844×390
+     with a notch's insets, 0082). */
+  body.driving .cue { --cue-top: 172px; right: calc(271px + var(--safe-r)); max-width: calc(100vw - 520px - var(--safe-l) - var(--safe-r)); }
+  /* The stick's STEER label inside its ring, at the top (above the dashed circle): standing over the
+     ring it sat under the third row of chips (BUILD · QUESTS · ARCADE, the full set) with a notch's
+     insets lifting the stick, its E showing between them (0087). Inside, nothing can reach it. */
+  body.driving .stick-hint { top: 9px; }
+  /* AI drive: up top between the wordmark and the clock, clear of the thumbs, the map and the chips in either
+     HUD; the switch and its word (the line is the cue's when it changes, and the title's). */
+  .fd-ai { left: calc(176px + var(--safe-l)); top: calc(8px + var(--safe-t)); max-width: 190px; }
+  .fd-ai small { display: none; }
+}
+/* Narrower than 720 sideways (a folding phone closed and turned, 0103: the compact line only), the clock comes
+   within reach of the wordmark: the switch goes under Reset and Exit instead. */
+@media (pointer: coarse) and (orientation: landscape) and (max-width: 719px) {
+  .fd-ai { left: calc(24px + var(--safe-l)); top: calc(144px + var(--safe-t)); }
+}
+@media (pointer: coarse) and (orientation: landscape) and (min-height: 700px) {
+  .fd-fine { left: calc(212px + var(--safe-l)); right: calc(292px + var(--safe-r)); }
+}
+@media (prefers-reduced-motion: reduce) { .fd-picker, .fd-card, .fd-endless { animation: none; } }
+
+/* --- Instruments (src/drive/hud.js, src/drive/minimap.js) --------------------------------------
+   Both unit systems on every readout, the leading one large; the map on canvas at the screen's
+   density; tap anything for more. */
+.fd-hud .h-tap { pointer-events: auto; }
+.fd-speed .fd-alt { margin-top: 4px; font: 400 11px/1 var(--mono); font-style: normal; color: rgba(245, 246, 248, 0.86); }
+@media (pointer: coarse) { .fd-tot { display: none; } }
+.fd-stats .u2 { font-size: 11px; }
+.fd-timer.h-tap { padding: 4px 8px; margin-top: -4px; }
+.fd-stats .h-tap { border-radius: 0; }
+.fd-map { pointer-events: auto; }
+.fd-mapbox { position: relative; cursor: pointer; border-radius: 4px; outline: none; }
+.fd-mapbox:hover .fd-minic { filter: brightness(1.15); }
+.fd-mapbox:focus-visible { box-shadow: 0 0 0 1px var(--ink), 0 0 0 4px rgba(245, 246, 248, 0.18); }
+.fd-minic { width: 150px; height: 150px; display: block; }
+.fd-profc { width: 150px; height: 34px; display: block; }
+.fd-maptag { position: absolute; top: 2px; right: 2px; min-width: 26px; padding: 3px 5px; border-radius: 3px; border: 1px solid var(--line); background: rgba(5, 7, 12, 0.6);
+  font: 500 11px/1 var(--mono); letter-spacing: 0.06em; color: var(--ink); text-align: center; cursor: pointer; text-shadow: none; }
+.fd-maptag:hover { background: rgba(245, 246, 248, 0.14); }
+@media (pointer: coarse) {
+  .fd-speed { grid-template-columns: auto auto; column-gap: 8px; align-items: end; padding: 2px 10px 4px; border-radius: 6px; background: rgba(5, 7, 12, 0.5); }   /* over a bright sky the units keep 4.5:1 */
+  .fd-speed b { grid-row: 1 / span 2; }
+  .fd-speed span { margin-top: 0; align-self: end; }
+  .fd-speed .fd-alt { margin: 0 0 4px; align-self: start; grid-column: 2; }
+  .fd-minic { width: 84px; height: 84px; }
+  .fd-profc { width: 84px; height: 22px; }
+  .fd-maptag { font-size: 11px; min-width: 30px; padding: 4px 6px; top: -4px; right: -4px; }
+}
+/* The full map: glass over the stage. The drive carries on behind it. */
+.fd-xmap { position: fixed; inset: 0; z-index: 7; display: grid; place-items: center; pointer-events: none; background: rgba(3, 5, 9, 0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); padding: calc(64px + var(--safe-t)) calc(24px + var(--safe-r)) calc(24px + var(--safe-b)) calc(24px + var(--safe-l)); }
+.fd-xmap.on .xm-panel { animation: xm-in 0.32s var(--ease); }
+@keyframes xm-in { from { transform: scale(0.97); } }
+.xm-panel { pointer-events: auto; width: min(1080px, 100%); height: min(760px, 100%); display: grid; grid-template-rows: auto 1fr 96px; gap: 0; overflow: hidden;
+  border-radius: 10px; border: 1px solid rgba(245, 246, 248, 0.16); background: linear-gradient(180deg, #0b0e15, #06080d);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6); color: var(--ink); font-variant-numeric: tabular-nums; text-shadow: none; }
+.xm-head { display: flex; align-items: center; gap: 20px; padding: 14px 16px 12px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.xm-title .eyebrow { margin: 0 0 4px; }
+.xm-title h3 { margin: 0; font: 400 17px/1.1 var(--display); letter-spacing: 0.05em; }
+.xm-stats { display: flex; gap: 22px; margin: 0 0 0 auto; }
+.xm-stats div { display: grid; gap: 5px; }
+.xm-stats dt { font: 500 11px/1 var(--text); letter-spacing: 0.14em; text-transform: uppercase; color: var(--lbl); }
+.xm-stats dd { margin: 0; font: 400 15px/1 var(--mono); }
+.xm-btns { display: flex; gap: 8px; align-items: center; }
+.xm-btns .chip[aria-pressed='true'] { color: #07090d; background: var(--ink); border-color: var(--ink); }
+.xm-x { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--ink); font-size: 20px; line-height: 1; }
+.xm-x:hover { background: rgba(245, 246, 248, 0.08); }
+.xm-stage { position: relative; min-height: 0; }
+.xm-map { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.xm-map:active { cursor: grabbing; }
+.xm-tip { position: absolute; left: 0; top: 0; width: 220px; padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(245, 246, 248, 0.2); background: rgba(5, 7, 12, 0.9); pointer-events: none; font-size: 12px; }
+.xm-tip > b { display: block; font: 400 18px/1.1 var(--mono); }
+.xm-tip > span { display: block; margin-top: 3px; color: var(--ink-2); }
+.xm-tip dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 8px 0 0; padding-top: 8px; border-top: 1px solid var(--line); }
+.xm-tip dt { color: var(--ink-2); } .xm-tip dd { margin: 0; font: 400 12px var(--mono); text-align: right; }
+.xm-hint { position: absolute; left: 14px; bottom: 10px; margin: 0; font-size: 11px; color: var(--ink-3); pointer-events: none; }
+.xm-hint kbd { font: 500 11px/1 var(--mono); padding: 2px 5px; border: 1px solid var(--line); border-radius: 3px; }
+.xm-prof { width: 100%; height: 96px; display: block; border-top: 1px solid var(--line); cursor: crosshair; touch-action: none; }
+@media (pointer: coarse), (max-width: 700px) {
+  .fd-xmap { padding: calc(8px + var(--safe-t)) 0 0; place-items: end stretch; }
+  .xm-panel { width: 100%; height: 100%; border-radius: 14px 14px 0 0; grid-template-rows: auto 1fr 76px; }
+  .xm-head { gap: 10px 14px; padding: 10px 12px; }
+  .xm-stats { margin: 0; order: 3; width: 100%; }
+  .xm-btns { margin-left: auto; }
+  .xm-prof { height: 76px; }
+  .xm-hint { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .fd-xmap.on .xm-panel { animation: none; } }
+body.xmap-open .fd-hud, body.xmap-open .bq-dock, body.xmap-open .touch { opacity: 0; transition: opacity 0.2s var(--ease); }
+
+/* --- The compact HUD (0061, src/hud-mode.js; the handle's own look is in src/styles.css) ------------
+   Free Drive and the Sandbox on a phone start with one line under the road's name: speed, elevation
+   and grade (height and gas in the Sandbox), and the handle (MORE ▾). The map, the camera, time and
+   fan chips, the road's subtitle and the build dock come back with it; Reset and Exit, the timer and
+   the map credit stay. .fd-dash and .fd-row are layout only: on a desktop's full HUD they vanish. */
+.fd-dash, .fd-row { display: contents; }
+@media (pointer: coarse) {
+  /* Full: the handle closes the stats' band (the row takes the stats' place on the glass). */
+  .fd-row { display: flex; position: absolute; align-items: stretch; }
+  .fd-row > .fd-stats { position: static; top: auto; bottom: auto; left: auto; right: auto; width: auto; margin: 0; transform: none; }
+  .fd-row > .h-handle { display: grid; height: auto; min-height: 44px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-left: 1px solid var(--line);
+    background: rgba(5, 7, 12, 0.5); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+}
+@media (pointer: coarse) and (orientation: portrait) {
+  .fd-row { top: calc(204px + var(--safe-t)); left: 50%; transform: translateX(-50%); }
+  .fd-stats div { padding: 8px 9px 7px; }   /* three stats and the handle in 358 px */
+}
+@media (pointer: coarse) and (orientation: landscape) {
+  .fd-row { top: calc(112px + var(--safe-t)); left: calc(250px + var(--safe-l)); right: calc(150px + var(--safe-r)); width: fit-content; margin: 0 auto; transform: none; }
+}
+/* Compact: the line. */
+:root[data-hud='compact'] .fd-hud :is(.fd-map, .fd-road-sub, .fd-alt, .fd-stats .u2, [data-h-cam], [data-h-tod], [data-h-fan], [data-s-cam], [data-s-fan]) { display: none; }
+:root[data-hud='compact'] body:has([data-drive-hud]:not([hidden])) .bq-dock { display: none; }   /* Build and Quests come back with MORE (B and J work throughout) */
+:root[data-hud='compact'] .fd-dash { display: flex; position: absolute; left: 50%; bottom: calc(34px + var(--safe-b)); transform: translateX(-50%); align-items: stretch;
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(5, 7, 12, 0.56); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+:root[data-hud='compact'] .fd-row { display: contents; }
+:root[data-hud='compact'] .fd-dash :is(.fd-speed, .fd-stats) { position: static; inset: auto; width: auto; margin: 0; transform: none; border: 0; border-radius: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+:root[data-hud='compact'] .fd-dash .fd-speed { display: flex; align-items: baseline; gap: 5px; padding: 8px 12px 7px; flex: 0 0 auto; align-self: center; }
+:root[data-hud='compact'] .fd-dash .fd-speed b { font-size: 28px; line-height: 0.9; }
+:root[data-hud='compact'] .fd-dash .fd-speed span { margin: 0; font-size: 11px; }
+:root[data-hud='compact'] .fd-dash .fd-stats { display: flex; flex: 1 1 auto; }
+:root[data-hud='compact'] .fd-dash .fd-stats div { flex: 1 1 auto; padding: 8px 12px 7px; border-top: 0; border-left: 1px solid var(--line); }
+:root[data-hud='compact'] .fd-dash .h-handle { display: grid; height: auto; min-height: 44px; border: 0; border-left: 1px solid var(--line); background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (pointer: coarse) {
+  :root[data-hud='compact'] .fd-fine { -webkit-line-clamp: 1; }
+  :root[data-hud='compact'] .fd-dash .fd-speed { padding: 6px 10px 5px; }
+}
+@media (pointer: coarse) and (orientation: portrait) {
+  :root[data-hud='compact'] .fd-fine { top: calc(84px + var(--safe-t)); }
+  :root[data-hud='compact'] .fd-dash { top: calc(108px + var(--safe-t)); bottom: auto; left: calc(16px + var(--safe-l)); right: calc(16px + var(--safe-r)); transform: none; }
+  :root[data-hud='compact'] .fd-dash .fd-stats > div:nth-child(3) { display: none; }   /* distance comes back with MORE */
+  :root[data-hud='compact'] .fd-dash .fd-stats div { padding: 8px 10px 7px; }
+  :root[data-hud='compact'] .fd-ctl { top: calc(164px + var(--safe-t)); right: calc(16px + var(--safe-r)); transform: none; }
+  :root[data-hud='compact'] .bq-dock { top: calc(164px + var(--safe-t)); }
+  :root[data-hud='compact'] body.driving .cue { top: calc(210px + var(--safe-t)); bottom: auto; left: calc(16px + var(--safe-l)); right: calc(16px + var(--safe-r)); }   /* the car rides low here: the cue stays up top */
+  :root[data-hud='compact'] .fd-hud::before { height: calc(212px + var(--safe-t)); }
+  /* AI drive in the chips' row, left of Reset and Exit; the cue line steps down under it (Free Drive only). */
+  :root[data-hud='compact'] .fd-ai { top: calc(162px + var(--safe-t)); max-width: calc(100vw - 160px - var(--safe-l) - var(--safe-r)); }
+  :root[data-hud='compact'] body.driving:has([data-h-ai]) .cue { top: calc(238px + var(--safe-t)); }
+  :root[data-hud='compact'] body:has([data-h-ai]) .fd-hud::before { height: calc(240px + var(--safe-t)); }
+}
+@media (pointer: coarse) and (orientation: landscape) {
+  :root[data-hud='compact'] .fd-dash { top: calc(54px + var(--safe-t)); bottom: auto; left: calc(250px + var(--safe-l)); right: calc(150px + var(--safe-r)); width: fit-content; margin: 0 auto; transform: none; }
+  :root[data-hud='compact'] body.driving .cue { top: calc(112px + var(--safe-t)); bottom: auto; left: calc(250px + var(--safe-l)); right: calc(150px + var(--safe-r)); }
+}
+
+/* The road reads first (0112). Compact on a touch screen the line, the switch, the chips and the cue line each
+   stand on their own glass: the shade at the top only has to carry what stands bare (the road's name, the clock,
+   the map credit), and the shade at the bottom nothing upright (the stick's label has its own pill) and the credit
+   sideways. The AI switch is one line (its sentence comes back while it is offered, and in the full HUD). */
+@media (pointer: coarse) {
+  :root[data-hud='compact'] .fd-ai:not([data-offer]) small { display: none; }
+  :root[data-hud='compact'] .fd-ai:not([data-offer]) .fd-ai-sw { grid-row: auto; }
+}
+@media (pointer: coarse) and (orientation: portrait) {
+  :root[data-hud='compact'] .fd-hud::before, :root[data-hud='compact'] body:has([data-h-ai]) .fd-hud::before { height: calc(150px + var(--safe-t));
+    background: linear-gradient(rgba(3, 5, 9, 0.7), rgba(3, 5, 9, 0.56) 70%, rgba(3, 5, 9, 0)); }   /* the credit's line (84–100 px) at the old shade's depth */
+  :root[data-hud='compact'] .fd-hud::after { display: none; }
+}
+/* A screen under 440 px tall upright (a flip's cover screen, 360×380; 0110): the thumbs take everything below 136 px on
+   the right and 210 px on the left. Reset and Exit go up into the top bar's empty left (the wordmark is put away
+   mid-drive), the line right under it, the clock and the AI switch beside each other under the line, the cue line
+   under them clear of LIFT and GO, the road's name goes (the arrival title says it) and the map credit takes the foot
+   of the glass, under the stick and BRAKE. */
+@media (pointer: coarse) and (orientation: portrait) and (max-height: 440px) {
+  :root[data-hud='compact'] .fd-road { display: none; }
+  :root[data-hud='compact'] .fd-ctl { top: calc(20px + var(--safe-t)); left: calc(16px + var(--safe-l)); right: auto; transform: none; }
+  :root[data-hud='compact'] .fd-dash { top: calc(60px + var(--safe-t)); }
+  :root[data-hud='compact'] .fd-timer { top: calc(112px + var(--safe-t)); gap: 0; padding: 3px 8px; border-radius: 4px; background: rgba(5, 7, 12, 0.56); }   /* on its own glass: under the shade's end, over trees */
+  :root[data-hud='compact'] .fd-timer span:empty { display: none; }
+  :root[data-hud='compact'] .fd-ai { top: calc(112px + var(--safe-t)); max-width: calc(100vw - 160px - var(--safe-l) - var(--safe-r)); }
+  :root[data-hud='compact'] body.driving .cue, :root[data-hud='compact'] body.driving:has([data-h-ai]) .cue { top: calc(162px + var(--safe-t)); right: calc(76px + var(--safe-r)); }
+  :root[data-hud='compact'] .fd-fine { top: auto; bottom: calc(3px + var(--safe-b)); right: calc(16px + var(--safe-r)); max-width: none; text-align: center; }
+  :root[data-hud='compact'] .fd-hud::before, :root[data-hud='compact'] body:has([data-h-ai]) .fd-hud::before { height: calc(136px + var(--safe-t)); }
+  :root[data-hud='compact'] .fd-hud::after { display: block; height: calc(30px + var(--safe-b)); }
+}
+@media (pointer: coarse) and (orientation: landscape) {
+  :root[data-hud='compact'] .fd-hud::before { height: calc(100px + var(--safe-t)); }
+  :root[data-hud='compact'] .fd-hud::after { height: calc(64px + var(--safe-b)); }
+}
+/* Sideways under 320 px tall (a flip's tall screen turned, with Chrome's bars: 800×300; 0110): LIFT rises to 96 px, under
+   the line's right end. The line keeps three cells (distance comes back where the full set fits) and starts at the
+   chips' edge instead of centring; the cue line stops short of LIFT. */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 320px) {
+  :root[data-hud='compact'] .fd-dash { margin: 0; }
+  :root[data-hud='compact'] .fd-dash .fd-stats > div:nth-child(3) { display: none; }
+  :root[data-hud='compact'] body.driving .cue { right: calc(280px + var(--safe-r)); }
+}
+/* Sideways and narrower than 720 (the fold closed and turned: 594×368 with its 84 px inset, 678×445 installed; a razr's
+   cover, 424×360; 0110): the slots stand in a column 164 px in from the right edge from 80 px down, and the line
+   centred between 250 and 150 px in from the edges ran past the glass. Everything goes to the left of that column,
+   one thing a row: Reset and Exit in the top bar's empty left, the line, the AI switch, the cue line; the road's name
+   goes (the arrival title says it) and the map credit sits at the foot between the stick and BRAKE. */
+@media (pointer: coarse) and (orientation: landscape) and (max-width: 719px) {
+  :root[data-hud='compact'] .fd-road { display: none; }
+  :root[data-hud='compact'] .fd-ctl { top: calc(20px + var(--safe-t)); left: calc(16px + var(--safe-l)); }
+  :root[data-hud='compact'] .fd-dash { top: calc(60px + var(--safe-t)); left: calc(16px + var(--safe-l)); right: auto; margin: 0; }
+  :root[data-hud='compact'] .fd-dash .fd-stats > div:nth-child(3) { display: none; }   /* distance comes back where the full set fits */
+  :root[data-hud='compact'] .fd-dash .fd-stats div { padding: 7px 9px 6px; }
+  :root[data-hud='compact'] .fd-ai { top: calc(114px + var(--safe-t)); left: calc(16px + var(--safe-l)); }
+  :root[data-hud='compact'] body.driving .cue { top: calc(166px + var(--safe-t)); left: calc(16px + var(--safe-l)); right: calc(172px + var(--safe-r)); width: fit-content; max-width: none; margin: 0; transform: none; }
+  :root[data-hud='compact'] .fd-fine { left: calc(132px + var(--safe-l)); right: calc(172px + var(--safe-r)); }
+}
