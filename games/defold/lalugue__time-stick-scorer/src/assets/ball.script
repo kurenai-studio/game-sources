@@ -1,0 +1,60 @@
+go.property("force_multiplier", 1)
+go.property("level_boundary_url", msg.url())
+go.property("is_bonus", false)
+
+function init(self)
+	msg.post("#collision_kinematic", "disable")
+
+	local yscale = go.get("#sprite", "scale.y")
+	if yscale ~= 0.25 then
+		go.set("#sprite", "scale.x", 0.25)
+		go.set("#sprite", "scale.y", 0.25)
+		go.set("#sprite", "scale.z", 0.25)
+	end
+
+	if self.is_bonus then
+		msg.post("#sprite", "play_animation", {id = hash("basketball_inverted_anim")})
+	end
+end
+
+function update(self, dt)
+	level_boundary_position = go.get_world_position(self.level_boundary_url)
+	if math.abs(go.get_world_position().x) > level_boundary_position.x or math.abs(go.get_world_position().y) > level_boundary_position.y then
+		-- teleport to origin
+		msg.post("#collision_dynamic", "disable")
+		go.set_position(go.get_position("origin"))
+		msg.post("#collision_dynamic", "enable")
+	end
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("destroy_ball") then
+		msg.post("/factory", "decrease_spawned_balls")
+		msg.post("/level", "add_score")
+		if self.is_bonus then
+			msg.post("/level", "add_time")
+		end
+		go.delete()
+	end
+	
+	if message_id == hash("enable_dynamic") then
+		msg.post("#collision_dynamic", "enable")
+	elseif message_id == hash("disable_dynamic") then
+		msg.post("#collision_dynamic", "disable")
+	end
+	
+	if message_id == hash("enable_kinematic") then
+		msg.post("#collision_kinematic", "enable")
+	elseif message_id == hash("disable_kinematic") then
+		msg.post("#collision_kinematic", "disable")
+	end
+
+	if message_id == hash("shoot_ball") then
+		local p = go.get_world_position()
+		local shooter_position = message.shooter_position
+		local direction = (shooter_position - p)
+		print("direction: ", direction)
+		msg.post("#collision_dynamic", "apply_force", {force = direction * self.force_multiplier, position = p})
+	end
+	
+end

@@ -1,0 +1,104 @@
+local cursor = require "in.cursor"
+print("cursor: ", cursor)
+
+go.property("shooter_url", msg.url())
+go.property("boundary_url", msg.url())
+
+local shooter_position
+
+local function shoot_ball(self, ball)
+	msg.post(ball, "shoot_ball", {shooter_position = go.get_world_position(self.shooter_url)})
+	sprite.play_flipbook("/shooter#sprite", hash("shooting"))
+end
+
+function init(self)
+	shooter_position = go.get_world_position(self.shooter_url)
+	msg.post("/shooter#sprite", "play_animation", {id = hash("idle")})
+	if not go.get("#cursor", "acquire_input_focus") then
+		self.forward_input = true
+		msg.post(".", "acquire_input_focus")
+	end
+
+	cursor.listen(msg.url("#cursor"), cursor.DRAG_START, function(message_id, message)
+		msg.post("/shooter#sprite", "play_animation", {id = hash("idle")})
+		-- prevent dragging of non-balls
+		if message.group ~= hash("ball") then
+			return true
+		end
+		-- prevent dragging of balls/objects beyond boundary
+		-- TODO: transfer boundary condition to another function
+		if message.x > go.get_world_position(self.boundary_url).x then
+			return true
+		end
+	end)
+
+	cursor.listen(msg.url("#cursor"), cursor.DRAG, function(message_id, message)
+		if message.group == hash("ball") then
+			msg.post(message.id, "disable_dynamic")
+			msg.post(message.id, "enable_kinematic")
+			local max_distance = 150
+			local p = go.get_position()
+			local distance = math.abs(vmath.length(p-shooter_position))
+			if distance > max_distance then
+				local angle = math.atan2(p.y - shooter_position.y, p.x - shooter_position.x)
+				local p_clamped = shooter_position + vmath.vector3(max_distance * math.cos(angle), max_distance * math.sin(angle), 0)
+				go.set_position(p_clamped, message.id)
+				p = p_clamped
+			else				
+				go.set_position(p, message.id)
+			end
+			msg.post("/aim_factory", "create_aim", {position = vmath.vector3(p.x,p.y,1)})
+		end
+	end)
+
+	cursor.listen(msg.url("#cursor"), cursor.DRAG_END, function(message_id, message)
+		if message.group == hash("ball") then
+			msg.post(message.id, "disable_kinematic")
+			msg.post(message.id, "enable_dynamic")
+			msg.post("/aim_factory", "end_aim")	
+			shoot_ball(self, message.id)
+		end
+	end)
+
+	cursor.listen(msg.url("#cursor"), cursor.CLICKED, function(message_id, message)
+		-- prevent dragging of balls/objects beyond boundary
+		-- TODO: transfer boundary condition to another function
+		if message.x > go.get_world_position(self.boundary_url).x then
+			return true
+		end
+		if message.group== hash("ball") then
+			msg.post("/shooter#sprite", "play_animation", {id = hash("idle")})
+			msg.post(message.id, "disable_dynamic")
+			msg.post(message.id, "enable_kinematic")	
+			go.set_position(shooter_position, message.id)
+		end
+	end)
+	
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == cursor.OVER then
+		print("Cursor over", message.id, message.group, message.x, message.y)
+	elseif message_id == cursor.OUT then
+		print("Cursor out", message.id, message.group, message.x, message.y)
+	elseif message_id == cursor.PRESSED then
+		print("Pressed", message.id, message.group, message.x, message.y)
+	elseif message_id == cursor.RELEASED then
+		print("Released", message.id, message.group, message.x, message.y)
+	elseif message_id == cursor.CLICKED then
+		print("Clicked", message.id, message.group, message.x, message.y)
+	elseif message_id == cursor.DRAG_START then
+		print("Drag started", message.id, message.group, message.x, message.y)
+	elseif message_id == cursor.DRAG_END then
+		print("Drag ended", message.id, message.group, message.x, message.y)
+	elseif message_id == cursor.DRAG then
+		print("Drag", message.id, message.group, message.x, message.y, message.dx, message.dy)
+	end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
+
