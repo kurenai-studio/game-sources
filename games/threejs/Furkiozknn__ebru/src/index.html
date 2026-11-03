@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Ebru</title>
+<meta name="description" content="A 3D paper-marbling art puzzle: sprinkle, comb and shape paint on thickened water, earn the master's seal, then lay the paper. Plays in the browser.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Ebru">
+<meta property="og:description" content="A 3D paper-marbling art puzzle: sprinkle, comb and shape paint on thickened water, earn the master's seal, then lay the paper. Plays in the browser.">
+<meta property="og:url" content="https://furkiozknn.github.io/ebru/">
+<meta property="og:image" content="https://furkiozknn.github.io/ebru/docs/card.jpg">
+<meta property="og:image:width" content="960">
+<meta property="og:image:height" content="540">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+/* Redesign (2026-11): ink & paper. Every panel is a sheet of light (hafif) ebru paper, the kind calligraphers wrote
+   on: a marbled ground from the game's own simulation under a cream wash, dark ink text, calligraphic serif headers
+   with an ink flourish, ebru-blue ink buttons, red wax seals, a walnut tool tray and a paper HUD strip. */
+:root{
+  --paper:#f3ecdb; --paper2:#e8dec6; --ink:#2a2016; --ink2:#4f3f2e; --ink3:#6a5a44; --rule:rgba(42,32,22,.22);
+  --blue:#1E6FB8; --blue2:#185c99; --gold:#b8860b; --gold2:#d9a441; --green:#4f7f4c; --red:#b5452c; --wax:#9c3a24;
+  --walnut:#5a3b24; --walnut2:#3e2816; --brass:#c9a227;
+  --marble:none; --marble2:none; --wood:none; /* set from JS: data URLs drawn by the simulation and the wood canvas */
+  --sa-t:env(safe-area-inset-top,0px); --sa-b:env(safe-area-inset-bottom,0px);
+  --bg:#1a140e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-tap-highlight-color:transparent;
+  touch-action:none;user-select:none;-webkit-user-select:none}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+/* the sheet of paper: marbled ground, cream wash, a deckled shadow */
+.glass{background:linear-gradient(rgba(243,236,219,.84),rgba(243,236,219,.9)),var(--marble) center/cover,var(--paper);
+  border:1px solid rgba(42,32,22,.35);border-radius:6px;color:var(--ink);
+  box-shadow:0 1px 0 rgba(255,255,255,.5) inset,0 14px 36px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.25)}
+.serif{font-family:Georgia,"Times New Roman","Noto Serif",serif}
+svg{display:block}
+i[data-icon]{display:inline-flex;width:24px;height:24px}
+i[data-icon] svg{width:100%;height:100%}
+/* calligraphic headers: italic serif with a thin ink flourish underneath */
+.panel h2,.title h1,.coach h3,.chc h3{font-family:Georgia,"Times New Roman","Noto Serif",serif;font-style:italic;font-weight:400;letter-spacing:.02em;color:var(--ink)}
+.flourish,.panel h2:not(.rhead h2),.title h1{position:relative;padding-bottom:10px}
+.panel h2:not(.rhead h2)::after,.title h1::after{content:"";position:absolute;left:50%;bottom:0;width:160px;height:8px;transform:translateX(-50%);
+  background:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 8'%3E%3Cpath d='M2 5 C 30 1 50 1 80 4 S 130 7 158 3' fill='none' stroke='%232a2016' stroke-width='1.3' stroke-linecap='round' opacity='.75'/%3E%3Cpath d='M74 4 l3 -2.5 3 2.5 -3 2.5z' fill='%23b5452c'/%3E%3C/svg%3E") center/contain no-repeat}
+.panel h2:not(.rhead h2){text-align:center}
+
+/* HUD: a strip of paper pinned at the top, a marbled band along its lower edge */
+.topbar{position:fixed;top:calc(8px + var(--sa-t));left:8px;right:8px;min-height:56px;display:flex;align-items:center;gap:8px;padding:4px 8px 7px;z-index:20;
+  border-radius:4px;overflow:hidden}
+.topbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--marble2) center/cover,var(--blue);opacity:.9}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--ink);white-space:nowrap;font-family:Georgia,"Times New Roman",serif;font-style:italic}
+.brand svg{width:30px;height:30px}
+.brand span{font-size:20px;letter-spacing:.04em}
+.stats{flex:1;display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;font-size:14px;color:var(--ink2);min-width:0}
+.stats b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.stats .lsn{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:Georgia,serif;font-style:italic;color:var(--ink)}
+.mwrap{display:flex;align-items:center;gap:6px}
+.mbar{display:inline-block;width:76px;height:8px;border-radius:2px;background:rgba(42,32,22,.14);overflow:hidden;position:relative;border:1px solid var(--rule)}
+.mbar i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,var(--blue),#5fafb8);transition:width .25s}
+.mbar em{position:absolute;left:80%;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
+.mwrap.ok b{color:var(--blue)}
+.acts{display:flex;gap:2px}
+.ibtn{width:44px;height:44px;border-radius:6px;border:1px solid transparent;background:transparent;display:inline-flex;align-items:center;
+  justify-content:center;color:var(--ink);font-weight:700;font-size:13px;position:relative;padding:0;transition:background .15s,border-color .15s}
+.ibtn:hover{background:rgba(42,32,22,.08);border-color:var(--rule)}
+.ibtn.on{background:rgba(30,111,184,.16);border-color:var(--blue)}
+.ibtn:disabled{opacity:.35;cursor:default}
+.ibtn i[data-icon]{width:24px;height:24px}
+.ibtn.pulse{animation:pulse 1s ease-in-out infinite;border-color:var(--blue)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(30,111,184,0)}50%{box-shadow:0 0 0 5px rgba(30,111,184,.4)}}
+.stars{display:inline-flex;gap:2px;vertical-align:middle}
+.stars svg{width:18px;height:18px}
+.stars svg,.bigstars svg{fill:transparent;stroke:rgba(42,32,22,.4);stroke-width:1.5}
+.stars svg.on,.bigstars svg.on{fill:var(--gold2);stroke:var(--gold)}
+@media (max-width:760px){
+  .topbar{flex-wrap:wrap;padding:4px 6px 8px}
+  .brand span{display:none}
+  .stats{gap:10px;font-size:13px;order:3;flex-basis:100%;justify-content:space-around;padding-bottom:2px}
+  .stats .lsn{display:none}
+  .acts{margin-left:auto}
+  .mbar{width:48px}
+}
+
+/* target preview: a small sheet in a walnut frame with a paper mat */
+.preview{position:fixed;right:10px;top:calc(76px + var(--sa-t));width:min(28vw,220px);padding:8px;z-index:17;pointer-events:none;
+  background:linear-gradient(rgba(92,58,30,.72),rgba(58,36,18,.8)),var(--wood) center/180px,var(--walnut);border:1px solid var(--walnut2);border-radius:3px;box-shadow:0 8px 22px rgba(0,0,0,.45),0 0 0 2px rgba(0,0,0,.2) inset}
+.preview span{display:block;font-size:11px;color:var(--paper);margin:0 0 5px 2px;font-family:Georgia,serif;font-style:italic;letter-spacing:.04em}
+.preview canvas{display:block;width:100%;height:auto;border-radius:1px;box-shadow:0 0 0 4px var(--paper),0 0 0 5px rgba(0,0,0,.3)}
+@media (max-width:760px){.preview{top:calc(112px + var(--sa-t));width:30vw;padding:6px}.preview canvas{box-shadow:0 0 0 3px var(--paper),0 0 0 4px rgba(0,0,0,.3)}}
+
+/* tool tray: a walnut box with paper labels and pigment dabs */
+.tray{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(8px + var(--sa-b));display:flex;align-items:center;gap:8px;padding:8px 10px;z-index:20;
+  max-width:calc(100vw - 16px);flex-wrap:wrap;justify-content:center;
+  background:linear-gradient(rgba(92,58,30,.72),rgba(58,36,18,.8)),var(--wood) center/220px,var(--walnut);border:1px solid var(--walnut2);border-radius:5px;color:var(--paper);
+  box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 -3px 0 rgba(0,0,0,.25) inset,0 12px 30px rgba(0,0,0,.5)}
+.tray .grp{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:center}
+.tray .sep{width:1px;align-self:stretch;background:rgba(0,0,0,.35);box-shadow:1px 0 0 rgba(255,255,255,.08)}
+.tbtn{min-width:52px;height:56px;border-radius:4px;border:1px solid rgba(0,0,0,.4);background:linear-gradient(rgba(243,236,219,.92),rgba(232,222,198,.95)),var(--marble) center/cover;padding:2px 4px;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;position:relative;box-shadow:0 1px 0 rgba(255,255,255,.1) inset,0 2px 3px rgba(0,0,0,.3);transition:transform .15s,box-shadow .15s}
+.tbtn i[data-icon]{width:30px;height:30px}
+.tbtn small{position:absolute;top:2px;left:5px;font-size:10px;color:var(--ink3);font-family:Georgia,serif}
+.tbtn:hover{transform:translateY(-1px)}
+.tbtn.sel{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue) inset,0 2px 3px rgba(0,0,0,.3);color:var(--blue2)}
+.tbtn:disabled{opacity:.3;cursor:default;transform:none}
+.tbtn.pulse{animation:pulse 1s ease-in-out infinite;border-color:var(--gold2)}
+.sw{width:44px;height:44px;border-radius:50%;border:2px solid rgba(0,0,0,.45);padding:0;position:relative;
+  box-shadow:inset 0 -5px 8px rgba(0,0,0,.35),inset 0 3px 4px rgba(255,255,255,.25),0 2px 3px rgba(0,0,0,.4);transition:transform .15s}
+.sw::after{content:"";position:absolute;left:22%;top:14%;width:28%;height:18%;border-radius:50%;background:rgba(255,255,255,.55);filter:blur(1px)} /* wet highlight */
+.sw:hover{transform:scale(1.06)}
+.sw.sel{border-color:var(--paper);box-shadow:0 0 0 2px var(--blue),inset 0 -5px 8px rgba(0,0,0,.35),inset 0 3px 4px rgba(255,255,255,.25)}
+.sw.pulse{animation:pulse 1s ease-in-out infinite}
+.sw:disabled{opacity:.25;cursor:default;transform:none}
+.cbtn{width:46px;height:46px;border-radius:4px;border:1px solid rgba(0,0,0,.4);background:rgba(243,236,219,.9);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;padding:0}
+.cbtn:hover{background:var(--paper)}
+.cbtn i[data-icon]{width:22px;height:22px}
+.cbtn:disabled{opacity:.3;cursor:default}
+.cbtn.pulse{animation:pulse 1s ease-in-out infinite;border-color:var(--gold2)}
+.lay{min-height:56px;padding:0 18px;border-radius:4px;border:1px solid rgba(0,0,0,.45);background:linear-gradient(var(--blue),var(--blue2));color:#fff;font-weight:700;
+  display:inline-flex;align-items:center;gap:8px;font-size:15px;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 2px 4px rgba(0,0,0,.4);transition:transform .15s,filter .15s}
+.lay:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.lay i[data-icon]{width:22px;height:22px}
+.lay.pulse{animation:pulse 1s ease-in-out infinite}
+.tray .seg{align-self:center;border-color:rgba(0,0,0,.45);background:rgba(243,236,219,.9)}
+.tray .seg button{min-width:48px;min-height:46px;padding:0 10px;font-size:13px;background:transparent;color:var(--ink)}
+.tray .seg button.on{background:var(--blue);color:#fff}
+@media (max-width:760px){.tray{left:8px;right:8px;transform:none;max-width:none;padding:6px 6px;gap:6px}.tray .grp{gap:3px}.tray .sep{display:none}#swatches{order:3;flex-basis:100%;justify-content:center}.tbtn{min-width:46px;height:50px}.tbtn i[data-icon]{width:26px;height:26px}.sw{width:44px;height:44px}.lay{min-height:50px;padding:0 12px;font-size:14px}.lay span{display:none}}
+
+/* toasts: paper slips */
+.toasts{position:fixed;top:calc(76px + var(--sa-t));left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;
+  align-items:center;z-index:25;pointer-events:none;width:max-content;max-width:92vw}
+@media (max-width:760px){.toasts{top:calc(120px + var(--sa-t))}}
+.toast{padding:8px 16px;border-radius:3px;font-weight:600;font-size:14.5px;animation:tin .25s ease-out;border-left:4px solid var(--blue)}
+.toast.good{border-left-color:var(--green)} .toast.bad{border-left-color:var(--red)}
+.toast.out{opacity:0;transform:translateY(-6px);transition:all .3s}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+
+/* overlays and panels */
+.overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(20,14,8,.5);
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:30;padding:12px;overflow:auto}
+.overlay.clear{background:rgba(14,10,6,.2);backdrop-filter:none;-webkit-backdrop-filter:none}
+.panel{padding:22px 24px;width:min(94vw,470px);max-height:calc(100vh - 24px);overflow:auto}
+.panel.wide{width:min(96vw,780px)}
+.panel h2{margin:0 0 12px;font-size:26px}
+.col{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.end{justify-content:flex-end}
+.btn{min-height:46px;padding:0 18px;border-radius:4px;border:1.5px solid var(--ink);background:rgba(255,255,255,.35);color:var(--ink);
+  font-weight:700;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,transform .15s,box-shadow .15s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.btn:hover{background:rgba(42,32,22,.1);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(var(--blue),var(--blue2));border-color:var(--blue2);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 2px 4px rgba(0,0,0,.3)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.w{width:100%}
+.btn i[data-icon]{width:20px;height:20px}
+label.sl{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink2)}
+label.sl span{width:96px}
+input[type=range]{flex:1;accent-color:var(--blue);height:44px;margin:0}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:4px;overflow:hidden;background:rgba(255,255,255,.3)}
+.seg button{min-height:44px;min-width:64px;padding:0 14px;border:0;background:transparent;font-weight:600;color:var(--ink)}
+.seg button.on{background:var(--blue);color:#fff}
+.lbl{width:96px;font-size:14px;color:var(--ink2)}
+.footer{margin-top:14px;font-size:12px;color:var(--ink2);text-align:center;border-top:1px solid var(--rule);padding-top:10px}
+.footer a{color:#104a7a;text-decoration:none} /* a11y: >=4.5:1 contrast on paper */
+.footer a:hover{text-decoration:underline}
+
+/* title */
+.title{text-align:center;width:min(94vw,520px)}
+.title .logo{width:120px;height:120px;margin:0 auto 2px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.title .logo svg{width:100%;height:100%}
+.title h1{margin:0 auto 6px;font-size:58px;letter-spacing:.08em;line-height:1.05;width:max-content}
+.title .sub{margin:4px 0 10px;color:var(--ink);font-size:15px;font-family:Georgia,serif;font-style:italic}
+.title .how{font-size:13.5px;color:var(--ink2);margin:0 0 12px;line-height:1.45}
+.title .best{font-size:14px;margin:12px 0 0;color:var(--ink)}
+#loadmsg{color:var(--ink2);font-size:14px;margin:6px 0}
+
+/* chapter map: three pages of a lesson book */
+.chcards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media (max-width:720px){.chcards{grid-template-columns:1fr}}
+.chc{border:1px solid var(--rule);border-radius:4px;padding:10px 12px;background:rgba(255,255,255,.3);position:relative;overflow:hidden}
+.chc::before{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:var(--marble2) center/cover,var(--blue);opacity:.85}
+.chc h3{margin:4px 0 0;font-size:17px}
+.chc p{margin:2px 0 8px;font-size:13px;color:var(--ink2);line-height:1.35;min-height:32px}
+.chc.locked{opacity:.5}
+.lsn6{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.lsn6 button{min-height:62px;border-radius:3px;border:1px solid var(--rule);background:rgba(255,255,255,.4);font-weight:700;font-size:12.5px;color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;line-height:1.1;position:relative;transition:background .15s}
+.lsn6 button:hover:not(:disabled){background:rgba(255,255,255,.7)}
+.lsn6 button .stars svg{width:10px;height:10px}
+.lsn6 button:disabled{opacity:.4;cursor:default}
+.lsn6 button.done{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.lsn6 button.next{border-color:var(--blue);background:rgba(30,111,184,.12);box-shadow:0 0 0 1px var(--blue) inset}
+.lsn6 button small{font-size:10px;color:var(--ink3);font-weight:400;font-family:Georgia,serif}
+
+/* lesson intro, result */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+@media (max-width:420px){.two{grid-template-columns:1fr}}
+.sheetimg{width:100%;aspect-ratio:4/3;border-radius:2px;background:#e9e2cf;display:block;box-shadow:0 0 0 5px var(--paper),0 0 0 6px rgba(42,32,22,.35),0 8px 18px rgba(0,0,0,.35)}
+.cap{font-size:13px;color:var(--ink2);margin:10px 0 0;text-align:center;font-family:Georgia,serif;font-style:italic}
+.note{background:rgba(255,255,255,.35);border-left:3px solid var(--red);padding:8px 12px;border-radius:0 3px 3px 0;font-size:14px;line-height:1.4}
+.note b{color:var(--red)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.4);border:1px solid var(--rule)}
+.chip i[data-icon]{width:16px;height:16px}
+.dot{width:14px;height:14px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.3)}
+.rhead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--rule);padding-bottom:8px;margin-bottom:10px}
+.rhead h2{margin:0;font-size:24px}
+.bigstars{display:flex;gap:6px}
+.bigstars svg{width:30px;height:30px}
+.kv{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 0}
+.kv div{padding:10px;border-radius:3px;background:rgba(255,255,255,.35);text-align:center;border:1px solid var(--rule)}
+.kv b{display:block;font-size:24px;color:var(--blue2);font-family:Georgia,serif}
+.kv span{font-size:12px;color:var(--ink2)}
+.rec{color:var(--green);font-weight:700;text-align:center;margin:4px 0}
+.galgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media (max-width:640px){.galgrid{grid-template-columns:repeat(2,1fr)}.galgrid button{width:44px;height:44px}}
+.galgrid figure{margin:0;position:relative;padding:4px 4px 10px;background:#fbf7ee;box-shadow:0 2px 6px rgba(0,0,0,.3);transform:rotate(-.6deg)}
+.galgrid figure:nth-child(2n){transform:rotate(.7deg)}
+.galgrid img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:1px;display:block;background:#e9e2cf}
+.galgrid button{position:absolute;right:8px;top:8px;width:34px;height:34px;min-width:44px;min-height:44px;border-radius:3px;border:0;background:rgba(42,32,22,.7);color:#fff;display:flex;align-items:center;justify-content:center;padding:0} /* a11y: 44x44 touch target */
+.galgrid button i[data-icon]{width:16px;height:16px}
+.empty{color:var(--ink2);font-size:14px;text-align:center;padding:20px 0}
+
+/* v2 elements: coach card, live critique, rim glow, seals, thickness, book covers, mascot */
+.coach{position:fixed;left:10px;top:calc(76px + var(--sa-t));width:min(36vw,340px);padding:12px 14px;z-index:18;transition:opacity .45s,transform .45s}
+.coach.out{opacity:0;transform:translateY(-8px);pointer-events:none}
+.coach h3{margin:0 0 6px;font-size:18px;border-bottom:1px solid var(--rule);padding-bottom:4px}
+.coach .note{font-size:13px;margin-bottom:8px}
+.coach .chips{margin-bottom:8px}
+.coach .tip{font-size:13px;color:var(--ink2);margin:0 0 8px;line-height:1.35}
+.coach .btn{min-height:44px;font-size:14px;padding:0 14px}
+@media (max-width:760px){.coach{left:8px;right:calc(30vw + 18px);width:auto;top:calc(120px + var(--sa-t));max-height:40vh;overflow:auto;padding:10px 12px}.coach .chips{display:none}}
+.crit{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + var(--sa-b));padding:7px 14px;border-radius:3px;font-size:13.5px;font-weight:600;
+  z-index:19;pointer-events:none;max-width:92vw;text-align:center;border-left:4px solid var(--red);transition:opacity .3s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crit.good{border-left-color:var(--green)}
+.crit[hidden]{display:none}
+@media (max-width:760px){.crit{bottom:calc(118px + var(--sa-b));font-size:13.5px}}
+.rim{position:fixed;inset:0;pointer-events:none;z-index:15;opacity:0;box-shadow:inset 0 0 90px 10px rgba(217,164,65,.55);transition:opacity .35s}
+.rim.on{opacity:1}
+.seal{display:inline-flex;width:22px;height:22px;vertical-align:middle;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+.seal svg{width:100%;height:100%}
+.lsn6 button .seal{position:absolute;right:3px;top:3px;width:16px;height:16px}
+.rankline{font-size:14px;margin:8px 0 0;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px}
+.fact{font-size:13px;color:var(--ink2);line-height:1.4;margin:10px 0 0;padding:8px 10px;border-radius:3px;background:rgba(255,255,255,.3);border:1px dashed var(--rule)}
+.fact b{color:var(--red)}
+#result .two{max-width:620px;margin:0 auto}
+#result .kv{margin:8px 0}
+.sealchip{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink);padding:6px 10px;border-radius:999px;background:rgba(181,69,44,.12);border:1px solid rgba(181,69,44,.6)}
+.sealchip.off{opacity:.7;background:rgba(255,255,255,.3);border-color:var(--rule)}
+.sealchip:not(.off) .seal{width:30px;height:30px;animation:stamp .5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes stamp{from{transform:scale(2.2) rotate(-18deg);opacity:0}60%{opacity:1}to{transform:none;opacity:1}}
+.rhead img.cat{width:72px;height:72px;object-fit:contain;margin-left:auto}
+.galgrid button.bind{right:auto;left:8px;background:rgba(156,58,36,.8)}
+.galgrid button.bind.on{background:var(--wax)}
+.title .logo.cat{width:96px;height:96px}
+#dbg{position:fixed;left:8px;bottom:calc(8px + var(--sa-b));font:12px/1.4 ui-monospace,Consolas,monospace;color:#9f9;background:rgba(0,0,0,.65);
+  padding:6px 8px;white-space:pre;pointer-events:none;z-index:60;border-radius:6px;max-width:92vw;overflow:hidden}
+#dbg .err{color:#f66}
+@media (prefers-reduced-motion:reduce){.sealchip:not(.off) .seal,.pulse{animation:none!important}} /* a11y: beat .ibtn.pulse/.tbtn.pulse specificity */
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+<script data-goatcounter="https://furkiozknn.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<canvas id="c" tabindex="0" aria-label="Ebru tray"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="topbar glass" hidden>
+  <div class="brand"><span class="logo-s"></span><span>Ebru</span></div>
+  <div class="stats">
+    <span class="lsn" id="hLesson"></span>
+    <span class="mwrap" id="hMatchWrap"><span data-t="match"></span> <b id="hMatch">0%</b><span class="mbar"><i id="hMatchBar"></i><em></em></span></span>
+    <span><span data-t="strokes"></span> <b id="hStrokes">0</b></span>
+    <span class="stars" id="hStars"></span>
+  </div>
+  <div class="acts">
+    <button class="ibtn" id="bMap" data-tt="lessons"><i data-icon="map"></i></button>
+    <button class="ibtn" id="bHint" data-tt="hint"><i data-icon="hint"></i></button>
+    <button class="ibtn" id="bUndo" data-tt="undo"><i data-icon="undo"></i></button>
+    <button class="ibtn" id="bReset" data-tt="reset"><i data-icon="reset"></i></button>
+    <button class="ibtn" id="bPause" data-tt="pause"><i data-icon="pause"></i></button>
+    <button class="ibtn" id="bSound" data-tt="sound"><i data-icon="sound"></i></button>
+    <button class="ibtn" id="bLang" data-tt="language">TR</button>
+  </div>
+</div>
+<div id="preview" class="preview glass" hidden><span data-t="target"></span><canvas id="tgtPrev" width="200" height="150"></canvas></div>
+<div id="tools" class="tray glass" hidden>
+  <div class="grp" id="toolGrp">
+    <button class="tbtn" data-tool="brush"><small>1</small><i data-icon="brush"></i></button>
+    <button class="tbtn" data-tool="biz"><small>2</small><i data-icon="awl"></i></button>
+    <button class="tbtn" data-tool="tarak"><small>3</small><i data-icon="comb"></i></button>
+    <button class="tbtn" data-tool="big"><small>4</small><i data-icon="drop"></i></button>
+  </div>
+  <div class="sep"></div>
+  <div class="grp" id="swatches"></div>
+  <div class="sep"></div>
+  <div class="grp">
+    <div class="seg" id="segThick" hidden><button data-v="0" data-t="thin"></button><button data-v="1" data-t="medium"></button><button data-v="2" data-t="thick"></button></div>
+    <button class="lay" id="bLay"><i data-icon="paper"></i><span data-t="lay"></span></button>
+    <button class="cbtn" id="bBindFree" data-tt="bind" hidden><i data-icon="bind"></i></button>
+    <button class="cbtn" id="bGallery" data-tt="gallery" hidden><i data-icon="gallery"></i></button>
+  </div>
+</div>
+<div id="toasts" class="toasts"></div>
+<div id="rim" class="rim"></div>
+<div id="crit" class="crit glass" hidden></div>
+<!-- the master's note, shown over the tray at the start of a lesson and faded at the first stroke -->
+<div id="coach" class="coach glass" hidden>
+  <h3 class="serif" id="coTitle"></h3>
+  <div class="note" id="coNote"></div>
+  <div class="chips" id="coChips"></div>
+  <p class="tip" id="coTip"></p>
+  <button class="btn" id="bCoachOk"><span data-t="gotIt"></span></button>
+</div>
+
+<!-- Title -->
+<div id="title" class="overlay">
+  <div class="panel glass title">
+    <div class="logo" id="logoBig"></div>
+    <h1 class="serif">Ebru</h1>
+    <p class="sub" data-t="subtitle"></p>
+    <p class="how" data-t="howto"></p>
+    <div id="loadmsg">Yükleniyor…</div>
+    <div class="col">
+      <button class="btn primary w" id="bPlay" disabled><i data-icon="play"></i><span data-t="play"></span> <small id="contInfo"></small></button>
+      <div class="row" style="justify-content:center">
+        <button class="btn" id="bLessons" hidden><i data-icon="map"></i><span data-t="lessons"></span></button>
+        <button class="btn" id="bFree"><i data-icon="brush"></i><span data-t="free"></span></button>
+        <button class="btn" id="bGal2"><i data-icon="gallery"></i><span data-t="gallery"></span></button>
+        <button class="btn" id="bSettings"><i data-icon="gear"></i><span data-t="settings"></span></button>
+        <button class="btn" id="bLang2">EN</button>
+      </div>
+    </div>
+    <p class="best" id="bestLine"></p>
+    <p class="rankline" id="rankLine"></p>
+    <p class="fact" id="factLine"></p>
+    <p class="footer">Claude Game Arena · <a href="https://furkiozknn.github.io/" target="_blank" rel="noopener">built by Claude Fable 5.1</a></p>
+  </div>
+</div>
+
+<!-- Chapter map -->
+<div id="map" class="overlay" hidden>
+  <div class="panel glass wide">
+    <div class="rhead"><h2 class="serif" data-t="lessons"></h2><span class="stars" id="mapStars"></span></div>
+    <div class="chcards" id="chcards"></div>
+    <div class="row end" style="margin-top:12px">
+      <button class="btn" id="bMapFree"><i data-icon="brush"></i><span data-t="free"></span></button>
+      <button class="btn" id="bMapBack"><span data-t="mainMenu"></span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Pause -->
+<div id="pause" class="overlay" hidden>
+  <div class="panel glass col">
+    <h2 class="serif" data-t="paused"></h2>
+    <button class="btn primary w" id="bResume"><span data-t="resume"></span></button>
+    <button class="btn w" id="bRestart"><span data-t="restart"></span></button>
+    <button class="btn w" id="bPMap"><span data-t="lessons"></span></button>
+    <button class="btn w" id="bPSettings"><span data-t="settings"></span></button>
+    <button class="btn w" id="bPMenu"><span data-t="mainMenu"></span></button>
+  </div>
+</div>
+
+<!-- Settings -->
+<div id="settings" class="overlay" hidden>
+  <div class="panel glass col">
+    <h2 class="serif" data-t="settings"></h2>
+    <label class="sl"><span data-t="master"></span><input type="range" id="sMaster" min="0" max="1" step="0.05"></label>
+    <label class="sl"><span data-t="music"></span><input type="range" id="sMusic" min="0" max="1" step="0.05"></label>
+    <label class="sl"><span data-t="effects"></span><input type="range" id="sSfx" min="0" max="1" step="0.05"></label>
+    <div class="row"><span class="lbl" data-t="language"></span><div class="seg" id="segLang"><button data-v="tr">Türkçe</button><button data-v="en">English</button></div></div>
+    <div class="row"><span class="lbl" data-t="quality"></span><div class="seg" id="segQ"><button data-v="low" data-t="low"></button><button data-v="high" data-t="high"></button></div></div>
+    <div class="row"><span class="lbl" data-t="fullscreen"></span><button class="btn" id="bFull"><i data-icon="full"></i><span data-t="fullscreen"></span></button></div>
+    <button class="btn primary w" id="bSetBack" style="margin-top:6px"><span data-t="back"></span></button>
+  </div>
+</div>
+
+<!-- Result -->
+<div id="result" class="overlay" hidden>
+  <div class="panel glass wide">
+    <div class="rhead"><h2 class="serif" id="rTitle"></h2><div class="bigstars" id="rStars"></div><img class="cat" id="rCat" alt="" hidden></div>
+    <p class="rec" id="rRec" hidden></p>
+    <div class="two">
+      <div><canvas class="sheetimg" id="rSheet" width="400" height="300"></canvas><p class="cap" id="rSheetCap"></p></div>
+      <div id="rTargetWrap"><canvas class="sheetimg" id="rTarget" width="400" height="300"></canvas><p class="cap" data-t="target"></p></div>
+    </div>
+    <div class="kv" id="rKv"></div>
+    <div class="note" id="rCrit" hidden></div>
+    <div class="row" id="rSealRow" style="margin:8px 0"></div>
+    <p class="fact" id="rFact"></p>
+    <div class="row end">
+      <button class="btn" id="bBind"><i data-icon="bind"></i><span data-t="bind"></span></button>
+      <button class="btn" id="bRMap"><span data-t="lessons"></span></button>
+      <button class="btn" id="bRetry"><i data-icon="reset"></i><span data-t="retry"></span></button>
+      <button class="btn primary" id="bNext"><i data-icon="play"></i><span data-t="next"></span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Gallery -->
+<div id="gallery" class="overlay" hidden>
+  <div class="panel glass wide">
+    <div class="rhead"><h2 class="serif" data-t="gallery"></h2><span id="galCount" style="color:var(--ink2);font-size:13px"></span></div>
+    <div class="galgrid" id="galGrid"></div>
+    <p class="empty" id="galEmpty" data-t="galEmpty"></p>
+    <div class="row end" style="margin-top:12px"><button class="btn primary" id="bGalBack"><span data-t="back"></span></button></div>
+  </div>
+</div>
+
+<!-- Ending -->
+<div id="ending" class="overlay" hidden>
+  <div class="panel glass title">
+    <div class="logo" id="logoEnd"></div>
+    <h2 class="serif" data-t="endTitle" style="font-size:30px"></h2>
+    <p class="sub" data-t="endSub"></p>
+    <p class="rankline" id="eRank"></p>
+    <div class="kv" id="eKv"></div>
+    <div class="col">
+      <button class="btn primary w" id="bEFree"><i data-icon="brush"></i><span data-t="free"></span></button>
+      <button class="btn w" id="bEMenu"><span data-t="mainMenu"></span></button>
+    </div>
+  </div>
+</div>
+
+<div id="dbg" hidden></div>
+
+<script>
+// Error capture + loading state (classic script so it runs before the module resolves)
+window.__errs = [];
+window.addEventListener('error', e => { window.__errs.push(String(e.message || e)); });
+window.addEventListener('unhandledrejection', e => { window.__errs.push('Promise: ' + String(e.reason && e.reason.message || e.reason)); });
+// "Did you know?" facts, all from the UNESCO Representative List entry for ebru (shown while loading and on result cards).
+// Sources: https://ich.unesco.org/en/RL/ebru-turkish-art-of-marbling-00644 (facts 1-4) and https://ich.unesco.org/en/decisions/9.COM/10.44 (fact 1)
+window.EBRU_FACTS = [
+  { tr: 'Ebru, 2014\'te UNESCO Somut Olmayan Kültürel Miras Temsili Listesi\'ne girdi.', en: 'Ebru, the Turkish art of marbling, was inscribed on UNESCO\'s Representative List in 2014.' },
+  { tr: 'Pigmentler koyulaştırılmış suya serpilir ve fırçayla işlenir; desen kâğıda alınır.', en: 'Pigments are sprinkled on thickened water and worked with a brush; the pattern is taken up on paper.' },
+  { tr: 'Ebru cilt ve kitap süslemede kullanılır.', en: 'Ebru is used to decorate book covers and bindings.' },
+  { tr: 'Temel beceri için en az iki yıl gerekir; usta-çırak yoluyla aktarılır, yaş, cinsiyet ya da köken engeli yoktur.', en: 'The basic skill takes at least two years, passed from master to apprentice, with no barrier of age, gender or origin.' },
+];
+(function () {
+  const q = new URLSearchParams(location.search).get('lang');
+  const tr = q ? q === 'tr' : /^tr/i.test(navigator.language || '');
+  document.getElementById('loadmsg').textContent = tr ? 'Yükleniyor… 0/18' : 'Loading… 0/18';
+  const f = window.EBRU_FACTS[Math.floor(Date.now() / 60000) % window.EBRU_FACTS.length];
+  document.getElementById('factLine').innerHTML = '<b>' + (tr ? 'Biliyor muydun?' : 'Did you know?') + '</b> ' + (tr ? f.tr : f.en);
+  setTimeout(() => { if (!window.__loaded) document.getElementById('loadmsg').textContent = tr ? 'Three.js yüklenemedi; internet bağlantısını kontrol et.' : 'Three.js could not load; check your connection.'; }, 20000);
+})();
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+// ---------------------------------------------------------------------------
+// Flags, storage, settings
+// ---------------------------------------------------------------------------
+const Q = new URLSearchParams(location.search);
+const FLAG = {
+  auto: Q.has('auto'), debug: Q.has('debug'), low: Q.has('low'), sim: parseFloat(Q.get('sim') || '0') || 0,
+  lang: Q.get('lang'), nosave: Q.has('nosave'), lesson: parseInt(Q.get('lesson') || '0', 10) || 0, noassets: Q.has('noassets'),
+  free: Q.has('free'), botJitter: parseFloat(Q.get('jitter') || '6') || 0,
+};
+// Every mesh, texture and sound is generated in code; the only files are the three mascot PNGs (v2), loaded after the
+// first frame and skipped with ?noassets (or on file://, where WebGL cannot read a local image).
+const ASSETS = { used: !FLAG.noassets, loaded: [], failed: [], skipped: FLAG.noassets, note: 'mascot PNGs only, everything else procedural' };
+const KEY = 'arena.ebru.';
+function load(k, def) { try { const v = localStorage.getItem(KEY + k); return v ? Object.assign(def, JSON.parse(v)) : def; } catch (e) { return def; } }
+function store(k, v) { if (FLAG.nosave || FLAG.auto) return; try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch (e) { /* private mode */ } }
+const isPhone = matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 820;
+const SET = load('settings', { master: 0.8, music: 0.6, sfx: 0.8, lang: /^tr/i.test(navigator.language || '') ? 'tr' : 'en', quality: isPhone ? 'low' : 'high', musicOn: true, sfxOn: true });
+if (FLAG.lang === 'tr' || FLAG.lang === 'en') SET.lang = FLAG.lang;
+if (FLAG.low) SET.quality = 'low';
+// v2 adds `seals` (master's seals per lesson); v1 saves load unchanged because missing fields keep their defaults
+const PROG = load('save', { stars: [], cur: 0, seals: [] });
+if (!Array.isArray(PROG.seals)) PROG.seals = [];
+const BEST = load('best', { stars: 0 });
+if (FLAG.auto || FLAG.nosave) { PROG.stars = []; PROG.cur = 0; PROG.seals = []; }
+let GALLERY = [], BOUND = []; // BOUND[i] = 1 when gallery sheet i is bound into a book cover (v2 key arena.ebru.bound)
+try { const g = localStorage.getItem(KEY + 'gallery'); GALLERY = g ? JSON.parse(g) : []; if (!Array.isArray(GALLERY)) GALLERY = []; } catch (e) { GALLERY = []; }
+try { const b = localStorage.getItem(KEY + 'bound'); BOUND = b ? JSON.parse(b) : []; if (!Array.isArray(BOUND)) BOUND = []; } catch (e) { BOUND = []; }
+BOUND.length = GALLERY.length; for (let i = 0; i < BOUND.length; i++) BOUND[i] = BOUND[i] ? 1 : 0;
+function saveSettings() { store('settings', SET); }
+function saveProg() { store('save', PROG); }
+function saveGallery() { store('gallery', GALLERY); store('bound', BOUND); }
+
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+const I18N = {
+  tr: {
+    subtitle: 'Kitreli suda boya, elde biz: geleneksel Türk ebrusu', play: 'Oyna', continue: 'Devam et', settings: 'Ayarlar', free: 'Serbest tekne', gallery: 'Galeri',
+    howto: 'Fırçayla boya serp, bizle çiz, tarakla tara. Teknedeki desen hedefe %80 uyunca kâğıdı yatır; 3 bölümde 18 ders.',
+    lessons: 'Dersler', begin: 'Başla', back: 'Geri', paused: 'Duraklatıldı', resume: 'Devam', restart: 'Dersi yeniden başlat', mainMenu: 'Ana menü',
+    master: 'Ana ses', music: 'Müzik', effects: 'Efektler', language: 'Dil', quality: 'Kalite', low: 'Düşük', high: 'Yüksek', fullscreen: 'Tam ekran',
+    match: 'Uyum', strokes: 'Hamle', target: 'Hedef', finished: 'Biten kâğıt', lay: 'Kâğıdı yatır', next: 'Sonraki ders', retry: 'Tekrar dene',
+    hint: 'İpucu (H)', undo: 'Geri al (Z)', reset: 'Tekneyi temizle (R)', pause: 'Duraklat (P)', sound: 'Ses', tool: 'Araç',
+    brush: 'Fırça', biz: 'Biz', tarak: 'Tarak', big: 'Büyük damla', colours: 'Renkler', tools: 'Araçlar', par: 'Par', parN: 'Par {n} hamle',
+    solved: 'Ders tamam!', notYet: 'Henüz değil', matchLbl: 'Uyum', strokesLbl: 'Hamle', starsLbl: 'Yıldız', newRecord: 'Yeni rekor!',
+    needMatch: 'En az %80 uyum gerek', bestLine: 'En iyi: {s}/54 yıldız · {n}/18 ders', bestNone: 'Henüz tamamlanmış ders yok', contInfo: '(ders {n})',
+    star1: 'Çöz (%80)', star2: '%90 uyum', star3: 'Par içinde', chapter: 'Bölüm', locked: 'Kilitli', freeTitle: 'Serbest tekne',
+    ch1: 'Temel desenler', ch1d: 'Battal, gelgit, şal ve bülbül yuvası: fırça ve biz.', ch2: 'Taraklı desenler', ch2d: 'Tarakla taranan gelgitler, kılçıklı ve dalgalı taraklı.',
+    ch3: 'Çiçekli ebru', ch3d: 'Hatip, lale, karanfil, sümbül, papatya ve gelincik.',
+    emptyTray: 'Tekne boş, önce boya serp', hintToast: 'İpucu: sonraki hamle teknede gösteriliyor', hintDone: 'Tüm hamleler yapıldı, kâğıdı yatır', undoNone: 'Geri alınacak hamle yok',
+    resetToast: 'Tekne temizlendi', laid: 'Kâğıt yatırıldı…', saved: 'Kâğıt galeriye alındı', galFull: 'Galeri dolu: en eski kâğıt çıkarıldı', galEmpty: 'Henüz kâğıt yok. Serbest teknede boya, Enter ile kâğıdı al.',
+    musicOn: 'Müzik açık', musicOff: 'Müzik kapalı', sfxOn: 'Efektler açık', sfxOff: 'Efektler kapalı', soundOn: 'Ses açık', soundOff: 'Ses kapalı',
+    toolLocked: 'Bu araç bu derste yok', colourLocked: 'Bu renk henüz açılmadı', newTool: 'Yeni araç: {n}', newColour: 'Yeni renk: {n}',
+    endTitle: 'Ebru ustası oldun', endSub: 'On sekiz ders, üç bölüm. Tekne artık senin: serbest teknede boya, kâğıtları galeriye as.',
+    usta: 'Usta', delete: 'Sil', freeHow: 'Serbest tekne: istediğin gibi boya; Enter ile kâğıdı yatır ve galeriye al (en çok 12 kâğıt).',
+    zoom: 'Yaklaştırmak için tekerlek ya da iki parmak', lessonN: 'Ders {n}', galCount: '{n}/12 kâğıt',
+    // v2
+    gotIt: 'Anladım', coachTip: 'Hedef sağ üstte. Hamleni teknede sürükle; H ile ustanın sonraki hamlesi su üstünde belirir.',
+    coachGhost: 'İlk hamle suda gösteriliyor: kesikli çizgiyi takip et.', layNow: 'Uyum %80: kâğıdı yatırabilirsin',
+    critMissing: '{c} eksik: {w} serp', critLittle: 'Daha çok {c} ekle, {w}', critMuch: 'Çok fazla {c}: biraz geri al', critPlace: '{c} {w} olmalı', critExtra: '{c} hedefte yok',
+    critGood: 'Usta: güzel, kâğıdı yatır', critTitle: 'Ustanın eleştirisi',
+    wUL: 'sol üstte', wU: 'üstte', wUR: 'sağ üstte', wL: 'solda', wC: 'ortada', wR: 'sağda', wDL: 'sol altta', wD: 'altta', wDR: 'sağ altta',
+    seal: 'Usta mührü', sealHow: 'Mühür için: ipucusuz, %90 uyum, par içinde', sealEarned: 'Usta mührü kazandın', sealN: '{n}/18 mühür',
+    rank0: 'Çırak', rank1: 'Kalfa', rank2: 'Usta', rankLine: '{r} · {n}/18 mühür',
+    thin: 'İnce', medium: 'Orta', thick: 'Kalın', thickness: 'Su kıvamı', thickToast: 'Su kıvamı: {n}',
+    bind: 'Ciltle', unbind: 'Cildi çöz', bound: 'Kâğıt kitap kapağına ciltlendi; galeride', cover: 'Kitap kapağı', didYouKnow: 'Biliyor muydun?',
+  },
+  en: {
+    subtitle: 'Paint on thickened water, an awl in hand: Turkish paper marbling', play: 'Play', continue: 'Continue', settings: 'Settings', free: 'Free tray', gallery: 'Gallery',
+    howto: 'Sprinkle paint with the brush, draw with the awl, pull the comb. When the tray matches the target at 80 %, lay the paper; 18 lessons in 3 chapters.',
+    lessons: 'Lessons', begin: 'Begin', back: 'Back', paused: 'Paused', resume: 'Resume', restart: 'Restart lesson', mainMenu: 'Main menu',
+    master: 'Master', music: 'Music', effects: 'Effects', language: 'Language', quality: 'Quality', low: 'Low', high: 'High', fullscreen: 'Fullscreen',
+    match: 'Match', strokes: 'Strokes', target: 'Target', finished: 'Finished sheet', lay: 'Lay the paper', next: 'Next lesson', retry: 'Try again',
+    hint: 'Hint (H)', undo: 'Undo (Z)', reset: 'Clear the tray (R)', pause: 'Pause (P)', sound: 'Sound', tool: 'Tool',
+    brush: 'Brush', biz: 'Awl (biz)', tarak: 'Comb (tarak)', big: 'Big drop', colours: 'Colours', tools: 'Tools', par: 'Par', parN: 'Par {n} strokes',
+    solved: 'Lesson complete!', notYet: 'Not yet', matchLbl: 'Match', strokesLbl: 'Strokes', starsLbl: 'Stars', newRecord: 'New record!',
+    needMatch: 'At least 80 % match needed', bestLine: 'Best: {s}/54 stars · {n}/18 lessons', bestNone: 'No lesson finished yet', contInfo: '(lesson {n})',
+    star1: 'Solve (80 %)', star2: '90 % match', star3: 'Within par', chapter: 'Chapter', locked: 'Locked', freeTitle: 'Free tray',
+    ch1: 'Basic patterns', ch1d: 'Battal, gelgit, şal and nightingale nest: brush and awl.', ch2: 'Combed patterns', ch2d: 'Combed gelgits, herringbone and wavy combs.',
+    ch3: 'Flower ebru', ch3d: 'Hatip, tulip, carnation, hyacinth, daisy and poppy.',
+    emptyTray: 'The tray is empty, sprinkle some paint first', hintToast: 'Hint: the next stroke is shown on the tray', hintDone: 'All strokes made, lay the paper', undoNone: 'Nothing to undo',
+    resetToast: 'Tray cleared', laid: 'Paper laid…', saved: 'Sheet saved to the gallery', galFull: 'Gallery full: the oldest sheet was removed', galEmpty: 'No sheets yet. Paint in the free tray and press Enter to lift a sheet.',
+    musicOn: 'Music on', musicOff: 'Music off', sfxOn: 'Effects on', sfxOff: 'Effects off', soundOn: 'Sound on', soundOff: 'Sound off',
+    toolLocked: 'This tool is not part of this lesson', colourLocked: 'This colour is not unlocked yet', newTool: 'New tool: {n}', newColour: 'New colour: {n}',
+    endTitle: 'You are an ebru master', endSub: 'Eighteen lessons, three chapters. The tray is yours now: paint freely and hang your sheets in the gallery.',
+    usta: 'Master', delete: 'Delete', freeHow: 'Free tray: paint as you like; Enter lays the paper and saves it to the gallery (12 sheets at most).',
+    zoom: 'Wheel or pinch to zoom', lessonN: 'Lesson {n}', galCount: '{n}/12 sheets',
+    // v2
+    gotIt: 'Got it', coachTip: 'The target is in the top right. Drag your strokes on the tray; H shows the master\'s next stroke on the water.',
+    coachGhost: 'The first stroke is shown on the water: follow the dashed line.', layNow: 'Match 80 %: you can lay the paper',
+    critMissing: '{c} is missing: sprinkle it {w}', critLittle: 'Add more {c}, {w}', critMuch: 'Too much {c}: undo some', critPlace: '{c} belongs {w}', critExtra: '{c} is not in the target',
+    critGood: 'Master: good, lay the paper', critTitle: 'The master\'s critique',
+    wUL: 'upper left', wU: 'at the top', wUR: 'upper right', wL: 'on the left', wC: 'in the centre', wR: 'on the right', wDL: 'lower left', wD: 'at the bottom', wDR: 'lower right',
+    seal: 'Master\'s seal', sealHow: 'For the seal: no hint, 90 % match, within par', sealEarned: 'You earned the master\'s seal', sealN: '{n}/18 seals',
+    rank0: 'Apprentice (çırak)', rank1: 'Journeyman (kalfa)', rank2: 'Master (usta)', rankLine: '{r} · {n}/18 seals',
+    thin: 'Thin', medium: 'Medium', thick: 'Thick', thickness: 'Water thickness', thickToast: 'Water: {n}',
+    bind: 'Bind it', unbind: 'Unbind', bound: 'Sheet bound into a book cover; see the gallery', cover: 'Book cover', didYouKnow: 'Did you know?',
+  },
+};
+const t = (k, vars) => { let s = (I18N[SET.lang] || I18N.tr)[k]; if (s === undefined) s = k; if (vars) for (const v in vars) s = s.replace('{' + v + '}', vars[v]); return s; };
+const fmt = (s, vars) => { for (const v in vars) s = s.replace('{' + v + '}', vars[v]); return s; };
+
+// ---------------------------------------------------------------------------
+// Icons (inline SVG, no emoji)
+// ---------------------------------------------------------------------------
+const ICON = {
+  brush: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-7 7-6-6z"/><path d="M7 11l-3.5 3.5a3 3 0 0 0 4.2 4.2L11 15"/><path d="M4 20c1-1 2-1 2.5-.5"/></svg>',
+  awl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20l9-9"/><path d="M13 11l5.5-5.5a2 2 0 0 1 2.8 2.8L15.8 13.8"/><path d="M3 21c2-1 5-2 7-4"/></svg>',
+  comb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 7h18v3H3z"/><path d="M5 10v9M8 10v7M11 10v9M14 10v7M17 10v9M20 10v7"/></svg>',
+  drop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/></svg>',
+  hint: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9c-.9.7-1.5 1.5-1.5 2.1h-4c0-.6-.6-1.4-1.5-2.1A6 6 0 0 1 12 3z"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>',
+  reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l12 8-12 8z"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
+  mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16 9l5 6M21 9l-5 6"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  paper: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M9 12c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0"/><path d="M9 16c1.5-1.5 3-1.5 4.5 0"/></svg>',
+  gallery: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>',
+  full: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.2 6.7.8-5 4.6 1.4 6.7L12 17.4l-6 3.4 1.4-6.7-5-4.6 6.7-.8z"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  map: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></svg>',
+  bind: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/><path d="M9 8h6"/></svg>',
+  // the master's seal: a red wax disc with a white tulip
+  seal: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#b5452c"/><circle cx="12" cy="12" r="8.2" fill="none" stroke="#f3ead8" stroke-width=".9" opacity=".7"/><path d="M12 17.5V11" stroke="#f3ead8" stroke-width="1.4" stroke-linecap="round"/><path d="M12 11.5c-2.4-1-3.2-3.6-2-5.6.8 1.4 1.5 1.8 2 2.9.5-1.1 1.2-1.5 2-2.9 1.2 2 .4 4.6-2 5.6z" fill="#f3ead8"/></svg>',
+};
+// Logo: a tray with a marbled tulip (also drawn on the title card and in the HUD)
+const LOGO = `<svg viewBox="0 0 120 120" aria-hidden="true">
+<defs><clipPath id="lg-clip"><rect x="10" y="14" width="100" height="92" rx="10"/></clipPath></defs>
+<rect x="6" y="10" width="108" height="100" rx="14" fill="#5a3b24"/>
+<rect x="10" y="14" width="100" height="92" rx="10" fill="#e7dfcb"/>
+<g clip-path="url(#lg-clip)">
+<path d="M-5 30 Q 20 18 40 30 T 85 30 T 130 30 V 44 Q 105 56 85 44 T 40 44 T -5 44z" fill="#1E6FB8" opacity=".85"/>
+<path d="M-5 62 Q 20 50 40 62 T 85 62 T 130 62 V 74 Q 105 86 85 74 T 40 74 T -5 74z" fill="#5fafb8" opacity=".8"/>
+<path d="M-5 92 Q 20 80 40 92 T 85 92 T 130 92 V 110 H -5z" fill="#1E6FB8" opacity=".75"/>
+<path d="M60 100 C 60 84 58 70 60 56" stroke="#4f7f4c" stroke-width="5" fill="none" stroke-linecap="round"/>
+<path d="M60 78 C 50 74 44 68 42 60 C 52 60 58 66 60 78z" fill="#4f7f4c"/>
+<path d="M60 56 C 48 50 44 36 50 26 C 54 34 58 36 60 42 C 62 36 66 34 70 26 C 76 36 72 50 60 56z" fill="#b5452c"/>
+<path d="M60 42 C 57 36 55 32 56 26 C 59 30 61 30 64 26 C 65 32 63 36 60 42z" fill="#d9a441"/>
+</g></svg>`;
+
+// ---------------------------------------------------------------------------
+// Audio: everything synthesised with Web Audio
+// ---------------------------------------------------------------------------
+const AUD = { ctx: null, master: null, music: null, sfx: null, started: false, swish: null, swishGain: null, nextBar: 0, bar: 0, timer: null, noise: null };
+function bootAudio() {
+  if (AUD.ctx) { if (AUD.ctx.state === 'suspended') AUD.ctx.resume().catch(() => {}); return; }
+  const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  const ctx = new AC(); AUD.ctx = ctx;
+  AUD.master = ctx.createGain(); AUD.master.connect(ctx.destination);
+  AUD.music = ctx.createGain(); AUD.music.connect(AUD.master);
+  AUD.sfx = ctx.createGain(); AUD.sfx.connect(AUD.master);
+  // shared noise buffer (2 s white noise)
+  const nb = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate); const d = nb.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  AUD.noise = nb;
+  applyVolumes();
+  AUD.nextBar = ctx.currentTime + 0.1; AUD.bar = 0;
+  AUD.timer = setInterval(musicTick, 400);
+  AUD.started = true;
+}
+function applyVolumes() {
+  if (!AUD.ctx) return;
+  AUD.master.gain.value = SET.master;
+  AUD.music.gain.value = SET.musicOn ? SET.music * 0.7 : 0;
+  AUD.sfx.gain.value = SET.sfxOn ? SET.sfx : 0;
+}
+function noiseSrc(dur) { const s = AUD.ctx.createBufferSource(); s.buffer = AUD.noise; s.loop = true; s.loopStart = Math.random(); s.loopEnd = s.loopStart + Math.min(1, dur + 0.1); return s; }
+// a drop falling on the water: pitch sweep plus a soft noise tick; bigger drops are lower
+function sfxDrip(r = 30) {
+  if (!AUD.ctx || !SET.sfxOn) return; const c = AUD.ctx, t0 = c.currentTime;
+  const o = c.createOscillator(), g = c.createGain(); o.type = 'sine';
+  const f = 1200 * Math.pow(30 / Math.max(10, r), 0.6);
+  o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(f * 0.45, t0 + 0.12);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+  o.connect(g).connect(AUD.sfx); o.start(t0); o.stop(t0 + 0.2);
+  const n = noiseSrc(0.1), bp = c.createBiquadFilter(), ng = c.createGain(); bp.type = 'bandpass'; bp.frequency.value = f * 2; bp.Q.value = 3;
+  ng.gain.setValueAtTime(0.12, t0); ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.08);
+  n.connect(bp).connect(ng).connect(AUD.sfx); n.start(t0); n.stop(t0 + 0.1);
+}
+// the awl / comb moving through the paint: a band-passed noise whose level follows the pointer speed
+function swishStart() {
+  if (!AUD.ctx || !SET.sfxOn || AUD.swish) return; const c = AUD.ctx;
+  const n = noiseSrc(2); const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 0.8;
+  const g = c.createGain(); g.gain.value = 0; n.connect(bp).connect(g).connect(AUD.sfx); n.start();
+  AUD.swish = { n, bp, g };
+}
+function swishLevel(speed, comb) {
+  if (!AUD.swish) return; const c = AUD.ctx; const lv = Math.min(0.22, speed * 0.00025) * (comb ? 1.4 : 1);
+  AUD.swish.g.gain.setTargetAtTime(lv, c.currentTime, 0.05);
+  AUD.swish.bp.frequency.setTargetAtTime(comb ? 500 + speed * 0.3 : 700 + speed * 0.6, c.currentTime, 0.05);
+}
+function swishStop() {
+  if (!AUD.swish) return; const s = AUD.swish, c = AUD.ctx; AUD.swish = null;
+  s.g.gain.setTargetAtTime(0, c.currentTime, 0.08); s.n.stop(c.currentTime + 0.4);
+}
+// paper laid on the water and lifted: filtered noise rustle
+function sfxPaper(lift) {
+  if (!AUD.ctx || !SET.sfxOn) return; const c = AUD.ctx, t0 = c.currentTime;
+  const n = noiseSrc(0.8), lp = c.createBiquadFilter(), g = c.createGain(); lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(lift ? 900 : 2500, t0); lp.frequency.exponentialRampToValueAtTime(lift ? 3500 : 700, t0 + 0.6);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.7);
+  n.connect(lp).connect(g).connect(AUD.sfx); n.start(t0); n.stop(t0 + 0.8);
+}
+function sfxClick() {
+  if (!AUD.ctx || !SET.sfxOn) return; const c = AUD.ctx, t0 = c.currentTime;
+  const o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.value = 660;
+  g.gain.setValueAtTime(0.12, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06);
+  o.connect(g).connect(AUD.sfx); o.start(t0); o.stop(t0 + 0.08);
+}
+function sfxChime(good) {
+  if (!AUD.ctx || !SET.sfxOn) return; const c = AUD.ctx, t0 = c.currentTime;
+  const notes = good ? [587, 740, 880, 1175] : [440, 415];
+  notes.forEach((f, i) => {
+    const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = f;
+    const ts = t0 + i * (good ? 0.12 : 0.2);
+    g.gain.setValueAtTime(0.0001, ts); g.gain.exponentialRampToValueAtTime(0.2, ts + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ts + 0.9);
+    o.connect(g).connect(AUD.sfx); o.start(ts); o.stop(ts + 1);
+  });
+}
+// v2: the match crossing 80 % (two soft notes) and 90 % (a brighter three-note rise)
+function sfxTier(level) {
+  if (!AUD.ctx || !SET.sfxOn) return; const c = AUD.ctx, t0 = c.currentTime;
+  const notes = level >= 2 ? [740, 1175, 1480] : [587, 880];
+  notes.forEach((f, i) => {
+    const o = c.createOscillator(), g = c.createGain(); o.type = level >= 2 ? 'triangle' : 'sine'; o.frequency.value = f;
+    const ts = t0 + i * 0.1;
+    g.gain.setValueAtTime(0.0001, ts); g.gain.exponentialRampToValueAtTime(level >= 2 ? 0.16 : 0.11, ts + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, ts + 0.6);
+    o.connect(g).connect(AUD.sfx); o.start(ts); o.stop(ts + 0.7);
+  });
+}
+// Music: a slow ney phrase in a Hicaz-like scale over a drone, with a kanun answering in plucked arpeggios. 4-beat bars at 54 bpm.
+const SCALE = [293.66, 311.13, 369.99, 392.0, 440.0, 466.16, 523.25, 587.33, 622.25, 739.99]; // D Eb F# G A Bb C D Eb F#
+const NEY_PHRASES = [[4, 5, 6, 5, 4, 3, 2, 3], [7, 6, 5, 4, 5, 3, 2, 0], [2, 3, 4, 6, 5, 4, 3, 2], [0, 2, 3, 4, 3, 2, 1, 0]];
+function ney(f, ts, dur, vel) {
+  const c = AUD.ctx; const o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter();
+  o.type = 'sine'; o2.type = 'triangle'; o.frequency.value = f; o2.frequency.value = f * 2.002; lp.type = 'lowpass'; lp.frequency.value = 1800;
+  const vib = c.createOscillator(), vg = c.createGain(); vib.frequency.value = 5.2; vg.gain.value = f * 0.006; vib.connect(vg); vg.connect(o.frequency); vg.connect(o2.frequency);
+  const g2 = c.createGain(); g2.gain.value = 0.25; o2.connect(g2).connect(lp);
+  g.gain.setValueAtTime(0.0001, ts); g.gain.linearRampToValueAtTime(vel, ts + Math.min(0.25, dur * 0.3)); g.gain.setValueAtTime(vel, ts + dur - 0.15); g.gain.linearRampToValueAtTime(0.0001, ts + dur);
+  // breath noise
+  const n = noiseSrc(dur), bp = c.createBiquadFilter(), ng = c.createGain(); bp.type = 'bandpass'; bp.frequency.value = f * 3; bp.Q.value = 4; ng.gain.value = vel * 0.12;
+  n.connect(bp).connect(ng).connect(lp);
+  o.connect(lp); lp.connect(g).connect(AUD.music);
+  o.start(ts); o2.start(ts); vib.start(ts); n.start(ts); o.stop(ts + dur + 0.05); o2.stop(ts + dur + 0.05); vib.stop(ts + dur + 0.05); n.stop(ts + dur + 0.05);
+}
+function kanun(f, ts, vel) {
+  const c = AUD.ctx; const o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain();
+  o.type = 'triangle'; o2.type = 'sine'; o.frequency.value = f; o2.frequency.value = f * 3.01;
+  const g2 = c.createGain(); g2.gain.setValueAtTime(0.3, ts); g2.gain.exponentialRampToValueAtTime(0.001, ts + 0.3); o2.connect(g2).connect(g);
+  g.gain.setValueAtTime(0.0001, ts); g.gain.exponentialRampToValueAtTime(vel, ts + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, ts + 1.4);
+  o.connect(g).connect(AUD.music); o.start(ts); o2.start(ts); o.stop(ts + 1.5); o2.stop(ts + 1.5);
+}
+function drone(ts, dur) {
+  const c = AUD.ctx; const o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = SCALE[0] / 2;
+  g.gain.setValueAtTime(0.0001, ts); g.gain.linearRampToValueAtTime(0.09, ts + 0.5); g.gain.setValueAtTime(0.09, ts + dur - 0.5); g.gain.linearRampToValueAtTime(0.0001, ts + dur);
+  o.connect(g).connect(AUD.music); o.start(ts); o.stop(ts + dur + 0.1);
+}
+function musicTick() {
+  if (!AUD.ctx || !SET.musicOn || document.hidden) return;
+  const c = AUD.ctx; const BAR = 60 / 54 * 4;
+  while (AUD.nextBar < c.currentTime + 1.2) {
+    const ts = AUD.nextBar, bar = AUD.bar;
+    drone(ts, BAR);
+    const ph = NEY_PHRASES[Math.floor(bar / 2) % NEY_PHRASES.length];
+    if (bar % 4 !== 3) { // ney plays three bars, rests one
+      const half = (bar % 2) * 4;
+      for (let i = 0; i < 4; i++) { const idx = ph[half + i]; const dur = i === 3 ? BAR / 4 * 1.0 : BAR / 4 * 0.95; ney(SCALE[idx], ts + i * BAR / 4, dur, 0.11); }
+    }
+    // kanun arpeggio on 8ths, lighter
+    const chord = bar % 4 === 3 ? [0, 2, 4, 7] : bar % 2 ? [0, 3, 5, 7] : [0, 2, 4, 6];
+    for (let i = 0; i < 8; i++) { if ((bar + i) % 3 === 1) continue; kanun(SCALE[chord[i % 4]] / (i < 4 ? 2 : 1), ts + i * BAR / 8, 0.07); }
+    AUD.nextBar += BAR; AUD.bar++;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Marbling simulation. Mathematical marbling: every drop is a closed polygon, every tool is a closed-form,
+// deterministic deformation of all points (Jaffer / Lu style). Colours never mix: each band is its own polygon.
+// Sim space is 1024 x 768 units regardless of canvas size, so player, bot and targets share one geometry.
+// ---------------------------------------------------------------------------
+const SW = 1024, SH = 768, STEP = 8;
+const TOOL = {
+  brush: { r: 30, spread: 78, jitter: 22 },  // sprinkled drops
+  big: { r: 110, spread: 260, jitter: 0 },     // one big drop
+  biz: { lam: 26, mu: 90, mub: 30, gain: 0.7 },  // awl: falloff across the path, window ahead (mu) and behind (mub)
+  tarak: { lam: 11, mu: 50, mub: 25, gain: 0.6, spacing: 40, teeth: 25 }, // comb: 25 teeth across the whole tray
+};
+// v2, free tray only: the water's thickness (kitre / size). Thin water lets a drop spread wide and the tines drag a
+// broad wake; thick water keeps drops small and the wake narrow. Index 1 is the untouched TOOL table, which the
+// lessons, the targets and the bot always use, so every target stays bit-identical to v1.
+function scaledTools(d, l, m) {
+  const o = {}; for (const k in TOOL) o[k] = Object.assign({}, TOOL[k]);
+  o.brush.r = TOOL.brush.r * d; o.brush.spread = TOOL.brush.spread * d; o.big.r = TOOL.big.r * d; o.big.spread = TOOL.big.spread * d;
+  for (const k of ['biz', 'tarak']) { o[k].lam = TOOL[k].lam * l; o[k].mu = TOOL[k].mu * m; o[k].mub = TOOL[k].mub * m; }
+  return o;
+}
+const THICK = [scaledTools(1.3, 1.6, 1.35), TOOL, scaledTools(0.78, 0.6, 0.72)];
+function hashSeed(x, y, k) { let h = (Math.round(x * 10) * 73856093) ^ (Math.round(y * 10) * 19349663) ^ (k * 83492791); h = (h ^ (h >>> 13)) * 1274126177; return (h ^ (h >>> 16)) >>> 0; }
+function mulberry(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let x = a; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; }
+const clampS = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+// exp(-x) lookup for x in [0, 8), 256 entries per unit
+const EXPT = new Float32Array(2050); for (let i = 0; i < EXPT.length; i++) EXPT[i] = Math.exp(-i / 256);
+
+class Marble {
+  constructor() { this.polys = []; this.maxLen = 7; this.minLen = 2; this.points = 0; this.rev = 0; }
+  clear() { this.polys = []; this.points = 0; this.rev++; }
+  snapshot() { return this.polys.map(p => ({ c: p.c, n: p.n, pts: p.pts.slice(0, p.n * 2) })); }
+  restore(s) { this.polys = s.map(p => ({ c: p.c, n: p.n, pts: p.pts.slice(), dirty: true })); this.finish(); }
+  // A drop of radius r at (cx,cy): every existing point moves out radially so that the new disc fits exactly.
+  drop(cx, cy, r, c) {
+    const r2 = r * r;
+    for (const p of this.polys) {
+      const a = p.pts, m = p.n * 2;
+      for (let i = 0; i < m; i += 2) {
+        let dx = a[i] - cx, dy = a[i + 1] - cy, d2 = dx * dx + dy * dy;
+        if (d2 < 1e-4) { dx = 0.01; dy = 0; d2 = 1e-4; }
+        const s = Math.sqrt(1 + r2 / d2);
+        a[i] = cx + dx * s; a[i + 1] = cy + dy * s;
+      }
+      p.dirty = true;
+    }
+    const n = Math.max(20, Math.min(110, Math.round(2 * Math.PI * r / (this.maxLen * 0.8))));
+    const pts = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) { const th = i / n * Math.PI * 2; pts[i * 2] = cx + Math.cos(th) * r; pts[i * 2 + 1] = cy + Math.sin(th) * r; }
+    this.polys.push({ c, n, pts, dirty: true });
+    if (this.polys.length > 520) this.polys.splice(0, this.polys.length - 520);
+    this.finish();
+  }
+  // The awl moved from A to B. Paint follows the tine with an exponential falloff across the path (lam) and a
+  // window along it (mu), the closed-form tine deformation of mathematical marbling applied per step: a long pull
+  // drags paint for about 2*mu units and leaves the classic chevron wake.
+  tine(ax, ay, bx, by, T) {
+    const lam = T.lam, mu = T.mu, mub = T.mub, gain = T.gain;
+    const vx = (bx - ax) * gain, vy = (by - ay) * gain, L = Math.hypot(bx - ax, by - ay) || 1, mx = (bx - ax) / L, my = (by - ay) / L, nx = -my, ny = mx;
+    const cutD = lam * 3.5, cutS = mu * 3.5, cutB = mub * 3.5, il = 1 / lam, im = 1 / mu, ib = 1 / mub;
+    for (const p of this.polys) {
+      const cx = (p.minx + p.maxx) / 2 - ax, cy = (p.miny + p.maxy) / 2 - ay, rad = Math.hypot(p.maxx - p.minx, p.maxy - p.miny) / 2;
+      const sc = cx * mx + cy * my; if (sc > cutS + rad || sc < -cutB - rad || Math.abs(cx * nx + cy * ny) > cutD + rad) continue;
+      const a = p.pts, m = p.n * 2; let moved = false;
+      for (let i = 0; i < m; i += 2) {
+        const px = a[i] - ax, py = a[i + 1] - ay, s = px * mx + py * my;
+        if (s > cutS || s < -cutB) continue;
+        let d = px * nx + py * ny; if (d < 0) d = -d; if (d > cutD) continue;
+        const f = EXPT[(d * il + (s < 0 ? -s * ib : s * im)) * 256 | 0];
+        a[i] += vx * f; a[i + 1] += vy * f; moved = true;
+      }
+      if (moved) p.dirty = true;
+    }
+    this.finish();
+  }
+  // The comb: `teeth` tines spaced `spacing` apart, perpendicular to the motion, each pulling like the awl.
+  // (tx,ty) is the smoothed motion direction: the teeth stay perpendicular to it instead of wobbling with every step.
+  comb(ax, ay, bx, by, T, tx, ty) {
+    const lam = T.lam, mu = T.mu, mub = T.mub, gain = T.gain, spacing = T.spacing, teeth = T.teeth;
+    const vx = (bx - ax) * gain, vy = (by - ay) * gain, mx = tx, my = ty, nx = -my, ny = mx;
+    const K = (teeth - 1) / 2, cutD = lam * 3.5, cutS = mu * 3.5, cutB = mub * 3.5, half = K * spacing + cutD, il = 1 / lam, im = 1 / mu, ib = 1 / mub;
+    for (const p of this.polys) {
+      const cx = (p.minx + p.maxx) / 2 - ax, cy = (p.miny + p.maxy) / 2 - ay, rad = Math.hypot(p.maxx - p.minx, p.maxy - p.miny) / 2;
+      const sc = cx * mx + cy * my; if (sc > cutS + rad || sc < -cutB - rad || Math.abs(cx * nx + cy * ny) > half + rad) continue;
+      const a = p.pts, m = p.n * 2; let moved = false;
+      for (let i = 0; i < m; i += 2) {
+        const px = a[i] - ax, py = a[i + 1] - ay, s = px * mx + py * my;
+        if (s > cutS || s < -cutB) continue;
+        const across = px * nx + py * ny; let k = Math.round(across / spacing); if (k > K) k = K; else if (k < -K) k = -K;
+        let d = across - k * spacing; if (d < 0) d = -d; if (d > cutD) continue;
+        const f = EXPT[(d * il + (s < 0 ? -s * ib : s * im)) * 256 | 0];
+        a[i] += vx * f; a[i + 1] += vy * f; moved = true;
+      }
+      if (moved) p.dirty = true;
+    }
+    this.finish();
+  }
+  finish() {
+    let total = 0;
+    for (let k = this.polys.length - 1; k >= 0; k--) {
+      const p = this.polys[k];
+      if (p.dirty || p.minx === undefined) { this.resample(p); p.dirty = false; }
+      if (p.n < 3 || (p.maxx - p.minx) * (p.maxy - p.miny) < 3) { this.polys.splice(k, 1); continue; }
+      total += p.n;
+    }
+    this.points = total; this.rev++;
+    // point budget: coarsen when the tray gets busy, so a long session stays at 60 fps
+    const target = this.points > 150000 ? 11 : this.points > 100000 ? 9 : 7;
+    this.maxLen = target; this.minLen = target * 0.28;
+  }
+  resample(p) {
+    const a = p.pts, n = p.n, maxL = this.maxLen, maxL2 = maxL * maxL, minL2 = this.minLen * this.minLen;
+    let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9, need = false;
+    // clamp to the tray walls in place, find the bbox and check whether any edge is too long or too short
+    for (let i = 0; i < n * 2; i += 2) {
+      let x = a[i], y = a[i + 1];
+      if (x < 0.5) { x = 0.5; a[i] = x; } else if (x > SW - 0.5) { x = SW - 0.5; a[i] = x; }
+      if (y < 0.5) { y = 0.5; a[i + 1] = y; } else if (y > SH - 0.5) { y = SH - 0.5; a[i + 1] = y; }
+      if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
+    }
+    for (let i = 0; i < n && !need; i++) { const j = (i + 1) % n, dx = a[j * 2] - a[i * 2], dy = a[j * 2 + 1] - a[i * 2 + 1], d2 = dx * dx + dy * dy; if (d2 > maxL2 || d2 < minL2) need = true; }
+    p.minx = minx; p.miny = miny; p.maxx = maxx; p.maxy = maxy;
+    if (!need) return;
+    const out = []; let px = a[(n - 1) * 2], py = a[(n - 1) * 2 + 1];
+    for (let i = 0; i < n; i++) {
+      const x0 = a[i * 2], y0 = a[i * 2 + 1], ddx = x0 - px, ddy = y0 - py;
+      if (ddx * ddx + ddy * ddy < minL2) continue; // too close to the previous kept point
+      out.push(x0, y0);
+      const j = (i + 1) % n, x1 = a[j * 2], y1 = a[j * 2 + 1], d = Math.hypot(x1 - x0, y1 - y0);
+      if (d > maxL) { const k = Math.ceil(d / maxL); for (let s = 1; s < k; s++) out.push(x0 + (x1 - x0) * s / k, y0 + (y1 - y0) * s / k); }
+      px = x0; py = y0;
+    }
+    p.pts = Float32Array.from(out); p.n = out.length / 2;
+  }
+  // draw into a 2D context; `scale` maps sim units to canvas pixels
+  draw(ctx, scale, palette, outline) {
+    ctx.save(); ctx.scale(scale, scale);
+    ctx.lineWidth = 1.2 / scale; ctx.lineJoin = 'round';
+    for (const p of this.polys) {
+      const a = p.pts, m = p.n * 2; if (m < 6) continue;
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]);
+      for (let i = 2; i < m; i += 2) ctx.lineTo(a[i], a[i + 1]);
+      ctx.closePath(); ctx.fillStyle = palette[p.c].hex; ctx.fill();
+      if (outline) { ctx.strokeStyle = palette[p.c].dark; ctx.stroke(); }
+    }
+    ctx.restore();
+  }
+}
+
+// Execute one recorded stroke on a sim. Strokes: {k:'brush'|'big', c, p:[[x,y]...]} or {k:'biz'|'tarak', p:[[x,y]...]}.
+// The same code runs for the player's drag (incrementally), the bot and the target generator.
+class StrokeRunner {
+  constructor(sim, tools = TOOL) { this.sim = sim; this.s = null; this.T = tools; }
+  begin(stroke, x, y) {
+    const k = stroke.k; this.s = { k, c: stroke.c, lx: x, ly: y, ax: x, ay: y, x0: x, y0: y, acc: 0, n: 0 };
+    if (k === 'brush' || k === 'big') {
+      const T = this.T[k]; this.s.rng = mulberry(hashSeed(x, y, k === 'big' ? 7 : 3));
+      const r = T.r * (k === 'big' ? 1 : 0.85 + 0.3 * this.s.rng());
+      this.sim.drop(x, y, r, stroke.c); this.s.n++; return [{ x, y, r }];
+    }
+    return [];
+  }
+  move(x, y) {
+    const s = this.s; if (!s) return []; const ev = [];
+    if (s.k === 'brush' || s.k === 'big') {
+      const T = this.T[s.k]; const dx = x - s.lx, dy = y - s.ly, d = Math.hypot(dx, dy); if (d < 1e-6) return ev;
+      let travelled = 0;
+      while (s.acc + (d - travelled) >= T.spread) { // drops fall every `spread` units along the path
+        travelled += T.spread - s.acc; s.acc = 0;
+        const jx = T.jitter ? (s.rng() - 0.5) * 2 * T.jitter : 0, jy = T.jitter ? (s.rng() - 0.5) * 2 * T.jitter : 0;
+        const r = T.r * (s.k === 'big' ? 1 : 0.75 + 0.5 * s.rng());
+        const px = clampS(s.lx + dx / d * travelled + jx, 4, SW - 4), py = clampS(s.ly + dy / d * travelled + jy, 4, SH - 4);
+        this.sim.drop(px, py, r, s.c); s.n++; ev.push({ x: px, y: py, r });
+      }
+      s.acc += d - travelled; s.lx = x; s.ly = y; return ev;
+    }
+    // line tools: walk from the last applied anchor towards the pointer in fixed STEP increments,
+    // so the result does not depend on the pointer event rate (player, bot and targets agree)
+    const dx = x - s.ax, dy = y - s.ay, d = Math.hypot(dx, dy);
+    if (d < STEP) return ev;
+    const ux = dx / d, uy = dy / d, n = Math.floor(d / STEP);
+    for (let i = 0; i < n; i++) {
+      const bx = s.ax + ux * STEP, by = s.ay + uy * STEP;
+      if (s.k === 'biz') this.sim.tine(s.ax, s.ay, bx, by, this.T.biz);
+      else {
+        // the comb is held straight: its teeth stay perpendicular to the overall pull direction (start to here)
+        let tx = s.ax - s.x0, ty = s.ay - s.y0; const tl = Math.hypot(tx, ty);
+        if (tl > 40) { tx /= tl; ty /= tl; } else { tx = ux; ty = uy; }
+        this.sim.comb(s.ax, s.ay, bx, by, this.T.tarak, tx, ty);
+      }
+      s.ax = bx; s.ay = by; s.n++;
+    }
+    return ev;
+  }
+  end() { const s = this.s; this.s = null; return s; }
+}
+// run a whole recorded stroke at once (targets, undo-free replay)
+function runStroke(sim, stroke) {
+  const R = new StrokeRunner(sim); const p = stroke.p;
+  R.begin(stroke, p[0][0], p[0][1]);
+  for (let i = 1; i < p.length; i++) R.move(p[i][0], p[i][1]);
+  R.end();
+}
+
+// ---------------------------------------------------------------------------
+// Earth pigments
+// ---------------------------------------------------------------------------
+const PAL = [
+  { hex: '#1E6FB8', tr: 'Ebru mavisi', en: 'Ebru blue' }, { hex: '#B5452C', tr: 'Aşı kırmızısı', en: 'Red ochre' },
+  { hex: '#D9A441', tr: 'Sarı toprak', en: 'Yellow ochre' }, { hex: '#4F7F4C', tr: 'Oksit yeşil', en: 'Oxide green' },
+  { hex: '#F2EDE3', tr: 'Üstübeç beyazı', en: 'Lead white' }, { hex: '#2A2520', tr: 'Kandil karası', en: 'Lamp black' },
+  { hex: '#7C5A3A', tr: 'Çamlıca toprağı', en: 'Çamlıca earth' }, { hex: '#2C4A8A', tr: 'Lahor çividi', en: 'Lahore indigo' },
+  { hex: '#D98B9C', tr: 'Gül kurusu', en: 'Dusty rose' }, { hex: '#6B4C9A', tr: 'Mor', en: 'Violet' },
+  { hex: '#E0732E', tr: 'Turuncu', en: 'Orange' }, { hex: '#5FAFB8', tr: 'Turkuaz', en: 'Turquoise' },
+];
+for (const p of PAL) { const c = new THREE.Color(p.hex); p.rgb = [c.r * 255, c.g * 255, c.b * 255]; c.multiplyScalar(0.72); p.dark = '#' + c.getHexString(); }
+const WATER = '#DDD6C1', WATER_RGB = [221, 214, 193];
+
+// ---------------------------------------------------------------------------
+// Lessons: every target is a recipe of strokes replayed in the same simulation, so every lesson is solvable.
+// ---------------------------------------------------------------------------
+let recipeRng = mulberry(1);
+const zig = (rows, y0, y1, x0 = 50, x1 = SW - 50, startLeft = true) => { // wobbly back-and-forth brush rows
+  const p = [];
+  for (let i = 0; i < rows; i++) {
+    const y = rows === 1 ? y0 : y0 + (y1 - y0) * i / (rows - 1); const L = (i % 2 === 0) === startLeft;
+    const n = 6; for (let k = 0; k <= n; k++) { const f = k / n; p.push([(L ? x0 : x1) + ((L ? x1 : x0) - (L ? x0 : x1)) * f, clampS(y + (recipeRng() - 0.5) * 70, 30, SH - 30)]); }
+  }
+  return p;
+};
+const vzig = (cols, x0, x1, y0 = 40, y1 = SH - 40) => { const p = []; for (let i = 0; i < cols; i++) { const x = x0 + (x1 - x0) * i / (cols - 1); p.push([x, i % 2 ? y1 : y0], [x, i % 2 ? y0 : y1]); } return p; };
+const diag = (n, startLeft) => { // zigzag of 45-degree lines x - y = c clipped to the tray
+  const p = [], m = 40;
+  for (let i = 0; i < n; i++) {
+    const c = -560 + 1440 * i / (n - 1);
+    const ya = Math.max(m, m - c), yb = Math.min(SH - m, SW - m - c);
+    const a = [ya + c, ya], b = [yb + c, yb];
+    if (i % 2 === (startLeft ? 0 : 1)) p.push(a, b); else p.push(b, a);
+  }
+  return p;
+};
+const spiral = (cx, cy, r0, turns, n = 40) => { const p = []; for (let i = 0; i <= n; i++) { const tt = i / n, ang = tt * turns * Math.PI * 2, r = r0 * (1 - tt * 0.92); p.push([cx + Math.cos(ang) * r, cy + Math.sin(ang) * r]); } return p; };
+const line = (...pts) => pts;
+const wave = (x0, y0, y1, amp, periods, n = 30) => { const p = []; for (let i = 0; i <= n; i++) { const tt = i / n; p.push([x0 + Math.sin(tt * periods * Math.PI * 2) * amp, y0 + (y1 - y0) * tt]); } return p; };
+const arc = (cx, cy, r, a0, a1, n = 10) => { const p = []; for (let i = 0; i <= n; i++) { const a = a0 + (a1 - a0) * i / n; p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return p; };
+const BR = (c, p) => ({ k: 'brush', c, p }), BIG = (c, x, y) => ({ k: 'big', c, p: [[x, y]] }), BIZ = p => ({ k: 'biz', p }), TAR = p => ({ k: 'tarak', p });
+// stem: a green drop pulled downward with the awl
+const stem = (x, yTop, yBot, c = 3) => [BR(c, [[x, yTop + 40]]), BIZ(line([x, yTop + 40], [x, yBot]))];
+const groundLight = () => [BR(11, zig(3, 120, SH - 120)), BR(4, zig(3, 190, SH - 60, SW - 50, 50)), BIZ(zig(6, 70, SH - 70))];
+
+const LESSONS = [
+  // chapter 1: basic patterns
+  { id: 'battal', name: { tr: 'Battal', en: 'Battal' }, tools: ['brush'], colours: [0, 1],
+    note: { tr: 'Ebrunun temeli battaldır: fırçadan damlayan boya kitreli suda yayılır, sonra kâğıt yatırılır; başka hiçbir müdahale yoktur.', en: 'Battal is the base of all ebru: paint dripped from the brush spreads on the thickened water and the paper is laid with no further intervention.' },
+    recipe: () => [BR(0, zig(5, 90, SH - 90)), BR(1, zig(5, 150, SH - 40, SW - 50, 50))] },
+  { id: 'serpmeli', name: { tr: 'Serpmeli battal', en: 'Sprinkled battal' }, tools: ['brush'], colours: [0, 1, 2],
+    note: { tr: 'Fırça, at kılının gül dalına bağlanmasıyla yapılır. Fırçayı sol elin işaret parmağına vurarak boyayı serpersin; damlalar sık düşer.', en: 'The brush is horsehair tied to a rose-wood handle. Tap it on the finger of your other hand to sprinkle; the drops fall densely.' },
+    recipe: () => [BR(0, zig(4, 80, SH - 160)), BR(1, zig(4, 150, SH - 90, SW - 50, 50)), BR(2, zig(4, 200, SH - 50))] },
+  { id: 'somaki', name: { tr: 'Somaki', en: 'Somaki' }, tools: ['brush'], colours: [0, 1, 2, 5],
+    note: { tr: 'İki renkli battal, somaki denen mor-kırmızı mermere benzediği için bu adı alır.', en: 'A two-colour battal is called somaki because it resembles porphyry marble.' },
+    recipe: () => [BR(5, zig(5, 80, SH - 100)), BR(1, zig(5, 140, SH - 50, SW - 50, 50))] },
+  { id: 'gelgit', name: { tr: 'Gelgit', en: 'Gelgit' }, tools: ['brush', 'biz'], colours: [0, 1, 2, 5, 3],
+    note: { tr: 'Battal üzerinde biz, tekne boyunca ileri geri paralel çizgilerle gezdirilir; adı da bu gidiş gelişten gelir.', en: 'On a battal ground the awl is drawn back and forth across the tray in parallel lines; the name means "come and go".' },
+    recipe: () => [BR(0, zig(5, 90, SH - 90)), BR(2, zig(5, 150, SH - 40, SW - 50, 50)), BIZ(zig(9, 60, SH - 60))] },
+  { id: 'sal', name: { tr: 'Şal', en: 'Şal (shawl)' }, tools: ['brush', 'biz'], colours: [0, 1, 2, 5, 3, 6],
+    note: { tr: 'Gelgitin üstüne çapraz dalgalar atılır; desen bir şal dokusunu andırır.', en: 'Diagonal waves are drawn over the gelgit; the pattern recalls a woven shawl.' },
+    recipe: () => [BR(1, zig(5, 90, SH - 90)), BR(3, zig(5, 150, SH - 40, SW - 50, 50)), BIZ(zig(9, 60, SH - 60)), BIZ(diag(9, true))] },
+  { id: 'bulbul', name: { tr: 'Bülbül yuvası', en: 'Nightingale nest' }, tools: ['brush', 'biz'], colours: [0, 1, 2, 5, 3, 6, 7],
+    note: { tr: 'Biz, dıştan içe doğru helezonlar çizer; her helezon bir bülbül yuvasını andırır.', en: 'The awl draws spirals from the outside in; each one resembles a nightingale\'s nest.' },
+    recipe: () => [BR(7, zig(5, 90, SH - 90)), BR(6, zig(5, 150, SH - 40, SW - 50, 50)), ...[[190, 200], [512, 200], [834, 200], [190, 560], [512, 560], [834, 560]].map(([x, y]) => BIZ(spiral(x, y, 140, 3)))] },
+  // chapter 2: combed patterns
+  { id: 'tarakli', name: { tr: 'Taraklı', en: 'Taraklı (combed)' }, tools: ['brush', 'biz', 'tarak'], colours: [0, 1, 2, 5, 3, 6, 7, 8],
+    note: { tr: 'Gelgit çizgileri, dişleri eşit aralıklı tarakla tek çekişte taranır.', en: 'The gelgit lines are combed in a single pull with an evenly toothed comb.' },
+    recipe: () => [BR(0, zig(5, 90, SH - 90)), BR(2, zig(5, 150, SH - 40, SW - 50, 50)), BIZ(zig(9, 60, SH - 60)), TAR(line([512, 20], [512, SH - 20]))] },
+  { id: 'kilcikli', name: { tr: 'Kılçıklı', en: 'Kılçıklı (herringbone)' }, tools: ['brush', 'biz', 'tarak'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9],
+    note: { tr: 'Tarak bir çekilir, yarım diş kaydırılıp geri çekilir; balık kılçığı gibi bir doku çıkar.', en: 'Comb once, shift half a tooth and comb back: the pattern looks like a fish\'s bones.' },
+    recipe: () => [BR(1, zig(5, 90, SH - 90)), BR(7, zig(5, 150, SH - 40, SW - 50, 50)), BIZ(zig(9, 60, SH - 60)), TAR(line([512, 20], [512, SH - 20])), TAR(line([532, SH - 20], [532, 20]))] },
+  { id: 'dalgali', name: { tr: 'Dalgalı taraklı', en: 'Wavy combed' }, tools: ['brush', 'biz', 'tarak'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4],
+    note: { tr: 'Tarak düz değil, dalgalı bir yolda çekilir.', en: 'The comb is pulled along a wavy path instead of a straight one.' },
+    recipe: () => [BR(8, zig(5, 90, SH - 90)), BR(0, zig(5, 150, SH - 40, SW - 50, 50)), BIZ(zig(9, 60, SH - 60)), TAR(wave(512, 20, SH - 20, 45, 2))] },
+  { id: 'cift', name: { tr: 'Çift taraklı', en: 'Double combed' }, tools: ['brush', 'biz', 'tarak'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10],
+    note: { tr: 'İkinci tarama birincinin üstüne, dik yönde yapılır.', en: 'A second combing crosses the first at right angles.' },
+    recipe: () => [BR(9, zig(5, 90, SH - 90)), BR(2, zig(5, 150, SH - 40, SW - 50, 50)), BIZ(zig(9, 60, SH - 60)), TAR(line([512, 20], [512, SH - 20])), TAR(line([20, 384], [SW - 20, 384]))] },
+  { id: 'hafif', name: { tr: 'Hafif ebru', en: 'Light ebru' }, tools: ['brush', 'biz', 'tarak'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Çok sulandırılmış boyalarla yapılan açık ebru; hattatlar yazı zemini olarak kullanırdı.', en: 'Light ebru with very diluted colours; calligraphers used it as a ground for writing.' },
+    recipe: () => [BR(4, zig(4, 90, SH - 90)), BR(8, zig(3, 160, SH - 130, SW - 50, 50)), BR(11, zig(3, 230, SH - 60)), BIZ(zig(7, 60, SH - 60))] },
+  { id: 'zemin', name: { tr: 'Zemin', en: 'Zemin (ground)' }, tools: ['brush', 'biz', 'tarak', 'big'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Çiçekli ebru için önce sakin bir zemin hazırlanır: hafif bir battal ya da seyrek gelgit. Büyük damla zemini açar.', en: 'Flower ebru starts with a calm ground: a light battal or a sparse gelgit. A big drop opens a circle in it.' },
+    recipe: () => [...groundLight(), BIG(10, 512, 384), BIG(0, 260, 300), BIG(1, 764, 470)] },
+  // chapter 3: flower ebru
+  { id: 'hatip', name: { tr: 'Hatip ebrusu', en: 'Hatip ebru' }, tools: ['brush', 'biz', 'tarak', 'big'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Hatip ebrusunda iç içe damlalar bizle dört yönde çekilerek şekillendirilir; çiçekli ebrunun öncüsüdür.', en: 'In hatip ebru concentric drops are shaped by pulling the awl through them in four directions; the forerunner of flower ebru.' },
+    recipe: () => [...groundLight(), BIG(1, 512, 384), BIG(0, 512, 384), BR(2, [[512, 384]]), BIZ(line([512, 150], [512, 620])), BIZ(line([220, 384], [804, 384])), BIZ(line([340, 210], [684, 560])), BIZ(line([684, 210], [340, 560]))] },
+  { id: 'lale', name: { tr: 'Lale', en: 'Tulip' }, tools: ['brush', 'biz', 'tarak', 'big'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Lale: büyük damlanın içinden biz yukarı çekilir, yanlardan iki küçük çekişle yapraklar açılır. Önce sap, sonra çiçek.', en: 'Tulip: the awl is pulled upward through a large drop, and two small side pulls open the petals. Stem first, then the flower.' },
+    recipe: () => [...groundLight(), ...stem(512, 420, 720), BIG(1, 512, 330), BIZ(line([512, 450], [512, 170])), BIZ(line([450, 380], [462, 250])), BIZ(line([574, 380], [562, 250]))] },
+  { id: 'karanfil', name: { tr: 'Karanfil', en: 'Carnation' }, tools: ['brush', 'biz', 'tarak', 'big'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Karanfilde damlanın üst kenarına küçük damlalar konur, biz aşağı çekilerek saçaklı yapraklar açılır.', en: 'For the carnation, small drops are set on the top edge and the awl is pulled down to open the fringed petals.' },
+    recipe: () => [...groundLight(), ...stem(512, 420, 720), BIG(1, 512, 330), BR(2, arc(512, 330, 95, Math.PI * 1.15, Math.PI * 1.85, 8)), BIZ(line([512, 170], [512, 430])), BIZ(line([430, 190], [470, 420])), BIZ(line([594, 190], [554, 420]))] },
+  { id: 'sumbul', name: { tr: 'Sümbül', en: 'Hyacinth' }, tools: ['brush', 'biz', 'tarak', 'big'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Sümbül, sapın üstüne dizilen küçük mor damlalardan oluşur.', en: 'The hyacinth is a column of small purple drops along the stem.' },
+    recipe: () => [...groundLight(), ...stem(512, 480, 720), BR(9, line([512, 500], [512, 160])), BR(9, line([470, 470], [470, 200])), BR(9, line([554, 470], [554, 200]))] },
+  { id: 'papatya', name: { tr: 'Papatya', en: 'Daisy' }, tools: ['brush', 'biz', 'tarak', 'big'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Papatya: beyaz büyük damlanın ortasına sarı bir göbek konur, biz göbekten dışarı çekilerek yapraklar açılır.', en: 'Daisy: a yellow heart is dropped into a large white drop, then the awl is pulled outward from the heart to open the petals.' },
+    recipe: () => [...groundLight(), ...stem(512, 420, 720), BIG(4, 512, 330), BR(2, [[512, 330]]), BIZ(line([512, 330], [512, 190])), BIZ(line([512, 330], [640, 300])), BIZ(line([512, 330], [384, 300])), BIZ(line([512, 330], [600, 440])), BIZ(line([512, 330], [424, 440]))] },
+  { id: 'gelincik', name: { tr: 'Gelincik', en: 'Poppy' }, tools: ['brush', 'biz', 'tarak', 'big'], colours: [0, 1, 2, 5, 3, 6, 7, 8, 9, 4, 10, 11],
+    note: { tr: 'Ebru 2014\'te UNESCO Somut Olmayan Kültürel Miras Listesi\'ne alındı. Son ders: kırmızı gelincik, siyah göbek.', en: 'Ebru was inscribed on UNESCO\'s Intangible Cultural Heritage list in 2014. Last lesson: a red poppy with a black heart.' },
+    recipe: () => [...groundLight(), ...stem(512, 420, 720), BIG(1, 512, 330), BR(5, [[512, 330]]), BIZ(line([512, 330], [512, 200])), BIZ(line([512, 330], [630, 350])), BIZ(line([512, 330], [394, 350])), BIZ(line([512, 330], [512, 440]))] },
+];
+const CHAPTERS = [{ k: 'ch1', from: 0 }, { k: 'ch2', from: 6 }, { k: 'ch3', from: 12 }];
+LESSONS.forEach((L, i) => { recipeRng = mulberry(1000 + i * 7919); L.index = i; L.strokes = L.recipe(); L.par = L.strokes.length + 1; L.chapter = Math.floor(i / 6); L.cols = [...new Set(L.strokes.filter(s => s.c !== undefined).map(s => s.c))]; });
+
+// ---------------------------------------------------------------------------
+// Target rendering and match score
+// ---------------------------------------------------------------------------
+const MW = 40, MH = 30, CW = 16, CH = 12; // class grid and coarse colour grid
+const matchCan = document.createElement('canvas'); matchCan.width = MW; matchCan.height = MH; const matchCtx = matchCan.getContext('2d', { willReadFrequently: true });
+const coarseCan = document.createElement('canvas'); coarseCan.width = CW; coarseCan.height = CH; const coarseCtx = coarseCan.getContext('2d', { willReadFrequently: true });
+const midCan = document.createElement('canvas'); midCan.width = 160; midCan.height = 120; const midCtx = midCan.getContext('2d', { willReadFrequently: true });
+// Rasterise a sim small and on the CPU (no readback from the big GPU canvas), then box it down to 40x30 and 16x12.
+function downsample(sim) {
+  const m = midCtx; paintBase(m, 160, 120); sim.draw(m, 160 / SW, PAL, false);
+  matchCtx.imageSmoothingEnabled = true; matchCtx.imageSmoothingQuality = 'high'; matchCtx.drawImage(midCan, 0, 0, MW, MH);
+  coarseCtx.imageSmoothingEnabled = true; coarseCtx.imageSmoothingQuality = 'high'; coarseCtx.drawImage(midCan, 0, 0, CW, CH);
+  return { fine: matchCtx.getImageData(0, 0, MW, MH).data, coarse: coarseCtx.getImageData(0, 0, CW, CH).data };
+}
+function paintBase(ctx, w, h) {
+  ctx.fillStyle = WATER; ctx.fillRect(0, 0, w, h);
+  const g = ctx.createRadialGradient(w * 0.5, h * 0.45, h * 0.1, w * 0.5, h * 0.5, w * 0.7);
+  g.addColorStop(0, 'rgba(255,255,255,0.10)'); g.addColorStop(1, 'rgba(60,50,30,0.14)'); ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+}
+const nearestClass = (r, g, b) => { // palette index or 12 for water
+  let best = 12, bd = (r - WATER_RGB[0]) ** 2 + (g - WATER_RGB[1]) ** 2 + (b - WATER_RGB[2]) ** 2;
+  for (let i = 0; i < PAL.length; i++) { const p = PAL[i].rgb, d = (r - p[0]) ** 2 + (g - p[1]) ** 2 + (b - p[2]) ** 2; if (d < bd) { bd = d; best = i; } }
+  return best;
+};
+// per colour class: how many cells of the 40x30 grid and where their centroid is
+function classStats(fine) {
+  const st = []; for (let k = 0; k < 13; k++) st.push({ n: 0, x: 0, y: 0 });
+  for (let i = 0, c = 0; i < fine.length; i += 4, c++) { const k = nearestClass(fine[i], fine[i + 1], fine[i + 2]); const o = st[k]; o.n++; o.x += c % MW; o.y += (c / MW) | 0; }
+  for (const o of st) if (o.n) { o.x /= o.n; o.y /= o.n; }
+  return st;
+}
+// 0..1 match of the tray against a target: coarse colour layout (where is which colour, leniently) plus, per colour
+// the target uses, whether the player used about as much of it in about the same place
+function matchScore(a, tg) {
+  let sum = 0, wsum = 0; const T = 0.5 * 441.67, b = tg.coarse, ac = a.coarse;
+  for (let i = 0; i < ac.length; i += 4) {
+    const dr = ac[i] - b[i], dg = ac[i + 1] - b[i + 1], db = ac[i + 2] - b[i + 2];
+    const d = Math.sqrt(dr * dr + dg * dg + db * db), sim = d >= T ? 0 : 1 - (d / T) * (d / T);
+    const pr = b[i] - WATER_RGB[0], pg = b[i + 1] - WATER_RGB[1], pb = b[i + 2] - WATER_RGB[2];
+    const painted = Math.min(1, Math.sqrt(pr * pr + pg * pg + pb * pb) / 110);
+    const w = 0.3 + 0.7 * painted; sum += w * sim; wsum += w;
+  }
+  const cell = sum / wsum;
+  const ps = classStats(a.fine), ts = tg.stats; let cls = 0, nk = 0, extra = 0;
+  for (let k = 0; k < 12; k++) {
+    const t0 = ts[k], p0 = ps[k];
+    if (t0.n >= 3) {
+      nk++; if (!p0.n) continue;
+      const area = Math.min(t0.n, p0.n) / Math.max(t0.n, p0.n), dist = Math.hypot(t0.x - p0.x, t0.y - p0.y);
+      cls += 0.5 * area + 0.5 * Math.max(0, 1 - dist / 10);
+    } else if (p0.n >= 12) extra += 0.1; // a colour the target does not use, over 1 % of the tray
+  }
+  const cterm = nk ? Math.max(0, cls / nk - Math.min(0.3, extra)) : 1;
+  return 0.5 * cell + 0.5 * cterm;
+}
+// v2, the master's critique: the same per-pigment area and centroid stats, read out as the worst deviations
+// (pigment unused, too little / too much, wrong place, a pigment the target does not use), each with a place word.
+function whereWord(x, y) { // position on the 40 x 30 class grid -> one of nine place words
+  const col = x < 14 ? 'L' : x > 26 ? 'R' : '', row = y < 10.5 ? 'U' : y > 19.5 ? 'D' : '';
+  return 'w' + (row + col || 'C');
+}
+// classStats restricted to the pigments actually in play (target recipe + player's strokes) plus water: with the full
+// palette an antialiased red-on-cream edge reads as "dusty rose", which is fine for the symmetric score but would make
+// the critique name pigments nobody used
+function classStatsIn(fine, allowed) {
+  const st = []; for (let k = 0; k < 13; k++) st.push({ n: 0, x: 0, y: 0 });
+  const w0 = WATER_RGB[0], w1 = WATER_RGB[1], w2 = WATER_RGB[2];
+  for (let i = 0, c = 0; i < fine.length; i += 4, c++) {
+    const r = fine[i], g = fine[i + 1], b = fine[i + 2];
+    let best = 12, bd = (r - w0) ** 2 + (g - w1) ** 2 + (b - w2) ** 2;
+    for (const k of allowed) { const p = PAL[k].rgb, d = (r - p[0]) ** 2 + (g - p[1]) ** 2 + (b - p[2]) ** 2; if (d < bd) { bd = d; best = k; } }
+    const o = st[best]; o.n++; o.x += c % MW; o.y += (c / MW) | 0;
+  }
+  for (const o of st) if (o.n) { o.x /= o.n; o.y /= o.n; }
+  return st;
+}
+function critique(a, tg, tcols, pcols) {
+  const allowed = [...new Set([...tcols, ...pcols])].sort((u, v) => u - v), key = allowed.join(',');
+  if (!tg.statsBy) tg.statsBy = {}; if (!tg.statsBy[key]) tg.statsBy[key] = classStatsIn(tg.fine, allowed);
+  const ps = classStatsIn(a.fine, allowed), ts = tg.statsBy[key], out = [];
+  for (const k of allowed) {
+    const t0 = ts[k], p0 = ps[k];
+    if (t0.n >= 3) {
+      if (!p0.n) { out.push({ kind: 'critMissing', c: k, w: whereWord(t0.x, t0.y), sev: 1 + t0.n / 100 }); continue; }
+      const ratio = p0.n / t0.n, dist = Math.hypot(t0.x - p0.x, t0.y - p0.y);
+      if (ratio < 0.6) out.push({ kind: 'critLittle', c: k, w: whereWord(t0.x, t0.y), sev: 0.5 + (1 - ratio) * 0.5 });
+      else if (ratio > 1.7) out.push({ kind: 'critMuch', c: k, w: whereWord(p0.x, p0.y), sev: 0.4 + Math.min(0.4, (ratio - 1.7) * 0.2) });
+      if (dist > 5) out.push({ kind: 'critPlace', c: k, w: whereWord(t0.x, t0.y), sev: 0.3 + Math.min(0.5, dist / 20) });
+    } else if (p0.n >= 12) out.push({ kind: 'critExtra', c: k, w: whereWord(p0.x, p0.y), sev: 0.45 + Math.min(0.4, p0.n / 300) });
+  }
+  out.sort((u, v) => v.sev - u.sev);
+  return out;
+}
+const critText = d => t(d.kind, { c: PAL[d.c][SET.lang], w: t(d.w) });
+// targets are generated lazily on a 512 x 384 canvas
+const tgtSim = new Marble();
+function buildTarget(L) {
+  if (L.target) return L.target;
+  tgtSim.clear(); for (const s of L.strokes) runStroke(tgtSim, s);
+  const can = document.createElement('canvas'); can.width = 512; can.height = 384; const ctx = can.getContext('2d');
+  paintBase(ctx, 512, 384); tgtSim.draw(ctx, 0.5, PAL, false);
+  const d = downsample(tgtSim);
+  L.target = { can, fine: d.fine, coarse: d.coarse, stats: classStats(d.fine) }; return L.target;
+}
+
+// ---------------------------------------------------------------------------
+// 3D workshop: Three.js scene, merged vertex-coloured statics, tray texture, tools, paper, dust
+// ---------------------------------------------------------------------------
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, SET.quality === 'low' ? 1 : 1.5));
+renderer.shadowMap.enabled = SET.quality !== 'low'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+// Redesign (2026-11) palette: ink & paper fine art. Walnut wood, cream paper, lime plaster, ebru blue, red ochre wax,
+// brass, zinc. Every mesh colour below comes from this table so the room reads as one material family.
+const C = { walnut: 0x5a3b24, walnutDark: 0x3e2816, oak: 0x8a6240, oakLight: 0xa57a4e, plaster: 0xd8c7a8, plasterDark: 0xb49b78,
+  paper: 0xefe6d2, blue: 0x1E6FB8, ochre: 0xB5452C, brass: 0xc9a227, zinc: 0x7d8178, kilimRed: 0x8a3a2a, kilimBlue: 0x2c4a8a, ink: 0x2a2520, shade: 0x2a1d12 };
+const scene = new THREE.Scene(); scene.background = new THREE.Color(C.shade);
+// a little warm haze towards the far wall: the window light reads as air, not as a flat backdrop
+scene.fog = new THREE.Fog(0x4a3626, 3.2, 8.5);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 30);
+const TRAY_W = 0.8, TRAY_H = 0.6, TRAY_Y = 0.80, TABLE_Y = 0.745;
+const trayCentre = new THREE.Vector3(0, TRAY_Y, 0);
+
+// ---- Canvas textures for the room (redesign 2026-11): wood grain, lime plaster, laid paper, kilim, window view ----
+function noiseCanvas(w, h, fn) { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); fn(x, w, h); return c; }
+function texOf(can, repeat = 1) { const t = new THREE.CanvasTexture(can); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeat, repeat); t.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy()); return t; }
+// wood: long streaks with a slow wobble, a few darker knots; multiplied by the vertex colour, so it is drawn near white
+const woodTex = texOf(noiseCanvas(256, 256, (x, w, h) => {
+  x.fillStyle = '#d9c5a5'; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < 420; i++) {
+    const y = Math.random() * h, len = 40 + Math.random() * 200, a = 0.05 + Math.random() * 0.14;
+    x.strokeStyle = `rgba(${Math.random() < 0.5 ? '90,55,25' : '160,120,80'},${a})`; x.lineWidth = 0.6 + Math.random() * 1.6;
+    x.beginPath(); const x0 = Math.random() * w; x.moveTo(x0, y);
+    for (let s = 1; s <= 6; s++) x.lineTo(x0 + len * s / 6, y + Math.sin(s * 1.3 + x0) * 2.2); x.stroke();
+  }
+  for (let i = 0; i < 4; i++) { const kx = Math.random() * w, ky = Math.random() * h; const g = x.createRadialGradient(kx, ky, 1, kx, ky, 12 + Math.random() * 10); g.addColorStop(0, 'rgba(70,40,15,.45)'); g.addColorStop(0.5, 'rgba(110,70,30,.2)'); g.addColorStop(1, 'rgba(110,70,30,0)'); x.fillStyle = g; x.fillRect(kx - 30, ky - 30, 60, 60); }
+}), 1);
+// lime plaster: soft mottle, a few hairline cracks, trowel marks
+const plasterTex = texOf(noiseCanvas(256, 256, (x, w, h) => {
+  x.fillStyle = '#e4d6bd'; x.fillRect(0, 0, w, h);
+  for (let i = 0; i < 1400; i++) { x.fillStyle = `rgba(${Math.random() < 0.5 ? '120,95,60' : '255,250,235'},${Math.random() * 0.12})`; const r = 2 + Math.random() * 9; x.beginPath(); x.arc(Math.random() * w, Math.random() * h, r, 0, 7); x.fill(); }
+  for (let i = 0; i < 30; i++) { x.strokeStyle = `rgba(255,255,245,${0.05 + Math.random() * 0.08})`; x.lineWidth = 6 + Math.random() * 10; x.beginPath(); const sx = Math.random() * w, sy = Math.random() * h; x.moveTo(sx, sy); x.quadraticCurveTo(sx + 40, sy + (Math.random() - 0.5) * 60, sx + 90, sy + (Math.random() - 0.5) * 20); x.stroke(); }
+  for (let i = 0; i < 5; i++) { x.strokeStyle = 'rgba(90,70,45,.25)'; x.lineWidth = 0.7; x.beginPath(); let px = Math.random() * w, py = Math.random() * h; x.moveTo(px, py); for (let s = 0; s < 8; s++) { px += (Math.random() - 0.3) * 14; py += (Math.random() - 0.5) * 14; x.lineTo(px, py); } x.stroke(); }
+}), 1);
+// paper grain: cream ground, fibres in two directions, low mottle, speckles; shared by the laid sheet, the stack and the cloth
+function paperCanvas(w = 256, h = 192, tone = '#efe6d2') {
+  return noiseCanvas(w, h, (x) => {
+    x.fillStyle = tone; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 60; i++) { const g = x.createRadialGradient(Math.random() * w, Math.random() * h, 2, Math.random() * w, Math.random() * h, 30 + Math.random() * 40); g.addColorStop(0, `rgba(${Math.random() < 0.5 ? '150,120,80' : '255,255,245'},${0.03 + Math.random() * 0.05})`); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); }
+    for (let i = 0; i < 900; i++) { const a = Math.random() * 0.1; x.strokeStyle = `rgba(120,90,50,${a})`; x.lineWidth = 0.5 + Math.random(); const px = Math.random() * w, py = Math.random() * h, l = 2 + Math.random() * 10, d = Math.random() < 0.6 ? 0 : Math.PI / 2 + (Math.random() - 0.5) * 0.6; x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(d) * l, py + Math.sin(d) * l + (Math.random() - 0.5)); x.stroke(); }
+    for (let i = 0; i < 300; i++) { x.fillStyle = `rgba(80,60,30,${Math.random() * 0.18})`; x.fillRect(Math.random() * w, Math.random() * h, 1, 1); }
+  });
+}
+function paperTexture(w = 256, h = 192) { const t = new THREE.CanvasTexture(paperCanvas(w, h)); t.colorSpace = THREE.SRGBColorSpace; return t; }
+const paperGrainTex = texOf(paperCanvas(256, 256), 1);
+// kilim: bands with small stepped motifs in the pigment colours
+const kilimTex = (() => { const t = texOf(noiseCanvas(256, 512, (x, w, h) => {
+  const bands = ['#8a3a2a', '#2c4a8a', '#d9a441', '#8a3a2a', '#e7dfcb', '#2c4a8a', '#8a3a2a', '#4f7f4c', '#8a3a2a'];
+  bands.forEach((c, i) => { x.fillStyle = c; x.fillRect(0, i * h / bands.length, w, h / bands.length + 1); });
+  const bh = h / bands.length;
+  for (let i = 0; i < bands.length; i++) { x.fillStyle = i % 2 ? '#e7dfcb' : '#2a2520'; for (let k = 0; k < 8; k++) { const cx = (k + 0.5) * w / 8, cy = (i + 0.5) * bh; x.beginPath(); x.moveTo(cx, cy - bh * 0.3); x.lineTo(cx + 8, cy); x.lineTo(cx, cy + bh * 0.3); x.lineTo(cx - 8, cy); x.closePath(); x.fill(); } }
+  for (let i = 0; i < 1200; i++) { x.fillStyle = `rgba(0,0,0,${Math.random() * 0.12})`; x.fillRect(Math.random() * w, Math.random() * h, 2, 1); }
+}), 1); t.repeat.set(1, 1); return t; })();
+// the view through the window: morning sky, the glow of the sun, a cypress and a far dome with a minaret
+const windowTex = (() => { const t = new THREE.CanvasTexture(noiseCanvas(256, 256, (x, w, h) => {
+  const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#9fc3e6'); g.addColorStop(0.55, '#f4dcb0'); g.addColorStop(1, '#fff3d6'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+  const s = x.createRadialGradient(70, 120, 5, 70, 120, 120); s.addColorStop(0, 'rgba(255,250,225,1)'); s.addColorStop(0.3, 'rgba(255,240,200,.7)'); s.addColorStop(1, 'rgba(255,240,200,0)'); x.fillStyle = s; x.fillRect(0, 0, w, h);
+  x.fillStyle = 'rgba(90,80,110,.45)'; // far city: dome and minaret
+  x.beginPath(); x.arc(180, 190, 26, Math.PI, 0); x.lineTo(206, 215); x.lineTo(154, 215); x.closePath(); x.fill();
+  x.fillRect(214, 150, 5, 65); x.beginPath(); x.moveTo(211, 150); x.lineTo(216.5, 136); x.lineTo(222, 150); x.closePath(); x.fill();
+  x.fillStyle = 'rgba(40,60,40,.75)'; // cypress, near
+  x.beginPath(); x.moveTo(40, 256); x.quadraticCurveTo(26, 190, 44, 120); x.quadraticCurveTo(62, 190, 48, 256); x.closePath(); x.fill();
+  x.fillStyle = 'rgba(120,110,90,.55)'; x.fillRect(0, 222, w, 34); // the sill / rooftops below
+  for (let i = 0; i < 200; i++) { x.fillStyle = `rgba(255,255,255,${Math.random() * 0.06})`; x.fillRect(Math.random() * w, Math.random() * h, 1, 1); } // glass haze
+})); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+
+// ---- Geometry helpers: three merged static groups (wood / plaster / paper), each one draw call ----
+const parts = [], woodParts = [], paperParts = [];
+const _col = new THREE.Color();
+function colorize(g, color, jitter = 0.05) {
+  _col.set(color); const n = g.attributes.position.count, arr = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const j = 1 + (Math.random() - 0.5) * jitter; arr[i * 3] = _col.r * j; arr[i * 3 + 1] = _col.g * j; arr[i * 3 + 2] = _col.b * j; }
+  g.setAttribute('color', new THREE.BufferAttribute(arr, 3)); return g;
+}
+// world-projected UVs after the geometry is placed, so one grain texture runs continuously along every plank;
+// grainY makes the grain vertical (legs, posts)
+function worldUV(g, scale = 1.6, grainY = false) {
+  const p = g.attributes.position, uv = g.attributes.uv;
+  for (let i = 0; i < p.count; i++) { const x = p.getX(i), y = p.getY(i), z = p.getZ(i); if (grainY) uv.setXY(i, y * scale, (x + z * 0.37) * scale); else uv.setXY(i, (x + z * 0.37) * scale, (y + z * 0.9) * scale); }
+  return g;
+}
+function box(w, h, d, x, y, z, color, ry = 0, list = parts, jitter, grainY) { const g = new THREE.BoxGeometry(w, h, d); if (ry) g.rotateY(ry); g.translate(x, y, z); worldUV(g, 1.6, grainY); list.push(colorize(g, color, jitter)); return g; }
+function cyl(rt, rb, h, x, y, z, color, seg = 10, list = parts, rot, grainY = true) { const g = new THREE.CylinderGeometry(rt, rb, h, seg); if (rot) g.rotateZ(rot[0]).rotateY(rot[1]); g.translate(x, y, z); worldUV(g, 1.6, grainY); list.push(colorize(g, color)); return g; }
+function mergedMesh(list, mat, shadow = true) { const g = mergeGeometries(list, false); const m = new THREE.Mesh(g, mat); m.castShadow = shadow; m.receiveShadow = true; return m; }
+const lambert = new THREE.MeshLambertMaterial({ vertexColors: true, map: plasterTex });
+const woodMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: woodTex });
+const paperMat = new THREE.MeshLambertMaterial({ vertexColors: true, map: paperGrainTex });
+const W = woodParts, P = paperParts; // shorthand for the lists below
+
+// floor planks (oak, grain along x) and a kilim with its own woven texture
+for (let i = 0; i < 16; i++) box(0.36, 0.02, 7, -2.7 + i * 0.36, -0.01, -0.8, i % 2 ? 0x6b4a2e : 0x74522f, 0, W, 0.14, true);
+{ const k = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.4), new THREE.MeshLambertMaterial({ map: kilimTex })); k.rotation.x = -Math.PI / 2; k.position.set(0, 0.004, -0.1); k.receiveShadow = true; scene.add(k); }
+// walls: lime plaster, darker towards the floor (vertex colour gradient), a walnut skirting and a picture rail
+function wall(w, h, d, x, y, z) { const g = box(w, h, d, x, y, z, C.plaster, 0, parts, 0.05); const p = g.attributes.position, c = g.attributes.color; for (let i = 0; i < p.count; i++) { const f = 0.78 + 0.22 * Math.min(1, p.getY(i) / 2.2); c.setXYZ(i, c.getX(i) * f, c.getY(i) * f, c.getZ(i) * f); } }
+wall(7, 3.2, 0.12, 0, 1.6, -1.75); wall(0.12, 3.2, 6, -3.0, 1.6, 0.6); wall(0.12, 3.2, 6, 3.0, 1.6, 0.6);
+box(7, 0.12, 0.03, 0, 0.06, -1.68, C.walnutDark, 0, W); box(0.03, 0.12, 6, -2.93, 0.06, 0.6, C.walnutDark, 0, W); box(0.03, 0.12, 6, 2.93, 0.06, 0.6, C.walnutDark, 0, W);
+box(7, 0.04, 0.04, 0, 2.3, -1.68, C.walnut, 0, W);
+// window: walnut frame and muntins, a deep sill, the view as a lit pane
+const WX = 0.1, WY = 1.62, WW = 1.2, WH = 1.15;
+box(WW + 0.12, 0.07, 0.16, WX, WY + WH / 2, -1.69, C.walnut, 0, W); box(WW + 0.12, 0.07, 0.16, WX, WY - WH / 2, -1.69, C.walnut, 0, W);
+box(0.07, WH, 0.16, WX - WW / 2, WY, -1.69, C.walnut, 0, W, undefined, true); box(0.07, WH, 0.16, WX + WW / 2, WY, -1.69, C.walnut, 0, W, undefined, true);
+box(0.04, WH, 0.05, WX, WY, -1.67, C.walnut, 0, W, undefined, true); box(WW, 0.04, 0.05, WX, WY, -1.67, C.walnut, 0, W);
+box(WW + 0.3, 0.05, 0.3, WX, WY - WH / 2 - 0.05, -1.59, C.oak, 0, W); // sill
+const pane = new THREE.Mesh(new THREE.PlaneGeometry(WW, WH), new THREE.MeshBasicMaterial({ map: windowTex })); pane.position.set(WX, WY, -1.685); scene.add(pane);
+// a shaft of window light towards the table: one additive quad with a soft gradient, dust motes drift inside it
+const shaft = (() => {
+  const c = noiseCanvas(64, 256, (x, w, h) => { const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(255,236,200,.55)'); g.addColorStop(0.6, 'rgba(255,236,200,.18)'); g.addColorStop(1, 'rgba(255,236,200,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); const s = x.createLinearGradient(0, 0, w, 0); s.addColorStop(0, 'rgba(0,0,0,1)'); s.addColorStop(0.25, 'rgba(0,0,0,0)'); s.addColorStop(0.75, 'rgba(0,0,0,0)'); s.addColorStop(1, 'rgba(0,0,0,1)'); x.globalCompositeOperation = 'destination-out'; x.fillStyle = s; x.fillRect(0, 0, w, h); });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 2.3), new THREE.MeshBasicMaterial({ map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.5, side: THREE.DoubleSide }));
+  m.position.set(WX + 0.35, WY - 0.75, -0.9); m.rotation.set(-0.95, 0.15, 0); m.renderOrder = 2; scene.add(m); return m;
+})();
+// shelf on the left wall: books, a jug, bottles of ox-gall and spare jars, a rolled sheet
+box(1.4, 0.04, 0.3, -1.7, 1.3, -1.55, C.walnut, 0, W); [[-2.35, 1.2], [-1.05, 1.2]].forEach(([x, y]) => box(0.04, 0.2, 0.26, x, y, -1.57, C.walnutDark, 0, W, undefined, true));
+[[0x8a3a2a, 0.05], [0x2c4a8a, 0.04], [0x4f7f4c, 0.06], [0xd9a441, 0.035], [0x5a3b24, 0.05], [0x6b4c9a, 0.045]].forEach(([c, w], i) => box(w, 0.26 - (i % 3) * 0.02, 0.2, -2.3 + i * 0.07, 1.45 - (i % 3) * 0.01, -1.55, c, 0, P, 0.1));
+cyl(0.05, 0.07, 0.22, -1.4, 1.43, -1.55, 0x9a7a5a, 12); cyl(0.03, 0.05, 0.08, -1.4, 1.58, -1.55, 0x9a7a5a, 12);
+[[-1.85, 0x3a5a3a, 0.03, 0.18], [-1.75, 0x6a3a2a, 0.025, 0.14], [-1.62, 0x2a2520, 0.028, 0.2]].forEach(([x, c, r, h]) => { cyl(r, r, h, x, 1.32 + h / 2, -1.55, c, 10); cyl(r * 0.5, r * 0.5, 0.04, x, 1.32 + h + 0.02, -1.55, 0x9a7a5a, 8); });
+cyl(0.02, 0.02, 0.34, -1.2, 1.34, -1.5, C.paper, 10, P, [Math.PI / 2, 0.3]);
+// a framed marbled sheet on the back wall, above the table (its texture is set once the sim runs, see marbleCanvas)
+box(0.5, 0.38, 0.03, -1.0, 1.75, -1.72, C.walnutDark, 0, W); box(0.44, 0.32, 0.035, -1.0, 1.75, -1.72, C.paper, 0, P, 0.02);
+const framedSheet = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.28), new THREE.MeshLambertMaterial({ map: paperTexture() })); framedSheet.position.set(-1.0, 1.75, -1.70); scene.add(framedSheet);
+// a hanging calligraphy panel (levha) to the right of the window, and a hook with spare combs
+box(0.36, 0.5, 0.03, 1.45, 1.7, -1.72, C.walnutDark, 0, W); box(0.3, 0.44, 0.035, 1.45, 1.7, -1.72, 0xe4d6bd, 0, P, 0.02);
+[[-0.08, 0.02], [0.06, -0.12], [-0.02, 0.1], [0.1, 0.08]].forEach(([dx, dy]) => box(0.16, 0.012, 0.004, 1.45 + dx, 1.7 + dy, -1.70, C.ink, dx * 2.5, parts, 0.01)); // ink strokes
+[0.24, 0.16].forEach((len, i) => { box(len, 0.018, 0.02, 2.2 + i * 0.3, 1.5 - i * 0.18, -1.7, C.oak, 0.2, W); for (let k = 0; k < len / 0.02; k++) cyl(0.0015, 0.0015, 0.05, 2.2 + i * 0.3 - len / 2 + k * 0.02, 1.5 - i * 0.18 - 0.03, -1.7, 0xb9b9c4, 4); });
+// table: oak top with a walnut edge band, apron with a drawer and a brass knob, turned legs, stretchers
+box(1.7, 0.05, 1.15, 0, TABLE_Y - 0.025, 0, C.oak, 0, W, 0.08);
+box(1.74, 0.02, 1.19, 0, TABLE_Y - 0.006, 0, C.walnut, 0, W); // edge band
+box(1.7, 0.08, 0.05, 0, TABLE_Y - 0.09, 0.55, C.walnut, 0, W); box(1.7, 0.08, 0.05, 0, TABLE_Y - 0.09, -0.55, C.walnut, 0, W);
+box(0.05, 0.08, 1.1, -0.825, TABLE_Y - 0.09, 0, C.walnut, 0, W); box(0.05, 0.08, 1.1, 0.825, TABLE_Y - 0.09, 0, C.walnut, 0, W);
+box(0.5, 0.06, 0.02, 0.25, TABLE_Y - 0.09, 0.575, C.oakLight, 0, W); cyl(0.012, 0.012, 0.025, 0.25, TABLE_Y - 0.09, 0.59, C.brass, 10, parts, [Math.PI / 2, 0]); // drawer + knob
+[[-0.78, -0.5], [0.78, -0.5], [-0.78, 0.5], [0.78, 0.5]].forEach(([x, z]) => { box(0.07, TABLE_Y - 0.05, 0.07, x, (TABLE_Y - 0.05) / 2, z, C.walnut, 0, W, undefined, true); cyl(0.05, 0.04, 0.05, x, 0.4, z, C.walnut, 10, W); cyl(0.04, 0.05, 0.05, x, 0.2, z, C.walnut, 10, W); });
+box(1.5, 0.03, 0.03, 0, 0.12, 0.5, C.walnut, 0, W); box(1.5, 0.03, 0.03, 0, 0.12, -0.5, C.walnut, 0, W);
+// the tray (tekne): walnut rim with a lighter top strip and brass corner caps, zinc bottom
+const RW = TRAY_W + 0.08, RH = TRAY_H + 0.08, RT = 0.04, RTOP = TABLE_Y + 0.085;
+box(RW, 0.085, RT, 0, TABLE_Y + 0.0425, -RH / 2 + RT / 2, C.walnutDark, 0, W); box(RW, 0.085, RT, 0, TABLE_Y + 0.0425, RH / 2 - RT / 2, C.walnutDark, 0, W);
+box(RT, 0.085, RH, -RW / 2 + RT / 2, TABLE_Y + 0.0425, 0, C.walnutDark, 0, W); box(RT, 0.085, RH, RW / 2 - RT / 2, TABLE_Y + 0.0425, 0, C.walnutDark, 0, W);
+box(RW, 0.006, RT, 0, RTOP + 0.003, -RH / 2 + RT / 2, C.oak, 0, W); box(RW, 0.006, RT, 0, RTOP + 0.003, RH / 2 - RT / 2, C.oak, 0, W);
+box(RT, 0.006, RH, -RW / 2 + RT / 2, RTOP + 0.003, 0, C.oak, 0, W); box(RT, 0.006, RH, RW / 2 - RT / 2, RTOP + 0.003, 0, C.oak, 0, W);
+[[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([a, b]) => cyl(0.014, 0.016, 0.006, a * (RW / 2 - RT / 2), RTOP + 0.009, b * (RH / 2 - RT / 2), 0x8f7226, 10, parts, undefined, false)); // brass corner nails
+box(TRAY_W, 0.01, TRAY_H, 0, TABLE_Y + 0.01, 0, C.zinc);
+// right of the tray: a cloth with the resting tools (awl, brush, a reed pen), a cup of rose-twig brushes
+box(0.3, 0.006, 0.9, 0.62, TABLE_Y + 0.003, 0.05, C.paper, 0, P, 0.04);
+cyl(0.009, 0.009, 0.24, 0.6, TABLE_Y + 0.016, 0.1, 0x7a4a26, 8, W, [Math.PI / 2, 0.2]); cyl(0.013, 0.004, 0.06, 0.6, TABLE_Y + 0.016, 0.25, C.ink, 8, parts, [Math.PI / 2, 0.2]);
+cyl(0.009, 0.009, 0.24, 0.68, TABLE_Y + 0.016, 0.32, 0x7a4a26, 8, W, [Math.PI / 2, -0.15]); cyl(0.013, 0.004, 0.06, 0.68, TABLE_Y + 0.016, 0.47, C.blue, 8, parts, [Math.PI / 2, -0.15]);
+cyl(0.0025, 0.0025, 0.14, 0.56, TABLE_Y + 0.01, -0.3, 0xb9b9c4, 6, parts, [Math.PI / 2, 0]); cyl(0.008, 0.008, 0.07, 0.56, TABLE_Y + 0.012, -0.2, 0x7a4a26, 8, W, [Math.PI / 2, 0]);
+cyl(0.004, 0.003, 0.16, 0.64, TABLE_Y + 0.008, 0.4, 0xb08a4a, 6, parts, [Math.PI / 2, 0.5]); // reed pen
+cyl(0.04, 0.034, 0.1, 0.79, TABLE_Y + 0.05, -0.14, 0x9a7a5a, 12); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; cyl(0.004, 0.005, 0.22, 0.79 + Math.cos(a) * 0.02, TABLE_Y + 0.16, -0.14 + Math.sin(a) * 0.02, 0x7a4a26, 6, W, [Math.cos(a) * 0.2, Math.sin(a) * 0.2]); cyl(0.009, 0.003, 0.04, 0.79 + Math.cos(a) * 0.035, TABLE_Y + 0.28, -0.14 + Math.sin(a) * 0.035, C.ink, 6, parts); }
+// the oil lamp (kandil) at the back right, a bowl of ox-gall beside it, the muller and a pile of ground ochre
+cyl(0.045, 0.055, 0.015, 0.76, TABLE_Y + 0.0075, -0.47, C.brass, 12); cyl(0.012, 0.016, 0.12, 0.76, TABLE_Y + 0.075, -0.47, C.brass, 8); cyl(0.035, 0.02, 0.05, 0.76, TABLE_Y + 0.16, -0.47, C.brass, 10);
+cyl(0.03, 0.022, 0.07, 0.76, TABLE_Y + 0.22, -0.47, 0xfff0c8, 10); // the glass
+cyl(0.05, 0.035, 0.045, 0.66, TABLE_Y + 0.0225, -0.3, 0x3f6f78, 12); cyl(0.042, 0.042, 0.004, 0.66, TABLE_Y + 0.046, -0.3, 0x8a9a7a, 12);
+cyl(0.022, 0.03, 0.04, -0.76, TABLE_Y + 0.02, -0.5, 0x8a8a90, 12); cyl(0.012, 0.012, 0.05, -0.76, TABLE_Y + 0.06, -0.5, 0x8a8a90, 8); box(0.16, 0.012, 0.12, -0.78, TABLE_Y + 0.006, -0.5, 0x6f6a5e, 0.2, parts, 0.05); cyl(0.0001, 0.03, 0.02, -0.7, TABLE_Y + 0.02, -0.52, C.ochre, 10);
+// a small brass bowl of size (kitre) with a ladle, and a vase with one red tulip, both left of the jars
+cyl(0.07, 0.05, 0.05, -0.76, TABLE_Y + 0.025, -0.33, C.brass, 14); cyl(0.064, 0.064, 0.004, -0.76, TABLE_Y + 0.05, -0.33, 0xd9d2bd, 14);
+cyl(0.004, 0.004, 0.14, -0.72, TABLE_Y + 0.08, -0.33, C.walnut, 6, W, [0.9, 0.3]); cyl(0.02, 0.012, 0.012, -0.68, TABLE_Y + 0.05, -0.35, C.brass, 10);
+cyl(0.018, 0.012, 0.09, 0.62, TABLE_Y + 0.045, -0.5, 0x3f6f78, 10); cyl(0.004, 0.004, 0.14, 0.62, TABLE_Y + 0.14, -0.5, 0x4f7f4c, 5, parts, [0.1, 0]); cyl(0.0001, 0.018, 0.045, 0.63, TABLE_Y + 0.23, -0.5, C.ochre, 8);
+// paper stack on the left, a comb beside it, a bone folder
+for (let i = 0; i < 8; i++) box(0.42, 0.004, 0.32, -0.64 + (Math.random() - 0.5) * 0.012, TABLE_Y + 0.002 + i * 0.004, 0.2 + (Math.random() - 0.5) * 0.012, i === 7 ? C.paper : 0xe6dcc6, (Math.random() - 0.5) * 0.08, P, 0.03);
+box(0.5, 0.025, 0.03, -0.62, TABLE_Y + 0.0125, -0.3, 0x7a4a26, 0.1, W);
+for (let i = 0; i < 20; i++) cyl(0.002, 0.002, 0.05, -0.62 - 0.24 + i * 0.0245, TABLE_Y + 0.01, -0.3 + 0.03 + (i - 10) * 0.0245 * 0.1, 0xb9b9c4, 5, parts, [Math.PI / 2, 0.1]);
+box(0.12, 0.006, 0.02, -0.7, TABLE_Y + 0.036, 0.3, 0xe8dcc0, 0.4, parts, 0.02); // bone folder on the stack
+// a stool, a water bowl, a basket of scrap paper on the floor; the drying line with pins
+box(0.34, 0.03, 0.34, 1.35, 0.44, 0.9, C.walnut, 0, W); [[-0.13, -0.13], [0.13, -0.13], [-0.13, 0.13], [0.13, 0.13]].forEach(([x, z]) => box(0.04, 0.43, 0.04, 1.35 + x, 0.215, 0.9 + z, C.walnutDark, 0, W, undefined, true));
+cyl(0.16, 0.12, 0.12, -1.3, 0.06, 0.6, C.oak, 14, W);
+cyl(0.14, 0.11, 0.16, 1.5, 0.08, 0.2, 0xb08a4a, 12); for (let i = 0; i < 5; i++) box(0.16, 0.003, 0.12, 1.5 + (Math.random() - 0.5) * 0.06, 0.165 + i * 0.004, 0.2 + (Math.random() - 0.5) * 0.06, C.paper, Math.random() * 3, P, 0.03);
+const LINE_Z = -1.0, LINE_Y = 1.14;
+cyl(0.004, 0.004, 2.6, 0, LINE_Y, LINE_Z, 0x6a5a48, 5, parts, [Math.PI / 2, 0]);
+cyl(0.02, 0.02, LINE_Y + 0.1, -1.3, (LINE_Y + 0.1) / 2, LINE_Z, C.walnut, 8, W); cyl(0.02, 0.02, LINE_Y + 0.1, 1.3, (LINE_Y + 0.1) / 2, LINE_Z, C.walnut, 8, W);
+[-0.95, -0.4, 0.95].forEach(x => { box(0.02, 0.05, 0.015, x - 0.15, LINE_Y - 0.01, LINE_Z + 0.01, 0xc4a070, 0, W, undefined, true); box(0.02, 0.05, 0.015, x + 0.15, LINE_Y - 0.01, LINE_Z + 0.01, 0xc4a070, 0, W, undefined, true); });
+const statics = mergedMesh(parts, lambert); scene.add(statics);
+const woodStatics = mergedMesh(woodParts, woodMat); scene.add(woodStatics);
+const paperStatics = mergedMesh(paperParts, paperMat); scene.add(paperStatics);
+
+// pigment pots: glazed ceramic (MeshStandard picks up the window from the environment map), cork stoppers and a
+// paper label on each, three InstancedMeshes with per-instance colours
+const JAR_N = PAL.length;
+const jarGeo = new THREE.CylinderGeometry(0.028, 0.024, 0.062, 14), lidGeo = new THREE.CylinderGeometry(0.022, 0.026, 0.016, 12), labelGeo = new THREE.PlaneGeometry(0.03, 0.02);
+const jars = new THREE.InstancedMesh(jarGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35, metalness: 0.0, envMapIntensity: 0.8 }), JAR_N);
+const lids = new THREE.InstancedMesh(lidGeo, new THREE.MeshLambertMaterial({ color: 0xb08a5a }), JAR_N);
+const labels = new THREE.InstancedMesh(labelGeo, new THREE.MeshLambertMaterial({ color: 0xefe6d2, map: paperGrainTex }), JAR_N);
+{
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), sc = new THREE.Vector3(1, 1, 1), pos = new THREE.Vector3(), col = new THREE.Color();
+  for (let i = 0; i < JAR_N; i++) {
+    const x = -0.55 + i * (1.1 / (JAR_N - 1)), z = -0.45 + (i % 2) * 0.07, ry = (Math.random() - 0.5) * 0.6;
+    m.makeTranslation(x, TABLE_Y + 0.031, z); jars.setMatrixAt(i, m); col.set(PAL[i].hex).multiplyScalar(0.95); jars.setColorAt(i, col);
+    m.makeTranslation(x, TABLE_Y + 0.07, z); lids.setMatrixAt(i, m);
+    e.set(-0.12, ry, 0); q.setFromEuler(e); pos.set(x + Math.sin(ry) * 0.027, TABLE_Y + 0.03, z + Math.cos(ry) * 0.027); m.compose(pos, q, sc); labels.setMatrixAt(i, m);
+  }
+  jars.instanceMatrix.needsUpdate = true; jars.instanceColor.needsUpdate = true; lids.instanceMatrix.needsUpdate = true; labels.instanceMatrix.needsUpdate = true;
+  jars.castShadow = lids.castShadow = true; jars.receiveShadow = true; scene.add(jars, lids, labels);
+}
+
+// The water surface: the paint polygons are rasterised on the GPU into a multisampled render target with the
+// stencil trick (one signed-winding stencil pass per colour, then a colour quad), so a busy tray costs no CPU raster
+// and no canvas-to-texture upload per frame.
+const PAINT_W = SET.quality === 'low' ? 512 : 768, PAINT_H = PAINT_W * 3 / 4;
+const paintRT = new THREE.WebGLRenderTarget(PAINT_W, PAINT_H, { samples: 4, depthBuffer: true, stencilBuffer: true });
+paintRT.texture.colorSpace = THREE.SRGBColorSpace; paintRT.texture.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+const paintScene = new THREE.Scene(), paintCam = new THREE.OrthographicCamera(0, SW, 0, SH, -10, 10);
+const baseCan = document.createElement('canvas'); baseCan.width = 256; baseCan.height = 192; paintBase(baseCan.getContext('2d'), 256, 192);
+const baseTex = new THREE.CanvasTexture(baseCan); baseTex.colorSpace = THREE.SRGBColorSpace;
+function simQuad(mat) { // a quad covering the sim rectangle, v = 1 at sim y = 0
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, SW, 0, 0, SW, SH, 0, 0, SH, 0], 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2)); g.setIndex([0, 1, 2, 0, 2, 3]);
+  const m = new THREE.Mesh(g, mat); m.frustumCulled = false; paintScene.add(m); return m;
+}
+const baseQuad = simQuad(new THREE.MeshBasicMaterial({ map: baseTex, depthTest: false, depthWrite: false, side: THREE.DoubleSide })); baseQuad.renderOrder = -1;
+// One mesh, one render call: per colour three groups (winding +1 on front faces, -1 on back faces, then a bbox quad
+// filled where the stencil is non-zero, which also zeroes it). Materials are created in that order so Three's
+// material-id sort keeps the sequence.
+const CAP_V = 200000, CAP_I = 600000;
+const fanGeo = new THREE.BufferGeometry();
+const fanPos = new THREE.BufferAttribute(new Float32Array(CAP_V * 3), 3).setUsage(THREE.DynamicDrawUsage);
+const fanIdx = new THREE.BufferAttribute(new Uint32Array(CAP_I), 1).setUsage(THREE.DynamicDrawUsage);
+fanGeo.setAttribute('position', fanPos); fanGeo.setIndex(fanIdx);
+const fanMats = [];
+for (let k = 0; k < PAL.length; k++) {
+  fanMats.push(new THREE.MeshBasicMaterial({ colorWrite: false, depthTest: false, depthWrite: false, side: THREE.FrontSide, stencilWrite: true, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.IncrementWrapStencilOp }));
+  fanMats.push(new THREE.MeshBasicMaterial({ colorWrite: false, depthTest: false, depthWrite: false, side: THREE.BackSide, stencilWrite: true, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.DecrementWrapStencilOp }));
+  fanMats.push(new THREE.MeshBasicMaterial({ color: PAL[k].hex, side: THREE.DoubleSide, depthTest: false, depthWrite: false, stencilWrite: true, stencilFunc: THREE.NotEqualStencilFunc, stencilRef: 0, stencilZPass: THREE.ZeroStencilOp, stencilFail: THREE.ZeroStencilOp }));
+}
+const fans = new THREE.Mesh(fanGeo, fanMats); fans.frustumCulled = false; paintScene.add(fans);
+function buildFans(sim) {
+  const byC = []; for (let k = 0; k < PAL.length; k++) byC.push([]);
+  for (const p of sim.polys) if (p.n >= 3) byC[p.c].push(p);
+  const pos = fanPos.array, idx = fanIdx.array; let v = 0, ix = 0; fanGeo.clearGroups();
+  for (let k = 0; k < PAL.length; k++) {
+    if (!byC[k].length) continue;
+    const start = ix; let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9;
+    for (const p of byC[k]) {
+      const a = p.pts, n = p.n, base = v; if (v + n + 4 > CAP_V || ix + (n - 2) * 3 + 6 > CAP_I) break;
+      for (let i = 0; i < n; i++) { pos[(v + i) * 3] = a[i * 2]; pos[(v + i) * 3 + 1] = a[i * 2 + 1]; pos[(v + i) * 3 + 2] = 0; }
+      for (let i = 1; i < n - 1; i++) { idx[ix++] = base; idx[ix++] = base + i; idx[ix++] = base + i + 1; }
+      v += n; if (p.minx < minx) minx = p.minx; if (p.maxx > maxx) maxx = p.maxx; if (p.miny < miny) miny = p.miny; if (p.maxy > maxy) maxy = p.maxy;
+    }
+    if (ix === start) continue;
+    fanGeo.addGroup(start, ix - start, k * 3); fanGeo.addGroup(start, ix - start, k * 3 + 1);
+    // the colour quad: the colour's bounding box, a little wider for the antialiased edge
+    minx -= 2; miny -= 2; maxx += 2; maxy += 2; const q = v;
+    pos.set([minx, miny, 0, maxx, miny, 0, maxx, maxy, 0, minx, maxy, 0], q * 3); v += 4;
+    const qs = ix; idx[ix++] = q; idx[ix++] = q + 1; idx[ix++] = q + 2; idx[ix++] = q; idx[ix++] = q + 2; idx[ix++] = q + 3;
+    fanGeo.addGroup(qs, 6, k * 3 + 2);
+  }
+  fanPos.addUpdateRange(0, v * 3); fanPos.needsUpdate = true; fanIdx.addUpdateRange(0, ix); fanIdx.needsUpdate = true;
+  fans.visible = ix > 0;
+}
+function renderPaint(sim) {
+  buildFans(sim);
+  renderer.setRenderTarget(paintRT); renderer.render(paintScene, paintCam); renderer.setRenderTarget(null);
+}
+// read the paint back into a 2D canvas (the finished sheet, the gallery thumbnails)
+function paintToCanvas(w, h) {
+  const PW = paintRT.width, PH = paintRT.height;
+  const buf = new Uint8Array(PW * PH * 4); renderer.readRenderTargetPixels(paintRT, 0, 0, PW, PH, buf);
+  const img = new ImageData(PW, PH); const d = img.data, row = PW * 4;
+  for (let y = 0; y < PH; y++) d.set(buf.subarray((PH - 1 - y) * row, (PH - y) * row), y * row); // WebGL rows start at the bottom
+  const full = document.createElement('canvas'); full.width = PW; full.height = PH; full.getContext('2d').putImageData(img, 0, 0);
+  const can = document.createElement('canvas'); can.width = w; can.height = h; can.getContext('2d').drawImage(full, 0, 0, w, h); return can;
+}
+// wet surface: a faint ripple normal map under the paint so the window's reflection breaks up like size (kitre)
+// that has just been combed, and a low roughness so the pigment reads wet rather than printed
+const rippleTex = (() => {
+  const N = 128, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'), img = x.createImageData(N, N), d = img.data;
+  const h = (i, j) => Math.sin(i * 0.19 + Math.sin(j * 0.07) * 2) * 0.5 + Math.sin(j * 0.23 + i * 0.05) * 0.35 + Math.sin((i + j) * 0.11) * 0.25;
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const dx = h(i + 1, j) - h(i - 1, j), dy = h(i, j + 1) - h(i, j - 1), k = (j * N + i) * 4;
+    d[k] = 128 + dx * 40; d[k + 1] = 128 + dy * 40; d[k + 2] = 255; d[k + 3] = 255;
+  }
+  x.putImageData(img, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 3); return t;
+})();
+const water = new THREE.Mesh(new THREE.PlaneGeometry(TRAY_W, TRAY_H), new THREE.MeshStandardMaterial({ map: paintRT.texture, roughness: 0.27, metalness: 0.0, normalMap: rippleTex, normalScale: new THREE.Vector2(0.07, 0.07), envMapIntensity: 1.0 }));
+water.rotation.x = -Math.PI / 2; water.position.set(0, TRAY_Y, 0); water.receiveShadow = true; scene.add(water);
+// transparent overlay above the water: hint ghost and tool cursor
+const ovCan = document.createElement('canvas'); ovCan.width = 512; ovCan.height = 384; const ovCtx = ovCan.getContext('2d', { willReadFrequently: true });
+const ovTex = new THREE.CanvasTexture(ovCan); ovTex.colorSpace = THREE.SRGBColorSpace;
+const overlay = new THREE.Mesh(new THREE.PlaneGeometry(TRAY_W, TRAY_H), new THREE.MeshBasicMaterial({ map: ovTex, transparent: true, depthWrite: false }));
+overlay.rotation.x = -Math.PI / 2; overlay.position.set(0, TRAY_Y + 0.0015, 0); scene.add(overlay);
+// invisible pick plane
+const pickPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -TRAY_Y);
+
+// paper: see paperCanvas above (grain shared with the stack and the cloth)
+const paperTex = paperTexture();
+// the sheet carries its own pattern as a faint emissive so the finished marbling reads bright even with the window behind it
+const sheet = new THREE.Mesh(new THREE.PlaneGeometry(TRAY_W, TRAY_H, 24, 1), new THREE.MeshLambertMaterial({ map: paperTex, emissive: 0x8a8278, emissiveMap: paperTex, side: THREE.DoubleSide }));
+function setSheetMap(tex) { const m = sheet.material; if (m.map && m.map !== paperTex && m.map !== tex) m.map.dispose(); m.map = tex; m.emissiveMap = tex; m.needsUpdate = true; }
+const sheetBase = sheet.geometry.attributes.position.array.slice(); // flat positions; stepLay bends the sheet as it is lifted
+sheet.rotation.x = -Math.PI / 2; sheet.castShadow = true; sheet.visible = false; scene.add(sheet);
+// three sheets drying on the line
+const hanging = [-0.95, -0.4, 0.95].map(x => {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.255), new THREE.MeshLambertMaterial({ map: paperTex, side: THREE.DoubleSide }));
+  m.position.set(x, LINE_Y - 0.14, LINE_Z + 0.02); m.rotation.y = (Math.random() - 0.5) * 0.08; m.castShadow = true; scene.add(m); return m;
+});
+function setHangingTexture(i, canvasOrImg) {
+  const tex = new THREE.CanvasTexture(canvasOrImg); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = hanging[i]; if (m.material.map && m.material.map !== paperTex) m.material.map.dispose(); m.material.map = tex; m.material.needsUpdate = true;
+}
+// decorative marbled sheets (the framed one on the wall, the three on the line until the gallery fills them):
+// short recipes run through the same simulation and drawn on paper grain
+function marbleCanvas(strokes, w = 256, h = 192, alpha = 1, tone = '#e9e0cb') {
+  const sim = new Marble(); for (const s of strokes) runStroke(sim, s);
+  const c = paperCanvas(w, h, tone), x = c.getContext('2d'); x.globalAlpha = alpha; sim.draw(x, w / SW, PAL, false); x.globalAlpha = 1; return c;
+}
+const DECOR = (() => {
+  recipeRng = mulberry(4242); const a = marbleCanvas([BR(0, zig(4, 90, SH - 90)), BR(1, zig(4, 150, SH - 40, SW - 50, 50)), BIZ(zig(7, 60, SH - 60))]);
+  recipeRng = mulberry(777); const b = marbleCanvas([BR(11, zig(4, 90, SH - 90)), BR(2, zig(4, 150, SH - 40, SW - 50, 50)), BIZ(zig(7, 60, SH - 60)), TAR(line([512, 20], [512, SH - 20]))]);
+  recipeRng = mulberry(99); const c = marbleCanvas([BR(7, zig(4, 90, SH - 90)), BR(8, zig(4, 150, SH - 40, SW - 50, 50)), ...[[260, 220], [760, 220], [512, 540]].map(([x, y]) => BIZ(spiral(x, y, 150, 3)))]);
+  recipeRng = mulberry(31); const d = marbleCanvas([BR(1, zig(3, 120, SH - 120)), BR(2, zig(3, 200, SH - 60, SW - 50, 50)), BIZ(zig(6, 70, SH - 70)), BIG(0, 512, 384), BIZ(line([512, 500], [512, 180])), BIZ(line([440, 420], [455, 280])), BIZ(line([584, 420], [569, 280]))]);
+  return [a, b, c, d];
+})();
+{ const t = new THREE.CanvasTexture(DECOR[3]); t.colorSpace = THREE.SRGBColorSpace; framedSheet.material.map = t; framedSheet.material.needsUpdate = true; }
+DECOR.slice(0, 3).forEach((c, i) => setHangingTexture(i, c));
+// the UI's paper: a light (hafif) marbled ground under every panel and a stronger band for edges, both drawn by the
+// simulation; the tool tray's walnut comes from the wood canvas. Set as CSS variables (data URLs).
+{
+  recipeRng = mulberry(5151); const soft = marbleCanvas([BR(11, zig(4, 90, SH - 90)), BR(8, zig(3, 160, SH - 130, SW - 50, 50)), BR(2, zig(3, 230, SH - 60)), BIZ(zig(7, 60, SH - 60))], 512, 384, 0.5, '#f3ecdb');
+  recipeRng = mulberry(6161); const band = marbleCanvas([BR(0, zig(4, 90, SH - 90)), BR(11, zig(4, 150, SH - 40, SW - 50, 50)), BIZ(zig(8, 60, SH - 60)), TAR(line([512, 20], [512, SH - 20]))], 512, 384, 1, '#e8dec6');
+  const st = document.documentElement.style;
+  st.setProperty('--marble', `url(${soft.toDataURL('image/jpeg', 0.8)})`); st.setProperty('--marble2', `url(${band.toDataURL('image/jpeg', 0.8)})`); st.setProperty('--wood', `url(${woodTex.image.toDataURL('image/jpeg', 0.85)})`);
+}
+
+// the active tool floats above the pointer: rose-twig brush with bound horsehair, awl with a turned handle and a brass
+// ferrule, walnut comb with steel pins and a grip, a glazed bowl of paint with a spoon for the big drop
+const steel = new THREE.MeshStandardMaterial({ color: 0xd0d0d8, roughness: 0.3, metalness: 0.8 });
+const brassMat = new THREE.MeshStandardMaterial({ color: C.brass, roughness: 0.4, metalness: 0.7 });
+const wood = new THREE.MeshLambertMaterial({ color: 0x7a4a26, map: woodTex }), roseWood = new THREE.MeshLambertMaterial({ color: 0x8c5a3a, map: woodTex }), bristle = new THREE.MeshLambertMaterial({ color: 0x2a2520 });
+const glaze = new THREE.MeshStandardMaterial({ color: 0x3f6f78, roughness: 0.3, metalness: 0.0, envMapIntensity: 0.8 });
+const toolMeshes = {};
+{
+  const brush = new THREE.Group();
+  const h = new THREE.Mesh(new THREE.CylinderGeometry(0.0075, 0.0105, 0.22, 8), roseWood); h.position.y = 0.17; h.rotation.z = 0.04; brush.add(h);
+  const knot = new THREE.Mesh(new THREE.SphereGeometry(0.011, 8, 6), roseWood); knot.position.set(0.002, 0.2, 0); knot.scale.set(1, 0.6, 1); brush.add(knot);
+  const tie = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.014, 10), new THREE.MeshLambertMaterial({ color: 0xc9b89a })); tie.position.y = 0.072; brush.add(tie);
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.003, 0.075, 8), bristle); b.position.y = 0.03; brush.add(b); brush.userData.bristles = b;
+  brush.rotation.z = 0.35; toolMeshes.brush = brush;
+  const big = new THREE.Group();
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.022, 0.045, 14), glaze); cup.position.y = 0.06; big.add(cup);
+  const paint = new THREE.Mesh(new THREE.CircleGeometry(0.028, 14), new THREE.MeshStandardMaterial({ color: C.blue, roughness: 0.2 })); paint.rotation.x = -Math.PI / 2; paint.position.y = 0.081; big.add(paint); big.userData.paint = paint;
+  const spoon = new THREE.Mesh(new THREE.CylinderGeometry(0.0015, 0.0015, 0.09, 6), steel); spoon.position.set(0.02, 0.1, 0); spoon.rotation.z = -0.5; big.add(spoon);
+  big.rotation.z = -0.5; toolMeshes.big = big;
+  const biz = new THREE.Group();
+  const n = new THREE.Mesh(new THREE.CylinderGeometry(0.0012, 0.0025, 0.12, 6), steel); n.position.y = 0.06; biz.add(n);
+  const fer = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.004, 0.014, 8), brassMat); fer.position.y = 0.125; biz.add(fer);
+  const hh = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.0065, 0.07, 10), wood); hh.position.y = 0.165; biz.add(hh);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.011, 10, 8), wood); bulb.position.y = 0.205; biz.add(bulb);
+  biz.rotation.z = 0.25; toolMeshes.biz = biz;
+  const tarak = new THREE.Group();
+  const barW = TOOL.tarak.teeth * TOOL.tarak.spacing / SW * TRAY_W + 0.02;
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(barW, 0.02, 0.028), wood); bar.position.y = 0.06; tarak.add(bar);
+  const grip = new THREE.Mesh(new THREE.BoxGeometry(barW * 0.5, 0.022, 0.016), wood); grip.position.y = 0.081; tarak.add(grip);
+  const strip = new THREE.Mesh(new THREE.BoxGeometry(barW, 0.004, 0.03), brassMat); strip.position.y = 0.049; tarak.add(strip);
+  const teethGeos = [];
+  for (let i = 0; i < TOOL.tarak.teeth; i++) { const g = new THREE.CylinderGeometry(0.0012, 0.0012, 0.06, 5); g.translate((i - (TOOL.tarak.teeth - 1) / 2) * TOOL.tarak.spacing / SW * TRAY_W, 0.02, 0); teethGeos.push(g); }
+  tarak.add(new THREE.Mesh(mergeGeometries(teethGeos, false), steel)); toolMeshes.tarak = tarak;
+  for (const k in toolMeshes) { toolMeshes[k].visible = false; toolMeshes[k].userData.rz = toolMeshes[k].rotation.z; toolMeshes[k].traverse(o => { if (o.isMesh) o.castShadow = true; }); scene.add(toolMeshes[k]); }
+}
+
+// lights: warm window sun with one shadow map over the table, soft hemisphere fill
+const sun = new THREE.DirectionalLight(0xffd9a6, 2.5); sun.position.set(-0.9, 2.7, -1.4); sun.target.position.copy(trayCentre); scene.add(sun, sun.target);
+sun.castShadow = SET.quality !== 'low'; sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -1.1; sun.shadow.camera.right = 1.1; sun.shadow.camera.top = 1.1; sun.shadow.camera.bottom = -1.1; sun.shadow.camera.near = 0.5; sun.shadow.camera.far = 7; sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.01;
+// warm plaster bounce from above, walnut floor bounce from below; a cool fill from the room side so wood keeps its shape
+const hemi = new THREE.HemisphereLight(0xffe9cc, 0x4a3222, 0.85); scene.add(hemi);
+const fill = new THREE.DirectionalLight(0xa9bfe0, 0.4); fill.position.set(1.6, 1.4, 2.2); scene.add(fill);
+// the oil lamp (kandil) on the far right of the table: a small warm pool of light that flickers (see stepLamp)
+const lamp = new THREE.PointLight(0xffb060, 0.9, 1.6, 2); lamp.position.set(0.76, TABLE_Y + 0.26, -0.47); scene.add(lamp);
+const flame = (() => { const c = document.createElement('canvas'); c.width = 32; c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(16, 40, 2, 16, 32, 30); g.addColorStop(0, 'rgba(255,250,210,1)'); g.addColorStop(0.3, 'rgba(255,190,80,0.9)'); g.addColorStop(0.7, 'rgba(255,120,30,0.35)'); g.addColorStop(1, 'rgba(255,100,20,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })); sp.position.set(0.76, TABLE_Y + 0.25, -0.47); sp.scale.set(0.03, 0.055, 1); scene.add(sp); return sp; })();
+// Environment for the MeshStandard surfaces (water, steel, brass): a small canvas equirect of the room, a bright
+// window on a warm wall, run through PMREM once at boot. It gives the wet paint its sheen and the tools a glint.
+const envTex = (() => {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, 128); g.addColorStop(0, '#c9ad88'); g.addColorStop(0.5, '#6a4a30'); g.addColorStop(1, '#2a1a10'); x.fillStyle = g; x.fillRect(0, 0, 256, 128);
+  const w = x.createRadialGradient(96, 40, 4, 96, 40, 60); w.addColorStop(0, 'rgba(255,246,225,1)'); w.addColorStop(0.35, 'rgba(255,230,190,0.8)'); w.addColorStop(1, 'rgba(255,220,170,0)'); x.fillStyle = w; x.fillRect(0, 0, 256, 128);
+  x.fillStyle = 'rgba(255,250,235,.95)'; x.fillRect(80, 24, 32, 30); // the window pane itself
+  const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+{ const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromEquirectangular(envTex).texture; pm.dispose(); }
+scene.environmentIntensity = 0.6;
+
+// dust motes in the window light: soft round sprites as Points
+function softSprite() { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const g = x.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,245,220,1)'); g.addColorStop(0.4, 'rgba(255,245,220,0.5)'); g.addColorStop(1, 'rgba(255,245,220,0)'); x.fillStyle = g; x.fillRect(0, 0, 64, 64); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
+const DUST_N = SET.quality === 'low' ? 120 : 260;
+const dustPos = new Float32Array(DUST_N * 3), dustVel = new Float32Array(DUST_N * 3);
+for (let i = 0; i < DUST_N; i++) { const tt = Math.random(); dustPos[i * 3] = WX + (Math.random() - 0.5) * 1.2 + tt * 1.3; dustPos[i * 3 + 1] = WY + (Math.random() - 0.5) * 1.2 - tt * 1.0; dustPos[i * 3 + 2] = -1.6 + tt * 1.8 + (Math.random() - 0.5) * 0.5; dustVel[i * 3] = (Math.random() - 0.5) * 0.02; dustVel[i * 3 + 1] = -0.005 - Math.random() * 0.01; dustVel[i * 3 + 2] = (Math.random() - 0.5) * 0.02; }
+const dustGeo = new THREE.BufferGeometry(); dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+const dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({ size: 0.022, map: softSprite(), transparent: true, opacity: 0.55, depthWrite: false, sizeAttenuation: true })); scene.add(dust);
+function stepDust(dt) {
+  for (let i = 0; i < DUST_N; i++) {
+    dustPos[i * 3] += dustVel[i * 3] * dt; dustPos[i * 3 + 1] += dustVel[i * 3 + 1] * dt; dustPos[i * 3 + 2] += dustVel[i * 3 + 2] * dt;
+    if (dustPos[i * 3 + 1] < 0.3) { const tt = Math.random(); dustPos[i * 3] = WX + (Math.random() - 0.5) * 1.2 + tt * 1.3; dustPos[i * 3 + 1] = WY + 0.4 + Math.random() * 0.3; dustPos[i * 3 + 2] = -1.6 + tt * 1.8; }
+  }
+  dustGeo.attributes.position.needsUpdate = true;
+}
+
+// v2 mascot: the white Turkish Van kitten dozes on the left edge of the table, in the window light (the sill itself
+// is above the camera's view). A billboard sprite loaded after the first frame; ?noassets and file:// skip it.
+const MASCOT = { sprite: null, flickAt: 3, flick: 0 };
+const MASCOT_SRC = { sleep: 'assets/mascot/kedi-uyuyor.png', cheer: 'assets/mascot/kedi-kutlama.png', think: 'assets/mascot/kedi-dusunuyor.png' };
+function loadMascot() {
+  if (FLAG.noassets || location.protocol === 'file:') { ASSETS.skipped = true; return; }
+  new THREE.TextureLoader().load(MASCOT_SRC.sleep, tex => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false }));
+    s.scale.set(0.24, 0.24, 1); s.position.set(-0.66, TABLE_Y + 0.085, -0.12); s.center.set(0.5, 0.42);
+    scene.add(s); MASCOT.sprite = s; ASSETS.loaded.push('mascot/kedi-uyuyor.png');
+  }, undefined, () => { ASSETS.failed.push('mascot/kedi-uyuyor.png'); });
+}
+function stepMascot(dt) {
+  const s = MASCOT.sprite; if (!s) return;
+  MASCOT.flickAt -= dt;
+  if (MASCOT.flickAt <= 0) { MASCOT.flickAt = 2.5 + Math.random() * 3; MASCOT.flick = 0.6; }
+  if (MASCOT.flick > 0) { MASCOT.flick -= dt; const f = Math.max(0, MASCOT.flick) / 0.6; s.material.rotation = Math.sin(f * Math.PI * 2) * 0.07 * f; } // a tail flick: the sticker wags
+  else s.material.rotation = 0;
+}
+
+// camera: above the tray at a slight angle; from the front in landscape, from the side in portrait, fitted to the free area
+const CAM = { zoom: 1, portrait: false, D: 2 };
+const _v = new THREE.Vector3();
+function fitCamera() {
+  const W = innerWidth, H = innerHeight; CAM.portrait = H > W * 1.05;
+  camera.aspect = W / H;
+  const hud = document.getElementById('hud'), tools = document.getElementById('tools');
+  const top = (hud.hidden ? (W < 760 ? 100 : 64) : hud.offsetHeight) + 14 + (CAM.portrait ? 110 : 0), bottom = (tools.hidden ? (W < 760 ? 120 : 72) : tools.offsetHeight) + 18;
+  const safeCy = (top + (H - bottom)) / 2; camera.setViewOffset(W, H, 0, H / 2 - safeCy, W, H);
+  const el = CAM.portrait ? 0.95 : 0.78; // elevation above the table
+  const dir = CAM.portrait ? new THREE.Vector3(Math.cos(el), Math.sin(el), 0) : new THREE.Vector3(0, Math.sin(el), Math.cos(el));
+  const corners = [[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => new THREE.Vector3(a * (TRAY_W / 2 + 0.07), TRAY_Y + 0.03, b * (TRAY_H / 2 + 0.07)));
+  let lo = 0.6, hi = 6;
+  for (let it = 0; it < 18; it++) {
+    const D = (lo + hi) / 2; camera.position.copy(trayCentre).addScaledVector(dir, D); camera.lookAt(trayCentre); camera.updateMatrixWorld(); camera.updateProjectionMatrix();
+    let ok = true;
+    for (const c of corners) { _v.copy(c).project(camera); const px = (_v.x + 1) / 2 * W, py = (1 - _v.y) / 2 * H; if (px < 10 || px > W - 10 || py < top || py > H - bottom) { ok = false; break; } }
+    if (ok) hi = D; else lo = D;
+  }
+  CAM.D = hi;
+  camera.position.copy(trayCentre).addScaledVector(dir, CAM.D * CAM.zoom); camera.lookAt(trayCentre); camera.updateProjectionMatrix();
+  if (CAM.onPortrait) CAM.onPortrait(CAM.portrait);
+}
+function onResize() { renderer.setSize(innerWidth, innerHeight); fitCamera(); }
+addEventListener('resize', onResize);
+
+// ---------------------------------------------------------------------------
+// Game state
+// ---------------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+const G = {
+  state: 'title', paused: false, free: false, lesson: 0, L: null, loaded: false,
+  sim: new Marble(), runner: null, stroke: null, strokes: [], undo: [],
+  tool: 'brush', colour: 0, match: 0, matchDirty: false, matchAt: 0, hint: null, hintT: 0,
+  lay: null, hover: null, pressing: false, dirtyTex: true, time: 0, simming: false, sheetCanvas: null, lastResult: null,
+  hangSlot: 0, settingsFrom: 'title', lastDir: [0, 1], hidden: false,
+  // v2
+  thick: 1, hintUsed: false, coach: false, crit: [], tier: 0, lastSaved: -1,
+  ripples: [], // redesign: rings on the water where drops fell
+};
+const TOOLFX = { bob: 0 }; // the brush dips when it sprinkles
+function addRipple(x, y, r) { G.ripples.push({ x, y, r, t: 0 }); if (G.ripples.length > 40) G.ripples.shift(); TOOLFX.bob = 1; G.ovDirty = true; }
+const tools = () => G.free ? THICK[G.thick] : TOOL; // the tool table in force: thickness applies to the free tray only
+function redrawTray() { renderPaint(G.sim); G.dirtyTex = false; }
+function computeMatch() {
+  if (G.free || !G.L) return 0;
+  const tg = buildTarget(G.L), empty = G.strokes.length === 0 && !G.stroke;
+  const a = empty ? null : downsample(G.sim);
+  const m = empty ? 0 : matchScore(a, tg);
+  G.crit = empty ? [] : critique(a, tg, G.L.cols, usedColours()).slice(0, 2);
+  // crossing 80 % lights the rim and chimes softly, 90 % chimes again (only while playing, never on undo back down)
+  const tier = m >= 0.9 ? 2 : m >= 0.8 ? 1 : 0;
+  if (G.state === 'play' && tier > G.tier) { rimGlow(); sfxTier(tier); if (tier === 1 && G.L.index < 3) { $('bLay').classList.add('pulse'); toast(t('layNow'), 'good'); } }
+  if (tier < 1) $('bLay').classList.remove('pulse');
+  G.tier = tier; G.match = m; G.matchDirty = false; updateHud(); return m;
+}
+function rimGlow() { const r = $('rim'); r.classList.add('on'); clearTimeout(rimGlow.t); rimGlow.t = setTimeout(() => r.classList.remove('on'), 900); }
+
+// ---------------------------------------------------------------------------
+// Overlay: hint ghost and tool cursor
+// ---------------------------------------------------------------------------
+function redrawOverlay() { G.ovDirty = true; }
+function drawOverlayNow() {
+  const c = ovCtx, s = 512 / SW; c.clearRect(0, 0, 512, 384); c.save(); c.scale(s, s);
+  if (G.hint !== null && G.L && G.hint < G.L.strokes.length) {
+    const st = G.L.strokes[G.hint], p = st.p, col = st.c !== undefined ? PAL[st.c].hex : '#1E6FB8';
+    c.lineWidth = 5; c.setLineDash([16, 12]); c.lineDashOffset = -G.hintT * 60; c.strokeStyle = 'rgba(255,255,255,0.85)';
+    if (st.k === 'brush' || st.k === 'big') {
+      c.beginPath(); for (let i = 0; i < p.length; i++) c[i ? 'lineTo' : 'moveTo'](p[i][0], p[i][1]); c.stroke();
+      c.setLineDash([]); c.lineWidth = 4; c.strokeStyle = col; c.globalAlpha = 0.9;
+      const r = TOOL[st.k].r; c.beginPath(); c.arc(p[0][0], p[0][1], r, 0, Math.PI * 2); c.stroke();
+      if (p.length > 1) { c.beginPath(); c.arc(p[p.length - 1][0], p[p.length - 1][1], r * 0.6, 0, Math.PI * 2); c.stroke(); }
+    } else {
+      c.beginPath(); for (let i = 0; i < p.length; i++) c[i ? 'lineTo' : 'moveTo'](p[i][0], p[i][1]); c.stroke();
+      c.setLineDash([]); c.strokeStyle = '#1E6FB8'; c.lineWidth = 3; c.stroke();
+      if (st.k === 'tarak') { // comb width marker at the start
+        const a = p[0], b = p[1] || p[0]; const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, half = (TOOL.tarak.teeth - 1) / 2 * TOOL.tarak.spacing;
+        c.beginPath(); c.moveTo(a[0] - nx * half, a[1] - ny * half); c.lineTo(a[0] + nx * half, a[1] + ny * half); c.lineWidth = 6; c.strokeStyle = 'rgba(255,255,255,0.7)'; c.stroke();
+      }
+    }
+    // moving dot along the path
+    let total = 0; const segs = []; for (let i = 1; i < p.length; i++) { const d = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); segs.push(d); total += d; }
+    if (total > 0) {
+      let d = (G.hintT * 500) % total, i = 0; while (i < segs.length - 1 && d > segs[i]) { d -= segs[i]; i++; }
+      const f = segs[i] ? d / segs[i] : 0, x = p[i][0] + (p[i + 1][0] - p[i][0]) * f, y = p[i][1] + (p[i + 1][1] - p[i][1]) * f;
+      c.globalAlpha = 1; c.fillStyle = '#fff'; c.beginPath(); c.arc(x, y, 9, 0, Math.PI * 2); c.fill(); c.fillStyle = col; c.beginPath(); c.arc(x, y, 6, 0, Math.PI * 2); c.fill();
+    }
+    // start marker
+    c.globalAlpha = 1; c.fillStyle = '#d9a441'; c.beginPath(); c.arc(p[0][0], p[0][1], 11, 0, Math.PI * 2); c.fill();
+  }
+  // ripples: two rings spreading from every drop, fading as they go
+  if (G.ripples.length) {
+    c.setLineDash([]);
+    for (const rp of G.ripples) { const f = rp.t / 0.7; c.globalAlpha = (1 - f) * 0.55; c.lineWidth = 3 - f * 2; c.strokeStyle = 'rgba(255,255,255,0.9)'; c.beginPath(); c.arc(rp.x, rp.y, rp.r + 6 + f * 70, 0, Math.PI * 2); c.stroke(); c.globalAlpha = (1 - f) * 0.3; c.beginPath(); c.arc(rp.x, rp.y, rp.r + 2 + f * 40, 0, Math.PI * 2); c.stroke(); }
+    c.globalAlpha = 1;
+  }
+  // cursor
+  if (G.hover && G.state === 'play' && !G.paused && !isPhone) {
+    const h = G.hover; c.globalAlpha = 0.9; c.setLineDash([]); c.lineWidth = 2.5; c.strokeStyle = 'rgba(255,255,255,0.9)';
+    if (G.tool === 'brush' || G.tool === 'big') { const r = tools()[G.tool].r; c.beginPath(); c.arc(h.x, h.y, r, 0, Math.PI * 2); c.stroke(); c.strokeStyle = PAL[G.colour].hex; c.lineWidth = 2; c.beginPath(); c.arc(h.x, h.y, r - 4, 0, Math.PI * 2); c.stroke(); }
+    else if (G.tool === 'biz') { c.beginPath(); c.arc(h.x, h.y, 7, 0, Math.PI * 2); c.stroke(); }
+    else { const [dx, dy] = G.lastDir, nx = -dy, ny = dx, K = (TOOL.tarak.teeth - 1) / 2; c.fillStyle = 'rgba(255,255,255,0.85)'; for (let k = -K; k <= K; k++) { c.beginPath(); c.arc(h.x + nx * k * TOOL.tarak.spacing, h.y + ny * k * TOOL.tarak.spacing, 4, 0, Math.PI * 2); c.fill(); } }
+  }
+  c.restore(); ovTex.needsUpdate = true;
+}
+
+// ---------------------------------------------------------------------------
+// Strokes (shared by player and bot)
+// ---------------------------------------------------------------------------
+function allowedTools() { return G.free ? ['brush', 'biz', 'tarak', 'big'] : G.L.tools; }
+function usedColours() { const s = new Set(); for (const st of G.strokes) if (st.c !== undefined) s.add(st.c); if (G.stroke && G.stroke.c !== undefined) s.add(G.stroke.c); return [...s]; }
+function allowedColours() { return G.free ? PAL.map((_, i) => i) : G.L.colours; }
+function startStroke(x, y) {
+  if (G.state !== 'play' || G.paused || G.stroke) return;
+  x = clampS(x, 2, SW - 2); y = clampS(y, 2, SH - 2);
+  G.undo.push({ snap: G.sim.snapshot(), strokes: G.strokes.slice() }); if (G.undo.length > 12) G.undo.shift();
+  G.stroke = { k: G.tool, c: G.colour, p: [[x, y]] }; G.runner = new StrokeRunner(G.sim, tools());
+  const ev = G.runner.begin(G.stroke, x, y); for (const e of ev) { sfxDrip(e.r); addRipple(e.x, e.y, e.r); }
+  if (G.tool === 'biz' || G.tool === 'tarak') swishStart();
+  G.dirtyTex = true; G.pressing = true;
+  if (G.coach) hideCoach();
+}
+function moveStroke(x, y) {
+  if (!G.stroke) return;
+  x = clampS(x, 2, SW - 2); y = clampS(y, 2, SH - 2);
+  const last = G.stroke.p[G.stroke.p.length - 1]; const dx = x - last[0], dy = y - last[1], d = Math.hypot(dx, dy);
+  if (d < 0.5) return;
+  if (d > 1) G.lastDir = [dx / d, dy / d];
+  G.stroke.p.push([x, y]); const before = G.runner.s.n; const ev = G.runner.move(x, y);
+  for (const e of ev) { sfxDrip(e.r); addRipple(e.x, e.y, e.r); }
+  if (G.runner.s.n !== before) { G.dirtyTex = true; G.matchDirty = true; }
+  if (AUD.swish) swishLevel(d * 60, G.tool === 'tarak');
+}
+function endStroke() {
+  if (!G.stroke) return;
+  G.runner.end(); swishStop(); G.strokes.push(G.stroke); G.stroke = null; G.pressing = false;
+  G.dirtyTex = true; G.matchDirty = true;
+  if (G.hint !== null) { G.hint = null; clearPulse(); }
+  redrawOverlay(); updateHud();
+}
+function undo() {
+  if (G.stroke) return;
+  if (!G.undo.length) { toast(t('undoNone')); return; }
+  const u = G.undo.pop(); G.sim.restore(u.snap); G.strokes = u.strokes; G.dirtyTex = true; G.matchDirty = true; sfxClick(); updateHud();
+}
+function resetTray() {
+  if (G.stroke) return;
+  G.undo.push({ snap: G.sim.snapshot(), strokes: G.strokes.slice() }); if (G.undo.length > 12) G.undo.shift();
+  G.sim.clear(); G.strokes = []; G.dirtyTex = true; G.matchDirty = true; G.match = 0; toast(t('resetToast')); sfxPaper(false); updateHud();
+}
+function setTool(k, silent) {
+  if (!allowedTools().includes(k)) { if (!silent) toast(t('toolLocked'), 'bad'); return; }
+  G.tool = k; for (const b of document.querySelectorAll('#toolGrp .tbtn')) b.classList.toggle('sel', b.dataset.tool === k);
+  if (!silent) { sfxClick(); toast(t(k)); }
+  redrawOverlay();
+}
+function setColour(i, silent) {
+  if (!allowedColours().includes(i)) { if (!silent) toast(t('colourLocked'), 'bad'); return; }
+  G.colour = i; for (const b of document.querySelectorAll('#swatches .sw')) b.classList.toggle('sel', +b.dataset.c === i);
+  toolMeshes.big.userData.paint.material.color.set(PAL[i].hex); bristle.color.set(PAL[i].hex).multiplyScalar(0.7);
+  if (!silent) sfxClick();
+  redrawOverlay();
+}
+// ghost of recipe stroke `idx` on the water plus pulsing tool / colour buttons; `coached` is the free first-stroke
+// ghost of lessons 1-3, which does not count as a hint for the master's seal
+function setHint(idx, coached) {
+  G.hint = idx; G.hintT = 0; const st = G.L.strokes[idx];
+  clearPulse();
+  const tb = document.querySelector(`#toolGrp .tbtn[data-tool="${st.k}"]`); if (tb) tb.classList.add('pulse');
+  if (st.c !== undefined) { const sb = document.querySelector(`#swatches .sw[data-c="${st.c}"]`); if (sb) sb.classList.add('pulse'); }
+  if (!coached) { G.hintUsed = true; toast(t('hintToast')); sfxClick(); }
+  redrawOverlay();
+}
+function showHint() {
+  if (G.free || !G.L || G.state !== 'play') return;
+  const idx = G.strokes.length;
+  if (idx >= G.L.strokes.length) { toast(t('hintDone'), 'info'); G.hint = null; clearPulse(); return; }
+  if (G.hint === idx) { G.hint = null; clearPulse(); redrawOverlay(); return; }
+  setHint(idx, false);
+}
+function clearPulse() { for (const b of document.querySelectorAll('.pulse')) b.classList.remove('pulse'); if (G.tier >= 1 && G.state === 'play' && !G.free && G.L && G.L.index < 3) $('bLay').classList.add('pulse'); }
+
+// v2: the master's note as a card over the tray; it fades at the first stroke or on "Got it"
+function showCoach(fresh = true) {
+  const L = G.L; if (!L) return;
+  $('coTitle').textContent = `${t('lessonN', { n: L.index + 1 })}: ${L.name[SET.lang]}`;
+  $('coNote').innerHTML = `<b>${t('usta')}:</b> ${L.note[SET.lang]}`;
+  $('coChips').innerHTML = L.tools.map(k => `<span class="chip"><i data-icon="${k === 'biz' ? 'awl' : k === 'tarak' ? 'comb' : k === 'big' ? 'drop' : 'brush'}"></i>${t(k)}</span>`).join('') +
+    `<span class="chip">${ICON.star.replace('<svg', '<svg style="width:14px;height:14px;fill:#d9a441"')}${t('star1')} · ${t('star2')} · ${t('parN', { n: L.par })}</span>`;
+  $('coTip').textContent = L.index < 3 ? t('coachGhost') : t('coachTip');
+  fillIcons($('coChips'));
+  const c = $('coach'); c.hidden = false; c.classList.remove('out'); G.coach = true;
+  if (fresh) $('bCoachOk').focus();
+}
+function hideCoach() { if (!G.coach) return; G.coach = false; const c = $('coach'); c.classList.add('out'); setTimeout(() => { if (!G.coach) c.hidden = true; }, 500); }
+
+// ---------------------------------------------------------------------------
+// Laying the paper
+// ---------------------------------------------------------------------------
+function layPaper() {
+  if (G.state !== 'play' || G.paused || G.stroke) return;
+  if (!G.sim.polys.length) { toast(t('emptyTray'), 'bad'); return; }
+  G.state = 'laying'; G.lay = { t: 0, captured: false }; G.hint = null; clearPulse(); $('bLay').classList.remove('pulse'); hideCoach(); $('crit').hidden = true; redrawOverlay();
+  setSheetMap(paperTex); sheet.visible = true; sheet.position.set(0, TRAY_Y + 0.5, 0); sheet.rotation.set(-Math.PI / 2, 0, 0);
+  sfxPaper(false); toast(t('laid'));
+}
+function captureSheet() {
+  if (G.dirtyTex) redrawTray();
+  const m = G.free ? 0 : computeMatch();
+  if (G.dirtyTex) redrawTray();
+  const cp = paintToCanvas(512, 384);
+  G.sheetCanvas = cp;
+  const tex = new THREE.CanvasTexture(cp); tex.colorSpace = THREE.SRGBColorSpace;
+  setSheetMap(tex);
+  G.sim.clear(); G.dirtyTex = true; G.lastResult = { match: m, strokes: G.strokes.length, crit: G.crit.slice(), hintUsed: G.hintUsed };
+  setHangingTexture(G.hangSlot++ % 3, cp);
+  sfxPaper(true);
+}
+// v2: bind a sheet into a book cover (2D composite: leather spine and corners, the sheet as the board paper, a title strip)
+function bindCover(src, w = 400, h = 300) {
+  const can = document.createElement('canvas'); can.width = w; can.height = h; const x = can.getContext('2d');
+  const sp = Math.round(w * 0.16), m = Math.round(w * 0.025);
+  x.fillStyle = '#4a2a1a'; x.fillRect(0, 0, w, h); // leather
+  const lg = x.createLinearGradient(0, 0, sp, 0); lg.addColorStop(0, '#3a2014'); lg.addColorStop(0.5, '#5a3320'); lg.addColorStop(1, '#3a2014'); x.fillStyle = lg; x.fillRect(0, 0, sp, h);
+  x.strokeStyle = 'rgba(217,164,65,.85)'; x.lineWidth = 2; for (const yy of [h * 0.12, h * 0.2, h * 0.8, h * 0.88]) { x.beginPath(); x.moveTo(sp * 0.2, yy); x.lineTo(sp * 0.8, yy); x.stroke(); }
+  // the marbled board
+  x.save(); x.beginPath(); x.rect(sp + m, m, w - sp - 2 * m, h - 2 * m); x.clip(); x.drawImage(src, sp + m, m, w - sp - 2 * m, h - 2 * m); x.restore();
+  x.strokeStyle = 'rgba(0,0,0,.35)'; x.lineWidth = 3; x.strokeRect(sp + m + 1.5, m + 1.5, w - sp - 2 * m - 3, h - 2 * m - 3);
+  // leather corners
+  const cs = Math.round(w * 0.11); x.fillStyle = '#4a2a1a';
+  for (const [cx, cy, dx, dy] of [[w, 0, -1, 1], [w, h, -1, -1]]) { x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + dx * cs, cy); x.lineTo(cx, cy + dy * cs); x.closePath(); x.fill(); x.strokeStyle = 'rgba(217,164,65,.7)'; x.lineWidth = 1.5; x.beginPath(); x.moveTo(cx + dx * cs, cy); x.lineTo(cx, cy + dy * cs); x.stroke(); }
+  // title strip
+  const tw = w * 0.34, th = h * 0.13, tx = sp + (w - sp - tw) / 2, ty = h * 0.3;
+  x.fillStyle = '#efe6d2'; x.fillRect(tx, ty, tw, th); x.strokeStyle = '#b5452c'; x.lineWidth = 2; x.strokeRect(tx + 3, ty + 3, tw - 6, th - 6);
+  x.fillStyle = '#b5452c'; x.font = `italic ${Math.round(th * 0.5)}px Georgia, serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('Ebru', tx + tw / 2, ty + th / 2 + 1);
+  // soft highlight along the hinge
+  const hg = x.createLinearGradient(sp, 0, sp + m * 3, 0); hg.addColorStop(0, 'rgba(0,0,0,.35)'); hg.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = hg; x.fillRect(sp, 0, m * 3, h);
+  return can;
+}
+function pushGallery(canvas, bound) { // keep the plain JPEG; the cover is recomposed when shown
+  const th = document.createElement('canvas'); th.width = 256; th.height = 192; th.getContext('2d').drawImage(canvas, 0, 0, 256, 192);
+  let full = false; GALLERY.push(th.toDataURL('image/jpeg', 0.82)); BOUND.push(bound ? 1 : 0);
+  while (GALLERY.length > 12) { GALLERY.shift(); BOUND.shift(); full = true; }
+  saveGallery(); G.lastSaved = GALLERY.length - 1; return full;
+}
+// the paper is not a board: it bows while it falls and bellies while it is peeled off the water
+function bendSheet(amount) {
+  const p = sheet.geometry.attributes.position, a = p.array;
+  for (let i = 0; i < p.count; i++) { const u = sheetBase[i * 3] / TRAY_W + 0.5; a[i * 3 + 2] = sheetBase[i * 3 + 2] + amount * Math.sin(u * Math.PI); }
+  p.needsUpdate = true; sheet.geometry.computeVertexNormals();
+}
+function stepLay(dt) {
+  const L = G.lay; L.t += dt; const tt = L.t;
+  if (tt < 0.7) { const f = tt / 0.7, e = 1 - (1 - f) * (1 - f); sheet.position.y = TRAY_Y + 0.5 * (1 - e) + 0.003; sheet.rotation.set(-Math.PI / 2 + 0.25 * (1 - e), 0, 0); bendSheet(0.04 * (1 - e)); }
+  else if (!L.captured) { L.captured = true; captureSheet(); sheet.position.y = TRAY_Y + 0.003; bendSheet(0); }
+  else if (tt < 1.0) { /* rest on the water */ }
+  else if (tt < 2.2) {
+    const f = (tt - 1.0) / 1.2, e = f * f * (3 - 2 * f); bendSheet(0.07 * Math.sin(f * Math.PI));
+    const toward = CAM.portrait ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 0, 1);
+    sheet.position.copy(trayCentre).addScaledVector(toward, 0.12 * e); sheet.position.y = TRAY_Y + 0.003 + 0.42 * e;
+    if (CAM.portrait) sheet.rotation.set(-Math.PI / 2, 0, -0.9 * e); else sheet.rotation.set(-Math.PI / 2 + 0.9 * e, 0, 0);
+  } else { sheet.visible = false; G.lay = null; finishSheet(); }
+}
+function finishSheet() {
+  if (G.free) {
+    const full = pushGallery(G.sheetCanvas, false);
+    toast(full ? t('galFull') : t('saved'), 'good'); sfxChime(true);
+    G.strokes = []; G.undo = []; G.state = 'play'; updateHud();
+    // "Bind it" for the sheet just saved: the tray button pulses for a while
+    const b = $('bBindFree'); b.hidden = false; b.classList.add('pulse'); clearTimeout(finishSheet.t); finishSheet.t = setTimeout(() => b.classList.remove('pulse'), 8000);
+    return;
+  }
+  const r = G.lastResult, L = G.L, pct = Math.round(r.match * 100);
+  const solved = r.match >= 0.8; const stars = solved ? 1 + (r.match >= 0.9 ? 1 : 0) + (r.strokes <= L.par ? 1 : 0) : 0;
+  const prev = PROG.stars[L.index] || 0; const record = stars > prev;
+  if (record) { PROG.stars[L.index] = stars; }
+  if (solved) PROG.cur = Math.max(PROG.cur || 0, Math.min(17, L.index + 1));
+  // the master's seal: solved at 90 % or better, within par, without a hint (stars are unchanged by it)
+  const seal = solved && r.match >= 0.9 && r.strokes <= L.par && !r.hintUsed, newSeal = seal && !PROG.seals[L.index];
+  if (seal) PROG.seals[L.index] = 1;
+  saveProg(); const total = LESSONS.reduce((a, _, i) => a + (PROG.stars[i] || 0), 0); if (total > (BEST.stars || 0)) { BEST.stars = total; store('best', BEST); }
+  r.stars = stars; r.solved = solved; r.record = record; r.seal = seal;
+  sfxChime(solved);
+  $('rTitle').textContent = solved ? t('solved') : t('notYet');
+  $('rStars').innerHTML = [0, 1, 2].map(i => ICON.star.replace('<svg', `<svg class="${i < stars ? 'on' : ''}"`)).join('');
+  $('rRec').hidden = !(record && solved); $('rRec').textContent = t('newRecord');
+  showResultSheet(false); $('rTarget').getContext('2d').drawImage(buildTarget(L).can, 0, 0, 400, 300);
+  $('rKv').innerHTML = `<div><b>${pct}%</b><span>${t('matchLbl')}</span></div><div><b>${r.strokes}/${L.par}</b><span>${t('strokesLbl')} · ${t('par')}</span></div><div><b>${stars}/3</b><span>${t('starsLbl')}</span></div>`;
+  // critique: the worst two deviations, on a failed sheet or when the seal was missed on match
+  const crit = r.crit || []; $('rCrit').hidden = solved && (r.match >= 0.9 || !crit.length);
+  $('rCrit').innerHTML = (solved ? '' : `${t('needMatch')}. `) + (crit.length ? `<b>${t('critTitle')}:</b> ` + crit.map(critText).join(' · ') : '');
+  $('rSealRow').innerHTML = `<span class="sealchip${seal ? '' : ' off'}"><span class="seal">${ICON.seal}</span>${seal ? t('sealEarned') : t('sealHow')}</span>` + (newSeal ? ` <span class="rec">${t('rankLine', { r: t('rank' + rankIndex()), n: sealCount() })}</span>` : '');
+  $('rFact').innerHTML = `<b>${t('didYouKnow')}</b> ${window.EBRU_FACTS[L.index % window.EBRU_FACTS.length][SET.lang]}`;
+  // the kitten: cheering at three stars, thinking on "Not yet"
+  const cat = $('rCat'); cat.hidden = true;
+  if (!FLAG.noassets && (stars === 3 || !solved)) {
+    cat.onload = () => { cat.hidden = false; }; cat.onerror = () => { cat.hidden = true; };
+    cat.src = stars === 3 ? MASCOT_SRC.cheer : MASCOT_SRC.think; if (cat.complete && cat.naturalWidth) cat.hidden = false;
+  }
+  $('bBind').hidden = false; r.bound = false; $('bBind').querySelector('span').textContent = t('bind');
+  $('bNext').hidden = !solved; $('bNext').querySelector('span').textContent = L.index === 17 ? t('endTitle') : t('next');
+  G.state = 'result'; showOverlay('result'); $(solved ? 'bNext' : 'bRetry').focus();
+}
+function showResultSheet(bound) {
+  const x = $('rSheet').getContext('2d'); x.clearRect(0, 0, 400, 300);
+  x.drawImage(bound ? bindCover(G.sheetCanvas, 400, 300) : G.sheetCanvas, 0, 0, 400, 300);
+  $('rSheetCap').textContent = bound ? t('cover') : t('finished');
+}
+// "Bind it" on the result card: shows the cover and saves the sheet to the gallery as a bound sheet (once)
+function bindResult() {
+  const r = G.lastResult; if (!r || !G.sheetCanvas) return;
+  r.bound = !r.bound; showResultSheet(r.bound); sfxPaper(r.bound);
+  if (r.bound && r.galIdx === undefined) { pushGallery(G.sheetCanvas, true); r.galIdx = G.lastSaved; toast(t('bound'), 'good'); }
+  else if (r.galIdx !== undefined && BOUND[r.galIdx] !== undefined) { BOUND[r.galIdx] = r.bound ? 1 : 0; saveGallery(); }
+  $('bBind').querySelector('span').textContent = r.bound ? t('unbind') : t('bind');
+}
+function sealCount() { let n = 0; for (let i = 0; i < 18; i++) if (PROG.seals[i]) n++; return n; }
+function rankIndex() { const n = sealCount(); return n >= 12 ? 2 : n >= 6 ? 1 : 0; }
+function rankHtml() { return `<span class="seal">${ICON.seal}</span>${t('rankLine', { r: t('rank' + rankIndex()), n: sealCount() })}`; }
+
+// ---------------------------------------------------------------------------
+// Screens
+// ---------------------------------------------------------------------------
+const OVERLAYS = ['title', 'map', 'pause', 'settings', 'result', 'gallery', 'ending'];
+function showOverlay(id) { for (const o of OVERLAYS) $(o).hidden = o !== id; if (id) { const b = $(id).querySelector('button:not([hidden]):not(:disabled)'); if (b) b.focus(); } }
+function hudVisible(v) { $('hud').hidden = !v; $('tools').hidden = !v; $('preview').hidden = !v || G.free; if (!v) { hideCoach(); $('crit').hidden = true; } fitCamera(); }
+function goTitle() {
+  G.state = 'title'; G.paused = false; G.free = false; G.L = null; G.stroke = null; G.hint = null; clearPulse();
+  hudVisible(false); showOverlay('title'); refreshTitle(); redrawOverlay();
+}
+function refreshTitle() {
+  const solvedN = LESSONS.filter((_, i) => (PROG.stars[i] || 0) > 0).length, total = LESSONS.reduce((a, _, i) => a + (PROG.stars[i] || 0), 0);
+  $('bestLine').textContent = solvedN ? t('bestLine', { s: total, n: solvedN }) : t('bestNone');
+  const next = firstUnsolved();
+  $('contInfo').textContent = solvedN > 0 && next < 18 ? t('contInfo', { n: next + 1 }) : '';
+  $('bLessons').hidden = solvedN === 0;
+  $('rankLine').innerHTML = rankHtml();
+  $('bLang2').textContent = SET.lang === 'tr' ? 'English' : 'Türkçe';
+}
+function firstUnsolved() { for (let i = 0; i < 18; i++) if (!(PROG.stars[i] > 0)) return i; return 18; }
+// Play: straight into the first unsolved lesson (the map when all eighteen are solved)
+function playNext() { const n = firstUnsolved(); if (n < 18) startLesson(n); else openMap(); }
+function openMap() {
+  if (G.stroke) return;
+  G.state = 'map'; G.paused = false; hudVisible(false); buildMap(); showOverlay('map');
+}
+function buildMap() {
+  const wrap = $('chcards'); wrap.innerHTML = '';
+  const total = LESSONS.reduce((a, _, i) => a + (PROG.stars[i] || 0), 0);
+  $('mapStars').innerHTML = `<b style="font-size:14px;margin-right:4px">${total}/54</b>` + ICON.star.replace('<svg', '<svg class="on"') + `<b style="font-size:14px;margin:0 4px 0 12px">${sealCount()}/18</b><span class="seal">${ICON.seal}</span>`;
+  const next = firstUnsolved();
+  CHAPTERS.forEach((ch, ci) => {
+    const unlockedCh = ch.from === 0 || (PROG.stars[ch.from - 1] || 0) > 0;
+    const card = document.createElement('div'); card.className = 'chc' + (unlockedCh ? '' : ' locked');
+    card.innerHTML = `<h3 class="serif">${ci + 1}. ${t('chapter')}: ${t(ch.k)}</h3><p>${t(ch.k + 'd')}</p>`;
+    const grid = document.createElement('div'); grid.className = 'lsn6';
+    for (let i = ch.from; i < ch.from + 6; i++) {
+      const L = LESSONS[i], st = PROG.stars[i] || 0, unlocked = i === 0 || (PROG.stars[i - 1] || 0) > 0;
+      const b = document.createElement('button'); b.disabled = !unlocked; b.className = st ? 'done' : i === next ? 'next' : '';
+      b.innerHTML = `<small>${i + 1}</small>${L.name[SET.lang]}<span class="stars">${[0, 1, 2].map(k => ICON.star.replace('<svg', `<svg class="${k < st ? 'on' : ''}"`)).join('')}</span>` + (PROG.seals[i] ? `<span class="seal" title="${t('seal')}">${ICON.seal}</span>` : '');
+      if (!unlocked) b.setAttribute('aria-label', t('locked'));
+      b.addEventListener('click', () => { sfxClick(); startLesson(i); });
+      grid.appendChild(b);
+    }
+    card.appendChild(grid); wrap.appendChild(card);
+  });
+}
+// a lesson starts straight in play (v2): the master's note is a card over the tray, lessons 1-3 show the first stroke's ghost
+function startLesson(i) {
+  G.lesson = i; G.L = LESSONS[i]; G.free = false;
+  beginPlay(); showCoach();
+  if (i < 3) setHint(0, true);
+}
+function beginPlay() {
+  const L = G.L; G.state = 'play'; G.paused = false;
+  G.sim.clear(); G.strokes = []; G.undo = []; G.stroke = null; G.hint = null; G.match = 0; G.matchDirty = false; G.dirtyTex = true; G.tier = 0; G.hintUsed = false; G.crit = []; clearPulse();
+  $('bLay').classList.remove('pulse'); hideCoach();
+  buildSwatches(); setTool(L.tools[0], true); setColour(L.colours[0], true);
+  $('hLesson').textContent = `${L.index + 1}. ${L.name[SET.lang]}`; $('hMatchWrap').hidden = false; $('hStars').hidden = false; $('bGallery').hidden = true; $('bBindFree').hidden = true; $('segThick').hidden = true; $('bHint').hidden = false;
+  drawPreview();
+  showOverlay(null); hudVisible(true); updateHud(); redrawOverlay(); canvas.focus();
+  if (L.index > 0) {
+    const prev = LESSONS[L.index - 1];
+    for (const k of L.tools) if (!prev.tools.includes(k)) toast(t('newTool', { n: t(k) }), 'good');
+    for (const c of L.colours) if (!prev.colours.includes(c)) toast(t('newColour', { n: PAL[c][SET.lang] }), 'good');
+  }
+}
+function beginFree() {
+  G.free = true; G.L = null; G.state = 'play'; G.paused = false;
+  G.sim.clear(); G.strokes = []; G.undo = []; G.stroke = null; G.hint = null; G.dirtyTex = true; G.crit = []; clearPulse(); hideCoach();
+  buildSwatches(); setTool('brush', true); setColour(0, true); setThick(G.thick, true);
+  $('hLesson').textContent = t('freeTitle'); $('hMatchWrap').hidden = true; $('hStars').hidden = true; $('bGallery').hidden = false; $('bBindFree').hidden = true; $('segThick').hidden = false; $('bHint').hidden = true;
+  showOverlay(null); hudVisible(true); updateHud(); redrawOverlay(); canvas.focus(); toast(t('freeHow'));
+}
+function setThick(i, silent) {
+  G.thick = i; for (const b of $('segThick').children) b.classList.toggle('on', +b.dataset.v === i);
+  if (!silent) { sfxClick(); toast(t('thickToast', { n: t(['thin', 'medium', 'thick'][i]) })); }
+  redrawOverlay();
+}
+// bind the sheet just saved from the free tray (toggle)
+function bindLastFree() {
+  const i = G.lastSaved; if (i < 0 || !GALLERY[i]) return;
+  BOUND[i] = BOUND[i] ? 0 : 1; saveGallery(); sfxPaper(true); $('bBindFree').classList.remove('pulse');
+  toast(BOUND[i] ? t('bound') : t('saved'), 'good');
+}
+// the target thumbnail in the HUD; drawn rotated in portrait, where the camera looks at the tray from its short side
+function drawPreview() {
+  if (!G.L) return; const c = $('tgtPrev'), tg = buildTarget(G.L);
+  if (CAM.portrait) { c.width = 150; c.height = 200; const x = c.getContext('2d'); x.save(); x.translate(150, 0); x.rotate(Math.PI / 2); x.drawImage(tg.can, 0, 0, 200, 150); x.restore(); }
+  else { c.width = 200; c.height = 150; c.getContext('2d').drawImage(tg.can, 0, 0, 200, 150); }
+}
+CAM.onPortrait = () => drawPreview();
+function buildSwatches() {
+  const w = $('swatches'); w.innerHTML = '';
+  const allowed = allowedColours();
+  for (const i of allowed) {
+    const b = document.createElement('button'); b.className = 'sw'; b.dataset.c = i; b.style.background = PAL[i].hex; b.title = PAL[i][SET.lang]; b.setAttribute('aria-label', PAL[i][SET.lang]);
+    b.addEventListener('click', () => setColour(i)); w.appendChild(b);
+  }
+  for (const b of document.querySelectorAll('#toolGrp .tbtn')) { const ok = allowedTools().includes(b.dataset.tool); b.disabled = !ok; b.title = t(b.dataset.tool); b.setAttribute('aria-label', t(b.dataset.tool)); }
+}
+function updateHud() {
+  if (G.state !== 'play' && G.state !== 'laying') return;
+  $('hStrokes').textContent = G.free ? String(G.strokes.length) : `${G.strokes.length}/${G.L.par}`;
+  if (!G.free) {
+    const pct = Math.round(G.match * 100); $('hMatch').textContent = pct + '%'; $('hMatchBar').style.width = pct + '%'; $('hMatchWrap').classList.toggle('ok', G.match >= 0.8);
+    const s = G.match >= 0.8 ? 1 + (G.match >= 0.9 ? 1 : 0) + (G.strokes.length <= G.L.par ? 1 : 0) : 0;
+    $('hStars').innerHTML = [0, 1, 2].map(i => ICON.star.replace('<svg', `<svg class="${i < s ? 'on' : ''}"`)).join('');
+    // the live critique line: the worst deviation, or the master's nod from 90 % up
+    const c = $('crit'), d = G.crit[0], show = G.state === 'play' && G.strokes.length > 0 && (d || G.match >= 0.9);
+    c.hidden = !show; if (show) { c.textContent = G.match >= 0.9 || !d ? t('critGood') : critText(d); c.classList.toggle('good', G.match >= 0.9 || !d); c.style.bottom = `calc(${$('tools').offsetHeight + 16}px + var(--sa-b))`; }
+  }
+  $('bUndo').disabled = !G.undo.length;
+}
+function togglePause(force) {
+  if (G.state !== 'play') return;
+  const to = force === undefined ? !G.paused : force; if (to === G.paused) return;
+  G.paused = to; if (G.paused) { if (G.stroke) endStroke(); swishStop(); showOverlay('pause'); } else showOverlay(null);
+  sfxClick();
+}
+function openSettings(from) {
+  G.settingsFrom = from; $('sMaster').value = SET.master; $('sMusic').value = SET.music; $('sSfx').value = SET.sfx;
+  for (const b of $('segLang').children) b.classList.toggle('on', b.dataset.v === SET.lang);
+  for (const b of $('segQ').children) b.classList.toggle('on', b.dataset.v === SET.quality);
+  showOverlay('settings');
+}
+function closeSettings() { saveSettings(); showOverlay(G.settingsFrom === 'pause' ? 'pause' : 'title'); if (G.settingsFrom === 'title') refreshTitle(); }
+function openGallery(from) {
+  G.galleryFrom = from; const grid = $('galGrid'); grid.innerHTML = '';
+  $('galEmpty').hidden = GALLERY.length > 0; $('galCount').textContent = t('galCount', { n: GALLERY.length });
+  GALLERY.slice().reverse().forEach((src, ri) => {
+    const idx = GALLERY.length - 1 - ri; const f = document.createElement('figure');
+    const img = document.createElement('img'); img.alt = 'ebru'; f.appendChild(img);
+    if (BOUND[idx]) { const im = new Image(); im.onload = () => { img.src = bindCover(im, 256, 192).toDataURL('image/jpeg', 0.85); }; im.src = src; } else img.src = src;
+    const b = document.createElement('button'); b.innerHTML = ICON.close; b.title = t('delete'); b.setAttribute('aria-label', t('delete'));
+    b.addEventListener('click', () => { GALLERY.splice(idx, 1); BOUND.splice(idx, 1); saveGallery(); sfxClick(); openGallery(from); }); f.appendChild(b);
+    const bb = document.createElement('button'); bb.className = 'bind' + (BOUND[idx] ? ' on' : ''); bb.innerHTML = ICON.bind; bb.title = t(BOUND[idx] ? 'unbind' : 'bind'); bb.setAttribute('aria-label', bb.title);
+    bb.addEventListener('click', () => { BOUND[idx] = BOUND[idx] ? 0 : 1; saveGallery(); sfxPaper(true); openGallery(from); }); f.appendChild(bb);
+    grid.appendChild(f);
+  });
+  showOverlay('gallery');
+}
+function closeGallery() { if (G.galleryFrom === 'play') { showOverlay(null); } else showOverlay('title'); }
+function showEnding() {
+  G.state = 'ending'; hudVisible(false); const total = LESSONS.reduce((a, _, i) => a + (PROG.stars[i] || 0), 0);
+  $('eKv').innerHTML = `<div><b>${total}/54</b><span>${t('starsLbl')}</span></div><div><b>18/18</b><span>${t('lessons')}</span></div><div><b>${sealCount()}/18</b><span>${t('seal')}</span></div>`;
+  $('eRank').innerHTML = rankHtml();
+  showOverlay('ending'); sfxChime(true);
+}
+
+// ---------------------------------------------------------------------------
+// Toasts, texts, icons, settings
+// ---------------------------------------------------------------------------
+function toast(msg, kind = 'info') {
+  const wrap = $('toasts'); const d = document.createElement('div'); d.className = 'toast glass ' + kind; d.textContent = msg; wrap.appendChild(d);
+  while (wrap.children.length > 4) wrap.firstChild.remove();
+  setTimeout(() => { d.classList.add('out'); setTimeout(() => d.remove(), 320); }, 2400);
+}
+function fillIcons(root = document) { for (const el of root.querySelectorAll('i[data-icon]')) if (!el.firstChild) el.innerHTML = ICON[el.dataset.icon] || ''; }
+function applyTexts() {
+  document.documentElement.lang = SET.lang;
+  for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
+  for (const el of document.querySelectorAll('[data-tt]')) { el.title = t(el.dataset.tt); el.setAttribute('aria-label', t(el.dataset.tt)); }
+  $('bLang').textContent = SET.lang.toUpperCase(); $('bLang2').textContent = SET.lang === 'tr' ? 'English' : 'Türkçe';
+  for (const b of document.querySelectorAll('#toolGrp .tbtn')) { b.title = t(b.dataset.tool); b.setAttribute('aria-label', t(b.dataset.tool)); }
+  for (const b of document.querySelectorAll('#swatches .sw')) { const nm = PAL[+b.dataset.c][SET.lang]; b.title = nm; b.setAttribute('aria-label', nm); }
+  if (G.L && (G.state === 'play' || G.state === 'laying')) $('hLesson').textContent = `${G.L.index + 1}. ${G.L.name[SET.lang]}`;
+  if (G.free && G.state === 'play') $('hLesson').textContent = t('freeTitle');
+  if (G.state === 'map') buildMap(); if (G.state === 'title') refreshTitle(); if (G.coach) showCoach(false);
+  if (G.state === 'play') updateHud();
+  $('galEmpty').textContent = t('galEmpty');
+  const f = window.EBRU_FACTS[Math.floor(Date.now() / 60000) % window.EBRU_FACTS.length]; $('factLine').innerHTML = `<b>${t('didYouKnow')}</b> ${f[SET.lang]}`;
+  updateSoundIcon();
+}
+function setLang(l) { SET.lang = l; saveSettings(); applyTexts(); for (const b of $('segLang').children) b.classList.toggle('on', b.dataset.v === l); }
+function updateSoundIcon() { const on = SET.musicOn || SET.sfxOn; $('bSound').innerHTML = on ? ICON.sound : ICON.mute; $('bSound').classList.toggle('on', false); }
+function toggleMusic() { SET.musicOn = !SET.musicOn; applyVolumes(); saveSettings(); updateSoundIcon(); toast(t(SET.musicOn ? 'musicOn' : 'musicOff')); if (SET.musicOn && AUD.ctx) { AUD.nextBar = AUD.ctx.currentTime + 0.1; } }
+function toggleSfx() { SET.sfxOn = !SET.sfxOn; applyVolumes(); saveSettings(); updateSoundIcon(); toast(t(SET.sfxOn ? 'sfxOn' : 'sfxOff')); }
+function toggleSound() { const on = !(SET.musicOn || SET.sfxOn); SET.musicOn = on; SET.sfxOn = on; applyVolumes(); saveSettings(); updateSoundIcon(); toast(t(on ? 'soundOn' : 'soundOff')); if (on && AUD.ctx) AUD.nextBar = AUD.ctx.currentTime + 0.1; }
+function setQuality(q) {
+  SET.quality = q; saveSettings();
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, q === 'low' ? 1 : 1.5)); renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = q !== 'low'; sun.castShadow = q !== 'low'; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+  const w = q === 'low' ? 512 : 768; if (paintRT.width !== w) { paintRT.setSize(w, w * 3 / 4); G.dirtyTex = true; }
+  dustGeo.setDrawRange(0, q === 'low' ? Math.floor(DUST_N / 2) : DUST_N);
+  for (const b of $('segQ').children) b.classList.toggle('on', b.dataset.v === q);
+}
+function toggleFullscreen() { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) { /* unsupported */ } }
+
+// ---------------------------------------------------------------------------
+// Input: pointer, wheel, pinch, keyboard
+// ---------------------------------------------------------------------------
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), hitV = new THREE.Vector3();
+function toSim(cx, cy) {
+  ndc.x = cx / innerWidth * 2 - 1; ndc.y = -(cy / innerHeight) * 2 + 1; ray.setFromCamera(ndc, camera);
+  if (!ray.ray.intersectPlane(pickPlane, hitV)) return null;
+  return { x: (hitV.x / TRAY_W + 0.5) * SW, y: (hitV.z / TRAY_H + 0.5) * SH, wx: hitV.x, wz: hitV.z };
+}
+const inTray = (p, m = 0) => p && p.x >= -m && p.x <= SW + m && p.y >= -m && p.y <= SH + m;
+const pointers = new Map(); let strokePointer = null, pinch = null;
+canvas.addEventListener('pointerdown', e => {
+  bootAudio(); canvas.focus();
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) { if (G.stroke) endStroke(); strokePointer = null; const [a, b] = [...pointers.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: CAM.zoom }; return; }
+  if (G.state !== 'play' || G.paused || G.stroke) return;
+  const p = toSim(e.clientX, e.clientY); if (!inTray(p, 40)) return;
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+  strokePointer = e.pointerId; G.hover = p; startStroke(p.x, p.y);
+});
+canvas.addEventListener('pointermove', e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pinch && pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); CAM.zoom = clampS(pinch.z * pinch.d / Math.max(1, d), 0.55, 1.4); fitCamera(); return; }
+  const p = toSim(e.clientX, e.clientY);
+  G.hover = inTray(p, 60) ? p : null;
+  if (G.stroke && e.pointerId === strokePointer && p) moveStroke(p.x, p.y);
+  else if (p && G.state === 'play') { const h = G.hover; if (h && G.lastHover) { const dx = h.x - G.lastHover.x, dy = h.y - G.lastHover.y, d = Math.hypot(dx, dy); if (d > 2) G.lastDir = [dx / d, dy / d]; } G.lastHover = h; redrawOverlay(); }
+});
+function pointerEnd(e) {
+  pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null;
+  if (e.pointerId === strokePointer) { strokePointer = null; endStroke(); }
+}
+canvas.addEventListener('pointerup', pointerEnd); canvas.addEventListener('pointercancel', pointerEnd);
+canvas.addEventListener('pointerleave', () => { if (!G.stroke) { G.hover = null; redrawOverlay(); } });
+canvas.addEventListener('wheel', e => { e.preventDefault(); CAM.zoom = clampS(CAM.zoom * (1 + e.deltaY * 0.0012), 0.55, 1.4); fitCamera(); }, { passive: false });
+addEventListener('keydown', e => {
+  const tag = (e.target && e.target.tagName) || ''; if (tag === 'INPUT') return;
+  const k = e.key.toLowerCase();
+  if (k === 'm') { toggleMusic(); return; } if (k === 'x') { toggleSfx(); return; } if (k === 'l') { setLang(SET.lang === 'tr' ? 'en' : 'tr'); return; }
+  if (k === 'f' && G.state === 'play') { toggleFullscreen(); return; }
+  if (k === 'p' || k === 'escape') {
+    if (G.state === 'play') { togglePause(); e.preventDefault(); }
+    else if (G.state === 'map' || G.state === 'gallery' && G.galleryFrom !== 'play') { if (k === 'escape') goTitle(); }
+    return;
+  }
+  if (G.state !== 'play' || G.paused) return;
+  if (k === '1') setTool('brush'); else if (k === '2') setTool('biz'); else if (k === '3') setTool('tarak'); else if (k === '4') setTool('big');
+  else if (k === 'z') undo(); else if (k === 'r') resetTray(); else if (k === 'h') showHint();
+  else if (k === 'enter' && !(e.target && e.target.tagName === 'BUTTON')) { layPaper(); e.preventDefault(); }
+  else if (k === 'g' && G.free) openGallery('play');
+  else if (k === 't' && G.free) setThick((G.thick + 1) % 3);
+  else if (k === 'b' && G.free) bindLastFree();
+});
+document.addEventListener('visibilitychange', () => { G.hidden = document.hidden; if (document.hidden && G.stroke) endStroke(); });
+
+// buttons
+$('bPlay').addEventListener('click', () => { bootAudio(); sfxClick(); playNext(); });
+$('bLessons').addEventListener('click', () => { bootAudio(); sfxClick(); openMap(); });
+$('bMap').addEventListener('click', () => { sfxClick(); openMap(); });
+$('bPMap').addEventListener('click', () => { sfxClick(); openMap(); });
+$('bCoachOk').addEventListener('click', () => { sfxClick(); hideCoach(); canvas.focus(); });
+$('bBind').addEventListener('click', () => { sfxClick(); bindResult(); });
+$('bBindFree').addEventListener('click', () => { sfxClick(); bindLastFree(); });
+for (const b of $('segThick').children) b.addEventListener('click', () => setThick(+b.dataset.v));
+$('bFree').addEventListener('click', () => { bootAudio(); sfxClick(); beginFree(); });
+$('bMapFree').addEventListener('click', () => { sfxClick(); beginFree(); });
+$('bEFree').addEventListener('click', () => { sfxClick(); beginFree(); });
+$('bGal2').addEventListener('click', () => { bootAudio(); sfxClick(); openGallery('title'); });
+$('bGallery').addEventListener('click', () => { sfxClick(); openGallery('play'); });
+$('bGalBack').addEventListener('click', () => { sfxClick(); closeGallery(); });
+$('bSettings').addEventListener('click', () => { bootAudio(); sfxClick(); openSettings('title'); });
+$('bPSettings').addEventListener('click', () => { sfxClick(); openSettings('pause'); });
+$('bSetBack').addEventListener('click', () => { sfxClick(); closeSettings(); });
+$('bLang2').addEventListener('click', () => { setLang(SET.lang === 'tr' ? 'en' : 'tr'); });
+$('bLang').addEventListener('click', () => { setLang(SET.lang === 'tr' ? 'en' : 'tr'); });
+$('bMapBack').addEventListener('click', () => { sfxClick(); goTitle(); });
+$('bResume').addEventListener('click', () => togglePause(false));
+$('bRestart').addEventListener('click', () => { sfxClick(); if (G.free) beginFree(); else beginPlay(); });
+$('bPMenu').addEventListener('click', () => { sfxClick(); goTitle(); });
+$('bEMenu').addEventListener('click', () => { sfxClick(); goTitle(); });
+$('bRMap').addEventListener('click', () => { sfxClick(); openMap(); });
+$('bRetry').addEventListener('click', () => { sfxClick(); beginPlay(); });
+$('bNext').addEventListener('click', () => { sfxClick(); if (G.L.index === 17) { if (firstUnsolved() >= 18) showEnding(); else openMap(); } else startLesson(G.L.index + 1); });
+$('bHint').addEventListener('click', showHint); $('bUndo').addEventListener('click', undo); $('bReset').addEventListener('click', resetTray);
+$('bPause').addEventListener('click', () => togglePause()); $('bSound').addEventListener('click', toggleSound); $('bLay').addEventListener('click', layPaper);
+for (const b of document.querySelectorAll('#toolGrp .tbtn')) b.addEventListener('click', () => setTool(b.dataset.tool));
+$('sMaster').addEventListener('input', e => { SET.master = +e.target.value; applyVolumes(); });
+$('sMusic').addEventListener('input', e => { SET.music = +e.target.value; applyVolumes(); });
+$('sSfx').addEventListener('input', e => { SET.sfx = +e.target.value; applyVolumes(); });
+$('sSfx').addEventListener('change', () => sfxDrip(30));
+for (const b of $('segLang').children) b.addEventListener('click', () => setLang(b.dataset.v));
+for (const b of $('segQ').children) b.addEventListener('click', () => { sfxClick(); setQuality(b.dataset.v); });
+$('bFull').addEventListener('click', toggleFullscreen);
+for (const o of OVERLAYS) $(o).addEventListener('pointerdown', () => bootAudio(), { once: true });
+
+// ---------------------------------------------------------------------------
+// Bot (?auto): plays every lesson by making the recipe strokes through the same stroke API as the player
+// ---------------------------------------------------------------------------
+const BOT = { on: FLAG.auto, wait: 0, pts: null, i: 0, budget: 0, retries: 0, done: false, lessonsDone: 0, log: [] };
+const botRng = mulberry(12345);
+function botPath(p) { // resample the recipe path to ~20-unit steps with a slow hand tremor
+  const out = []; const J = FLAG.botJitter; let ox = 0, oy = 0;
+  for (let i = 0; i < p.length; i++) {
+    if (i > 0) { const a = p[i - 1], b = p[i], d = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.round(d / 20)); for (let s = 1; s < n; s++) out.push([a[0] + (b[0] - a[0]) * s / n, a[1] + (b[1] - a[1]) * s / n]); }
+    out.push([p[i][0], p[i][1]]);
+  }
+  return out.map(([x, y]) => { ox = clampS(ox + (botRng() - 0.5) * J * 0.5, -J, J); oy = clampS(oy + (botRng() - 0.5) * J * 0.5, -J, J); return [x + ox, y + oy]; });
+}
+function botStep(dt) {
+  if (!BOT.on || BOT.done) return;
+  BOT.wait -= dt; if (BOT.wait > 0) return;
+  switch (G.state) {
+    case 'title': if (G.loaded) { $('bPlay').click(); BOT.wait = 0.3; } break; // v2: Play lands straight in the lesson
+    case 'map': { const n = firstUnsolved(); if (n >= 18) { showEnding(); } else startLesson(n); BOT.wait = 0.3; break; }
+    case 'play': {
+      if (G.paused) togglePause(false);
+      if (G.free) { BOT.done = true; break; }
+      const L = G.L, idx = G.strokes.length;
+      if (G.stroke) {
+        BOT.budget += 2600 * dt; // units per second
+        while (BOT.i < BOT.pts.length && BOT.budget >= 20) { const p = BOT.pts[BOT.i++]; moveStroke(p[0], p[1]); BOT.budget -= 20; }
+        if (BOT.i >= BOT.pts.length) { endStroke(); BOT.wait = 0.12; }
+      } else if (idx < L.strokes.length) {
+        const s = L.strokes[idx]; setTool(s.k, true); if (s.c !== undefined) setColour(s.c, true);
+        BOT.pts = botPath(s.p); BOT.i = 1; BOT.budget = 0; startStroke(BOT.pts[0][0], BOT.pts[0][1]);
+      } else { computeMatch(); layPaper(); BOT.wait = 0.2; }
+      break;
+    }
+    case 'result': {
+      const r = G.lastResult; BOT.log.push({ lesson: G.L.index + 1, match: Math.round(r.match * 1000) / 10, strokes: r.strokes, stars: r.stars, seal: !!r.seal, crit: (r.crit || []).map(critText) });
+      if (r.solved) { BOT.retries = 0; BOT.lessonsDone++; $('bNext').click(); }
+      else if (BOT.retries++ < 2) $('bRetry').click();
+      else { BOT.log.push({ lesson: G.L.index + 1, skipped: true }); PROG.stars[G.L.index] = 1; $('bRMap').click(); }
+      BOT.wait = 0.3; break;
+    }
+    case 'ending': BOT.done = true; break;
+    default: break;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main loop, debug, boot
+// ---------------------------------------------------------------------------
+const DBG = { fps: 0, calls: 0, tris: 0, frames: 0, acc: 0, gpu: '?', work: 0, workAcc: 0, workMax: 0 };
+const dbgEl = $('dbg'); if (FLAG.debug) dbgEl.hidden = false;
+try { const gl = renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); DBG.gpu = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'unknown'; } catch (e) { DBG.gpu = '?'; }
+function placeTool() {
+  for (const k in toolMeshes) toolMeshes[k].visible = false;
+  if (G.state !== 'play' || G.paused || !G.hover) return;
+  const m = toolMeshes[G.tool]; m.visible = true;
+  const wx = (G.hover.x / SW - 0.5) * TRAY_W, wz = (G.hover.y / SH - 0.5) * TRAY_H;
+  const dip = Math.sin(TOOLFX.bob * Math.PI);
+  m.position.set(wx, TRAY_Y + (G.pressing ? 0.0 : 0.035) - dip * 0.012, wz);
+  m.rotation.z = m.userData.rz + (G.tool === 'brush' ? -0.35 : -0.08) * dip;
+  if (G.tool === 'tarak') { const [dx, dy] = G.lastDir; m.rotation.y = Math.atan2(-dx, -dy); }
+}
+function tick(dt) {
+  G.time += dt;
+  botStep(dt);
+  if (G.state === 'laying' && G.lay) stepLay(dt);
+  if (G.hint !== null) { G.hintT += dt; G.ovDirty = true; }
+  if (G.ripples.length) { for (const rp of G.ripples) rp.t += dt; G.ripples = G.ripples.filter(rp => rp.t < 0.7); G.ovDirty = true; }
+  if (TOOLFX.bob > 0.001) TOOLFX.bob *= Math.exp(-dt * 7); else TOOLFX.bob = 0;
+  if (G.matchDirty && G.state === 'play' && !G.free && G.time - G.matchAt > 0.25) { G.matchAt = G.time; computeMatch(); updateHud(); }
+  if (!G.simming) { stepDust(dt); stepMascot(dt); stepLamp(); stepRoom(dt); }
+}
+function stepLamp() { const f = Math.sin(G.time * 9.1) * 0.08 + Math.sin(G.time * 23.7) * 0.05; lamp.intensity = 0.85 + f; flame.scale.set(0.03 + f * 0.1, 0.055 + f * 0.25, 1); flame.position.x = 0.76 + Math.sin(G.time * 13) * 0.0015; }
+// the drying sheets sway a little in the draught from the window
+function stepRoom(dt) {
+  hanging.forEach((m, i) => { m.rotation.y = Math.sin(G.time * 0.7 + i * 2.1) * 0.05; m.rotation.x = Math.sin(G.time * 0.9 + i) * 0.03; });
+  rippleTex.offset.x += dt * 0.012; rippleTex.offset.y -= dt * 0.007; // the size (kitre) creeps, so the window's reflection shimmers
+  shaft.material.opacity = 0.45 + Math.sin(G.time * 0.5) * 0.06;
+}
+function exportState() {
+  Object.assign(window.ebru, {
+    state: G.state, paused: G.paused, free: G.free, lesson: G.L ? G.L.index + 1 : 0, match: Math.round(G.match * 1000) / 10, strokes: G.strokes.length,
+    stars: PROG.stars.slice(), polys: G.sim.polys.length, points: G.sim.points, fps: DBG.fps, work: DBG.work, workMax: Math.round(DBG.workMax * 10) / 10, calls: DBG.calls, tris: DBG.tris, gpu: DBG.gpu,
+    bot: { on: BOT.on, done: BOT.done, lessonsDone: BOT.lessonsDone, log: BOT.log }, errors: window.__errs, assets: ASSETS, loaded: G.loaded, zoom: CAM.zoom, portrait: CAM.portrait,
+    // v2
+    seals: PROG.seals.slice(), sealCount: sealCount(), rank: ['cirak', 'kalfa', 'usta'][rankIndex()], thick: G.thick, hintUsed: G.hintUsed, coach: G.coach,
+    crit: G.crit.map(critText), bound: BOUND.slice(), gallery: GALLERY.length, mascot: !!MASCOT.sprite,
+  });
+}
+let last = performance.now();
+function frame(now) {
+  requestAnimationFrame(frame);
+  let dt = (now - last) / 1000; last = now; if (dt > 0.1) dt = 0.1; if (dt <= 0) return;
+  if (G.hidden) return; // the tab is hidden: freeze everything
+  const w0 = performance.now();
+  tick(dt);
+  // while a stroke is in progress the paint is re-rasterised at 30 Hz, the room still renders at 60
+  if (G.dirtyTex && (!G.stroke || (DBG.frames & 1) === 0)) redrawTray();
+  if (G.ovDirty && (DBG.frames & 1) === 1) { drawOverlayNow(); G.ovDirty = false; }
+  placeTool();
+  renderer.render(scene, camera);
+  const w = performance.now() - w0; DBG.workAcc += w; if (w > DBG.workMax) DBG.workMax = w;
+  DBG.frames++; DBG.acc += dt;
+  if (DBG.acc >= 0.5) {
+    DBG.fps = Math.round(DBG.frames / DBG.acc); DBG.work = Math.round(DBG.workAcc / DBG.frames * 100) / 100; DBG.workAcc = 0; DBG.frames = 0; DBG.acc = 0; DBG.calls = renderer.info.render.calls; DBG.tris = renderer.info.render.triangles;
+    if (FLAG.debug) dbgEl.innerHTML = `fps ${DBG.fps} · js ${DBG.work} ms (max ${DBG.workMax.toFixed(1)}) · calls ${DBG.calls} · tris ${DBG.tris}\n${G.state}${G.paused ? ' (paused)' : ''} · lesson ${G.L ? G.L.index + 1 : '-'} · match ${Math.round(G.match * 100)}% · strokes ${G.strokes.length}\npolys ${G.sim.polys.length} · points ${G.sim.points} · zoom ${CAM.zoom.toFixed(2)}\n${DBG.gpu}${window.__errs.length ? '\n<span class="err">' + window.__errs.slice(-3).join('\n') + '</span>' : ''}`;
+    exportState();
+  }
+}
+window.ebru = {};
+window.ebruSim = (seconds) => { // fast-forward without rendering
+  G.simming = true; const step = 1 / 30; for (let s = 0; s < seconds; s += step) tick(step);
+  G.simming = false; if (G.dirtyTex) redrawTray(); drawOverlayNow(); G.ovDirty = false; exportState(); return window.ebru;
+};
+window.ebruDebug = { G, LESSONS, PAL, BOT, PROG, buildTarget, matchScore, computeMatch, startStroke, moveStroke, endStroke, layPaper, startLesson, beginPlay, beginFree, setTool, setColour, Marble, StrokeRunner, runStroke, downsample, classStats, paintBase, botPath, TOOL, THICK, redrawTray, paintRT, ovTex, renderer, scene, camera, paintToCanvas,
+  critique, critText, bindCover, setThick, setHint, showHint, showCoach, hideCoach, finishSheet, sealCount, rankIndex, openMap, playNext, FACTS: window.EBRU_FACTS, MASCOT };
+
+// boot: texts, icons, hanging sheets from the gallery, then the targets one per task
+fillIcons(); $('logoBig').innerHTML = LOGO; $('logoEnd').innerHTML = LOGO; document.querySelector('.logo-s').innerHTML = LOGO;
+applyTexts(); refreshTitle(); updateSoundIcon();
+GALLERY.slice(-3).forEach((src, i) => { const img = new Image(); img.onload = () => setHangingTexture(i, img); img.src = src; });
+G.hangSlot = Math.min(3, GALLERY.length) % 3;
+renderer.setSize(innerWidth, innerHeight); fitCamera(); redrawTray(); drawOverlayNow();
+dustGeo.setDrawRange(0, SET.quality === 'low' ? Math.floor(DUST_N / 2) : DUST_N);
+requestAnimationFrame(frame);
+let loadIdx = 0;
+function loadStep() {
+  try { buildTarget(LESSONS[loadIdx]); } catch (e) { window.__errs.push('target ' + loadIdx + ': ' + e.message); }
+  loadIdx++; $('loadmsg').textContent = (SET.lang === 'tr' ? 'Yükleniyor… ' : 'Loading… ') + loadIdx + '/18';
+  if (loadIdx < LESSONS.length) setTimeout(loadStep, 0);
+  else {
+    G.loaded = true; window.__loaded = true; $('loadmsg').hidden = true; $('bPlay').disabled = false; $('bPlay').focus(); exportState();
+    loadMascot();
+    if (FLAG.free) beginFree(); else if (FLAG.lesson >= 1 && FLAG.lesson <= 18) startLesson(FLAG.lesson - 1);
+    if (FLAG.sim > 0) window.ebruSim(FLAG.sim);
+  }
+}
+setTimeout(loadStep, 0);
+</script>
+</body>
+</html>
