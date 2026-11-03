@@ -1,0 +1,441 @@
+// One attempt, start line to settle: steps the vehicle, quantises and records the input (so the
+// run can be re-simulated exactly), records replay frames, and measures everything the judges
+// score. Pure and deterministic: the Worker runs this same file to verify a submitted run.
+import { createVehicle, step, bodyRates, up, forward, worldPoint, newInput, DT, CAR, NOZZLES, HULL, massOf, VALVE_KEYS } from './vehicle.js';
+import { COURSES, DEFAULT_COURSE, WALL, LINEUP, SHOW, roofUnder, wallArcLength } from './courses.js';
+import { freeWorld } from './world.js';
+import { SPEC } from './spec.js';
+import { v3 } from './m3.js';
+import { createDamage, updateDamage, damageFacts } from './damage.js';
+import { datan2, dacos, dhypot } from './dmath.js';
+
+// v15: LAND rolls out at the reveal's pace on no more thrust than the roll needs (the car falls
+// nearly free off the lip), then brakes late and hard through the blowdown to a set-down from 2.5 m;
+// down-jets 23 kN front / 16 kN rear (pitch-free 76.5 kN, 3.2 G); brakePeakG telemetry.
+// v14: the rigid-body engine (Rapier, deterministic build: docs/PHYSICS_ENGINE.md) owns every body
+// and contact. The roadster's hull is a rigid convex hull over compliant skirts; its bodywork folds
+// by the energy a contact puts into it; each parked vehicle is a 3D rigid body with its own mass,
+// CoM and inertia on four suspended, parked tyres (it rocks, slides, tips and rolls); every collider
+// has its own material (deck, pad, steel, paint); replay frames carry each body's full 3D pose.
+// v26: Assist's auto-land starts LAND at the last stop that fits when the player hasn't, and LAND
+// carries over a parked row at 7 m/s on the rear jets (ticket 0067).
+// v16: tyres build side force over a relaxation length (σ ≈ 0.35 m front, 0.4 m rear, √load).
+// v18: LAND's set-down follows the fall it ends (none after the kickflip), the Lineup mark just
+// past the row (0014).
+// v19: the Wall starts parked at the foot of the curl (z −6, was −120), as run 1 did (0019).
+// v22: a held stick asks the armed fans for a corner's suction; the rack and Assist's stability
+// control open to the grip they add (> 2 g, ticket 0020).
+// v21: driving feel. Assist's crawl limit only on the Wall's curl; traction control keeps the
+// tyre's side force (friction ellipse); stability control (Assist) brakes a front wheel against a
+// slide; the rack opens up for opposite lock and slews at its variable ratio.
+// v12: the parked row at its researched sizes and curb masses (docs/VEHICLES.md).
+// v11: the input log gains `manual` + ten valve channels (Advanced: per-thruster control); LAND rolls
+// out decisively from inverted, plans its brake on the end-of-stop pressure, holds the line and
+// protects the lift it needs; Pro is rate control; Assist limits the crawl up the curl and the
+// airborne carry; TC/ABS in every tier; the tier is telemetry.
+// v10: angular momentum integration and rotational air drag (no NaN at Pro spin rates).
+// v20: the hull is tested against the curl only when it can reach it (src/sim/world.js `gateCurl`,
+// the server's CPU budget); v13: fan suction scheduled from the deck's tilt (and the grip void at a launch or a hard
+// stop), 1.5 s spool, held demand: the livestream DOWNFORCE channel; v11: the skill ladder;
+// v9: bodywork folds (elastic to a 100 kN yield per hull probe, then plastic crush), no artificial
+// spin damping while the hull is in contact, impact events; v8: taller Wall, sourced mass
+// distribution; v7: body geometry; v6: The Show is one flight (off the Wall, over the row); parked
+// vehicles are bodies with mass, per-surface materials; v5: driver-relative steer/roll/yaw,
+// grip-limited steering; v4: sourced specs (docs/REVEAL_RESEARCH.md); v3: dmath; v2: physics v2
+// v24: the launch complex beyond the stage is solid (pad, mount, vehicle, strongback, masts, tank,
+// buildings: src/sim/complex.js) once the car comes within 150 m of it, and the range's static fire
+// (20 s into a run, then every 40 s) throws its jet out of the flame trench onto a car parked in it
+// (src/sim/rocket.js). A run that stays on the stage replays to the same bits (the references do);
+// one that drives out to the pad didn't meet anything there before.
+// v25: "on the Wall" is the Wall's footprint (|x| < width/2 + 2 m): the 3 m pad read as the Wall, and a
+// drive up onto it ended the run as a landing.
+// v27: the Show's judging pays for what the pilot decides (0121): precision read off the pad's rings, gas
+// full from 45 %, a safe clearance marked down less, and the panel's weight moved off the climb, the hang
+// and the roll-out (which Assist flies to 9.7–10 for everyone) onto the mark. Scores only; no physics.
+export const SIM_VERSION = 27;
+export const FRAME_EVERY = 4;           // replay frame every 4 ticks = 60 Hz
+export const MAX_TICKS = 240 * 90;      // 90 s hard cap
+export const G_WIN = 120;               // 0.5 s of ticks: the braking peak's averaging window
+
+// The input log's channels. v11 appended `manual` and v0..v9 (one per nozzle, NOZZLE_SPEC order).
+const LEGACY_KEYS = ['throttle', 'brake', 'steer', 'pitch', 'roll', 'yaw', 'lift', 'thrust', 'retro', 'level', 'fan', 'assist'];
+const KEYS = [...LEGACY_KEYS, 'manual', ...VALVE_KEYS];
+export const INPUT_KEYS = KEYS;
+export const LEGACY_INPUT_KEYS = LEGACY_KEYS;
+// A log entry is [tick, ...channels]. Entries from an older client (12 channels) still verify: the
+// channels they lack are zero (no manual mode, valves shut), so they replay as they were flown,
+// under today's physics (as every log has on every SIM_VERSION bump).
+export const isLogEntryLength = (n) => n === KEYS.length + 1 || n === LEGACY_KEYS.length + 1;
+
+// Quantise a raw input to the canonical integers both client and server use.
+export function quantise(raw, out) {
+  return unpackInts(packInput(raw, packScratch), out);
+}
+// The same, per channel, as integers (hundredths): the input log's entries. Spelled out channel by channel
+// on purpose: a load or store by a computed key (raw[KEYS[i]]) boxes every number it moves, and this runs
+// every 240 Hz tick (0049). The order is KEYS's, checked below.
+const qi = (v) => Math.round(Math.max(-1, Math.min(1, v || 0)) * 100);
+function packInput(r, n) {
+  n[0] = qi(r.throttle); n[1] = qi(r.brake); n[2] = qi(r.steer); n[3] = qi(r.pitch); n[4] = qi(r.roll); n[5] = qi(r.yaw);
+  n[6] = qi(r.lift); n[7] = qi(r.thrust); n[8] = qi(r.retro); n[9] = qi(r.level); n[10] = qi(r.fan); n[11] = qi(r.assist);
+  n[12] = qi(r.manual);
+  n[13] = qi(r.v0); n[14] = qi(r.v1); n[15] = qi(r.v2); n[16] = qi(r.v3); n[17] = qi(r.v4);
+  n[18] = qi(r.v5); n[19] = qi(r.v6); n[20] = qi(r.v7); n[21] = qi(r.v8); n[22] = qi(r.v9);
+  return n;
+}
+function unpackInts(n, o) {
+  o.throttle = n[0] / 100; o.brake = n[1] / 100; o.steer = n[2] / 100; o.pitch = n[3] / 100; o.roll = n[4] / 100; o.yaw = n[5] / 100;
+  o.lift = n[6] / 100; o.thrust = n[7] / 100; o.retro = n[8] / 100; o.level = n[9] / 100; o.fan = n[10] / 100; o.assist = n[11] / 100;
+  o.manual = n[12] / 100;
+  o.v0 = n[13] / 100; o.v1 = n[14] / 100; o.v2 = n[15] / 100; o.v3 = n[16] / 100; o.v4 = n[17] / 100;
+  o.v5 = n[18] / 100; o.v6 = n[19] / 100; o.v7 = n[20] / 100; o.v8 = n[21] / 100; o.v9 = n[22] / 100;
+  return o;
+}
+if (KEYS.join() !== 'throttle,brake,steer,pitch,roll,yaw,lift,thrust,retro,level,fan,assist,manual,v0,v1,v2,v3,v4,v5,v6,v7,v8,v9') {
+  throw new Error('run.js: the input channels changed; update packInput and unpackInts');
+}
+const packScratch = new Int16Array(KEYS.length);
+const unpack = (arr, out) => { for (let i = 0; i < KEYS.length; i++) out[KEYS[i]] = (arr[i] || 0) / 100; return out; };
+
+// Everything the judges score.
+function newTelemetry(courseId) {
+  return {
+    course: courseId, crossedRow: false, deckScrape: false,
+    launchSpeed: 0, launchTick: -1, airStartTick: -1, touchTick: -1, endTick: -1,
+    apex: 0, apexZ: 0, rollAccum: 0, pitchAccum: 0, yawAccum: 0, offAxis: 0,
+    minClearance: Infinity, contact: false, contactSpeed: 0, contactTick: -1,
+    airAtLaunch: CAR.airMass, airAtTouch: 0, airEnd: 0,
+    sink: 0, tiltDeg: 0, headingDeg: 0, lateral: 0, landZ: 0, landSpeed: 0,
+    wheelTouch: [-1, -1, -1, -1], wheelSpreadMs: 0, maxCompression: 0, bottomOut: false,
+    bodyStrike: false, flipped: false, settledUpright: false, maxSpeed: 0,
+    thrustChanges: 0, endReason: '',
+    // Flight tier, from the inputs actually flown: any Assist tick makes it an Assist run; an
+    // Advanced run is manual on every tick of the flight (from release to touchdown).
+    usedAssist: false, usedPro: false, usedManual: false, tier: 'assist',
+    zeroToSixty: null,
+    // The Wall.
+    rampEntrySpeed: 0, rampTick: -1, maxRampHeight: 0, progress: 0, invertedTime: 0, maxG: 0,
+    // The braking peak, read like the livestream's G-FORCE channel: the most specific force
+    // averaged over 0.5 s, while the down-jets brake a fall with the roof up (not the release kick
+    // or a contact spike, which maxG catches), and the height mid-window (m, CoM height over the ground less its height at rest).
+    brakePeakG: 0, brakePeakH: 0,
+    launchHeight: 0, launchUpY: 1, launchProgress: 0, fellOff: false, landedOnRamp: false,
+    // Damage (src/sim/damage.js): filled from the run's damage sensor when the book closes.
+    damage: null,
+  };
+}
+
+export function createRun(courseId = DEFAULT_COURSE) {
+  const course = COURSES[courseId] || COURSES[DEFAULT_COURSE];
+  const run = {
+    course: course.id,
+    car: createVehicle(course.id),
+    damage: createDamage(),    // the damage sensor: per-zone %, total (src/sim/damage.js)
+    phase: 'drive',            // drive → ramp (Wall, Show) → air → landed → done
+    tick: 0,
+    inputLog: [],              // [tick, ...ints] whenever the quantised input changes
+    lastPacked: null,          // the last logged channels (Int16Array), compared in place every tick
+    flippedTicks: 0, airTicks: 0, offTicks: 0,
+    frames: [],                // see recordFrame for the layout
+    gWin: new Float64Array(G_WIN), gSum: 0,   // the last 0.5 s of specific force (g), for brakePeakG
+    hWin: new Float64Array(G_WIN),            // and the height over it (the peak is placed mid-window)
+    t: newTelemetry(course.id),
+  };
+  run.impacts = run.car.impacts;   // impact events (src/sim/impacts.js): the crash, for the renderer and the replay
+  return run;
+}
+
+const q = newInput();
+const rates = v3(), upv = v3(), fw = v3(), p = v3();
+
+// Replay frame: pos(3) quat(4) wheel compression(4) wheel spin(4) throttles(10) steer fan, then
+// each parked vehicle's pose (x, y, z, qx, qy, qz, qw: BODY_STRIDE floats), so a shoved, tipped
+// or rolled car replays where it went.
+export const FRAME_SIZE = 7 + 4 + 4 + NOZZLES.length + 2;
+export const BODY_FRAME = FRAME_SIZE, BODY_STRIDE = 7;
+function recordFrame(run) {
+  const c = run.car, bodies = c.world.bodies;
+  const f = new Float32Array(FRAME_SIZE + BODY_STRIDE * bodies.length);
+  for (let i = 0; i < bodies.length; i++) {
+    const b = bodies[i], o = FRAME_SIZE + BODY_STRIDE * i;
+    f[o] = b.cx; f[o + 1] = b.cy; f[o + 2] = b.cz; f[o + 3] = b.qx; f[o + 4] = b.qy; f[o + 5] = b.qz; f[o + 6] = b.qw;
+  }
+  f[0] = c.pos.x; f[1] = c.pos.y; f[2] = c.pos.z;
+  f[3] = c.quat.x; f[4] = c.quat.y; f[5] = c.quat.z; f[6] = c.quat.w;
+  for (let i = 0; i < 4; i++) { f[7 + i] = c.wheels[i].compression; f[11 + i] = c.wheels[i].spin; }
+  for (let i = 0; i < NOZZLES.length; i++) f[15 + i] = c.throttles[i];
+  f[15 + NOZZLES.length] = c.steer;
+  f[16 + NOZZLES.length] = c.fan;
+  run.frames.push(f);
+}
+
+// Advance one tick with a raw input. Returns the run.
+export function stepRun(run, raw) {
+  if (run.phase === 'done') return run;
+  return advance(run, logInput(run, raw));
+}
+// Quantise this tick's input, log it if it changed, and return it (quantised, in a shared object). Nothing
+// is allocated unless the input changed (0049).
+export function logInput(run, raw) {
+  const n = packInput(raw, packScratch);
+  if (!sameInts(n, run.lastPacked)) logEntry(run, n);
+  return unpackInts(n, q);
+}
+function sameInts(a, b) {
+  if (b === null) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+function logEntry(run, n) {
+  run.inputLog.push([run.tick, ...n]);
+  (run.lastPacked ??= new Int16Array(n.length)).set(n);
+}
+
+// Progress along the Wall's profile (0 at the foot, 1 at the lip) for a point near the deck.
+export function wallProgress(pos) {
+  return wallArcLength(pos.z, pos.y) / WALL.length;
+}
+
+function advance(run, input) {
+  const c = run.car, t = run.t;
+  if (input.assist) t.usedAssist = true;
+  else if (input.manual) t.usedManual = true;
+  else if (run.phase === 'air' || run.phase === 'ramp') t.usedPro = true;
+  // The Wall's rules run the Wall and the Show (which is the Wall with the row under its ledge).
+  const show = run.course === 'show';
+  const wall = run.course !== 'lineup';
+  const course = show ? SHOW : wall ? WALL : LINEUP;
+  const prevLift = c.throttles[0] + c.throttles[1] + c.throttles[2] + c.throttles[3];
+  const prevVx = c.vel.x, prevVy = c.vel.y, prevVz = c.vel.z;
+  step(c, input);
+  updateDamage(run.damage, c, HULL);
+  run.tick++;
+  if (run.tick % FRAME_EVERY === 0) recordFrame(run);
+
+  const speed = dhypot(c.vel.x, c.vel.y, c.vel.z);
+  t.maxSpeed = Math.max(t.maxSpeed, speed);
+  if (t.zeroToSixty === null && dhypot(c.vel.x, c.vel.z) >= 26.8224) t.zeroToSixty = Math.round(run.tick * DT * 100) / 100;
+  const lift = c.throttles[0] + c.throttles[1] + c.throttles[2] + c.throttles[3];
+  if (Math.abs(lift - prevLift) > 0.08) t.thrustChanges++;
+  // Felt acceleration in g (what the car's occupant would feel), the number the stunt is about.
+  const ax = (c.vel.x - prevVx) / DT, ay = (c.vel.y - prevVy) / DT + 9.81, az = (c.vel.z - prevVz) / DT;
+  const g = Math.min(25, dhypot(ax, ay, az) / 9.81);
+  if (run.tick > 30) t.maxG = Math.max(t.maxG, g);
+  const wi = run.tick % G_WIN;
+  run.gSum += g - run.gWin[wi]; run.gWin[wi] = g; run.hWin[wi] = Math.max(0, c.pos.y - SPEC.comHeight);
+  if (c.obstacleContact && !t.contact) { t.contact = true; t.contactSpeed = c.obstacleSpeed; t.contactTick = run.tick; }
+  up(c, upv);
+  if (run.phase === 'air' && run.tick >= G_WIN && upv.y > 0.7 && c.vel.y < 0 && lift > 1 && run.gSum / G_WIN > t.brakePeakG) {
+    t.brakePeakG = run.gSum / G_WIN; t.brakePeakH = run.hWin[(run.tick + G_WIN / 2) % G_WIN];
+  }
+  const airborne = c.grounded === 0 && !c.hullContact;
+  const lx = c.pos.x, lz = c.pos.z;
+
+  if (run.phase === 'drive') {
+    if (wall) {
+      // On the Wall: touching its deck, or up off the ground over its footprint. The footprint's width
+      // matters since the launch complex is solid (v24): the 3 m pad, 265 m to the side, read as the Wall.
+      if (c.onWall || (c.pos.z > 0.5 && c.pos.y > 1.2 && Math.abs(c.pos.x) < WALL.width / 2 + 2)) {
+        run.phase = 'ramp'; t.rampTick = run.tick; t.rampEntrySpeed = speed;
+      }
+    } else {
+      // The Lineup has no ramp: the car lifts off flat ground on thrust alone.
+      run.airTicks = c.grounded === 0 ? run.airTicks + 1 : 0;
+      if (run.airTicks > 12) {
+        run.phase = 'air'; t.airStartTick = run.tick - 12;
+        t.launchTick = t.airStartTick; t.launchSpeed = speed; t.airAtLaunch = c.air;
+      }
+    }
+  } else if (run.phase === 'ramp') {
+    if (c.grounded > 0) {
+      t.maxRampHeight = Math.max(t.maxRampHeight, c.pos.y - SPEC.comHeight);
+      t.progress = Math.max(t.progress, wallProgress(c.pos));
+      if (upv.y < -0.3) t.invertedTime += DT;
+    }
+    if (Math.abs(c.pos.x) > WALL.width / 2 + 0.3 && c.pos.y > 1.5) t.fellOff = true;
+    run.airTicks = airborne ? run.airTicks + 1 : 0;
+    if (run.airTicks > 24) {
+      run.phase = 'air';
+      t.airStartTick = run.tick - 24;
+      t.launchTick = t.airStartTick;
+      t.launchHeight = c.pos.y; t.launchUpY = upv.y; t.launchProgress = t.progress; t.airAtLaunch = c.air;
+      t.launchSpeed = speed;
+    } else if (c.pos.y < SPEC.comHeight + 0.3 && c.pos.z < 0 && c.grounded > 0 && t.progress < 0.3) {
+      run.phase = 'drive';   // rolled back off the foot of the ramp
+    }
+  } else if (run.phase === 'air') {
+    bodyRates(c, rates);
+    t.rollAccum += rates.z * DT;
+    t.pitchAccum += rates.x * DT;
+    t.yawAccum += rates.y * DT;
+    t.offAxis += (Math.abs(rates.x) + Math.abs(rates.y)) * DT;
+    if (c.pos.y > t.apex) { t.apex = c.pos.y; t.apexZ = c.pos.z; }
+    const overRow = show ? lz < course.rowNear + 3 && lz > course.rowFar - 3 : !wall && lz > course.lineupZ0 - 3 && lz < course.lineupEnd + 3;
+    if (overRow) {
+      for (let i = 0; i < HULL.length; i++) {
+        worldPoint(c, HULL[i], p);
+        const roof = roofUnder(c.world, p.x, p.z);
+        if (roof > -Infinity) t.minClearance = Math.min(t.minClearance, p.y - roof);
+      }
+    }
+    if (show && lz < course.rowFar) t.crossedRow = true;
+    const minAir = wall ? 48 : 36;
+    // On the Wall, touching the deck while still up high is a scrape off the lip, not a landing.
+    const deckScrape = wall && (c.grounded > 0 || c.hullGround) && c.pos.y > 3 && wallArcLength(c.pos.z, c.pos.y) > 1;
+    if (deckScrape) t.deckScrape = true;
+    if ((c.grounded > 0 || c.hullGround) && !deckScrape && run.tick - t.airStartTick > minAir) {
+      run.phase = 'landed';
+      t.touchTick = run.tick;
+      // The sink is the closing speed into the ground: the engine resolves a rigid contact within
+      // the tick, so read it from before this tick's step as well as after (the faster of the two).
+      t.sink = Math.max(0, -prevVy, -c.vel.y);
+      forward(c, fw);
+      t.tiltDeg = dacos(Math.max(-1, Math.min(1, upv.y))) * 180 / Math.PI;
+      // Heading error against the run direction (the Wall sends you back the way you came).
+      t.headingDeg = datan2(wall ? -fw.x : fw.x, wall ? -fw.z : fw.z) * 180 / Math.PI;
+      t.lateral = lx - course.pad.x;
+      t.landZ = lz;
+      t.landSpeed = dhypot(c.vel.x, c.vel.z);
+      t.airAtTouch = c.air;
+      if (wall && c.pos.y > 1.2 && wallArcLength(c.pos.z, c.pos.y) > 1) t.landedOnRamp = true;
+    } else if (!wall && c.grounded > 0 && run.tick - t.airStartTick <= 36) {
+      run.phase = 'drive'; run.airTicks = 0;
+      t.rollAccum = 0; t.pitchAccum = 0; t.yawAccum = 0; t.offAxis = 0; t.apex = 0;
+    }
+  }
+
+  if (run.phase === 'landed') {
+    const since = run.tick - t.touchTick;
+    if (since <= 72) {
+      for (let i = 0; i < 4; i++) {
+        if (t.wheelTouch[i] < 0 && c.wheels[i].contact) t.wheelTouch[i] = run.tick;
+        t.maxCompression = Math.max(t.maxCompression, c.wheels[i].compression);
+      }
+      if (c.hullContact && !c.obstacleContact) t.bodyStrike = true;
+    }
+  }
+
+  // Flip detection: upside down while touching the ground (on the deck that's the point).
+  const onDeck = wall && run.phase === 'ramp';
+  if (!onDeck && upv.y < 0.25 && (c.grounded > 0 || c.hullContact) && run.phase !== 'air') run.flippedTicks++;
+  else run.flippedTicks = 0;
+  if (run.flippedTicks > 120) t.flipped = true;
+  run.offTicks = onDeck && speed < 0.5 ? run.offTicks + 1 : 0;
+
+  let end = '';
+  // A non-finite state would poison the replay, the scorecard and the HUD. The integrator is built
+  // never to produce one; if it ever does, end the run cleanly instead of drawing NaN.
+  if (!Number.isFinite(c.pos.x + c.pos.y + c.pos.z + c.quat.w + c.angVel.x + c.angVel.y + c.angVel.z + c.vel.x + c.vel.y + c.vel.z)) { finish(run, 'sim-fault'); return run; }
+  if (t.flipped) end = 'flipped';
+  else if (t.contact && run.tick - t.contactTick > 480) end = 'contact';
+  // (A car that comes to rest on its roof or side hasn't settled: it is flipped, once that's held.)
+  // (It waits out the 0.3 s wheel-sync window first: LAND sets down at 0.8 m/s, already under 1.2.)
+  else if (run.phase === 'landed' && ((speed < 1.2 && run.tick - t.touchTick > 72) || run.tick - t.touchTick > 240 * 5) && (upv.y >= 0.25 || run.tick - t.touchTick > 240 * 5)) end = 'settled';
+  else if (c.pos.z > COURSES[run.course].runout.zMax || c.pos.z < COURSES[run.course].runout.zMin) end = 'runout';
+  else if (run.offTicks > 240 * 6) end = 'stalled';
+  else if (run.tick >= MAX_TICKS) end = 'timeout';
+  else if (!wall && run.phase === 'drive' && lz > course.lineupEnd + 4 && c.grounded > 0) end = 'no-jump';
+  if (end) finish(run, end);
+  return run;
+}
+
+function finish(run, reason) {
+  run.phase = 'done';
+  closeBook(run, run.t, reason);
+  // The run is over: give the engine its memory back (the bodies' poses stay readable). A run armed
+  // for its aftermath (the browser's live runs) keeps the world until the car has come to rest.
+  if (!run.after) freeWorld(run.car.world);
+}
+
+// --- The aftermath: a crashed car finishes its crash (ticket 0062) --------------------------------
+// The score is decided when the run ends (closeBook, above), and the Worker replays to there and no
+// further. What a real car does next is still physics: it slides, scrubs, rocks and stops. The
+// browser keeps stepping the same deterministic world with one fixed input, unscored and unlogged,
+// and records the frames so the replay shows the car coming to rest.
+//
+// The input is what a crashed car of this kind does with no one at the controls:
+// - Brakes on, held to a standstill. Post-collision braking (VW's Multi-Collision Brake, Bosch's
+//   secondary-collision mitigation in ESP) brakes through the ESC hydraulics once the airbag
+//   controller has seen a crash, with ABS modulating each wheel (vehicle.js: ABS in every tier).
+//   Here it is the full pedal. Production systems hand back at ≈10 km/h for a driver to steer; with
+//   no driver here, the brakes hold the car to a stop, as a hill-hold does.
+// - No drive torque and no fan: an EV's crash sensor fires the pyrotechnic high-voltage disconnect,
+//   so the motors and the suction fan lose power (the fan's suction dumps: vehicle.js fanDump).
+// - Valves shut (ESTIMATE: normally-closed solenoids, so a dead controller fails them shut);
+//   `manual` with every valve at 0 bypasses the flight computer.
+// - Wheel straight: steer-by-wire with no command centres the rack.
+export const AFTER_CAP = 240 * 6;     // 6 s: a car still moving then is a car on its roof, sliding
+export const AFTER_STILL = 120;       // 0.5 s at rest ends it
+export const AFTER_SPEED = 0.3;       // m/s
+export const AFTER_SPIN = 0.3;        // rad/s
+const AFTER_INPUT = newInput();
+AFTER_INPUT.assist = 0; AFTER_INPUT.manual = 1; AFTER_INPUT.brake = 1;
+
+// Arm a run for its aftermath before it ends: finish() then keeps its world.
+export function armAftermath(run) {
+  run.after = { ticks: 0, still: 0, done: false, startTick: -1 };
+  return run;
+}
+
+// One aftermath tick. Returns true once the car is at rest (or at the cap), and frees the world then.
+// The run's telemetry, input log and damage sensor are not touched (the score stays as it was).
+export function aftermathStep(run) {
+  const a = run.after;
+  if (!a) return true;
+  if (a.done) return true;
+  const c = run.car;
+  if (c.world.freed || run.t.endReason === 'sim-fault') return endAftermath(run);
+  if (a.startTick < 0) a.startTick = run.tick;
+  step(c, AFTER_INPUT);
+  run.tick++; a.ticks++;
+  if (run.tick % FRAME_EVERY === 0) recordFrame(run);
+  if (!Number.isFinite(c.pos.x + c.pos.y + c.pos.z + c.vel.x + c.vel.y + c.vel.z + c.angVel.x + c.angVel.y + c.angVel.z)) return endAftermath(run);
+  const rest = dhypot(c.vel.x, c.vel.y, c.vel.z) < AFTER_SPEED && dhypot(c.angVel.x, c.angVel.y, c.angVel.z) < AFTER_SPIN;
+  a.still = rest ? a.still + 1 : 0;
+  if (a.still >= AFTER_STILL || a.ticks >= AFTER_CAP) return endAftermath(run);
+  return false;
+}
+function endAftermath(run) {
+  run.after.done = true;
+  freeWorld(run.car.world);
+  return true;
+}
+
+// The whole aftermath at once (tests, tools): steps until the car is at rest or the cap.
+export function aftermath(run) {
+  if (!run.after) armAftermath(run);
+  while (!aftermathStep(run));
+  return run;
+}
+
+// Final bookkeeping for one stunt's telemetry.
+function closeBook(run, t, reason) {
+  const c = run.car;
+  t.endTick = run.tick;
+  t.endReason = reason;
+  t.tier = t.usedAssist ? 'assist' : t.usedManual && !t.usedPro ? 'advanced' : 'pro';
+  t.airEnd = c.air;
+  up(c, upv);
+  t.settledUpright = upv.y > 0.8 && !t.flipped;
+  if (t.wheelTouch.every((x) => x >= 0)) t.wheelSpreadMs = (Math.max(...t.wheelTouch) - Math.min(...t.wheelTouch)) * DT * 1000;
+  else t.wheelSpreadMs = 1000;
+  t.bottomOut = t.maxCompression > CAR.restLen - CAR.mountToCentre + CAR.maxTravel + 0.02;
+  t.mass = massOf(c);
+  t.damage = damageFacts(run.damage);
+}
+
+// Re-simulate a run from its input log alone (replay, server verification). `onTick(run, input)`
+// (optional) sees every tick: the coach (src/sim/coach.js) reads the flight through it.
+export function simulate(inputLog, courseId = DEFAULT_COURSE, maxTicks = MAX_TICKS, onTick = null) {
+  const run = createRun(courseId);
+  const inp = newInput();
+  let li = 0;
+  while (run.phase !== 'done' && run.tick < maxTicks) {
+    while (li < inputLog.length && inputLog[li][0] <= run.tick) { unpack(inputLog[li].slice(1), inp); li++; }
+    advance(run, inp);
+    if (onTick) onTick(run, inp);
+  }
+  if (run.phase !== 'done') finish(run, 'timeout');
+  run.inputLog = inputLog;
+  return run;
+}
