@@ -1,0 +1,64 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>5e3ce998-93d5-448c-ae98-cdf1ea9c1a6e</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>GraveDefensor.Shared</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Actions\ColorTransitionAction.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Assets.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\MathOps.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Primitives2D.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\MovementPath.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\TouchState.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\EnemyWave.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Scenes\BattleScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Buttons\Button.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Buttons\PickerButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Buttons\WeaponPickerButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\ClickableDrawable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Dialogs\WeaponPickerDialog.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Drawable.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Enemies\CreepyWorm.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Enemies\Enemy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Enemies\EnemyFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Enemies\EnemyStatus.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Enemies\Skeleton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\EnemySet.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\GlobalContent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\GraveDefensorMaster.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Master.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Core\Path.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Scenes\Scene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Scenes\ScrollableScene.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\WeaponPod.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Dialogs\Dialog.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\FiringState.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\IWeapon.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\MiniGun.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\RotationalWeapon`1.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\WeaponFactory.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Drawable\Weapons\Weapon.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\MouseStateExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\PointExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extensions\VectorExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Globals.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)GraveDefensorGame.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Messages\ChangeStatusMessage.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Abstract\IAudioManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Abstract\IDrawContext`1.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Abstract\IInitContentContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Abstract\IInitContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Implementation\DrawContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Implementation\InitContentContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Implementation\InitContext.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Services\Implementation\UpdateContext.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Drawable\Scenes\" />
+  </ItemGroup>
+</Project>

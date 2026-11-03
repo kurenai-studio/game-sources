@@ -1,0 +1,28 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="GraveDefensor.Designer.Views.SettingsView">
+  <DockPanel>
+      <TextBlock DockPanel.Dock="Top" Margin="0,0,0,8" HorizontalAlignment="Center" FontSize="30">Settings</TextBlock>
+    <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right">
+      <Button Command="{Binding CloseCommand}" MinWidth="80">Close</Button>
+    </StackPanel>
+    <Grid MaxWidth="500">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="4" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <TextBlock VerticalAlignment="Center">Assets</TextBlock>
+      <DockPanel Grid.Column="2" LastChildFill="True">
+        <Button x:Name="AssetsShowDialog" DockPanel.Dock="Right" Click="OnAssetsShowDialog">...</Button>
+        <TextBox Text="{Binding AssetsPath, Mode=TwoWay}" IsReadOnly="True" />
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>
