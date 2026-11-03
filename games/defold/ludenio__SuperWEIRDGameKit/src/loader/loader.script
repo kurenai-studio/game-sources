@@ -1,0 +1,54 @@
+local h_proxy_loaded = hash("proxy_loaded")
+local h_proxy_unloaded = hash("proxy_unloaded")
+local h_load_world = hash("load_world")
+local h_unload_world = hash("unload_world")
+
+local function reset_world_modules()
+	-- Shared Lua state outlives collection proxies. Drop the unloaded world's
+	-- cached object handles, snapshots, animation state and parsed asset tables.
+	-- The menu owns visual_settings, so keep that shared selection intact.
+	for name in pairs(package.loaded) do
+		if (name:sub(1, 5) == "main." and name ~= "main.visual_settings") or name == "assets.table_data" then
+			package.loaded[name] = nil
+		end
+	end
+end
+
+local function switch_proxy(self, next_proxy, next_world_index)
+	self.switching = true
+	self.next_proxy = next_proxy
+	self.next_world_index = next_world_index
+	msg.post(self.current_proxy, "unload")
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.current_proxy = "#menu"
+	self.world_index = 0
+	self.switching = true
+	msg.post(self.current_proxy, "load")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == h_proxy_loaded then
+		msg.post(sender, "init")
+		msg.post(sender, "enable")
+		self.switching = false
+		if self.world_index ~= 0 then
+			msg.post("/root#gui", hash("enable_button"))
+		end
+	elseif message_id == h_proxy_unloaded then
+		if self.world_index ~= 0 then
+			reset_world_modules()
+		end
+		self.current_proxy = self.next_proxy
+		self.world_index = self.next_world_index
+		self.next_proxy = nil
+		self.next_world_index = nil
+		msg.post(self.current_proxy, "load")
+	elseif message_id == h_load_world and not self.switching and self.world_index == 0 then
+		switch_proxy(self, "#world_" .. message.world_index, message.world_index)
+	elseif message_id == h_unload_world and not self.switching and self.world_index ~= 0 then
+		switch_proxy(self, "#menu", 0)
+	end
+end
