@@ -1,0 +1,97 @@
+name: ci
+
+# The rules are tested, and so is the part of the frontend that is ordinary
+# logic. The window itself is only compiled.
+#
+# SadConsole opens a real window through MonoGame, so nothing that draws can
+# execute on a runner with no display. The effects suite is testable because it
+# decides what an effect does without ever drawing one. Saying "tested" of a job
+# that only compiles would be a claim this workflow does not support, so the two
+# jobs are named for what they actually do.
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Check the formatting
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: Test the rules
+        run: dotnet test tests/RogueBit.Core.Tests/RogueBit.Core.Tests.csproj --no-restore --verbosity normal
+
+      - name: Test the frontend logic
+        run: dotnet test tests/RogueBit.Console.Tests/RogueBit.Console.Tests.csproj --no-restore --verbosity normal
+
+      # The install scripts are not built or tested by anything else here. The
+      # install workflow runs them whole against a real release, so it only
+      # ever sees the path where the API answers. This covers the other one.
+      - name: Test how the install scripts find a release
+        run: sh tests/install/run.sh
+
+      - name: Test how the install script for Windows finds a release
+        shell: pwsh
+        run: ./tests/install/run.ps1
+
+  compile:
+    name: compile the window on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build the whole solution
+        run: dotnet build --configuration Release
+
+  publish:
+    name: check a published build can start
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install the .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish
+        run: >
+          dotnet publish src/RogueBit.Console/RogueBit.Console.csproj
+          --configuration Release --runtime linux-x64 --self-contained true
+          --output publish
+
+      # Compiling proves the references resolve. It does not prove the assembly
+      # is in the output, and one of them was not.
+      - name: Check the output has everything the game needs to start
+        run: scripts/check-publish.sh publish
