@@ -1,0 +1,1221 @@
+:root {
+  /* 三级层次：页面底 → 面板 → 浮层。纯黑没有暗部空间，浮层只能靠亮度区分 */
+  --bg: #0b0d12;
+  --panel: rgba(18, 21, 27, .74);
+  --float-1: rgba(32, 37, 46, .96);
+  --float-2: rgba(16, 19, 25, .985);
+  --line: rgba(255, 255, 255, .11);
+  --line-soft: rgba(255, 255, 255, .055);
+  --fg: #eef0f4;
+  --dim: #7b8087;
+  --green: #00ff88;
+  --red: #ff5252;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(1250px 820px at 50% -18%, rgba(58, 116, 172, .34), transparent 64%),
+    radial-gradient(900px 680px at 4% 108%, rgba(96, 60, 150, .26), transparent 62%),
+    radial-gradient(780px 580px at 99% 92%, rgba(30, 100, 100, .22), transparent 60%),
+    radial-gradient(620px 420px at 50% 58%, rgba(28, 46, 72, .30), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+  color: var(--fg);
+  font-family: "PingFang SC", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+  user-select: none;
+  touch-action: none;
+}
+
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+.ui { position: fixed; inset: 0; pointer-events: none; display: flex; flex-direction: column; z-index: 3; }
+
+.hud {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: calc(18px + env(safe-area-inset-top)) 22px 0;
+}
+.brand { font-size: 12px; letter-spacing: .22em; color: var(--dim); }
+.brand em { font-style: normal; display: block; margin-top: 5px; font-size: 15px; letter-spacing: .08em; color: var(--fg); }
+.folds { font-size: 13px; color: var(--dim); }
+.folds b { font-size: 26px; color: var(--fg); font-weight: 700; margin: 0 3px; }
+
+.panel {
+  margin-top: auto;
+  padding: 0 22px calc(18px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px;
+  pointer-events: auto;
+}
+
+.risk { text-align: center; font-size: 13px; color: var(--dim); letter-spacing: .04em; min-height: 18px; }
+.risk.danger { color: var(--red); }
+
+.items { display: flex; gap: 8px; }
+.items button {
+  flex: 1; padding: 13px 6px; font-size: 13px; font-family: inherit;
+  background: #101216; color: var(--fg); border: 1px solid #24272d; border-radius: 11px;
+  cursor: pointer; transition: all .15s; position: relative;
+}
+.items button b {
+  display: block; font-size: 10px; color: var(--dim); margin-top: 3px; font-weight: 400;
+}
+.items button:active { background: #1a1e24; border-color: var(--green); }
+.items button:disabled { opacity: .32; cursor: default; }
+
+.stop {
+  width: 100%; padding: 15px; font-size: 15px; font-family: inherit; letter-spacing: .06em;
+  background: transparent; color: var(--fg); border: 1px solid #2a2e35; border-radius: 12px;
+  cursor: pointer; transition: all .15s;
+}
+.stop:active { border-color: var(--green); color: var(--green); }
+.stop:disabled { opacity: .3; }
+
+.log {
+  text-align: center; font-size: 13px; color: var(--dim); line-height: 1.75;
+  padding: 0 6px; min-height: 62px;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  pointer-events: none;
+}
+.log p { transition: opacity .4s; }
+.log p.fade { opacity: .28; }
+
+.modal {
+  position: fixed; inset: 0; background: rgba(4,4,6,.94);
+  display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 20;
+  backdrop-filter: blur(8px);
+}
+.modal[hidden] { display: none; }
+.sheet { display: flex; flex-direction: column; gap: 14px; max-height: 100%; }
+.sheet img {
+  max-height: calc(100vh - 130px); max-width: 100%;
+  border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,.7);
+}
+.acts { display: flex; gap: 10px; }
+.acts a, .acts button {
+  flex: 1; padding: 14px; text-align: center; text-decoration: none; font-size: 15px;
+  font-family: inherit; border-radius: 12px; cursor: pointer; letter-spacing: .05em;
+  background: var(--green); color: #04110a; border: none; font-weight: 700;
+}
+.acts button { background: transparent; color: var(--fg); border: 1px solid #2a2e35; font-weight: 400; }
+
+@media (max-height: 700px) {
+  .stagetag h1 { font-size: 24px; }
+  .hint { transform: translateY(150px); }
+  .hint { margin-top: 6px; font-size: 12px; }
+}
+
+/* ===== 词条 ===== */
+@keyframes traitIn {
+  from { transform: scale(.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ===== 全屏闪光 ===== */
+.flash {
+  position: fixed; inset: 0; pointer-events: none; z-index: 25;
+  opacity: 0; transition: opacity .5s;
+}
+.flash.gold { background: radial-gradient(circle at 50% 40%, rgba(255,190,60,.55), transparent 62%); opacity: 1; }
+.flash.violet { background: radial-gradient(circle at 50% 40%, rgba(150,90,255,.42), transparent 60%); opacity: 1; }
+.flash.blue { background: radial-gradient(circle at 50% 40%, rgba(70,150,255,.32), transparent 60%); opacity: 1; }
+
+/* 顶部右侧 */
+.hud-right { display: flex; align-items: center; gap: 12px; }
+/* 成就入口：玻璃胶囊 + 金杯图标；小红点挂在右上角 */
+.book-btn {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: inherit; font-size: 12px; letter-spacing: .08em;
+  padding: 5px 11px 5px 9px; border-radius: 999px; cursor: pointer;
+  color: var(--fg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .085), rgba(255, 255, 255, .022)),
+    rgba(12, 15, 20, .72);
+  border: 1px solid rgba(255, 255, 255, .16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 8px 20px -14px rgba(0, 0, 0, .95);
+  pointer-events: auto;
+  transition: border-color .18s, box-shadow .18s, transform .12s, color .18s;
+}
+.book-btn .bb-icon {
+  width: 14px; height: 14px; flex: none; display: block;
+  color: rgba(255, 190, 90, .92);
+  filter: drop-shadow(0 0 5px rgba(255, 176, 32, .45));
+  transition: color .18s;
+}
+.book-btn span { line-height: 1; }
+.book-btn:active {
+  transform: scale(.955);
+  border-color: rgba(255, 176, 32, .6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .18),
+    0 0 22px -8px rgba(255, 176, 32, .9);
+}
+@media (hover: hover) {
+  .book-btn:hover { border-color: rgba(255, 255, 255, .3); }
+  .book-btn:hover .bb-icon { color: rgba(255, 205, 120, 1); }
+}
+/* 有新解锁的成就：右上角小红点（自带一圈底色，压在胶囊边上也不会糊） */
+.bb-dot {
+  position: absolute; top: -2px; right: -2px;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ff4d4f;
+  box-shadow:
+    0 0 0 2px rgba(9, 11, 15, .95),
+    0 0 10px 1px rgba(255, 77, 79, .75);
+  animation: bbDot 1.8s ease-in-out infinite;
+}
+.bb-dot[hidden] { display: none; }
+@keyframes bbDot {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.18); }
+}
+
+/* 成就页 */
+.book {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(4,5,8,.86); backdrop-filter: blur(16px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.book[hidden] { display: none; }
+
+.book-card {
+  position: relative;
+  width: 100%; max-width: 520px; max-height: 88vh;
+  display: flex; flex-direction: column;
+  background: linear-gradient(165deg, rgba(30,34,42,.97), rgba(14,16,21,.99));
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 22px;
+  box-shadow: 0 26px 80px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.09);
+  padding: 22px 20px 16px;
+  animation: bookIn .32s cubic-bezier(.2,1.3,.4,1);
+}
+@keyframes bookIn {
+  from { transform: translateY(18px) scale(.96); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.book-close {
+  position: absolute; top: 14px; right: 14px;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(255,255,255,.06); color: var(--dim);
+  border: 1px solid rgba(255,255,255,.12);
+  font-size: 13px; line-height: 1; cursor: pointer;
+  display: grid; place-items: center;
+  transition: all .16s;
+}
+.book-close:active { background: rgba(255,255,255,.14); color: var(--fg); }
+
+.book-top { display: flex; align-items: center; gap: 15px; margin-bottom: 16px; }
+.book-ring { position: relative; width: 62px; height: 62px; flex: none; }
+/* 圆环外发光必须画在 svg 元素自身（CSS filter 不裁出盒），
+   不能画在被 SVG 内部：<svg> 默认 overflow:hidden，drop-shadow 会被视口直接切掉 */
+.book-ring svg {
+  width: 100%; height: 100%; transform: rotate(-90deg);
+  overflow: visible;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 136, .55));
+  animation: ringGlow 3s ease-in-out infinite;
+}
+.book-ring circle { fill: none; stroke-width: 5; stroke-linecap: round; }
+.ring-bg { stroke: rgba(255,255,255,.09); }
+.ring-fg {
+  stroke: url(#ringGrad); stroke-dasharray: 188.5; stroke-dashoffset: 188.5;
+  transition: stroke-dashoffset .7s cubic-bezier(.3,1,.4,1);
+}
+/* 环中心留一点冷绿底光，让百分比不是浮在黑上 */
+.book-ring::before {
+  content: ''; position: absolute; inset: 11px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 255, 136, .13), transparent 72%);
+  pointer-events: none;
+}
+.book-ring span {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 13px; font-weight: 700; color: var(--fg); letter-spacing: .02em;
+  text-shadow: 0 0 10px rgba(0, 255, 136, .28);
+}
+.book-heading h2 { font-size: 20px; letter-spacing: .1em; font-weight: 700; }
+.book-heading p { font-size: 11.5px; color: var(--dim); margin-top: 4px; letter-spacing: .06em; }
+
+.book-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 15px; }
+.book-stat {
+  background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 11px; padding: 9px 6px; text-align: center;
+}
+.book-stat b { display: block; font-size: 17px; color: var(--fg); }
+.book-stat span { font-size: 9.5px; color: var(--dim); letter-spacing: .04em; }
+
+.book-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-right: 3px; }
+.book-scroll::-webkit-scrollbar { width: 3px; }
+.book-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 2px; }
+
+.book-group {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; letter-spacing: .22em; color: var(--gc, var(--dim));
+  margin: 16px 0 8px;
+}
+/* 组标题右侧一条淡出的分隔线，颜色跟着稀有度走 */
+.book-group::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--gc, #fff) 42%, transparent), transparent);
+}
+.book-group:first-child { margin-top: 0; }
+.book-group.r-common { --gc: #aab1bd; }
+.book-group.r-rare { --gc: #6fbcff; }
+.book-group.r-epic { --gc: #c48dff; }
+.book-group.r-legendary { --gc: #ffc84f; }
+
+.book-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+/* ---- 词条卡：四档稀有度各有自己的边框 / 底光 / 辉光 ----
+   做法：border 留透明，第二层 background 画在 border-box 上当渐变描边，
+   第一层 padding-box 才是卡面。文字色一律取「提亮版」主色，
+   小字号在深底上也要压得住，别拿原始饱和色直接写字。 */
+.book-trait {
+  --rc: #c6ccd6;
+  --rl1: rgba(200, 208, 222, .26);
+  --rl2: rgba(200, 208, 222, .13);
+  --rl3: rgba(228, 234, 244, .30);
+  --rtint: rgba(200, 208, 222, .05);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 10px 12px 11px;
+  /* 卡面也按稀有度染一层：四档不再是一模一样的深灰，但压得很深，不吃正文对比度 */
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--rc) 11%, #1c2028),
+      color-mix(in srgb, var(--rc) 5%, #0b0d12)) padding-box,
+    linear-gradient(125deg, var(--rl1) 0%, var(--rl2) 40%, var(--rl3) 64%, var(--rl1) 100%) border-box;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+  transition: transform .18s, box-shadow .18s;
+}
+/* 左上角一缕稀有度色，卡片不再是一块死黑 */
+.book-trait::before {
+  content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(132% 100% at 6% -26%, var(--rtint), transparent 62%);
+}
+.book-trait > * { position: relative; z-index: 2; }
+
+/* 普通：冷银细线，安静不发光 —— 底档就该朴素 */
+.book-trait.r-common {
+  --rc: #cbd2dc;
+  --rl1: rgba(203, 210, 220, .30);
+  --rl2: rgba(203, 210, 220, .13);
+  --rl3: rgba(236, 241, 248, .34);
+  --rtint: rgba(203, 210, 220, .05);
+}
+/* 稀有：亮蓝渐变边 + 淡蓝外环 + 蓝底光 */
+.book-trait.r-rare {
+  --rc: #7cc8ff;
+  --rl1: rgba(110, 190, 255, .62);
+  --rl2: rgba(58, 138, 255, .34);
+  --rl3: rgba(122, 206, 255, .62);
+  --rtint: rgba(74, 163, 255, .17);
+  box-shadow:
+    inset 0 1px 0 rgba(210, 240, 255, .10),
+    0 0 0 1px rgba(74, 163, 255, .16),
+    0 0 16px -8px rgba(74, 163, 255, .78);
+}
+/* 史诗：2px 紫→洋红渐变边 + 更重的辉光 */
+.book-trait.r-epic {
+  --rc: #cf9bff;
+  --rl1: rgba(190, 115, 255, .70);
+  --rl2: rgba(152, 92, 240, .46);
+  --rl3: rgba(152, 95, 255, .74);
+  --rtint: rgba(183, 107, 255, .20);
+  border-width: 2px;
+  box-shadow:
+    inset 0 1px 0 rgba(245, 225, 255, .12),
+    0 0 0 1px rgba(183, 107, 255, .18),
+    0 0 22px -8px rgba(190, 110, 255, .88);
+}
+/* 传说：2px 金边 + 呼吸辉光 + 旋转扫光，最高档就该最扎眼 */
+.book-trait.r-legendary {
+  --rc: #ffd15c;
+  --rl1: rgba(255, 190, 60, .86);
+  --rl2: rgba(255, 150, 40, .50);
+  --rl3: rgba(255, 248, 205, .95);
+  --rtint: rgba(255, 176, 32, .22);
+  border-width: 2px;
+  animation: legBreath 2.6s ease-in-out infinite;
+}
+.book-trait.r-legendary::after {
+  content: ''; position: absolute; inset: -60%; z-index: 1; pointer-events: none;
+  background: conic-gradient(from 0deg,
+    transparent 0deg, rgba(255, 214, 120, .07) 30deg, rgba(255, 246, 214, .20) 50deg,
+    rgba(255, 214, 120, .07) 70deg, transparent 96deg, transparent 360deg);
+  animation: legSpin 7s linear infinite;
+}
+@keyframes legSpin { to { transform: rotate(1turn); } }
+@keyframes legBreath {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(255, 240, 195, .16), 0 0 18px -9px rgba(255, 176, 32, .88); }
+  50%      { box-shadow: inset 0 1px 0 rgba(255, 240, 195, .24), 0 0 30px -6px rgba(255, 192, 64, 1); }
+}
+
+/* 高级词条卡的角落花纹：传说用双弧角饰，史诗用叠套菱形（mask 上色，跟着 --rc 走） */
+.book-trait .bt-orn {
+  position: absolute; right: 7px; bottom: 7px; z-index: 1;
+  width: 24px; height: 24px; pointer-events: none;
+  background: var(--rc); opacity: .42;
+  -webkit-mask: var(--bt-orn) no-repeat center / contain;
+  mask: var(--bt-orn) no-repeat center / contain;
+}
+.book-trait.r-legendary .bt-orn {
+  --bt-orn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='square' stroke-linejoin='miter'%3E%3Cpath d='M31 13V31H13'/%3E%3Cpath d='M24 20V24H20'/%3E%3Cpath d='M27.5 24.6 30 27.1 27.5 29.6 25 27.1Z' fill='%23000' stroke='none'/%3E%3C/svg%3E");
+}
+.book-trait.r-epic .bt-orn {
+  --bt-orn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='%23000' stroke-width='1.6'%3E%3Cpath d='M16 2 30 16 16 30 2 16Z'/%3E%3Cpath d='M16 9 23 16 16 23 9 16Z'/%3E%3C/svg%3E");
+}
+
+/* 未解锁：整体压暗，但边框仍留一缕稀有度色，图鉴才有收集欲 */
+.book-trait.locked { opacity: .52; }
+/* 未解锁就别演了：不呼吸、不扫光，只留一缕边色和底纹 */
+.book-trait.locked.r-legendary { animation: none; }
+.book-trait.locked.r-legendary::after { content: none; }
+.book-trait.locked .bt-name { color: #9aa2af; text-shadow: none; }
+.book-trait.locked .bt-rarity {
+  color: #8f97a4;
+  background: rgba(255, 255, 255, .05);
+  border-color: rgba(255, 255, 255, .16);
+}
+.book-trait.locked .bt-desc { color: #828a96; }
+
+/* 本次新解锁：绿环压过稀有度辉光，一眼看出哪几条是刚拿到的 */
+.book-trait.fresh {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .08),
+    0 0 0 1px rgba(0, 255, 136, .42),
+    0 0 22px -8px rgba(0, 255, 136, .9);
+}
+.book-trait.fresh.r-legendary { animation: none; }
+
+.book-trait .bt-new {
+  font-style: normal; font-size: 8.5px; font-weight: 700; letter-spacing: .1em; line-height: 1;
+  padding: 2px 4px; border-radius: 4px;
+  color: var(--green); background: rgba(0, 255, 136, .14);
+  border: 1px solid rgba(0, 255, 136, .46);
+}
+.book-trait .bt-top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+/* 稀有度标签独占一行贴右，标题再整行铺开：
+   英文名（Crease Deepens / A Thread of Green）不会被标签挤成三行 */
+.book-trait .bt-rarity {
+  order: 1; margin-left: auto;
+  flex: none; font-size: 9px; font-weight: 700; letter-spacing: .12em;
+  padding: 2px 6px; border-radius: 6px;
+  color: var(--rc);
+  background: color-mix(in srgb, var(--rc) 17%, rgba(6, 8, 12, .62));
+  border: 1px solid color-mix(in srgb, var(--rc) 52%, transparent);
+}
+.book-trait .bt-name {
+  order: 2; flex: 1 0 100%;
+  font-size: 13.5px; font-weight: 700; color: var(--rc); letter-spacing: .01em;
+  line-height: 1.35; overflow-wrap: anywhere;
+  text-shadow: 0 0 14px color-mix(in srgb, var(--rc) 45%, transparent);
+}
+.book-trait .bt-desc { font-size: 11px; color: #b4bbc6; margin-top: 4px; line-height: 1.5; }
+.book-trait .bt-count { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: #9aa2ae; margin-top: 3px; }
+
+/* 宽屏：别把手机版两列硬拉宽。面板加宽 + 改三列，字号跟着提一档，
+   桌面上一屏能看到更多卡片，描述也不再挤成两行半。 */
+@media (min-width: 820px) {
+  .book-card { max-width: 700px; padding: 26px 24px 20px; }
+  .book-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .book-trait { padding: 12px 14px 13px; }
+  .book-trait .bt-name { font-size: 14.5px; }
+  .book-trait .bt-rarity { font-size: 9.5px; }
+  .book-trait .bt-desc { font-size: 11.5px; }
+  .book-trait .bt-count { font-size: 11px; }
+  .book-stats { gap: 10px; margin-bottom: 17px; }
+  .book-stat b { font-size: 19px; }
+  .book-stat span { font-size: 10px; }
+  .book-group { font-size: 10.5px; margin: 18px 0 9px; }
+  .book-heading h2 { font-size: 22px; }
+}
+
+/* 新手引导：两行手势胶囊
+   上行演示「向右滑动」，下行演示「长按自动折叠」；长按充能时整块会随进度变亮 */
+.swipe-hint {
+  /* 屏幕正中、左右贯通的一条半透明 HUD 带：上下发丝线 + 中间渐隐渐变，不挡机身 */
+  position: fixed; left: 0; right: 0; top: 50%;
+  transform: translateY(-50%);
+  z-index: 16; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 15px 22px;
+  background:
+    linear-gradient(90deg, transparent, rgba(0,255,136,.20) 16%, rgba(0,255,136,.20) 84%, transparent) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent, rgba(0,255,136,.20) 16%, rgba(0,255,136,.20) 84%, transparent) bottom / 100% 1px no-repeat,
+    linear-gradient(180deg, rgba(9,12,16,.02), rgba(9,12,16,.46) 16%, rgba(9,12,16,.46) 84%, rgba(9,12,16,.02));
+  box-shadow: 0 0 46px -20px rgba(0,255,136,.6);
+  backdrop-filter: blur(3px) saturate(1.05);
+  -webkit-backdrop-filter: blur(3px) saturate(1.05);
+  transition: opacity .5s ease, transform .5s cubic-bezier(.2,.9,.3,1), box-shadow .2s;
+}
+.swipe-hint.gone { opacity: 0; transform: translateY(-50%) scale(.97); }
+
+.sh-step { display: flex; align-items: center; gap: 11px; position: relative; }
+.sh-step + .sh-step {
+  padding-top: 9px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+
+/* 长按充能：底光加亮，圆环随进度灌满 */
+.swipe-hint.charging {
+  box-shadow: 0 0 60px -14px rgba(0,255,136,.95);
+}
+.swipe-hint.charging .sh-ring::after {
+  animation: none;
+  transform: scale(calc(.15 + var(--hold, 0) * .95));
+  opacity: calc(.32 + var(--hold, 0) * .68);
+}
+
+/* 呼吸底光：让胶囊在暗背景上自己会亮 */
+.swipe-hint::before {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit;
+  background: radial-gradient(52% 130% at 50% 50%, rgba(0,255,136,.10), transparent 72%);
+  animation: shBreath 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shBreath {
+  0%, 100% { opacity: .4; }
+  50%      { opacity: 1; }
+}
+
+/* 轨道：一条细发丝线 + 光点 */
+.sh-lane {
+  position: relative; flex: none;
+  --lane: 68px;
+  width: var(--lane); height: 12px;
+}
+.sh-lane::before {
+  content: '';
+  position: absolute; left: 0; right: 0; top: 50%; height: 1.5px;
+  transform: translateY(-50%); border-radius: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.26));
+}
+.sh-dot {
+  position: absolute; top: 50%; left: 0;
+  width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #d8ffe9, #00ff88 62%, #00c46a);
+  box-shadow: 0 0 12px rgba(0,255,136,.95), 0 0 30px rgba(0,255,136,.45);
+  animation: shDot 2.3s cubic-bezier(.36,.02,.24,1) infinite;
+}
+/* 拖尾：光点后面那道渐隐的绿线，方向一目了然 */
+.sh-dot::after {
+  content: '';
+  position: absolute; right: 100%; top: 50%;
+  width: 30px; height: 2px; margin-top: -1px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,136,.75));
+}
+@keyframes shDot {
+  0%   { left: 0; opacity: 0; transform: scale(.55); }
+  14%  { opacity: 1; transform: scale(1); }
+  76%  { left: calc(var(--lane, 68px) - 9px); opacity: 1; transform: scale(1); }
+  90%  { left: calc(var(--lane, 68px) - 9px); opacity: 0; transform: scale(.6); }
+  100% { left: 0; opacity: 0; transform: scale(.55); }
+}
+
+/* 箭头：逐个点亮，像光点穿过去 */
+.sh-chev {
+  display: flex; align-items: center; gap: 0;
+  flex: none; margin-left: -3px; position: relative;
+}
+.sh-chev i {
+  font-style: normal; font-size: 16px; line-height: 1;
+  color: var(--green); opacity: .2;
+  animation: shChev 2.3s ease-in-out infinite;
+}
+.sh-chev i:nth-child(1) { animation-delay: .52s; }
+.sh-chev i:nth-child(2) { animation-delay: .66s; }
+.sh-chev i:nth-child(3) { animation-delay: .80s; }
+@keyframes shChev {
+  0%, 100% { opacity: .16; transform: translateX(0); }
+  18%      { opacity: 1;   transform: translateX(2px); }
+  42%      { opacity: .16; transform: translateX(0); }
+}
+
+.sh-txt {
+  display: flex; flex-direction: column; gap: 3px;
+  position: relative;
+  border-left: 1px solid rgba(255,255,255,.10);
+  padding: 1px 0 1px 11px;
+  line-height: 1.15;
+}
+.sh-txt b {
+  font-size: 13px; font-weight: 700; letter-spacing: .16em;
+  color: #eaf6ef; text-shadow: 0 1px 10px rgba(0,0,0,.9);
+  white-space: nowrap;
+}
+.sh-txt em {
+  /* 引导条现在浮在亮壁纸/机身上，副文案不能再用 --dim 那档灰 */
+  font-style: normal; font-size: 10px; letter-spacing: .1em;
+  color: rgba(206, 214, 226, .8);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .9);
+  white-space: nowrap;
+}
+
+/* 长按充能环：静止时内芯一呼一吸，按住时按进度灌满 */
+.sh-ring {
+  position: relative; flex: none;
+  width: 17px; height: 17px; border-radius: 50%;
+  border: 1.5px solid rgba(0,255,136,.30);
+  box-shadow: inset 0 0 8px -3px rgba(0,255,136,.8);
+}
+.sh-ring::before {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid rgba(0,255,136,.14);
+}
+.sh-ring::after {
+  content: ''; position: absolute; inset: 2.5px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #d8ffe9, #00ff88 68%, #00c46a);
+  box-shadow: 0 0 12px rgba(0,255,136,.9);
+  transform: scale(.15); opacity: .35;
+  animation: shRingFill 2.4s ease-in-out infinite;
+}
+@keyframes shRingFill {
+  0%   { transform: scale(.15); opacity: .35; }
+  55%  { transform: scale(1);   opacity: 1; }
+  75%  { transform: scale(1);   opacity: .9; }
+  100% { transform: scale(.15); opacity: .35; }
+}
+
+/* 自动折叠不再挂提示胶囊：按住就折、松手就停是直觉操作，任何浮层都只会挡视线 */
+
+
+/* ================= 稀有度条带（斜向贯穿） ================= */
+.rarity-band {
+  position: fixed;
+  left: -32vw; right: -32vw; top: 40%;
+  height: 92px;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 32; pointer-events: none;
+  opacity: 0;
+  transform: rotate(-7deg) translateX(-125%);
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rc) 9%, transparent) 14%,
+    color-mix(in srgb, var(--rc) 26%, transparent) 50%,
+    color-mix(in srgb, var(--rc) 9%, transparent) 86%,
+    transparent 100%);
+  border-top: 1.5px solid color-mix(in srgb, var(--rc) 72%, transparent);
+  border-bottom: 1.5px solid color-mix(in srgb, var(--rc) 72%, transparent);
+  box-shadow: 0 0 80px -16px var(--rc), inset 0 0 52px -24px var(--rc);
+  backdrop-filter: blur(14px) saturate(1.35);
+  -webkit-backdrop-filter: blur(14px) saturate(1.35);
+}
+
+/* --- 进场：从左侧斜扫入，略带回弹 --- */
+.rarity-band.in { animation: bandIn .54s cubic-bezier(.14,.9,.24,1) forwards; }
+@keyframes bandIn {
+  0%   { opacity: 0; transform: rotate(-7deg) translateX(-125%) scaleY(.84); }
+  55%  { opacity: 1; opacity: 1; }
+  100% { opacity: 1; transform: rotate(-7deg) translateX(0) scaleY(1); }
+}
+
+/* --- 退场：向右加速扫出并上浮淡出 --- */
+.rarity-band.out { animation: bandOut .40s cubic-bezier(.5,0,.9,.16) forwards; }
+@keyframes bandOut {
+  0%   { opacity: 1; transform: rotate(-7deg) translateX(0) scaleY(1); }
+  60%  { opacity: .55; }
+  100% { opacity: 0; transform: rotate(-7deg) translateX(132%) translateY(-14px) scaleY(.86); }
+}
+
+/* --- 文字 --- */
+.rarity-band .rb-inner {
+  display: flex; align-items: baseline; gap: 16px;
+  opacity: 0; transform: scale(.9);
+}
+.rarity-band.in .rb-inner {
+  animation: bandText .52s cubic-bezier(.2,1.4,.4,1) .09s forwards;
+}
+@keyframes bandText {
+  from { opacity: 0; transform: scale(.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.rb-label {
+  font-size: 11px; letter-spacing: .34em; color: #ffffff;
+  padding: 3px 9px 3px 11px;
+  border: 1px solid color-mix(in srgb, var(--rc) 80%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--rc) 26%, rgba(6,8,12,.72));
+  text-shadow: 0 0 10px var(--rc), 0 1px 3px rgba(0,0,0,.9);
+}
+.rb-name {
+  font-size: 26px; font-weight: 800; color: #fff; letter-spacing: .1em;
+  text-shadow: 0 0 24px var(--rc), 0 2px 12px rgba(0,0,0,.7);
+}
+
+/* --- 扫光 --- */
+.rb-sheen {
+  position: absolute; inset: 0; overflow: hidden;
+  background: linear-gradient(100deg, transparent 38%, rgba(255,255,255,.5) 50%, transparent 62%);
+  transform: translateX(-100%); opacity: 0;
+}
+.rarity-band.in .rb-sheen { animation: sheen 1s ease-out .12s 1 both; }
+@keyframes sheen {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  28%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* --- 回声光带（史诗 1 条 / 传说 2 条） --- */
+.rb-echo {
+  position: absolute; left: -8%; right: -8%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--rc), transparent);
+  box-shadow: 0 0 14px var(--rc);
+  opacity: 0;
+}
+.rb-echo-1 { top: -15px; }
+.rb-echo-2 { bottom: -19px; }
+.rarity-band.in .rb-echo { animation: echoIn .62s ease-out .18s forwards; }
+@keyframes echoIn {
+  from { opacity: 0; transform: scaleX(.25); }
+  to   { opacity: .85; transform: scaleX(1); }
+}
+
+/* --- 传说：星点飞散 --- */
+.rb-stars {
+  position: absolute; inset: -46px 0;
+  background-image:
+    radial-gradient(circle, var(--rc) 1.3px, transparent 1.5px),
+    radial-gradient(circle, #ffffff 1px, transparent 1.2px);
+  background-size: 47px 47px, 84px 84px;
+  opacity: 0;
+}
+.rarity-band.in .rb-stars { animation: stars .95s ease-out .1s forwards; }
+@keyframes stars {
+  0%   { opacity: 0; transform: scale(.94); }
+  38%  { opacity: .85; }
+  100% { opacity: 0; transform: scale(1.08); }
+}
+
+/* --- 传说：逐字上浮 --- */
+.rb-ch { display: inline-block; opacity: 0; transform: translateY(11px); }
+.rarity-band.in .rb-ch {
+  animation: chIn .44s cubic-bezier(.2,1.5,.4,1) forwards;
+  animation-delay: calc(.2s + var(--i) * .055s);
+}
+@keyframes chIn { to { opacity: 1; transform: translateY(0); } }
+
+/* --- 档位差异：越稀有越厚重 --- */
+.rarity-band.tier-epic { height: 102px; top: 39%; }
+.rarity-band.tier-legendary {
+  height: 118px; top: 38%;
+  box-shadow: 0 0 110px -18px var(--rc), inset 0 0 64px -26px var(--rc);
+  border-top-width: 2px; border-bottom-width: 2px;
+}
+
+/* ================= 顶部 HUD：品阶身份牌 + 词条装备栏 ================= */
+.hud-panel {
+  position: fixed; left: 0; right: 0; top: 0; z-index: 12;
+  padding: 0 0 14px;
+  /* 不用 backdrop-filter：顶部区域每帧重新模糊整条背景，中低端机拖拽时最吃这份开销 */
+  background: linear-gradient(180deg, rgba(6,8,12,.92) 0%, rgba(6,8,12,.72) 58%, rgba(6,8,12,0) 100%);
+  pointer-events: none;
+}
+
+/* --- 品阶身份牌 --- */
+.stagetag {
+  display: flex; align-items: center; gap: 13px;
+  padding: 10px 20px 0;
+}
+
+.stage-badge {
+  position: relative; flex: none;
+  width: 46px; height: 46px; border-radius: 14px;
+  display: grid; place-items: center;
+  background: linear-gradient(160deg, rgba(255,255,255,.10), rgba(255,255,255,.02));
+  border: 1px solid var(--sc, rgba(255,255,255,.20));
+  box-shadow: 0 0 20px -6px var(--sc, transparent), inset 0 1px 0 rgba(255,255,255,.14);
+  transition: border-color .4s, box-shadow .4s;
+}
+.stage-badge span {
+  font-size: 19px; font-weight: 800; letter-spacing: -.02em;
+  color: var(--sc, var(--fg));
+  text-shadow: 0 0 12px var(--sc, transparent);
+}
+
+.stage-main { flex: 1; min-width: 0; }
+.stage-row { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.stage-row h1 {
+  font-size: 21px; font-weight: 700; letter-spacing: .05em;
+  color: var(--sc, var(--fg));
+  /* 外发光靠 text-shadow 画在字形外沿，容器一旦 overflow:hidden 就会被裁成方块，
+     所以这里不裁剪；品阶名长度固定，用字号自适应兜住窄屏，不靠省略号 */
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--sc, #fff) 78%, transparent),
+    0 0 18px color-mix(in srgb, var(--sc, #fff) 42%, transparent),
+    0 0 34px color-mix(in srgb, var(--sc, #fff) 22%, transparent);
+  overflow: visible; text-overflow: clip;
+  flex: 0 1 auto; min-width: 0;
+  transition: color .4s;
+  white-space: nowrap;
+}
+.stage-row h1.dead { color: #ff4d5e; text-shadow: 0 0 24px rgba(255,77,94,.6); animation: none; }
+#stageSub {
+  font-size: 10px; letter-spacing: .18em; color: var(--dim);
+  flex: none; opacity: .9;
+}
+
+/* 10 格品阶进度 */
+.stage-bar {
+  display: flex; gap: 3px; margin-top: 7px;
+}
+.stage-bar i {
+  flex: 1; height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,.26);
+  transition: background .35s, box-shadow .35s;
+}
+.stage-bar i.on {
+  background: var(--sc, var(--green));
+  box-shadow: 0 0 8px -1px var(--sc, var(--green));
+}
+
+/* --- 词条装备栏 --- */
+.traits-wrap { padding: 9px 16px 0; pointer-events: none; }
+.traits-head {
+  display: flex; justify-content: flex-end; padding: 0 4px 4px;
+}
+.traits-head span {
+  font-size: 9.5px; letter-spacing: .16em; color: rgba(150,158,172,.62);
+}
+.traits {
+  display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
+  align-content: flex-start;
+}
+.trait {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10.5px; padding: 3px 9px 3px 7px; border-radius: 9px;
+  border: 1px solid color-mix(in srgb, currentColor 42%, transparent);
+  background: color-mix(in srgb, currentColor 10%, rgba(6,8,12,.55));
+  letter-spacing: .02em;
+  animation: traitIn .45s cubic-bezier(.2,1.4,.4,1);
+}
+.trait i {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: currentColor; flex: none;
+}
+/* 高稀有度带外发光 */
+.trait.r-rare { box-shadow: 0 0 12px -4px currentColor; }
+.trait.r-epic {
+  box-shadow: 0 0 16px -3px currentColor, inset 0 0 12px -6px currentColor;
+  font-weight: 600;
+}
+.trait.r-legendary {
+  box-shadow: 0 0 22px -2px currentColor, inset 0 0 14px -5px currentColor;
+  font-weight: 700;
+  animation: traitIn .45s cubic-bezier(.2,1.4,.4,1), legendPulse 2.2s ease-in-out infinite 0.5s;
+}
+@keyframes legendPulse {
+  0%, 100% { box-shadow: 0 0 18px -3px currentColor, inset 0 0 12px -6px currentColor; }
+  50%      { box-shadow: 0 0 30px 0 currentColor, inset 0 0 16px -4px currentColor; }
+}
+@keyframes traitIn {
+  from { opacity: 0; transform: translateY(5px) scale(.9); }
+  to   { opacity: 1; transform: none; }
+}
+
+
+/* ---- 页面基底噪点：2.8% 颗粒感，纯色大平面会显得廉价 ---- */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: .028;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  background-size: 140px 140px;
+}
+#scene { position: fixed; inset: 0; z-index: 1; }
+
+/* ---- 遮罩：毛玻璃 + 冷色调，不要死黑 ---- */
+.modal {
+  background: rgba(6, 8, 12, .80);
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+}
+.book {
+  background: rgba(6, 8, 12, .80);
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+}
+
+/* ---- 浮层卡片：双层边框 + 顶光 + 弥散阴影 ---- */
+.book-card {
+  background:
+    linear-gradient(180deg, var(--float-1) 0%, var(--float-2) 62%) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 24px !important;
+  box-shadow:
+    0 34px 96px -26px rgba(0, 0, 0, .92),
+    0 0 0 1px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    inset 0 -60px 80px -70px rgba(0, 0, 0, .95) !important;
+}
+.book-card::before {
+  content: '';
+  position: absolute; left: 12%; right: 12%; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .38), transparent);
+  pointer-events: none;
+}
+
+/* ---- 底部按钮：软边框 + 内高光，替代硬边 #24272d ---- */
+.items button {
+  background: linear-gradient(180deg, rgba(30, 34, 42, .92), rgba(15, 18, 23, .96)) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 2px 10px -6px rgba(0, 0, 0, .9);
+}
+.items button:active:not(:disabled) {
+  background: linear-gradient(180deg, rgba(40, 46, 56, .95), rgba(20, 24, 30, .98)) !important;
+}
+
+/* ---- 延保：折叠数 0 时可点升级续航上限；局内只展示剩余续命次数 ---- */
+/* 禁用态不整块发灰：延保是常驻状态位，必须一眼能读出还剩几次续命 */
+#btnAC:disabled { opacity: .92; cursor: default; }
+#btnAC b { letter-spacing: .04em; }
+#btnAC.is-armed {
+  border-color: rgba(0, 255, 136, .26) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 0 22px -14px rgba(0,255,136,.9);
+}
+#btnAC.is-armed b { color: rgba(0, 255, 136, .92); }
+#btnAC.spent { opacity: .55; }
+#btnAC.spent b { color: rgba(255,255,255,.38); }
+
+/* 可升级：金色高亮 + 左右晃动 + 缩放脉冲，明确喊用户来点 */
+#btnAC.can-upgrade {
+  opacity: 1; color: #fff8ea;
+  border-color: rgba(255, 176, 32, .62) !important;
+  background: linear-gradient(180deg, rgba(255,176,32,.18), rgba(120,74,8,.12)) !important;
+  box-shadow:
+    0 0 0 1px rgba(255,176,32,.16),
+    0 10px 30px -16px rgba(255,176,32,.95),
+    inset 0 1px 0 rgba(255,255,255,.16);
+  animation: acWobble 1.9s cubic-bezier(.36,.06,.3,.98) infinite !important;
+  transform-origin: 50% 80%;
+  will-change: transform;
+}
+#btnAC.can-upgrade b { color: #ffcf6b; font-weight: 700; }
+#btnAC.can-upgrade::after {
+  content: '';
+  position: absolute; inset: -2px; border-radius: 13px;
+  border: 1px solid rgba(255,176,32,.5);
+  animation: acRing 1.9s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes acWobble {
+  0%, 54%, 100% { transform: rotate(0deg) scale(1); }
+  58% { transform: rotate(-2.4deg) scale(1.045); }
+  63% { transform: rotate(2.2deg) scale(1.06); }
+  68% { transform: rotate(-1.5deg) scale(1.035); }
+  73% { transform: rotate(.9deg) scale(1.015); }
+  78% { transform: rotate(0deg) scale(1); }
+  86% { transform: rotate(0deg) scale(1.045); }
+  93% { transform: rotate(0deg) scale(1); }
+}
+@keyframes acRing {
+  0%   { opacity: .8; transform: scale(.99); }
+  70%  { opacity: 0;  transform: scale(1.11); }
+  100% { opacity: 0;  transform: scale(1.11); }
+}
+
+/* ---- 延保档案：开局前展示「本机历史最高品阶」与升级规则 ---- */
+.care-note {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  padding: 8px 12px; border-radius: 11px;
+  background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+  border: 1px solid rgba(255,255,255,.07);
+  font-size: 10px; letter-spacing: .08em; color: var(--dim);
+  animation: cnIn .45s cubic-bezier(.2,.9,.3,1) both;
+}
+.care-note[hidden] { display: none; }
+@keyframes cnIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.cn-head { flex: none; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.cn-head b {
+  font-size: 12px; font-weight: 700; letter-spacing: .12em;
+  color: #dfe6ee; text-shadow: 0 0 12px rgba(255,255,255,.18);
+}
+.cn-rule { display: flex; gap: 5px; margin-left: auto; }
+.cn-rule i {
+  font-style: normal; padding: 3px 7px; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,.09);
+  background: rgba(255,255,255,.02);
+  color: rgba(255,255,255,.28);
+  transition: color .25s, border-color .25s, background .25s;
+}
+.cn-rule i.on {
+  color: rgba(0,255,136,.95);
+  border-color: rgba(0,255,136,.35);
+  background: rgba(0,255,136,.10);
+  box-shadow: 0 0 14px -8px rgba(0,255,136,.95);
+}
+.cn-rule i.next {
+  color: #ffcf6b;
+  border-color: rgba(255,176,32,.68);
+  background: rgba(255,176,32,.14);
+  animation: cnNext 1.7s ease-in-out infinite;
+}
+@keyframes cnNext {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,176,32,0); }
+  50%      { box-shadow: 0 0 15px -1px rgba(255,176,32,.8); }
+}
+
+/* ---- 成就卡图片：加冷色描边，避免直接贴在黑上 ---- */
+.sheet img {
+  border: 1px solid rgba(255, 255, 255, .10);
+  box-shadow: 0 26px 70px -18px rgba(0, 0, 0, .9), 0 0 0 1px rgba(0, 0, 0, .5);
+}
+
+
+/* ================= 常驻循环动画 ================= */
+/* 全局激励量：折叠时为 0~1，由 JS 每帧写入，用来同步放大所有呼吸效果 */
+:root { --excite: 0; }
+
+/* 品阶徽章：辉光呼吸 */
+.stage-badge {
+  animation: badgeGlow 2.8s ease-in-out infinite;
+}
+@keyframes badgeGlow {
+  0%, 100% { box-shadow: 0 0 14px -6px var(--sc, transparent), inset 0 1px 0 rgba(255,255,255,.14); }
+  50%      { box-shadow: 0 0 30px -2px var(--sc, transparent), inset 0 1px 0 rgba(255,255,255,.22); }
+}
+
+/* 已点亮的品阶格：明暗涌动，像在跑马 */
+.stage-bar i.on {
+  animation: segGlow 1.9s ease-in-out infinite;
+}
+@keyframes segGlow {
+  0%, 100% { opacity: .74; }
+  50%      { opacity: 1; }
+}
+
+/* 品阶名：外发光极缓慢呼吸。
+   不用 filter: brightness —— filter 会把元素塞进独立光栅层并裁到边框盒，
+   外发光又会变成方块；直接让 text-shadow 的模糊半径自己呼吸最干净 */
+.stage-row h1:not(.dead) {
+  animation: nameGlow 3.4s ease-in-out infinite;
+}
+@keyframes nameGlow {
+  0%, 100% {
+    text-shadow:
+      0 0 5px color-mix(in srgb, var(--sc, #fff) 68%, transparent),
+      0 0 15px color-mix(in srgb, var(--sc, #fff) 34%, transparent),
+      0 0 30px color-mix(in srgb, var(--sc, #fff) 16%, transparent);
+  }
+  50% {
+    text-shadow:
+      0 0 8px color-mix(in srgb, var(--sc, #fff) 90%, transparent),
+      0 0 22px color-mix(in srgb, var(--sc, #fff) 50%, transparent),
+      0 0 44px color-mix(in srgb, var(--sc, #fff) 28%, transparent);
+  }
+}
+
+/* 底部按钮：待命时的细微呼吸，暗示可操作 */
+.items button:not(:disabled) {
+  animation: btnBreath 3.6s ease-in-out infinite;
+}
+@keyframes btnBreath {
+  0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 2px 10px -6px rgba(0,0,0,.9); }
+  50%      { box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 4px 18px -8px rgba(90,150,220,.5); }
+}
+
+/* 成就卡：浮起 + 外发光脉冲
+   发光颜色跟卡面主题色走 —— 主题色 = 评级色（S金/A紫/B蓝/C绿/D灰），main.js 写 data-grade。
+   稀有度只体现在词条胶囊上，不再决定整卡颜色。 */
+.sheet img { --card-glow: rgba(40, 110, 180, .35); }
+.sheet img[data-grade="S"]      { --card-glow: rgba(255, 176, 32, .52); }
+.sheet img[data-grade="A"]      { --card-glow: rgba(183, 107, 255, .48); }
+.sheet img[data-grade="B"]      { --card-glow: rgba(74, 163, 255, .44); }
+.sheet img[data-grade="C"]      { --card-glow: rgba(0, 255, 136, .34); }
+.sheet img[data-grade="D"]      { --card-glow: rgba(154, 160, 168, .28); }
+
+.sheet img {
+  animation: cardFloat 5.6s ease-in-out infinite, cardGlow 5.6s ease-in-out infinite;
+}
+@keyframes cardFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-7px) scale(1.006); }
+}
+@keyframes cardGlow {
+  0%, 100% { box-shadow: 0 26px 70px -18px rgba(0,0,0,.9), 0 0 0 1px rgba(0,0,0,.5); }
+  50%      { box-shadow: 0 34px 88px -14px var(--card-glow), 0 0 0 1px rgba(255,255,255,.07); }
+}
+
+/* 成就进度环：缓慢流光（画在 svg 元素上，不会被 SVG 视口裁掉） */
+@keyframes ringGlow {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(0, 255, 136, .45)); }
+  50%      { filter: drop-shadow(0 0 15px rgba(0, 255, 136, .95)); }
+}
+
+/* 减少动画偏好：尊重系统设置 */
+@media (prefers-reduced-motion: reduce) {
+  body::before, .stage-badge, .stage-bar i.on, .stage-row h1,
+  .items button:not(:disabled), .sheet img, .book-ring svg,
+  #btnAC.can-upgrade, #btnAC.can-upgrade::after,
+  .swipe-hint::before, .sh-dot, .sh-chev i, .cn-rule i.next,
+  .sh-ring::after, .bb-dot,
+  .book-trait.r-legendary, .book-trait.r-legendary::after {
+    animation: none !important;
+  }
+  /* 扫光停转后留一个静态的柔光角落，别变成一块纯透明 */
+  .book-trait.r-legendary::after { opacity: .5; transform: rotate(28deg); }
+  #btnAC.can-upgrade { transform: none !important; }
+}
+
+
+/* ================= 背景动效层 ================= */
+.bg-fx {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  overflow: hidden;
+}
+
+/* 漂浮光斑：三个不同速度、不同色相的大光团，缓慢游动 */
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  /* 不用 filter: blur —— 大面积的模糊滤镜在中低端 GPU 上每帧都要重新合成，
+     而 radial-gradient 本身已经是柔边，加 blur 纯属浪费 */
+  will-change: transform, opacity;
+}
+.o1 {
+  width: 78vmax; height: 78vmax;
+  left: -26vmax; top: -34vmax;
+  background: radial-gradient(circle, rgba(58, 128, 198, .55), rgba(36, 78, 128, .18) 55%, transparent 72%);
+  opacity: calc(.30 + var(--excite, 0) * .34);
+  /* 大块渐变每帧 transform 会触发重新合成，中低端机吃不消；
+     光斑保持静态，动效交给粒子层和 --excite 的亮度变化 */
+  transition: opacity .45s ease;
+}
+.o2 {
+  width: 62vmax; height: 62vmax;
+  right: -24vmax; bottom: -26vmax;
+  background: radial-gradient(circle, rgba(102, 62, 168, .50), rgba(62, 38, 102, .16) 55%, transparent 72%);
+  opacity: calc(.26 + var(--excite, 0) * .32);
+  transition: opacity .45s ease;
+}
+.o3 {
+  width: 48vmax; height: 48vmax;
+  left: 26vmax; bottom: -22vmax;
+  background: radial-gradient(circle, rgba(28, 118, 118, .40), transparent 70%);
+  opacity: calc(.20 + var(--excite, 0) * .30);
+  transition: opacity .45s ease;
+}
+
+@keyframes drift1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(7vmax, 5vmax, 0) scale(1.12); }
+  66%      { transform: translate3d(-4vmax, 9vmax, 0) scale(.96); }
+}
+@keyframes drift2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.04); }
+  40%      { transform: translate3d(-8vmax, -6vmax, 0) scale(.94); }
+  70%      { transform: translate3d(5vmax, -10vmax, 0) scale(1.14); }
+}
+@keyframes drift3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(.98); }
+  50%      { transform: translate3d(-7vmax, -8vmax, 0) scale(1.18); }
+}
+
+/* 折叠时整体提亮（光斑与星点已由 --excite 控制透明度） */
+.bg-fx { transition: filter .3s ease; }
+
+
+/* 尘埃粒子层（canvas 逐颗绘制，位置/大小/速度全部随机） */
+.dust {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  opacity: calc(.55 + var(--excite, 0) * .40);
+  transition: opacity .3s ease;
+}
+
+/* ================= 窄屏 / 矮屏适配 ================= */
+/* 品阶名不再用省略号裁剪（会裁掉外发光），改用字号与字距自适应窄屏，
+   保证 7 个字的长名（传奇·一掰就碎）与右侧 STAGE 标签仍能并排 */
+@media (max-width: 430px) {
+  .stage-row { gap: 8px; }
+  .stage-row h1 { font-size: 18px; letter-spacing: .01em; }
+  #stageSub { font-size: 9px; letter-spacing: .12em; }
+  .swipe-hint { padding: 9px 15px 9px 13px; gap: 9px; }
+  .sh-lane { --lane: 54px; }
+  .sh-txt b { font-size: 12px; letter-spacing: .1em; }
+}
+
+@media (max-height: 700px) {
+  .swipe-hint { bottom: calc(232px + env(safe-area-inset-bottom)); }
+}
+
+/* ================= 启动失败诊断条 ================= */
+/* 模块加载失败时页面只有静态外壳，必须把真实错误直接摆在玩家眼前，
+   否则就是"界面在、模型没了"这种最难猜的故障 */
+#bootErr {
+  position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom));
+  z-index: 99;
+  padding: 10px 12px; border-radius: 10px;
+  background: rgba(58, 12, 16, .94);
+  border: 1px solid rgba(255, 82, 82, .55);
+  color: #ffd9d9;
+  font: 600 11px/1.55 ui-monospace, Menlo, Consolas, monospace;
+  letter-spacing: .02em; word-break: break-all;
+  box-shadow: 0 12px 34px -14px rgba(0, 0, 0, .95);
+  pointer-events: auto;
+  user-select: text; -webkit-user-select: text;
+}
+#bootErr[hidden] { display: none; }
+#bootErr button {
+  margin-left: 9px; padding: 2px 11px; vertical-align: baseline;
+  font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  color: #ffe3e3; background: rgba(255, 82, 82, .2);
+  border: 1px solid rgba(255, 82, 82, .55); border-radius: 6px; cursor: pointer;
+}
+#bootErr button:active { background: rgba(255, 82, 82, .34); }
+
+/* ================= 双语（zh / en）================= */
+/* 文案还没按语言刷完时先别露字：英文用户不该看到一帧中文。
+   i18n.js 刷完会摘掉 .i18n-wait；index.html 另有 3 秒兜底，脚本挂了也不会永久隐藏 */
+html.i18n-wait .hud-panel,
+html.i18n-wait .swipe-hint,
+html.i18n-wait .panel { visibility: hidden; }
+
+/* 英文比中文长：字距收一点，别把顶栏和按钮挤换行 */
+html[data-lang="en"] .brand em { font-size: 13px; letter-spacing: .05em; }
+html[data-lang="en"] .book-btn { letter-spacing: .04em; }
+html[data-lang="en"] .stop { letter-spacing: .03em; }
+html[data-lang="en"] .book-heading h2 { letter-spacing: .06em; }
+html[data-lang="en"] .book-group { letter-spacing: .12em; }
+html[data-lang="en"] .book-stat span { letter-spacing: .02em; }
+
+/* ================= 顶部右侧：GitHub 源码入口 ================= */
+/* 与「成就」胶囊同一套玻璃质感，但只有图标，不抢主按钮的注意力 */
+.gh-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; flex: none; border-radius: 999px;
+  color: rgba(232, 236, 242, .86);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .085), rgba(255, 255, 255, .022)),
+    rgba(12, 15, 20, .72);
+  border: 1px solid rgba(255, 255, 255, .16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .12),
+    0 8px 20px -14px rgba(0, 0, 0, .95);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color .18s, box-shadow .18s, transform .12s, color .18s;
+}
+.gh-btn svg { width: 15px; height: 15px; display: block; }
+.gh-btn:active {
+  transform: scale(.94);
+  border-color: rgba(255, 255, 255, .45);
+  color: #fff;
+}
+@media (hover: hover) {
+  .gh-btn:hover {
+    border-color: rgba(255, 255, 255, .34);
+    color: #fff;
+  }
+}
