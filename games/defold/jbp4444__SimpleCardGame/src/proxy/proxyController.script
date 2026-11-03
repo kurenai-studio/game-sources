@@ -1,0 +1,48 @@
+
+local globals = require( 'utils.GlobalVars' )
+
+local function show( self, proxy )
+	if( self.current_proxy ) then
+		print( 'unloading old proxy' )
+		msg.post( self.current_proxy, "unload" )
+		self.current_proxy = nil
+	end
+	print( 'loading new proxy '..proxy )
+	msg.post( proxy, 'async_load', { data=1, foo=2, bar=3 } )
+	-- msg.post( proxy, "load" )
+	-- msg.post( proxy, 'enable' )
+	pprint( proxy )
+end
+
+function init( self )
+	print( 'proxyController init '..msg.url() )
+	-- fixed-fit projection:  projection that centers and fits content with maintained aspect ratio
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+	msg.post( '.', "acquire_input_focus" )
+	self.current_proxy = nil
+	msg.post( '.', 'show_menu' )
+end
+
+function on_message( self, message_id, message, sender )
+	if( message_id == hash("show_menu") ) then
+		print( 'show_menu message' )
+		print( '  game_level = '..globals.game_level )
+		show( self, "#menuproxy" )
+
+	-- elseif( message_id == hash("show_tutorial") ) then
+	-- 	show(self, "#playgameProxy")
+	elseif( message_id == hash("play_game") ) then
+		print( '  game_level = '..globals.game_level )
+		show( self, "#playgameproxy" )
+
+	elseif( message_id == hash("proxy_loaded") ) then
+		print( 'got proxy_loaded message' )
+		self.current_proxy = sender
+		msg.post( sender, "enable" )
+
+	elseif( message_id == hash("proxy_unloaded") ) then
+		print( 'got proxy_unloaded message' )
+		print( "Unloaded", sender )
+	end
+end
+
