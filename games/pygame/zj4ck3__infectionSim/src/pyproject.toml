@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "infectionSim"
+version = "1.0"
+description = "simulate the propagation of an infectious disease"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["simulation", "person", "main",]
+
+[tool.setuptools.packages.find]
+where = ["src"]
