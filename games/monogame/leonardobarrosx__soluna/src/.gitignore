@@ -1,0 +1,20 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+__pycache__/
+*.pyc
+
+# Art you are allowed to use but not to redistribute, in any game.
+games/*/assets/**/private/
+
+# Player accounts and characters stay on the server that created them.
+games/*/data/accounts/
+
+# Maps and game data that use private art.
+games/*/data/maps/private/
+games/*/data/private/
+
+# Maps the client keeps between sessions.
+cache/

@@ -1,0 +1,230 @@
+# Soluna — engine e jogo de exemplo
+
+Soluna é uma **engine 2D de RPG online**, em C# / .NET 10, com cliente MonoGame, servidor autoritativo e editores dentro do jogo. O repositório também inclui **Soluna**, um jogo-modelo de fantasia medieval sombria, com visão de cima, exploração roguelike e evolução guiada pelas ações do personagem.
+
+**Estado atual: base jogável em desenvolvimento.** Já é possível entrar com vários clientes, explorar, combater, praticar ofícios, fabricar equipamentos, transformar o personagem e renascer. O projeto ainda precisa de trabalho para operar como um MMORPG público em grande escala.
+
+## O que a engine já oferece
+
+| Área | Implementação atual |
+| --- | --- |
+| Cliente e mundo | MonoGame DesktopGL, mapas em camadas, grade de 32 × 32, movimento entre tiles com interpolação, câmera, zoom, iluminação e objetos ordenados por profundidade. |
+| Rede e simulação | Servidor UDP com LiteNetLib, atualização a 20 Hz, validação de movimento, combate, distância de interação, intervalos entre ações e custos das receitas. |
+| Contas e persistência | Cadastro, login, até três personagens por conta, uma sessão por conta e salvamento em arquivos JSON. Senhas armazenadas como hashes PBKDF2 com salt. |
+| Combate e personagens | Vida, essência, nível, experiência, inventário, equipamentos, NPCs amigáveis e hostis, perseguição, ataques, morte e reaparecimento. Suporte a PvP conforme a configuração do mapa. |
+| Autoria dentro do jogo | Editor de mapas em F1 (tiles, atributos, NPCs, cenário com colisão da base, pontos de interação e propriedades do mapa); editor do jogo em F2 (itens, NPCs, toda a aventura e as regras de evolução); importação de PNG ao arrastar para a janela (tileset, sprite ou cenário); importação de mapas Tiled pelo servidor. Edição restrita a administradores; o servidor valida, grava e envia as mudanças a todos na hora. |
+| Conteúdo e sincronização | Mapas, itens, NPCs e assets por jogo; distribuição de arquivos aos clientes e cache de mapas por revisão. |
+| Sistemas de aventura | Hábitos, formas emergentes, memórias da conta, sorte, atividades, receitas e geração de ruínas. Receitas e regras de evolução são configuradas por jogo em JSON. |
+| Vários jogos | Cada projeto vive em `games/<nome>`, com seleção por `--game` e criação a partir de outro jogo com `--new-game`. |
+
+Tudo o que é específico de Soluna fica nos dados do jogo, não no código: materiais, ofícios, suprimentos e seus efeitos, receitas, ofertas do mercador, objetivos e recompensas, memórias, espólios, baús, ciclo de sorte, masmorra, mensagens e as regras de evolução. Tudo isso é editado em F2, na aba Aventura (com subabas) e na aba Evolução. As regras de evolução só chegam a administradores; jogadores não veem os requisitos. A engine guarda apenas as mecânicas: contadores, hábitos registrados por ações, cálculo de sorte, combate e geração de andares.
+
+## O jogo-modelo Soluna
+
+### Uma forma construída pela vida
+
+Cada personagem começa como uma figura clara, neutra, sem escolher classe, raça ou aparência. Lutar, pescar, explorar, coletar, fabricar, consumir e conquistar deixa vestígios. Combinações desses hábitos podem mudar sua especialização, origem e apresentação visual durante a vida.
+
+O conteúdo atual tem **seis especializações e três origens**, que representam os caminhos de classe e sub-raça do exemplo. As transformações são descobertas pela prática, sem um menu de seleção ou exposição dos requisitos. Um espadachim continua podendo pescar, minerar e fabricar; a forma não bloqueia essas atividades. Mudanças persistentes nos hábitos podem levar a outra especialização.
+
+Na morte, nível, experiência, forma, hábitos, inventário e recursos da vida atual voltam ao estado inicial. Memórias, conquistas registradas e totais da conta permanecem. Esses registros concedem pequenos benefícios nas próximas vidas; a progressão persistente atual se concentra nessas memórias e na afinidade natural com a sorte.
+
+### Mundo, combate e ruínas
+
+- **Vigília de Soluna:** praça do santuário, mercado e ferraria, pousada, jardim do herbalista e margem do moinho, com mercador, bancada e quadro de objetivos.
+- **Bosque dos Esquecidos:** trilhas em circuito entre lago com cais, clareira de madeira, afloramento de minério, cristais e pátio das ruínas, com exploração e combate.
+- **Interiores acessíveis:** estalagem, ferraria, botica e moinho, ligados à vila por portas, com móveis, colisões e serviços. Bancadas e mercadores usam as receitas e ofertas do jogo; as camas ainda são decorativas.
+- **Ruínas do Eclipse:** salas e corredores procedurais, com composições de claustro, cripta, arquivo e raízes do eclipse; relicários, extração de essência e descida liberada após derrotar os inimigos do andar.
+- **Combate:** golpe corpo a corpo, pulso de essência em área, equipamentos, consumíveis e recompensas por derrotar criaturas. O Guardião do Eclipse aparece a cada terceiro andar.
+
+As ruínas não têm um último andar definido no conteúdo. A dificuldade aumenta com a profundidade, dentro dos limites numéricos da implementação. Uma nova expedição muda a semente quando não há jogadores nas ruínas. Os jogadores compartilham a expedição ativa; instâncias privadas por grupo ainda não existem. Semente e mapas são salvos, mas as criaturas reaparecem ao reiniciar o servidor.
+
+### Ofícios, fabricação e sorte
+
+Há **cinco atividades**: pesca, coleta de plantas (*gathering*), mineração (*mining*), corte de madeira (*woodcutting*) e extração de essência (*extraction*). Elas funcionam em pontos de interação do mapa, com distância e intervalo entre tentativas verificados pelo servidor.
+
+Os seis materiais do exemplo alimentam **nove receitas** de consumíveis, lingotes e equipamentos. A fabricação exige uma bancada. O mercador vende provisões e uma lâmina inicial; a venda de excedentes preserva dez unidades de cada material para uso posterior.
+
+A **sorte é variável**: soma a marca natural da conta, o ciclo dos espíritos, o ambiente, memórias, equipamentos, bênçãos, maldições e consumíveis. Ela afeta quantidades coletadas e chances de recompensas raras. O caderno mostra as influências ativas; bênçãos, chá e maldições têm duração limitada.
+
+### Visual atual
+
+O tileset reúne **48 superfícies e 80 objetos pequenos**. Um catálogo de **68 peças de cenário** inclui arquitetura, vegetação, mobiliário interno e ruínas: lareira, balcão, mesas, camas, estantes, alquimia, forja, moinho, colunas, estátuas, sarcófagos, altares, braseiros, tapetes e selos lunares.
+
+São **seis mapas fixos**, na revisão **12**: vila, bosque e quatro interiores. Caminhos ligam entradas e serviços, construções possuem pátios, árvores formam grupos e os materiais aparecem em clareiras próprias. Transições de grama, musgo, terra, areia e água reduzem as bordas rígidas dos tiles. Nas ruínas, pisos, bordas e peças são organizados por estilos de sala definidos nos dados; a colocação de obstáculos preserva o acesso aos corredores, encontros e saídas.
+
+Criaturas, habitantes e formas evoluídas mantêm suas folhas direcionais. O personagem inicial conserva a aparência neutra e o tamanho genérico; as cores e marcas das formas evoluídas acompanham a gameplay.
+
+A direção é fantasia sombria com sprites em pixels, acompanhada de arte de abertura, HUD, minimapa e caderno de vestígios. As referências de atmosfera e apresentação incluem Moonlighter, Crystalshire e RPGs top-down. O inventário de assets e o formato de importação estão nos [créditos e documentação de arte](games/soluna/assets/SOLUNA_ART.md). Para inspecionar todos os quadros dentro do cliente, sem servidor, execute `dotnet run --project src/Soluna.Client -- --art-preview`.
+
+As capturas abaixo são do cliente em execução com a arte atual incluída neste repositório.
+
+**Vigília de Soluna — cenário, habitantes e personagem inicial neutro**
+
+![Vila de Soluna com o tileset atual, mercador, santuário e personagem neutro](docs/screenshots/village.png)
+
+**Bosque dos Esquecidos — exploração, criaturas e pontos de coleta**
+
+![Bosque com os novos pisos, vegetação, criaturas e pontos de atividade](docs/screenshots/forest.png)
+
+**Prévia na engine — animações, formas emergentes, tiles e objetos**
+
+![Prévia dos sprites direcionais, formas do jogador e tilesets atuais renderizados pela engine](docs/screenshots/art-preview.png)
+
+**Catálogo de arquitetura, vegetação e mobiliário**
+
+![Peças reutilizáveis de cenário renderizadas pelo cliente](docs/screenshots/scenery-preview.png)
+
+**Estalagem — interior acessível pela porta da vila**
+
+![Salão, lareira e dormitórios da estalagem no cliente](docs/screenshots/inn.png)
+
+Também há interiores próprios para a [ferraria](docs/screenshots/smithy.png), [botica](docs/screenshots/herbalist.png) e [moinho](docs/screenshots/mill.png). Veja as páginas novas de [móveis e ruínas](docs/screenshots/interior-props.png) e [pisos e tiles](docs/screenshots/interior-tiles.png).
+
+**Ruínas — terceiro andar gerado com a semente 83**
+
+![Cripta e arquivo com pisos, bordas, estátuas e mobiliário no cliente](docs/screenshots/ruins.png)
+
+A [visão geral desse andar](docs/screenshots/ruins-overview.png) mostra as salas e os corredores conectados. As imagens dos interiores e das ruínas são prévias locais de autoria, usando a renderização do jogo.
+
+Os estilos podem ser alterados na [nova seção Ruínas do editor F2](docs/screenshots/dungeon-editor.png).
+
+As vistas completas da [vila](docs/screenshots/village-overview.png) e do [bosque](docs/screenshots/forest-overview.png) mostram a composição dos mapas. São prévias de autoria renderizadas pelo próprio cliente.
+
+Para inspecionar os mapas e o catálogo sem servidor nem contas:
+
+```bash
+dotnet run --project src/Soluna.Client -- --map-preview 1
+dotnet run --project src/Soluna.Client -- --map-preview 2 --overview
+dotnet run --project src/Soluna.Client -- --scenery-preview
+dotnet run --project src/Soluna.Client -- --scenery-preview --preview-page 1
+dotnet run --project src/Soluna.Client -- --map-preview 3 --overview
+dotnet run --project src/Soluna.Client -- --dungeon-preview 3 --seed 83 --overview
+```
+
+Na prévia de mapas e masmorras, WASD/setas movem o personagem respeitando colisões; Tab alterna a visão completa e Esc encerra. No catálogo e no ateliê de arte, Tab troca de página; `--preview-page` começa em zero. Esse modo é somente de inspeção, sem combate, interações ou salvamento. Os comandos aceitam `--game` e `--screenshot arquivo.png`.
+
+## Executar localmente
+
+Requer **.NET 10 SDK**. O cliente é uma aplicação desktop. No Linux, precisa de SDL2, OpenGL/Mesa, OpenAL e uma fonte disponível, como DejaVu; também é possível fornecer uma fonte `.ttf` em `games/soluna/assets/fonts/`. Testado no Windows e no Linux.
+
+Na raiz do repositório:
+
+```bash
+dotnet restore Soluna.slnx
+dotnet build Soluna.slnx --no-restore
+```
+
+Inicie o servidor em um terminal:
+
+```bash
+dotnet run --project src/Soluna.Server --no-build
+```
+
+Em outro terminal, abra o cliente:
+
+```bash
+dotnet run --project src/Soluna.Client --no-build
+```
+
+O destino padrão é `127.0.0.1`, porta **UDP 7171**. Crie uma conta na tela de entrada e dê um nome ao personagem. A primeira conta criada em um servidor novo recebe acesso de administrador aos editores. Abra outro cliente com outra conta para jogar em conjunto.
+
+O cliente aceita `--host`, `--port` e `--game`. Para usar outra porta local:
+
+```bash
+dotnet run --project src/Soluna.Server --no-build -- 7172
+dotnet run --project src/Soluna.Client --no-build -- --host 127.0.0.1 --port 7172
+```
+
+Execute esses dois comandos em terminais separados. Cliente e servidor precisam usar a mesma versão do protocolo. Encerre o servidor com **Ctrl+C** para salvar os personagens.
+
+## Controles e primeiros passos
+
+| Ação | Controle |
+| --- | --- |
+| Andar | WASD / setas |
+| Golpear | Espaço / Ctrl esquerdo |
+| Pulso de essência | Q |
+| Interagir, coletar ou usar uma passagem | E perto do ponto |
+| Usar tônico / éter | 1 / 2 |
+| Caderno: vida, ofícios, trocas e memórias | J |
+| Abrir receitas | C; fabricar exige proximidade de uma bancada |
+| Equipamento | I |
+| Retornar à vila | R, após sete segundos fora de combate |
+| Conversar | Enter |
+| Editor de mapas / itens e NPCs | F1 / F2, administrador |
+| Alternar iluminação | F3 |
+| Zoom | + / - |
+
+Na vila, procure o santuário ao norte da praça e a bancada a oeste. A passagem norte leva ao bosque. Use E nos pontos de recursos, volte à bancada para fabricar e consulte o caderno para acompanhar provisões e mudanças. O quadro da vila reconhece objetivos de caça e a derrota do guardião. A entrada das ruínas fica ao norte do bosque.
+
+## Criar outro jogo com a engine
+
+Crie uma cópia do conteúdo compartilhável do exemplo:
+
+```bash
+dotnet run --project src/Soluna.Server -- --new-game meu_mundo --from soluna
+```
+
+Depois, em terminais separados:
+
+```bash
+dotnet run --project src/Soluna.Server -- --game meu_mundo
+dotnet run --project src/Soluna.Client -- --game meu_mundo
+```
+
+A cópia exclui contas e pastas `private`. `SOLUNA_GAME` define o jogo padrão; `SOLUNA_ROOT` define a raiz que contém `games/`. Sem essa variável, a engine procura a raiz do repositório e usa seus arquivos de jogo diretamente.
+
+| Local | Responsabilidade |
+| --- | --- |
+| `src/Soluna.Shared` | Protocolo, formatos, fórmulas, evolução, sorte e geração procedural. |
+| `src/Soluna.Server` | Contas, persistência, simulação, combate, ofícios e distribuição de conteúdo. |
+| `src/Soluna.Client` | Renderização, entrada, interface, sincronização e editores. |
+| `games/<nome>/data/adventure.json` | Materiais, ofícios, suprimentos, efeitos, receitas, loja, objetivos, memórias, espólios, sorte, masmorra, textos e regras gerais. Editado em F2 → Aventura. |
+| `games/<nome>/data/evolution.json` | Regras de hábitos, especializações, origens, cores, silhuetas e bônus. Editado em F2 → Evolução. |
+| `games/<nome>/data/items.json`, `npcs.json`, `maps/` | Equipamentos, criaturas, mapas, portais, colisões e pontos de interação. |
+| `games/<nome>/assets/` | Sprites, tilesets, objetos de cenário, fontes e créditos. |
+| `games/<nome>/data/accounts/` | Contas e personagens persistidos; ignorados pelo Git. |
+| `tests/Soluna.Tests` | Verificações de regras, geração e integração por UDP. |
+| `tools/` | Geradores e importadores de conteúdo. |
+
+Consulte [Engine e jogo de exemplo](docs/SOLUNA_ENGINE.md) para os formatos e regras. `tools/configure_soluna_art.py` recria os metadados de importação e conserva as colisões do catálogo; `tools/build_soluna_art.py` reproduz as folhas de fallback. `tools/build_soluna_world.py` recria somente os seis mapas públicos, sem sobrescrever aventura, evolução, itens, NPCs ou contas; `--maps-only` permanece aceito por compatibilidade. Os scripts de mapas sobrescrevem os mapas de autoria: use-os apenas para regenerar deliberadamente esse conteúdo. O caminho normal é F1 para mapas e F2 → Aventura → Ruínas para pisos, estilos, peças e suas posições nas salas. Não é preciso executar geradores para jogar.
+
+## Testes e validação
+
+A partir da raiz do repositório:
+
+```bash
+dotnet build Soluna.slnx
+dotnet run --project tests/Soluna.Tests
+```
+
+O projeto de testes é um executor de console: retorna código diferente de zero se alguma verificação falhar. Cria um mundo temporário e contas descartáveis, abre seu próprio servidor em uma porta UDP local disponível e não depende do servidor de jogo em execução.
+
+A última validação terminou com **35 testes aprovados, nenhuma falha e build sem avisos ou erros**. A cobertura inclui evolução por hábitos, sorte, receitas, profissões, permissões, persistência, combate, cooldown, descida, renascimento, recortes de arte e edição ao vivo. Os seis mapas têm serviços e portais alcançáveis; as quatro portas foram atravessadas nos dois sentidos por movimento real via UDP. A geração foi verificada em **80 combinações de semente e profundidade**, incluindo circulação após decorar salas, reprodutibilidade e temas independentes dos encontros. O cliente também foi executado e inspecionado com Xvfb e Mesa.
+
+Para verificar o cliente sem monitor no Linux, com o servidor já iniciado e Xvfb instalado:
+
+```bash
+LIBGL_ALWAYS_SOFTWARE=1 ALSOFT_DRIVERS=null xvfb-run -a \
+  dotnet run --project src/Soluna.Client -- \
+  --walk --name Smoke --journal --screenshot /tmp/soluna-smoke.png
+```
+
+O modo `--walk --name` usa uma conta local de teste, entra no mundo e movimenta o personagem. `--journal` abre o caderno; `--screenshot` salva a imagem e encerra o cliente. Use essas opções para inspeção de desenvolvimento.
+
+## Limites e trabalho restante
+
+- **Operação de MMO:** foram validados clientes locais; capacidade de carga, hospedagem pública, moderação e operação contínua ainda precisam ser desenvolvidas e verificadas.
+- **Segurança de transporte:** as senhas são armazenadas com hash, mas o protocolo atual envia o login sem criptografia. A execução atual é destinada a uma rede de desenvolvimento confiável.
+- **Autoria:** faltam um editor de arte de personagem e de animações, e um lançador no cliente para criar, escolher e hospedar um jogo sem a linha de comando.
+- **Expedições:** ainda são compartilhadas entre jogadores; não há instâncias por grupo, e o estado das criaturas não sobrevive ao reinício do servidor.
+- **Conteúdo e acabamento:** áudio, variedade de cenários e habilidades, balanceamento prolongado e refinamento da apresentação continuam em desenvolvimento.
+
+Este README descreve o estado atual. [Engine base](docs/ENGINE_BASE.md) preserva o README anterior como referência histórica dos editores e importadores; descrições do jogo e planos antigos ali não substituem este documento.
+
+## Licença e créditos
+
+Código sob [licença MIT](LICENSE). A arquitetura foi inspirada em [Crystalshire](https://github.com/RobinPerris/Crystalshire), de Robin Perris. O cliente e a rede usam [MonoGame](https://monogame.net), [LiteNetLib](https://github.com/RevenantX/LiteNetLib) e [FontStashSharp](https://github.com/FontStashSharp/FontStashSharp).
+
+A arte nova e sua origem estão nos [créditos de Soluna](games/soluna/assets/SOLUNA_ART.md). Os conjuntos anteriores LPC e BoundWorlds/chibi mantêm seus créditos e licenças próprios; veja também a [documentação dos assets](games/soluna/assets/README.md).
