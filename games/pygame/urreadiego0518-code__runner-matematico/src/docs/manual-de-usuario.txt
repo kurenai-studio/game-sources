@@ -1,0 +1,299 @@
+==============================================================================
+                RUNNER MATEMÁTICO: ATLETA DEFINITIVO
+                        MANUAL DE USUARIO
+==============================================================================
+
+Este manual lo escribimos los cinco integrantes del equipo que
+desarrollamos el juego para la materia de Métodos Numéricos.
+
+Aquí encontrarás lo necesario para
+jugar, entender el HUD y saber exactamente qué obstáculo se salta y cuál se
+esquiva agachándose.
+
+
+------------------------------------------------------------------------------
+1. OBJETIVO
+------------------------------------------------------------------------------
+
+Corre por un terreno matemático infinito, esquiva los obstáculos, recoge
+corazones y sobrevive el mayor tiempo posible. Empiezas con 3 vidas: cada
+choque cuesta una vida y la partida termina cuando te quedas sin ninguna.
+
+Los puntos se ganan esquivando: cada piedra que saltas y cada dron bajo el que
+pasas agachado valen +100 puntos. Correr no suma, y si chocas con un obstáculo,
+ese obstáculo NO te da puntos. Los bonuses suman aparte: +500 por completar una
+fórmula con letras y +100 por un corazón cuando ya tienes las 5 vidas.
+
+El atleta se inclina automáticamente según la pendiente del terreno, calculada
+con derivación numérica (diferencias finitas centrales) en tiempo real.
+
+Todo el escenario es a color. El tema por defecto es Halloween: cielo morado
+con luna y estrellas, tierra oscura y obstáculos de ultratumba (fantasmas y
+lápidas). El tema Clásico es el paisaje de día (césped verde, tierra marrón,
+piedras y drones a color); Navidad y Oscuro cambian la paleta, nunca las reglas.
+
+
+------------------------------------------------------------------------------
+2. MENÚ PRINCIPAL
+------------------------------------------------------------------------------
+
+Usa las FLECHAS ARRIBA/ABAJO para navegar y ENTER para seleccionar.
+
+   Jugar                        Inicia una nueva partida.
+   Mejor puntuación con nombre  Consulta el top 5 de la sesión.
+   Opciones                     Dificultad y tema visual.
+   Salir                        Cierra el juego.
+
+En Opciones:
+   - D cambia la dificultad (Normal / Extremo).
+   - T cambia el tema (Halloween -> Clásico -> Navidad -> Oscuro).
+   - ESC vuelve al menú.
+
+Detalles:
+   - La dificultad Extremo sube la velocidad base de 5.5 a 7.0. En ambos modos
+     la velocidad aumenta cada 3 obstáculos esquivados y cada 10.000 puntos,
+     hasta un tope de 14.0 (así el salto siempre es físicamente posible).
+   - El juego arranca en el tema Halloween: noche morada, luna, estrellas,
+     fantasmas en lugar de drones y lápidas en lugar de piedras.
+   - El tema Clásico es el paisaje de día: cielo celeste, césped verde, tierra
+     marrón, piedras y drones a color.
+   - El tema Navidad es Nochebuena: cielo azul profundo con estrellas y nieve
+     cayendo, suelo cubierto de nieve blanca, regalos con lazo en lugar de
+     piedras y bolas de Navidad colgantes en lugar de drones.
+   - El tema Oscuro es una variante de paleta apagada.
+   - La música se enciende y apaga con M, aquí o durante la partida.
+
+
+------------------------------------------------------------------------------
+3. CONTROLES
+------------------------------------------------------------------------------
+
+   ESPACIO o FLECHA ARRIBA (^)   Saltar (para pasar la piedra)
+   FLECHA ABAJO (v), mantener    Agacharse (para pasar bajo el dron)
+   ESC o P                       Pausar / continuar
+   TAB                           Reintentar (en Pausa o en Game Over)
+   F11                           Pantalla completa
+   ENTER                         Confirmar / guardar nombre
+   M                             Música: encender / apagar
+
+La ventana también se puede redimensionar con el ratón; el juego mantiene la
+proporción 16:9 y pone bandas negras si hace falta.
+
+CÓMO SE PUNTÚA:
+   Cuando esquivas un obstáculo (lo saltas o pasas por debajo) ganas +100
+   puntos, y aparece un "+100" flotante como confirmación. Saltar al aire,
+   agacharse sin motivo o simplemente correr NO suman nada. Si chocas, ese
+   obstáculo no da puntos; tampoco si lo atraviesas durante el segundo y medio
+   de invulnerabilidad tras un choque.
+
+   Además, completar una fórmula con letras da +500 puntos y un corazón
+   recogido con las 5 vidas llenas da +100.
+
+En la pantalla de Game Over escribe tu nombre (máximo 10 caracteres
+alfanuméricos), pulsa ENTER para guardar y ESPACIO para volver al menú.
+
+MÚSICA Y SONIDOS:
+
+   La música y los efectos los creamos nosotros mismos por código: se
+   generan al arrancar, así que no hay que descargar ni copiar ningún
+   archivo de audio.
+
+   - Dos músicas distintas, las dos en bucle y en estilo 8 bits: una
+     misteriosa en el menú (más lenta, en tono menor) y otra alegre durante la
+     partida. Al empezar a jugar y al volver al menú el juego cambia de pista
+     solo. M enciende o apaga la música al instante (también en Opciones).
+   - Al moverte por el menú y al cambiar dificultad o tema suena un "blip"
+     corto, distinto de todos los sonidos de la partida.
+   - Salto: silbido corto que sube de tono.
+   - +100 al esquivar: campanita breve de confirmación.
+   - Choque: zumbido grave que baja de tono.
+   - Vida extra: arpegio ascendente y brillante (do-mi-sol-do-mi), imposible de
+     confundir con los demás sonidos. Si ya tienes las 5 vidas, el corazón
+     suena distinto: un arpegio más corto con final agudo, porque suma +100.
+   - Letra recogida: dos notas cortas y suaves.
+   - Fórmula completada: fanfarria corta y clara.
+   - Subida de nivel: barrido ascendente.
+   - Game Over: melodía descendente.
+
+   Si el equipo no tiene salida de audio, el juego arranca igual y se juega en
+   silencio; no aparece ningún error.
+
+
+------------------------------------------------------------------------------
+4. REGLA DE ORO: CADA OBSTÁCULO TIENE UNA RESPUESTA
+------------------------------------------------------------------------------
+
+   OBSTÁCULO          ASPECTO                       CÓMO SE SUPERA
+   ----------------   ---------------------------   -----------------------
+   Piedra / lápida /   pegado al suelo (0-28)        SALTAR
+   regalo
+   Dron / fantasma /   suspendido (34-62)            AGACHARSE (flecha abajo)
+   bola de Navidad
+
+En el tema Halloween el dron se dibuja como fantasma y la piedra como lápida;
+en Navidad son una bola colgante y un regalo con lazo. La mecánica es
+exactamente la misma en todos los temas.
+
+IMPORTANTE: el salto llega como máximo a 47.45 px de altura y el dron empieza
+a 34 px sobre el suelo. El salto NUNCA puede superar un dron: es físicamente
+imposible. Si ves un dron, la única respuesta es agacharse.
+
+Detalles que conviene tener claros:
+   - Agacharse NO sirve para la piedra: ocupa desde el suelo, así que agachado
+     también chocas.
+   - Saltar con un dron encima es choque inmediato, aunque visualmente parezca
+     que pasas cerca.
+   - No puedes agacharte en el aire: si ya saltaste, espera a aterrizar.
+   - Mantén la flecha abajo hasta que el dron termine de pasar por completo;
+     si te incorporas antes de tiempo, chocas.
+   - Lo que ves es lo que choca: la colisión usa las mismas franjas verticales
+     con las que se dibujan los sprites, también en las cuestas.
+
+
+------------------------------------------------------------------------------
+5. VIDAS Y CORAZONES
+------------------------------------------------------------------------------
+
+   - Empiezas con 3 corazones.
+   - Cada choque resta 1 vida y te da 1.5 segundos de invulnerabilidad (el
+     atleta parpadea): en ese lapso ningún obstáculo te vuelve a quitar vida,
+     y el obstáculo con el que chocaste desaparece.
+   - Cada 3.000 puntos aparece un corazón flotante en el camino (unas 30
+     esquivas; las fórmulas también cuentan): recógelo para ganar +1 vida.
+   - Puedes tener como máximo 5 vidas. Si ya estás al máximo, el corazón te da
+     +100 puntos en lugar de la vida.
+   - La partida termina solo cuando las vidas llegan a 0.
+
+
+------------------------------------------------------------------------------
+6. BONUS: LETRAS Y NIVELES
+------------------------------------------------------------------------------
+
+LETRAS DE FÓRMULAS (insignias redondas con una letra)
+   - En el camino aparecen letras sueltas. Recoges la que toca y avanza la
+     fórmula que se muestra arriba a la izquierda.
+   - La letra que sale es siempre la siguiente que falta, así que no hay que
+     adivinar: se recogen en orden, como en Subway Surfers.
+   - Si dejas pasar una letra no pierdes progreso: esa misma letra vuelve a
+     aparecer más adelante.
+   - Al completar la palabra ganas +500 puntos, suena una fanfarria y se pasa
+     al método siguiente. El ciclo es:
+        DERIVADA -> NEWTON -> GAUSS -> JACOBI -> EULER -> BISECCION
+     y en el HUD se ve el nombre completo (Derivación numérica,
+     Newton-Raphson modificado, Gauss-Seidel, Jacobi, Método de Euler,
+     Bisección).
+   - Algunas letras flotan alto: hay que saltar para alcanzarlas.
+
+NIVELES DE VELOCIDAD (cada 10.000 puntos)
+   - Cada 10.000 puntos sube un nivel: +1.0 px/frame de velocidad y menos
+     hueco entre obstáculos (aparecen más seguidos).
+   - Hay 3 subidas: nivel 2 a los 10.000, nivel 3 a los 20.000 y nivel 4 a los
+     30.000. La velocidad máxima pasa de 11.0 a 12.0, 13.0 y 14.0.
+   - El hueco mínimo entre obstáculos nunca es menor que lo que dura un salto,
+     así que siempre queda una respuesta posible.
+   - Al subir de nivel suena un barrido ascendente y aparece "¡NIVEL 2!".
+
+
+------------------------------------------------------------------------------
+7. EL HUD (INFORMACIÓN EN PANTALLA)
+------------------------------------------------------------------------------
+
+Arriba a la izquierda:
+
+   f'(x)   Derivada del terreno en tu posición, calculada con diferencias
+           finitas centrales. Es la causa de que el atleta se incline. Rango
+           real del terreno: -0.235 a +0.235.
+
+   h       Tu altura de vuelo sobre el terreno, en píxeles. Vale 0.00 cuando
+           corres y sube hasta 47.45 en el punto más alto del salto. Sirve
+           para comprobar que el salto nunca alcanza la franja del dron.
+
+   MÉTODO  Nombre del método de la fórmula en curso.
+
+   Letras  La palabra que estás completando. Las letras ya recogidas se ven
+           en color de acento y las que faltan en gris.
+
+Arriba a la derecha (estilo dinosaurio de Chrome):
+
+   - Marcador de 5 dígitos con tus puntos actuales.
+   - HI: la mejor marca de la sesión.
+   - Fila de corazones debajo: tus vidas restantes.
+   - NIVEL: a partir de 10.000 puntos, el nivel de velocidad actual.
+
+
+------------------------------------------------------------------------------
+8. PUNTUACIÓN Y MEDALLAS
+------------------------------------------------------------------------------
+
+Al terminar la partida e ingresar tu nombre obtienes una medalla según el
+puntaje:
+
+   MEDALLA     PUNTOS
+   ---------   ---------
+   BRONCE      500+
+   PLATA       1000+
+   ORO         2000+
+   DIAMANTE    3000+
+
+Con 5 esquivas limpias ya llegas a bronce; completar fórmulas (+500 cada una)
+acelera mucho la medalla. El ranking guarda las 5 mejores marcas de la sesión.
+Se vacía al cerrar el juego (no se guarda en disco).
+
+
+------------------------------------------------------------------------------
+9. CONSEJOS DE LOS QUE LO HICIMOS
+------------------------------------------------------------------------------
+
+   - Mira dos obstáculos por delante, no el que ya estás pasando.
+   - Cada obstáculo esquivado son +100 puntos: el marcador sube solo si juegas
+     limpio, así que la puntuación mide tu puntería, no el tiempo que aguantas.
+   - Salta con antelación: lo cómodo es saltar unos 10 frames antes del
+     impacto (0.17 s). A más velocidad, más lejos en píxeles, pero el tiempo de
+     reacción es siempre el mismo.
+   - Para el dron: empieza a agacharte antes de llegar; agacharse es
+     instantáneo, pero si ya estás en el aire no podrás hacerlo.
+   - Al agacharte bajo un dron, no te incorpores antes de tiempo.
+   - No arriesgues una vida por un corazón ni por una letra: primero asegura
+     el paso. Los dos aparecen siempre lejos de los obstáculos.
+   - Las letras se recogen en orden: no tienes que memorizar nada, mira el HUD.
+   - La velocidad sube cada 3 esquivas y cada 10.000 puntos. A partir de
+     10.000 los huecos se acortan: salta antes de lo que acostumbras.
+
+
+------------------------------------------------------------------------------
+10. SOLUCIÓN DE PROBLEMAS
+------------------------------------------------------------------------------
+
+   ModuleNotFoundError: No module named 'pygame'
+       -> pip install pygame
+
+   No hay sonido
+       -> Revisa el volumen del sistema y pulsa M (o mira Opciones: la línea
+          "Música" debe decir ON). Si tu equipo no tiene salida de audio el
+          juego se inicia igual, en silencio y sin mensajes de error.
+
+   La ventana se ve con bandas negras
+       -> Respeta la proporción 16:9; usa F11 para pantalla completa.
+
+   La tecla R no reinicia
+       -> Solo funciona en Pausa o en Game Over, no durante la carrera.
+
+   Quiero volver al paisaje de día
+       -> Opciones y pulsa T hasta "Clásico" (orden: Halloween -> Clásico ->
+          Navidad -> Oscuro). Las reglas no cambian con el tema.
+
+   Quiero el ambiente navideño
+       -> Opciones y pulsa T hasta "Navidad": cielo nocturno con estrellas,
+          nieve cayendo, suelo nevado, regalos y bolas de Navidad.
+
+   La ventana no responde
+       -> ESC para pausar y luego cierra con la X, o ESC en el menú.
+
+   El aviso "skipping toggle_fullscreen on wayland" ya no aparece
+       -> F11 se implementa reconstruyendo el modo de vídeo, no con
+          toggle_fullscreen (que SDL2 ignora en Wayland).
+
+
+==============================================================================
+                       Fin del manual de usuario
+==============================================================================
