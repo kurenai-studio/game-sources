@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1c1142"/>
+      <stop offset="1" stop-color="#04050d"/>
+    </linearGradient>
+    <radialGradient id="nebula" cx="0.3" cy="0.75" r="0.6">
+      <stop offset="0" stop-color="#6a2c9c" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#6a2c9c" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#4fe3ff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#4fe3ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sparkHalo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd25a" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ffd25a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="trail" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4fe3ff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#4fe3ff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="tile">
+      <rect x="100" y="100" width="824" height="824" rx="185"/>
+    </clipPath>
+  </defs>
+
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <g clip-path="url(#tile)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#nebula)"/>
+    <g stroke="#4c5cff" stroke-opacity="0.22" stroke-width="4" fill="none">
+      <path d="M100 238 Q512 300 924 238"/>
+      <path d="M100 376 Q512 440 924 376"/>
+      <path d="M100 514 Q512 560 924 514"/>
+      <path d="M100 652 Q512 690 924 652"/>
+      <path d="M100 790 Q512 815 924 790"/>
+      <path d="M238 100 Q300 512 238 924"/>
+      <path d="M376 100 Q440 512 376 924"/>
+      <path d="M514 100 Q560 512 514 924"/>
+      <path d="M652 100 Q690 512 652 924"/>
+      <path d="M790 100 Q815 512 790 924"/>
+    </g>
+
+    <circle cx="520" cy="500" r="330" fill="url(#halo)"/>
+    <path d="M471 553 L170 854" stroke="url(#trail)" stroke-width="34" stroke-linecap="round"/>
+
+    <g stroke-linejoin="round">
+      <polygon points="735,289 266,493 471,553 531,758" fill="none" stroke="#4fe3ff" stroke-opacity="0.18" stroke-width="70"/>
+      <polygon points="735,289 266,493 471,553 531,758" fill="none" stroke="#4fe3ff" stroke-opacity="0.35" stroke-width="38"/>
+      <polygon points="735,289 266,493 471,553 531,758" fill="#0a2a3c" stroke="#8ff0ff" stroke-width="16"/>
+    </g>
+    <circle cx="545" cy="500" r="26" fill="#ffffff"/>
+
+    <circle cx="300" cy="300" r="110" fill="url(#sparkHalo)"/>
+    <polygon points="300,248 352,300 300,352 248,300" fill="#3a2a08" stroke="#ffd25a" stroke-width="12" stroke-linejoin="round"/>
+    <circle cx="300" cy="300" r="10" fill="#ffffff"/>
+  </g>
+</svg>

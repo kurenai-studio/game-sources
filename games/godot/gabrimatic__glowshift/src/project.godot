@@ -1,0 +1,28 @@
+config_version=5
+
+[application]
+
+config/name="Glowshift"
+config/description="A neon arena game: collect sparks, dodge hunters, dash through them."
+config/version="1.0.0"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7")
+config/icon="res://icon.svg"
+boot_splash/bg_color=Color(0.012, 0.012, 0.035, 1)
+boot_splash/show_image=false
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/mode=2
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+
+viewport/hdr_2d=true
+anti_aliasing/quality/msaa_2d=2
+anti_aliasing/quality/msaa_2d.web=0
+environment/defaults/default_clear_color=Color(0.012, 0.012, 0.035, 1)
+textures/vram_compression/import_etc2_astc=true

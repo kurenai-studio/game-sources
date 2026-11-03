@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "LICENSE"
+      - "assets/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/CODEOWNERS"
+      - ".github/FUNDING.yml"
+      - ".github/dependabot.yml"
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - "*.md"
+      - "LICENSE"
+      - "assets/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
+      - ".github/CODEOWNERS"
+      - ".github/FUNDING.yml"
+      - ".github/dependabot.yml"
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  smoke-test:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot
+        run: |
+          curl -sSfL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          rm godot.zip
+          godot --version
+
+      - name: Import project
+        run: godot --headless --path . --import
+
+      - name: Smoke test
+        run: |
+          godot --headless --fixed-fps 60 --path . -s res://tests/smoke_test.gd 2>&1 | tee smoke.log
+          grep -q "SMOKE OK" smoke.log
+          if grep -E "SCRIPT ERROR|^ERROR:" smoke.log; then exit 1; fi

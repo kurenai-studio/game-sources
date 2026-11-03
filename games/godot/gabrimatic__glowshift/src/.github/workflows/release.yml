@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Export and publish
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version matches tag
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          grep -q "config/version=\"${version}\"" project.godot || { echo "project.godot config/version does not match ${GITHUB_REF_NAME}"; exit 1; }
+          grep -q "application/version=\"${version}\"" export_presets.cfg || { echo "export_presets.cfg version does not match ${GITHUB_REF_NAME}"; exit 1; }
+          grep -q "^## \[${version}\]" CHANGELOG.md || { echo "CHANGELOG.md has no section for ${version}"; exit 1; }
+
+      - name: Install Godot
+        run: |
+          curl -sSfL -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          rm godot.zip
+
+      - name: Cache export templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-export-templates-${{ env.GODOT_VERSION }}
+
+      - name: Install export templates
+        run: |
+          dir="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          if [ ! -f "$dir/version.txt" ]; then
+            curl -sSfL -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+            unzip -q templates.tpz
+            mkdir -p "$dir"
+            mv templates/* "$dir"/
+            rm -rf templates templates.tpz
+          fi
+
+      - name: Export
+        run: |
+          godot --headless --path . --import
+          mkdir -p build/macos build/windows build/linux build/web
+          godot --headless --path . --export-release macOS build/macos/Glowshift.zip
+          godot --headless --path . --export-release Windows build/windows/Glowshift.exe
+          godot --headless --path . --export-release Linux build/linux/Glowshift.x86_64
+          godot --headless --path . --export-release Web build/web/index.html
+          test -s build/macos/Glowshift.zip
+          test -s build/windows/Glowshift.exe
+          test -s build/linux/Glowshift.x86_64
+          test -s build/web/index.wasm
+
+      - name: Package
+        run: |
+          mkdir dist
+          cp build/macos/Glowshift.zip "dist/Glowshift-${GITHUB_REF_NAME}-macos.zip"
+          (cd build/windows && zip -q "../../dist/Glowshift-${GITHUB_REF_NAME}-windows.zip" Glowshift.exe)
+          (cd build/linux && chmod +x Glowshift.x86_64 && zip -q "../../dist/Glowshift-${GITHUB_REF_NAME}-linux.zip" Glowshift.x86_64)
+          (cd dist && sha256sum Glowshift-* > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '$0 ~ "^## \\[" v "\\]" {p=1; next} /^## \[/ {p=0} /^\[.*\]: / {p=0} p' CHANGELOG.md > notes.md
+          printf '\nPlay in your browser: https://gabrimatic.github.io/glowshift/\n' >> notes.md
+          cat notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Glowshift ${GITHUB_REF_NAME}" --notes-file notes.md --verify-tag
+
+      - name: Upload web build
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  pages:
+    name: Deploy web build
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
