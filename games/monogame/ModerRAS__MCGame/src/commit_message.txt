@@ -1,0 +1,14 @@
+修复SpriteBatch Begin/End配对问题
+
+## 修改内容
+- 修复了MCGame.cs中RenderUI()方法的SpriteBatch Begin/End配对问题
+- 将RenderCrosshair()方法中的Begin/End调用移除，因为已经在RenderUI()方法中调用了Begin()
+- 优化了十字准心的渲染逻辑，避免重复调用Begin/End导致性能问题
+
+## 技术细节
+- 问题：RenderCrosshair()方法中错误地调用了SpriteBatch.Begin()和End()，而RenderUI()方法已经调用了Begin()
+- 解决方案：移除RenderCrosshair()中的Begin/End调用，让其在RenderUI()的Begin/End块中执行
+- 影响：避免了重复调用Begin/End导致的渲染错误和性能损失
+
+## 文件修改
+- src/Core/MCGame.cs: 修复SpriteBatch配对问题
