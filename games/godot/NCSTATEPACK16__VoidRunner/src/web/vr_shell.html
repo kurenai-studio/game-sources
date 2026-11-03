@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+		<title>$GODOT_PROJECT_NAME</title>
+		<style>
+html, body, #canvas {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+body {
+	color: white;
+	background-color: black;
+	overflow: hidden;
+	touch-action: none;
+}
+
+#canvas {
+	display: block;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+#status, #status-splash, #status-progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+}
+
+#status, #status-splash {
+	top: 0;
+	bottom: 0;
+}
+
+#status {
+	background-color: $GODOT_SPLASH_COLOR;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	visibility: hidden;
+}
+
+#status-splash {
+	max-height: 100%;
+	max-width: 100%;
+	margin: auto;
+}
+
+#status-splash.show-image--false {
+	display: none;
+}
+
+#status-splash.fullsize--true {
+	height: 100%;
+	width: 100%;
+	object-fit: contain;
+}
+
+#status-splash.use-filter--false {
+	image-rendering: pixelated;
+}
+
+#status-progress, #status-notice {
+	display: none;
+}
+
+#status-progress {
+	bottom: 10%;
+	width: 50%;
+	margin: 0 auto;
+}
+
+#status-notice {
+	background-color: #5b3943;
+	border-radius: 0.5rem;
+	border: 1px solid #9b3943;
+	color: #e0e0e0;
+	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
+	line-height: 1.3;
+	margin: 0 2rem;
+	overflow: hidden;
+	padding: 1rem;
+	text-align: center;
+	z-index: 1;
+}
+
+/* --- VOID RUNNER loading overlay (custom) -------------------------------- */
+/* On single-threaded WebGL, first-use shader/pipeline compilation blocks the
+   main thread for whole seconds. This overlay sits ABOVE the canvas and animates
+   with a compositor-driven transform, so it keeps spinning even while WASM is
+   blocked — an honest loading screen instead of a frozen-looking browser. Shown
+   from page load and whenever GDScript enters a level; hidden by GDScript
+   (window.vrHideLoading) once the warmed first playable frame has rendered. */
+#vr-loading {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	background-color: #0a0a0c;
+	color: #c8ccd4;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	font-family: 'Courier New', monospace;
+	letter-spacing: 0.12em;
+	opacity: 1;
+	transition: opacity 0.5s ease;
+}
+
+/* M1.1: capability card. Reddit traffic is overwhelmingly mobile and the game is
+   keyboard-and-mouse only until Phase M4 ships touch controls, so a phone visitor
+   gets an honest explanation instead of a canvas they cannot play. Deliberately
+   NOT a hard block — the check is a heuristic, and a false positive must never be
+   the last word. */
+#vr-gate {
+	position: fixed;
+	inset: 0;
+	z-index: 200;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 1.5rem;
+	background-color: #0a0a0c;
+	color: #c8ccd4;
+	font-family: 'Courier New', monospace;
+	letter-spacing: 0.08em;
+	text-align: center;
+}
+
+#vr-rotate {
+	position: fixed;
+	inset: 0;
+	z-index: 210;
+	display: none;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+	text-align: center;
+	background-color: #0a0a0c;
+	color: #c8ccd4;
+	font-family: 'Courier New', monospace;
+	letter-spacing: 0.08em;
+}
+
+#vr-rotate p {
+	max-width: 24rem;
+	line-height: 1.6;
+	font-size: 0.9rem;
+}
+
+#vr-rotate .vr-gate-title {
+	font-size: 1.4rem;
+	font-weight: bold;
+	color: #e8ebf0;
+	margin-bottom: 0.8rem;
+}
+
+#vr-gate .vr-gate-title {
+	font-size: 1.5rem;
+	font-weight: bold;
+	color: #e8ebf0;
+	margin-bottom: 0.4rem;
+	text-shadow: 0 0 8px rgba(255, 154, 48, 0.35);
+}
+
+#vr-gate .vr-gate-sub {
+	color: #ff9a30;
+	font-size: 0.8rem;
+	margin-bottom: 1.4rem;
+}
+
+#vr-gate p {
+	max-width: 30rem;
+	line-height: 1.65;
+	font-size: 0.86rem;
+	margin: 0 0 1rem;
+}
+
+#vr-gate a {
+	color: #ff9a30;
+}
+
+#vr-gate .vr-gate-btn {
+	margin-top: 0.6rem;
+	padding: 0.6rem 1.2rem;
+	border: 1px solid #3d4a63;
+	background: transparent;
+	color: #c8ccd4;
+	font-family: inherit;
+	letter-spacing: 0.1em;
+	font-size: 0.8rem;
+	cursor: pointer;
+}
+
+#vr-gate .vr-gate-btn:hover,
+#vr-gate .vr-gate-btn:focus-visible {
+	border-color: #ff9a30;
+	color: #e8ebf0;
+	outline: none;
+}
+
+#vr-loading.vr-gone {
+	opacity: 0;
+	pointer-events: none;
+}
+
+#vr-loading .vr-title {
+	font-size: 1.6rem;
+	font-weight: bold;
+	color: #e8ebf0;
+	margin-bottom: 1.5rem;
+	text-shadow: 0 0 8px rgba(255, 154, 48, 0.35);
+}
+
+#vr-loading .vr-diag {
+	margin-top: 1.1rem;
+	font-size: 0.72rem;
+	letter-spacing: 0.06em;
+	color: #6b7486;
+	max-width: 32rem;
+	line-height: 1.6;
+	text-align: center;
+	padding: 0 1rem;
+	white-space: pre-wrap;
+}
+
+#vr-loading .vr-diag.vr-err {
+	color: #ff6b52;
+	font-size: 0.8rem;
+}
+
+#vr-loading .vr-ring {
+	width: 44px;
+	height: 44px;
+	margin-bottom: 1.2rem;
+	border: 3px solid rgba(255, 255, 255, 0.12);
+	border-top-color: #ff9a30;
+	border-radius: 50%;
+	will-change: transform;
+	animation: vr-spin 0.9s linear infinite;
+}
+
+#vr-loading .vr-msg {
+	font-size: 0.8rem;
+	color: #9aa0ac;
+}
+
+#vr-loading .vr-hint {
+	font-size: 0.62rem;
+	color: #5a616e;
+	margin-top: 0.55rem;
+}
+
+/* Rotating lore transmissions. The crossfade is a pure-CSS keyframe animation on
+   opacity, so it keeps cycling even while synchronous shader compiles block the
+   main thread — exactly the window this overlay exists to cover. Four stacked
+   lines, 14 s loop, ~3.5 s each. */
+#vr-loading .vr-lore {
+	position: relative;
+	width: 100%;
+	height: 1.4rem;
+	margin-top: 1.4rem;
+	text-align: center;
+}
+
+#vr-loading .vr-lore div {
+	position: absolute;
+	left: 0;
+	right: 0;
+	font-size: 0.72rem;
+	color: #8fb8cc;
+	letter-spacing: 0.16em;
+	opacity: 0;
+	will-change: opacity;
+	animation: vr-lore-cycle 14s linear infinite;
+}
+
+#vr-loading .vr-lore div:nth-child(2) { animation-delay: 3.5s; }
+#vr-loading .vr-lore div:nth-child(3) { animation-delay: 7s; }
+#vr-loading .vr-lore div:nth-child(4) { animation-delay: 10.5s; }
+
+@keyframes vr-lore-cycle {
+	0% { opacity: 0; }
+	3% { opacity: 1; }
+	22% { opacity: 1; }
+	25% { opacity: 0; }
+	100% { opacity: 0; }
+}
+
+@keyframes vr-spin {
+	to { transform: rotate(360deg); }
+}
+		</style>
+		$GODOT_HEAD_INCLUDE
+	</head>
+	<body>
+		<canvas id="canvas">
+			Your browser does not support the canvas tag.
+		</canvas>
+
+		<noscript>
+			Your browser does not support JavaScript.
+		</noscript>
+
+		<div id="status">
+			<img id="status-splash" class="$GODOT_SPLASH_CLASSES" src="$GODOT_SPLASH" alt="">
+			<progress id="status-progress"></progress>
+			<div id="status-notice"></div>
+		</div>
+
+		<div id="vr-rotate">
+			<div class="vr-gate-title">ROTATE YOUR DEVICE</div>
+			<p>VOID RUNNER needs landscape. Turn the phone sideways to fly.</p>
+		</div>
+
+		<!-- DORMANT since M4d: phones boot straight into the touch build now, and
+		     nothing sets window.vrGated any more, so this card never renders. It is
+		     kept wired on purpose as a fast-revert path — setting window.vrGated in
+		     the phone heuristic below makes it the phone experience again in one
+		     line. Two things a revert has to know: (1) #vr-gate-anyway currently has
+		     NO click handler, so it would need one that sets window.vrTouchMode,
+		     calls window.vrArmPortraitWatch() and window.vrStartEngine(); (2) the
+		     copy below was rewritten for the only case that can still gate a device
+		     — a browser that genuinely can't run the build. It used to say touch
+		     controls didn't exist yet, which stopped being true when M4b shipped. -->
+		<div id="vr-gate">
+			<div class="vr-gate-title">VOID RUNNER</div>
+			<div class="vr-gate-sub">THIS DEVICE MAY NOT FLY</div>
+			<p>VOID RUNNER needs WebGL2 and a decent chunk of memory. This browser
+			looks like it&rsquo;s missing something the game needs, so it may stall or
+			run out of room part-way through loading.</p>
+			<p>A desktop, a laptop, or a recent phone or tablet runs it instantly in
+			the browser, no download &mdash; touch controls are built in.</p>
+			<p><a href="https://github.com/NCSTATEPACK16/VoidRunner">Source on GitHub</a>
+			&mdash; it&rsquo;s open source, and every texture, sprite, sound and level is
+			generated by code.</p>
+			<button class="vr-gate-btn" id="vr-gate-anyway" type="button">LET ME TRY ANYWAY</button>
+		</div>
+
+		<div id="vr-loading">
+			<div class="vr-title">VOID RUNNER</div>
+			<div class="vr-ring"></div>
+			<div class="vr-msg" id="vr-loading-msg">INITIALIZING&hellip;</div>
+			<div class="vr-hint">compiling shaders &mdash; first run is slowest</div>
+			<div class="vr-diag" id="vr-diag"></div>
+			<!-- boot lore, baked in so it rotates before the engine even loads;
+			     vrShowLoading swaps these for per-sector lines -->
+			<div class="vr-lore" id="vr-lore">
+				<div>STARLIGHT STATION &mdash; LINK ESTABLISHED</div>
+				<div>RIFT ACTIVITY: CLIMBING</div>
+				<div>HIVE SIGNALS ON ALL OUTER BANDS</div>
+				<div>VOID RUNNER, YOU ARE GO FOR LAUNCH</div>
+			</div>
+		</div>
+
+		<script>
+		console.log('[VOIDRUNNER] shell loaded — build check: '
+			+ (document.getElementById('vr-diag') ? 'current' : 'STALE, clear cache'));
+
+		// Boot state shared with the engine bootstrap below. Registered FIRST and in
+		// its own block so that a throw anywhere later — including the engine script
+		// failing to load, which leaves `Engine` undefined — still gets reported.
+		// The earlier version put the watchdog inside the bootstrap, so the one case
+		// it most needed to catch was the one case it could not.
+		(function () {
+			// re-audit Step 5: firstFlightMs is set by the game at the first launch
+			window.vrBoot = { pct: -1, downloaded: false, started: false, booted: false, err: null,
+				firstFlightMs: 0 };
+			// re-audit Step 5: on iOS (Safari 16.4+) the ring/silent switch mutes Web Audio
+			// unless the page asks for media playback; elsewhere this does nothing.
+			try {
+				if (navigator.audioSession) { navigator.audioSession.type = 'playback'; }
+			} catch (e) { /* older browsers: nothing to set */ }
+			function report(msg) {
+				window.vrBoot.err = msg;
+				if (window.vrDiag) { window.vrDiag('ERROR\n' + msg, true); }
+			}
+			function ours(src) {
+				// same-origin only. Extensions inject content scripts into every page
+				// and their errors were being reported as if the game had thrown them.
+				return !src || src.indexOf(location.origin) === 0;
+			}
+			window.addEventListener('error', function (e) {
+				if (e && e.target && e.target.src) {
+					// a blocked analytics script is not a boot failure; note it quietly
+					if (!ours(e.target.src)) {
+						console.log('[VOIDRUNNER] third-party blocked: ' + e.target.src);
+						return;
+					}
+					report('failed to load ' + e.target.src);
+				} else if (e && e.message && ours(e.filename)) {
+					report(e.message);
+				}
+			}, true);   // capture phase, so subresource load failures are seen too
+			window.addEventListener('unhandledrejection', function (e) {
+				var r = e && e.reason;
+				report((r && r.message) ? r.message : String(r));
+			});
+			window.setTimeout(function () {
+				var b = window.vrBoot;
+				if (b.booted || b.err || !window.vrDiag) { return; }
+				var gl = 'none';
+				try {
+					var c = document.createElement('canvas');
+					if (c.getContext('webgl2')) { gl = 'webgl2'; }
+					else if (c.getContext('webgl')) { gl = 'webgl1 (Godot needs webgl2)'; }
+				} catch (e) { gl = 'blocked'; }
+				window.vrDiag('STALLED AFTER 20s\n'
+					+ (b.downloaded ? 'download complete' : 'download at ' + b.pct + '%') + '\n'
+					+ 'engine object: ' + (typeof window.Engine) + '\n'
+					+ 'webgl: ' + gl + '\n'
+					+ 'ua: ' + navigator.userAgent.slice(0, 80));
+			}, 20000);
+		}());
+
+		// M4a: ?touch=1 forces touch mode on for any device — kept as the manual
+		// override for testing the touch build on a machine the phone heuristic below
+		// doesn't match. Since M4d that heuristic is what normally turns touch on, and
+		// a matched phone boots straight into play; the capability card (#vr-gate) it
+		// used to stop at is dormant (see the comment on that markup).
+		//
+		// M4b fix: touch mode can turn on LATER than this line — the phone heuristic
+		// runs further down, and the dormant card's LET ME TRY ANYWAY path would too if
+		// it were ever re-armed. The watcher used to be a plain IIFE that only wired
+		// itself up if vrTouchMode was already true at page load, so any later path
+		// never armed the rotate card. It's now a named, idempotent function callable
+		// from anywhere.
+		window.vrTouchMode = /[?&]touch=1\b/.test(window.location.search);
+		(function () {
+			var armed = false;
+			window.vrArmPortraitWatch = function () {
+				if (armed) { return; }
+				armed = true;
+				// landscape is not optional: portrait renders the cockpit unusably small
+				var rot = document.getElementById('vr-rotate');
+				function sync() {
+					var portrait = window.innerHeight > window.innerWidth;
+					if (rot) { rot.style.display = portrait ? 'flex' : 'none'; }
+				}
+				window.addEventListener('resize', sync);
+				window.addEventListener('orientationchange', sync);
+				sync();
+				// best-effort lock; Safari refuses it outside fullscreen, hence the prompt
+				try {
+					if (screen.orientation && screen.orientation.lock) {
+						screen.orientation.lock('landscape').catch(function () {});
+					}
+				} catch (e) { /* unsupported — the prompt covers it */ }
+			};
+			if (window.vrTouchMode) { window.vrArmPortraitWatch(); }
+		}());
+
+		// D11: capture the browser's install prompt. beforeinstallprompt fires once,
+		// early, and only if the browser considers the page installable (HTTPS, a
+		// valid manifest, etc.) — it must be stashed immediately at script load, not
+		// requested on demand, or it's gone by the time a player reaches game-over.
+		// iOS Safari never fires this event at all (Apple has no equivalent API), so
+		// vrCanInstall() correctly returns false there and the in-game button simply
+		// doesn't render — the right behavior, not a bug to route around.
+		window.vrInstallEvent = null;
+		window.addEventListener('beforeinstallprompt', function (e) {
+			e.preventDefault();
+			window.vrInstallEvent = e;
+		});
+		window.vrCanInstall = function () {
+			return window.vrInstallEvent !== null;
+		};
+		window.vrPromptInstall = function () {
+			if (!window.vrInstallEvent) { return; }
+			window.vrInstallEvent.prompt();
+			window.vrInstallEvent = null;   // a captured prompt can only be shown once
+		};
+
+		// M1.1/M4d: phone detection. A coarse pointer alone is not enough — iPad
+		// Safari reports coarse+touch and IS supported with a keyboard — so the
+		// short screen edge is what separates a phone from a tablet. Tablets and
+		// desktops boot as before. M4d: M4b shipped a real, playable touch build,
+		// so a matched device now boots straight into touch play instead of
+		// stopping at the capability card below (#vr-gate) — that card, its
+		// #vr-gate-anyway button, and window.vrGated are left wired but dormant: a
+		// fast-revert fallback for a device this heuristic still gets wrong the
+		// other way (e.g. no WebGL2, already separately caught by the STALLED
+		// AFTER 20s diagnostic above), not the default phone experience anymore.
+		(function () {
+			var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+			var touch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+			var shortEdge = Math.min(window.screen.width, window.screen.height);
+			if (window.vrTouchMode) { return; }   // already armed via ?touch=1 or an earlier call
+			if (!(touch && coarse && shortEdge < 600)) { return; }
+			// M4d: the touch build is proven (M4b) — phones boot straight in, no click gate.
+			window.vrTouchMode = true;
+			window.vrArmPortraitWatch();
+		}());
+
+		// M3: anonymous counters + the feedback form, both driven from GDScript.
+		// Codes are injected from scripts/feedback.gd at export time; blank means the
+		// analytics script is never even fetched, and every call below no-ops. The
+		// game must not depend on either service being reachable.
+		(function () {
+			var GC_CODE = 'ncstatepack16';
+			var FORM_URL = 'https://tally.so/r/KYrvyk';
+			window.vrOpenForm = function () {
+				if (!FORM_URL) { return; }
+				window.open(FORM_URL, '_blank', 'noopener');
+			};
+			window.vrCount = function (name) {
+				try {
+					if (window.goatcounter && window.goatcounter.count) {
+						window.goatcounter.count({ path: name, title: name, event: true });
+					}
+				} catch (e) { /* blocked or offline — counting is never load-bearing */ }
+			};
+			if (!GC_CODE) { return; }
+			var sc = document.createElement('script');
+			sc.async = true;
+			sc.src = 'https://gc.zgo.at/count.js';
+			sc.setAttribute('data-goatcounter',
+				'https://' + GC_CODE + '.goatcounter.com/count');
+			// no automatic pageview: this is a single canvas that never navigates, so
+			// the only meaningful measurements are the explicit counters above
+			sc.setAttribute('data-goatcounter-settings', '{"no_onload": true}');
+			document.head.appendChild(sc);
+		}());
+
+		// M4c: iOS Safari only grants DeviceOrientationEvent permission when
+		// requestPermission() is called from inside a user-gesture handler — a
+		// plain page-load listener is silently ignored.
+		//
+		// DORMANT since the M4c final review: nothing calls this any more. The
+		// GYRO AIM settings toggle that used to call it was removed because the
+		// feature could not work on web at all. Godot 4.7's web export registers
+		// NO device-orientation/-motion listener of its own (grep the exported
+		// index.js for "deviceorientation"/"devicemotion": zero hits), so
+		// Input.get_gyroscope() is permanently Vector3.ZERO in a browser — it is
+		// a native-Android/iOS-only input. Granting the permission here would not
+		// have changed that; an earlier comment in this spot claimed the engine
+		// picked the events up internally, which was simply wrong.
+		//
+		// Kept, not deleted, as the matching half of the dormant GDScript
+		// scaffolding (GameState.gyro_aim_enabled + player.gd's additive nudge).
+		// A future session that writes a real JS -> GDScript orientation bridge
+		// needs this permission gesture; note that the browser API reports
+		// absolute tilt ANGLES, not the rad/s rate player.gd's GYRO_*_SENS
+		// constants assume, so that work is a retune, not just a wiring job.
+		window.vrRequestGyro = function () {
+			if (typeof DeviceOrientationEvent !== 'undefined'
+					&& typeof DeviceOrientationEvent.requestPermission === 'function') {
+				DeviceOrientationEvent.requestPermission().catch(function () {});
+			}
+		};
+
+		// GDScript drives these via JavaScriptBridge.eval (see game.gd).
+		(function () {
+			window.vrShowLoading = function (msg, lines) {
+				var el = document.getElementById('vr-loading');
+				if (!el) { return; }
+				if (msg) {
+					var m = document.getElementById('vr-loading-msg');
+					if (m) { m.textContent = msg; }
+				}
+				// swap in per-sector lore; new nodes restart the CSS cycle at their
+				// stagger offsets. Pad to 4 so every delay slot stays filled.
+				if (lines && lines.length) {
+					var lore = document.getElementById('vr-lore');
+					if (lore) {
+						lore.textContent = '';
+						for (var i = 0; i < 4; i++) {
+							var d = document.createElement('div');
+							d.textContent = lines[i % lines.length];
+							lore.appendChild(d);
+						}
+					}
+				}
+				el.style.display = 'flex';
+				// re-show on the next frame so the opacity transition can play
+				window.requestAnimationFrame(function () { el.classList.remove('vr-gone'); });
+			};
+			// The engine's own progress bar and, more importantly, its failure notice
+			// live in #status — which sits BELOW this overlay. Without mirroring them
+			// up here, a failed boot looks identical to a slow one: a spinner forever.
+			window.vrDiag = function (text, isError) {
+				// Also log, tagged: a page inspected remotely is usually buried in
+				// extension noise, and filtering the console for VOIDRUNNER is the
+				// fastest way to confirm you are even attached to the right tab.
+				try {
+					if (isError) { console.error('[VOIDRUNNER] ' + text); }
+					else { console.log('[VOIDRUNNER] ' + text); }
+				} catch (e) { /* console can be absent in odd embeddings */ }
+				var d = document.getElementById('vr-diag');
+				if (!d) { return; }
+				d.textContent = text || '';
+				d.className = 'vr-diag' + (isError ? ' vr-err' : '');
+				if (isError) {
+					var r = document.querySelector('#vr-loading .vr-ring');
+					if (r) { r.style.display = 'none'; }   // a spinner implies progress
+				}
+			};
+			// window.vrReport() — one paste-able summary for remote debugging
+			window.vrReport = function () {
+				var gl = 'none';
+				try {
+					var c = document.createElement('canvas');
+					if (c.getContext('webgl2')) { gl = 'webgl2'; }
+					else if (c.getContext('webgl')) { gl = 'webgl1 (Godot needs webgl2)'; }
+				} catch (e) { gl = 'blocked'; }
+				var r = {
+					page: location.href,
+					Engine: typeof window.Engine,
+					boot: window.vrBoot,
+					gated: window.vrGated === true,
+					touch: window.vrTouchMode === true,
+					webgl: gl,
+					cores: navigator.hardwareConcurrency,
+					ua: navigator.userAgent
+				};
+				console.log('[VOIDRUNNER] REPORT ' + JSON.stringify(r, null, 2));
+				return r;
+			};
+			window.vrHideLoading = function () {
+				var el = document.getElementById('vr-loading');
+				if (!el) { return; }
+				el.classList.add('vr-gone');
+				window.setTimeout(function () {
+					if (el.classList.contains('vr-gone')) { el.style.display = 'none'; }
+				}, 560);
+			};
+		}());
+		</script>
+
+		<script src="$GODOT_URL"></script>
+		<script>
+const GODOT_CONFIG = $GODOT_CONFIG;
+const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusOverlay = document.getElementById('status');
+	const statusProgress = document.getElementById('status-progress');
+	const statusNotice = document.getElementById('status-notice');
+
+	let initializing = true;
+	let statusMode = '';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		if (mode === 'hidden') {
+			statusOverlay.remove();
+			initializing = false;
+			return;
+		}
+		statusOverlay.style.visibility = 'visible';
+		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
+		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		console.error(err);
+		// #status sits below the loading overlay, so mirror it up or it is invisible
+		if (window.vrDiag) {
+			window.vrDiag('FAILED TO START\n'
+				+ ((err && err.message) ? err.message : String(err)), true);
+		}
+		if (window.vrBoot) { window.vrBoot.booted = true; }
+		if (err instanceof Error) {
+			setStatusNotice(err.message);
+		} else if (typeof err === 'string') {
+			setStatusNotice(err);
+		} else {
+			setStatusNotice('An unknown error occurred.');
+		}
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures({
+		threads: GODOT_THREADS_ENABLED,
+	});
+
+	if (missing.length !== 0) {
+		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
+			let serviceWorkerRegistrationPromise;
+			try {
+				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
+			} catch (err) {
+				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
+			}
+			// There's a chance that installing the service worker would fix the issue
+			Promise.race([
+				serviceWorkerRegistrationPromise.then((registration) => {
+					if (registration != null) {
+						return Promise.reject(new Error('Service worker already exists.'));
+					}
+					return registration;
+				}).then(() => engine.installServiceWorker()),
+				// For some reason, `getRegistration()` can stall
+				new Promise((resolve) => {
+					setTimeout(() => resolve(), 2000);
+				}),
+			]).then(() => {
+				// Reload if there was no error.
+				window.location.reload();
+			}).catch((err) => {
+				console.error('Error while registering service worker:', err);
+			});
+		} else {
+			// Display the message as usual
+			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+			displayFailureNotice(missingMsg + missing.join('\n'));
+		}
+	} else {
+		let lastPct = -1;
+		window.vrStartEngine = function () {
+			if (window.vrBoot.started) { return; }
+			window.vrBoot.started = true;
+			setStatusMode('progress');
+			engine.startGame({
+				'onProgress': function (current, total) {
+					if (current > 0 && total > 0) {
+						statusProgress.value = current;
+						statusProgress.max = total;
+						const pct = Math.floor((current / total) * 100);
+						if (pct !== lastPct) {
+							lastPct = pct;
+							window.vrBoot.pct = pct;
+							if (window.vrDiag) { window.vrDiag('DOWNLOADING ' + pct + '%'); }
+						}
+						if (current >= total) { window.vrBoot.downloaded = true; }
+					} else {
+						statusProgress.removeAttribute('value');
+						statusProgress.removeAttribute('max');
+					}
+				},
+			}).then(() => {
+				window.vrBoot.booted = true;
+				setStatusMode('hidden');
+				if (window.vrDiag) { window.vrDiag('STARTING ENGINE'); }
+			}, displayFailureNotice);
+		};
+		// A gated device shows the capability card instead. Booting the engine
+		// behind it downloaded 39 MB onto a phone that was just told it cannot
+		// play, and on a device that runs out of memory it also killed the tab —
+		// which is what made the page impossible to attach a debugger to.
+		if (!window.vrGated) { window.vrStartEngine(); }
+
+	}
+}());
+		</script>
+	</body>
+</html>

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="LevelDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "L2 · SUPPLY ARTERY"
+briefing = "Expect heavier patrols. Keep moving — a still ship is an easy target. Mines arm when you get close: shoot them early."
+objective = "RESCUE 3 STRANDED PODS"
+rings = 130
+spawn_tunnel = 0.08
+spawn_arena = 0.36
+enemy_hp = 2
+enemy_speed = 6.8
+enemy_fire = 2.5
+theme_id = "navy"
+level_seed = 202
+enemy_types = PackedStringArray("drone", "drone", "drone", "weaver", "turret", "mine")
+spur_count = 1
+miniboss_model = "hauler"
+miniboss_name = "HAULER"
+miniboss_hp = 70
+miniboss_size = 11.0
+hub = true
+objective_kind = "rescue"
+objective_count = 3

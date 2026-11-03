@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="LevelDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+display_name = "L6 · BROOD MOTHER"
+briefing = "She hatches STINGERS and lays mines. Keep strafing, pop the mines from range, and take the ring before the nest wakes."
+objective = "DESTROY THE BROOD MOTHER"
+rings = 56
+spawn_tunnel = 0.09
+spawn_arena = 0.3
+enemy_hp = 3
+enemy_speed = 8.4
+enemy_fire = 1.9
+theme_id = "hive"
+level_seed = 666
+enemy_types = PackedStringArray("weaver", "hulk", "stinger", "layer", "rammer", "mender", "splitter")
+kind = "boss"
+boss_name = "BROOD MOTHER"
+boss_hp = 200
+boss_size = 18.0
+boss_tint = Color(1, 1, 1, 1)
+boss_model = "brood"
+par_time = 200.0
+boss_shield_cells = 2
+boss_missile_cells = 1
