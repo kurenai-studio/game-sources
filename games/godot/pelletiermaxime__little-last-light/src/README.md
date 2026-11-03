@@ -1,0 +1,129 @@
+# Little Last Light
+
+A small Godot learning project: defend a mobile lantern with fixed, automatically firing turrets.
+
+## Run the project
+
+Open `project.godot` in Godot and press F6 for the current scene or F5 for the project. Developed with Godot 4.7.2 using the Compatibility renderer.
+
+- WASD or arrow keys: move the lantern.
+- Space: cycle brightness, energy generation, and enemy spawn rate.
+- During a run, click the small brightness indicator along the bottom to cycle Low / Medium / High. Its three segments and energy rate show the current setting.
+- The turret stays in place and shoots nearby enemies.
+- During a run, **Escape / P / controller Options** pauses or resumes. The pause screen's **Resume** button also works with mouse or controller focus. Movement, combat, the timer, and earnings freeze; Escape still cancels turret placement during preparation.
+
+**Controller:** prompts automatically switch to PlayStation, Xbox, or generic position icons when you use a controller, and back to mouse/keyboard prompts when you use the keyboard/mouse. Menus use the left stick or D-pad to select, Cross/A to confirm, and Circle/B to go back. In placement, the left stick moves the cursor and the D-pad selects toolbar buttons; move the stick to return to the arena. Square/X buys a basic turret, L1/LB buys a slow turret, and R3/right-stick click buys a Watchlight. Cross/A selects or places it, Circle/B cancels, Triangle/Y hides or shows the controls, and R1/RB sells the selected purchased turret. Options/Menu starts or pauses a run. During combat, Cross/A cycles brightness. Upgrades and layout refunds are selected from their buttons, avoiding accidental purchases through shoulder shortcuts. Unknown pads use button-position icons. Username entry still uses the keyboard.
+
+Start in **Preparation** with a compact card over the full arena. Choose **Place turrets**, **Buy upgrades**, or **Start run**. In placement mode, click an existing turret to move it for free, or click a turret purchase button. Turret purchases have no keyboard shortcut. All turret types share the same price: **60, 85, 110, 135… energy**, increasing with each purchased turret in the layout. Left-click to confirm a valid position; **Escape** cancels. The arena fills the window. The transparent placement card sits vertically on the left. Click through its background to place turrets, or press Tab to hide the controls and reach spots underneath buttons. Click **Start run** or press **Enter** when ready; the arena keeps the same bounds during combat.
+
+During a run, construction is locked and enemies spawn faster over time. Newly spawned enemies need one additional turret hit every 30 seconds; their health bars show remaining health. Enemies touching the lantern drain health. At zero health, enemies clear and your earnings are banked. A dedicated results screen shows survival time, earned energy, and your best. Its Leaderboard button opens rankings and record publishing on separate tabs; Continue stays visible on every page. Rankings use Previous/Next buttons with three entries per page, so no menu needs scrolling. Continue returns to preparation. Turrets and unspent energy carry into the next run.
+
+M6 basic enemies move at a fixed **85 pixels/second**, versus the lantern's **220**, and turn at **75 degrees/second** instead of instantly changing direction (2.4 seconds for a half-turn). Their eyes face their travel direction. Open space lets you escape; sharp dodges make pursuers curve around. Enemy speed no longer rises over time. Existing spawn and health scaling are temporary tuning, pending a roster of enemies with different movement patterns.
+
+**Water boss:** The Drencher arrives once at 5:00, with 700 HP and a three-second warning. It slowly pursues the lantern and leaves temporary water puddles. Fresh puddles warn for 0.6 seconds, then deal 8 damage/second while touching the lantern; overlapping puddles do not stack damage. Defeat it with your turrets to clear the water and continue the run.
+
+**Ten-minute boss:** The Rainkeeper arrives once at 10:00 with 900 HP. It marks three consecutive rain strikes, each with a 0.85-second warning, leaving large pools for three seconds. Keep moving through the burst and plan your return to the turrets. Earlier enemies remain in play. See [Rainkeeper mechanics](docs/rainkeeper.md).
+
+**Run goal:** survive until the Snuffer arrives at **15:00**, then defeat it to win. Ordinary enemies and surviving earlier bosses remain in the fight.
+
+Progress saves locally to `user://progress-v1.json` after purchases, upgrades, sales, moves, defeat, every five seconds during combat, and on a normal desktop close. Reopening restores energy, turret positions, paid purchase prices, and global upgrade levels. Existing saves migrate automatically.
+
+**End Run** on the pause screen banks and saves all earned energy and opens the results screen. Continue returns to preparation. Desktop preparation also has **Quit Game**, which saves before closing. The desktop game starts maximized.
+
+**Global upgrades** in preparation affect every existing and future turret. Damage gains +1 per level (60, 120, 240, 480 energy); fire rate gains +25% of its original rate per level (50, 100, 200, 400 energy). Each has four levels. Click an upgrade, or use arrow keys to select it and Enter to confirm; with a controller, select an upgrade and confirm. Menu cards fit shorter windows without scrollbars; U opens the upgrades view.
+
+**Sell selected turret** refunds its original purchase price: select a purchased turret as if moving it, then use the button, **X**, or controller **R1 / RB**. The free starter cannot be sold. New-turret prices still depend on how many you currently own.
+
+**Reset layout** refunds the actual recorded cost of all purchased turrets, restores one free starter to its original position, and saves. Use its button or **R**; with a controller, select the refund button and confirm. Global upgrades, records, and other earned energy remain intact. Upgrading, selling, and resetting are available only in preparation, never during a paused run.
+
+## Online leaderboard
+
+The in-game Records view and results screen show the current minor version's published leaderboard: all `0.0.x` patches share a board, while `0.1.x` starts a separate board. Each board shows one best published run per device across its patches, including existing scores. Editor runs use `dev` as a separate leaderboard: you can publish records, view rankings, and retry failed requests just like a release. The All versions link opens the website to browse minor versions.
+
+The results screen offers to publish a new survival record with a username; pending offers remain available through **Records** in preparation. New records include earned energy, defense investment, and a turret-layout diagram with upgrade levels. Publication is optional; failed attempts can be retried. Published leaderboards group patches by minor version; local progress remains scoped to the exact build version. The Nuxt website and Convex backend live in [`leaderboard/`](leaderboard/README.md), including setup, deployment, and verification instructions. Online publishing requires configuring this game's own backend and website URLs; unconfigured builds keep records locally.
+
+## Learn and explore
+
+- [Code structure and browser performance review](docs/refactor-performance.md)
+
+- [Reset layout and refund arithmetic](docs/reset-layout.md)
+
+- [Pause screen and scene-tree processing](docs/pause-screen.md)
+
+- [First milestone walkthrough](docs/milestone-1.md)
+- [Health, defeat, and restart walkthrough](docs/milestone-2.md)
+- [Turret placement walkthrough](docs/milestone-3.md)
+- [Run progression and saving walkthrough](docs/milestone-4.md)
+- [Clarity, brightness feedback, and run recap walkthrough](docs/milestone-5.md)
+- [Slower enemies and committed pursuit walkthrough](docs/milestone-6.md)
+- [Versioned online leaderboard walkthrough](docs/milestone-7.md)
+- [Charging enemy walkthrough](docs/milestone-8.md)
+- [Upgrades, selling, and run results (M9)](docs/milestone-9.md)
+- [Swarm performance and leaderboard run details (M10)](docs/milestone-10.md)
+- [The Drencher water boss (M11)](docs/milestone-11.md)
+- [Full arena and preparation cards (M12)](docs/milestone-12.md)
+- [Sound effects and settings (M13)](docs/milestone-13.md)
+- [Slow support turret (M14)](docs/milestone-14.md)
+- [Stationary ward and encounter pacing (M15)](docs/milestone-15.md)
+- [M14–M16 shared roadmap](docs/roadmap-m14-m16.md)
+- [Audio and display settings](docs/settings.md)
+- [Editing menu scenes and the shared Theme](docs/menu-scenes.md)
+- [Design concept](docs/concept.html) — open this HTML file in a browser.
+- [Playable browser demo](https://pelletiermaxime.github.io/little-last-light-demo/) — automatically published from successful `main` builds.
+
+## Export
+
+Linux, Windows, and Web presets are included in `export_presets.cfg`. Install matching Godot 4.7.2 export templates and create the `export` folder before exporting through Project → Export. Generated builds and Godot caches are excluded from Git.
+
+### M16: survive until dawn
+
+The Snuffer arrives at **15:00** while ordinary enemies keep spawning. Dodge its
+five-wide aimed volleys and full-circle droplet rings. Below half health, it fires
+three overlapping rings; at one-third health, Desperation accelerates its
+repositioning 2.5x and shortens recovery. Pulse turrets slow its movement with
+reduced boss susceptibility. Stay within 110 pixels of damage turrets to boost
+their damage and fire rate by ×1.5 each, upgradeable to ×2.0; their warm glow and link show the active boost. Moving
+within range keeps it active. Slow turrets are unaffected. The former stationary
+ward has been removed, so standing still no longer absorbs damage.
+
+Defeat the Snuffer to reach dawn, bank earnings once, and record your total clear
+time. Clears rank ahead of survival-only scores, fastest clear first. Existing
+records and saves remain readable. The isolated one-minute boss launcher is for
+local testing only and disables online publishing.
+
+### Automated builds and publishing
+
+`.github/workflows/publish.yml` builds all three platforms on pushes to `main` and `feat/**` branches, and on pull requests to `main`. A push to `main` also deploys the browser game to [the public demo repository's Pages site](https://pelletiermaxime.github.io/little-last-light-demo/) and publishes Windows and Linux x86_64 archives, plus SHA-256 checksums, in [Releases](https://github.com/pelletiermaxime/little-last-light/releases). Feature branches only upload build artifacts, so the pipeline can be tested before merging. The source repository stays private; only the web export is copied to the demo repository.
+
+Godot and the three required release templates are cached by engine version, runner OS, and architecture. A cache hit skips the download and installation steps. The first run, a Godot version change, or an evicted cache requires a fresh download; the game itself is rebuilt every run.
+
+**Deployment setup:** The public `pelletiermaxime/little-last-light-demo` repository serves Pages from `main`, at `/`. A write-enabled deploy key on that repository has its private key stored in this source repository's `PAGES_DEPLOY_KEY` Actions secret. This key is restricted to the demo repository and used only in the `pages` job on `main`. Keep the `github-pages` environment open to `main` deployments. Publishing preserves the demo README and replaces the exported site files; GitHub then builds the public Pages site. Desktop releases use the source repository's built-in `GITHUB_TOKEN`. Pages does not need to be enabled on this private repository.
+
+### itch.io browser uploads
+
+The `itch` job reuses the same `web-build` artifact as Pages and uploads it with [Butler](https://itch.io/docs/butler/) to the `html5` channel, using CI's assigned release version. It runs after the build and leaderboard checks succeed on pushes or manual workflow runs on `main`, independently of Pages and desktop publication. Feature branches and pull requests never upload to itch.io. Until `ITCH_TARGET` is configured, this job is skipped.
+
+One-time setup in this source repository's **Settings → Secrets and variables → Actions**:
+
+1. Install [Butler](https://itch.io/docs/butler/installing.html), run `butler login`, and store its credential as the **secret** `BUTLER_API_KEY`. The [authentication documentation](https://itch.io/docs/butler/login.html) lists the credential file locations and the `wharf` key in itch.io's API-key settings. Enter the key directly in GitHub's secret form.
+2. Set the **variable** `ITCH_TARGET` to `username/game-slug`, without a URL scheme or channel suffix. For example, `https://username.itch.io/little-last-light` becomes `username/little-last-light`. The itch.io project must already exist and the key must have access to it.
+3. Run **Actions → Build and publish game → Run workflow** on `main` after this workflow change is merged, or let the next push publish it.
+4. After the first upload, open itch.io's **Edit game** page, set the project kind to **HTML**, and mark the `html5` upload as **playable in the browser**, then save. See [Butler's HTML-game instructions](https://itch.io/docs/butler/pushing.html#html--playable-in-browser-games). Later uploads update the same channel automatically.
+
+An itch.io failure is visible as a failed job and does not block Pages or desktop publication. Retry the failed job to upload that run's existing artifact again. Remove `ITCH_TARGET` to disable future itch.io uploads.
+
+### Automatic versions and changelog
+
+`scripts/prepare-release.py` starts at `0.0.1` and increments the patch version from existing `vMAJOR.MINOR.PATCH` Git tags. Do not bump patch versions before merging. The script stamps the selected version into the build and each export's `version.txt`. After desktop publication succeeds, CI commits the assigned version back to `project.godot` on `main`. That field can still be raised manually to request a new major/minor minimum, such as `0.1.0`; writeback never lowers a newer value. Local builds stamp only the working copy.
+
+Releases use the version as both name and tag, point to the exact source commit, and use [CHANGELOG.md](CHANGELOG.md) for their release notes, with a comparison link and download instructions. The script selects a matching `## [X.Y.Z]` section if present, otherwise `## [Unreleased]`. Empty Unreleased entries, or entries identical to the previous release's Unreleased section, produce a short no-player-facing-changes note instead of repeating old notes. A missing changelog or missing required section fails the build. Rebuilding an already tagged commit reuses its version and refreshes its assets without overwriting editorial corrections to published notes. Build-only branches do not create tags or consume versions. The old `build-*` release remains available but does not affect version numbering.
+
+Update Unreleased alongside player-facing changes, using `### Added`, `### Changed`, and `### Fixed` as needed. Development-only previews and test tools belong in PR descriptions, not player release notes. After publication, `--record-published` archives the exact release notes under the assigned version and GitHub's actual UTC publication date. It removes only matching published entries from Unreleased, preserving newer additions and edits. The workflow retries a rejected push against fresh `main`, never force-pushes, and fails visibly if writeback cannot finish. Retry the failed recording job to recover; already recorded releases are left unchanged. The bot uses `GITHUB_TOKEN` and a `[skip ci]` metadata commit, avoiding a release loop. Tags continue to identify the source used to build the release, not the subsequent metadata commit.
+
+Pull requests only build and upload artifacts; they do not publish. You can also use **Actions → Build and publish game → Run workflow** on `main` to publish manually. Other branches only build. Pages and release publication run independently after a successful build, so a Pages deployment error does not prevent desktop downloads from publishing. The Pages job publishes the public repository commit; final site deployment runs in the public repository's Pages workflow.
+
+The Web preset has threads disabled, allowing it to run on Pages without custom cross-origin isolation headers. Desktop downloads are unsigned. Extract the Windows zip and run `little-last-light.exe`; extract the Linux tarball and run `./little-last-light.x86_64` (the archive preserves executable permissions).
+
+To reproduce the build locally on Linux, install Godot 4.7.2, its matching export templates, Python 3, `zip`, and `tar`, then run `bash scripts/build-release.sh`. Fetch the repository tags first to calculate the current version. Set `GODOT_BIN` if the executable has another name. The script imports assets before exporting and writes the site to `export/web`, release archives to `export/downloads`, and version/changelog metadata to `export/release`. When upgrading Godot, update `GODOT_VERSION` in the workflow and use matching local templates.
+
+**Lantern health:** start with 25 HP. Preparation offers four permanent +15 HP upgrades (40, 80, 160, 320 energy), up to 85 HP. Buy with the Lantern HP button, H, or controller R3. Every run starts at your upgraded maximum; resetting the turret layout preserves health upgrades.
