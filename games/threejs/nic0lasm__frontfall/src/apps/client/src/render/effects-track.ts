@@ -1,0 +1,595 @@
+import type { CameraView } from "./camera.ts";
+import type { UnitMark } from "./renderer.ts";
+
+/*
+ * What the combat effects draw and when (art-direction.md, Motion): a trail
+ * behind a missile, a flash where a missile lands, a
+ * splash where troops land, a ring at a port, sparks along an advancing
+ * front. Everything here is read from what the renderer is already given,
+ * never from the rules, so a replay or a golden is unaffected. No Three.js:
+ * the layer next to this file draws the particles this module asks for.
+ */
+
+/** A soft disc, or a thin ring. */
+export type Shape = "dot" | "ring";
+
+/** One short-lived mark on the map, in tiles (y counted from the north) and seconds. */
+export interface Particle {
+  readonly x: number;
+  readonly y: number;
+  /** Drift in tiles per second. */
+  readonly dx: number;
+  readonly dy: number;
+  readonly birth: number;
+  readonly life: number;
+  /** Diameter at birth and at death, in tiles. */
+  readonly size0: number;
+  readonly size1: number;
+  /** Smallest diameter on screen in CSS pixels, however far the view is zoomed out. */
+  readonly minPixels: number;
+  readonly color: string;
+  readonly alpha: number;
+  readonly shape: Shape;
+}
+
+export interface TrackerOptions {
+  readonly width: number;
+  readonly height: number;
+  readonly wrapsX: boolean;
+}
+
+const MISSILE_RADIUS = 12;
+const HEAVY_MISSILE_RADIUS = 30;
+/** The tiles the balance gives the blast radii on, 2^19, to scale them to this map. */
+const REFERENCE_TILES = 2 ** 19;
+
+/** The hot white-orange of a warship's shot, seen against any sea and any owner's colour. */
+const SHOT = "#FFD27A";
+const FOAM = "#CFE8F5";
+const FLASH = "#FFE2A8";
+/** The burst of a missile stopped in the air: cool, apart from the warm flash of a strike. */
+const AIR = "#BFE3FF";
+const GOLD = "#F2C14E";
+/** The ember of an active front (territory-layer.ts). */
+const EMBER = "#F25C2A";
+/** Tiles of depth a collapse takes on a 2^19-tile map, scaled like the blasts (R-ATTACK-10). */
+const COLLAPSE_DEPTH = 5;
+const COLLAPSE_LIFE = 1;
+/** Most collapse bursts alive at once. */
+const BURST_CAP = 8;
+/** Radius of the ring of a fallen capital in tiles on a map of 2^19 tiles, and seconds between two pulses of a threatened one. */
+const CAPITAL_DEPTH = 8;
+const CAPITAL_PULSE = 1.8;
+
+/** Most effects started by one pass over the ships, so that a jump in a replay is not a firework. */
+const BURST_BUDGET = 8;
+/** Most sparks started by one batch of changed tiles. */
+const FRONT_BUDGET = 10;
+/** Tiles of a start region at most, and its radius in tiles on a map of 2^19 tiles (B-SPAWN-RADIUS). */
+const ARRIVAL_TILES = 60;
+const SPAWN_RADIUS = 3;
+/** Seconds between two pulses along a front. */
+const PULSE_EVERY = 0.5;
+/** Margin around the view in which effects still start, in tiles. */
+const VIEW_MARGIN = 4;
+
+interface Seen {
+  kind: "transport" | "trade" | "warship" | "missile" | "heavyMissile";
+  x: number;
+  y: number;
+  color: string;
+  pass: number;
+  /** The last shot of this ship that started an effect. */
+  shot?: number;
+}
+
+/** Tells the layer which particles to draw as ships, missiles and fronts move. */
+export class EffectTracker {
+  private readonly known = new Map<number, Seen>();
+  private pass = 0;
+  private seeded = false;
+  private moving = true;
+  private view: CameraView | undefined;
+  private tilesPerPixel = 1;
+  private budget = 0;
+  private pulsedAt = -Infinity;
+  private threat: number | undefined;
+  private threatAt = -Infinity;
+  /** Players whose land has been seen, to tell a first arrival. */
+  private readonly owners = new Set<number>();
+  private seed = 0x9e3779b9;
+  private readonly blast: number;
+  /** When the bursts of collapsed fronts still running end, in the layer's seconds. */
+  private readonly bursts: number[] = [];
+
+  constructor(
+    private readonly emit: (particle: Particle) => void,
+    private readonly options: TrackerOptions,
+  ) {
+    this.blast = Math.sqrt((options.width * options.height) / REFERENCE_TILES);
+  }
+
+  /** Whether the player accepts motion: without it, trails stay and the rest holds still. */
+  setMotion(moving: boolean): void {
+    this.moving = moving;
+  }
+
+  /** The view of the last frame, to start effects only where they can be seen. */
+  setView(view: CameraView, tilesPerPixel: number): void {
+    this.view = view;
+    this.tilesPerPixel = tilesPerPixel;
+  }
+
+  /** Follows the ships and missiles of one frame; what appeared or vanished since the last one starts an effect. */
+  ships(marks: readonly UnitMark[], now: number): void {
+    this.budget = BURST_BUDGET;
+    const pass = ++this.pass;
+    for (const mark of marks) {
+      // A ship docking, landing or sinking has already vanished as far as the effects go.
+      if (mark.id === undefined || mark.state) continue;
+      const kind = mark.kind ?? "transport";
+      const seen = this.known.get(mark.id);
+      if (!seen) {
+        const added: Seen = {
+          kind,
+          x: mark.x,
+          y: mark.y,
+          color: mark.color,
+          pass,
+        };
+        this.known.set(mark.id, added);
+        if (this.seeded) this.appeared(added, now);
+        continue;
+      }
+      seen.x = mark.x;
+      seen.y = mark.y;
+      seen.pass = pass;
+      if (mark.shot && mark.shot.id !== seen.shot) {
+        seen.shot = mark.shot.id;
+        this.fired(mark.x, mark.y, mark.shot.x, mark.shot.y, mark.color, now);
+      }
+    }
+    for (const [id, seen] of this.known) {
+      if (seen.pass === pass) continue;
+      this.known.delete(id);
+      this.vanished(seen, now);
+    }
+    this.seeded = true;
+  }
+
+  /** Sparks along the tiles that just changed hands: the front moving. */
+  fronts(tiles: ArrayLike<number>, owners: ArrayLike<number>, now: number): void {
+    if (!this.view) return;
+    const { width } = this.options;
+    this.arrivals(tiles, owners, now);
+    if (!this.moving) return;
+    this.pulse(tiles, owners, now);
+    let started = 0;
+    let skip = 0;
+    // A random start, so that the same tiles of a long front are not always the ones that spark.
+    const first = Math.floor(this.random() * 3);
+    for (let i = first; i < tiles.length && started < FRONT_BUDGET; i++) {
+      if (skip++ % 3 !== 0) continue;
+      const tile = tiles[i] as number;
+      const owner = owners[tile] as number;
+      if (owner === 0) continue;
+      const x = (tile % width) + 0.5;
+      const y = Math.floor(tile / width) + 0.5;
+      if (!this.visible(x, y)) continue;
+      started++;
+      this.emit({
+        x,
+        y,
+        dx: (this.random() - 0.5) * 0.8,
+        dy: -0.6 - this.random() * 0.6,
+        birth: now,
+        life: 0.8 + this.random() * 0.4,
+        size0: 1.2,
+        size1: 0.3,
+        minPixels: 2.5,
+        color: FLASH,
+        alpha: 0.55,
+        shape: "dot",
+      });
+    }
+  }
+
+  /** A ring where a player's land first appears: a start tile picked, as the spawn phase ends. */
+  private arrivals(tiles: ArrayLike<number>, owners: ArrayLike<number>, now: number): void {
+    const { width } = this.options;
+    const batch = new Map<number, { count: number; x: number; y: number }>();
+    for (let i = 0; i < tiles.length; i++) {
+      const tile = tiles[i] as number;
+      const owner = owners[tile] as number;
+      if (owner === 0 || this.owners.has(owner)) continue;
+      const entry = batch.get(owner);
+      if (entry) entry.count++;
+      else batch.set(owner, { count: 1, x: tile % width, y: Math.floor(tile / width) });
+    }
+    for (const [owner, { count, x, y }] of batch) {
+      this.owners.add(owner);
+      // A start region is a few dozen tiles; a larger batch is a resynchronisation, not an arrival.
+      if (count > ARRIVAL_TILES || !this.visible(x, y)) continue;
+      const r = SPAWN_RADIUS * this.blast;
+      if (this.moving) this.ring(x, y, now, 1.6, r, r * 5, FLASH, 0.8);
+      else this.emit(disc(x, y, now, 1.6, r * 3, r * 3, FLASH, 0.35, 10));
+    }
+  }
+
+  /** A soft glow that breathes where a front is taking land, at most twice a second. */
+  private pulse(tiles: ArrayLike<number>, owners: ArrayLike<number>, now: number): void {
+    if (tiles.length === 0 || now - this.pulsedAt < PULSE_EVERY) return;
+    const { width } = this.options;
+    const tile = tiles[Math.floor(this.random() * tiles.length)] as number;
+    const x = tile % width;
+    const y = Math.floor(tile / width);
+    if (owners[tile] === 0 || !this.visible(x, y)) return;
+    this.pulsedAt = now;
+    this.emit(disc(x, y, now, 0.9, 5, 9, FLASH, 0.22, 14));
+  }
+
+  /**
+   * An ember shock ring that grows to the radius of a collapsed front, with a
+   * few sparks (R-ATTACK-10). Held still it is one ring that only fades. A
+   * burst is skipped outside the view, and at most BURST_CAP run at once, so a
+   * replay that jumps ahead is not a firework.
+   */
+  collapsed(tile: number, now: number): void {
+    const { width } = this.options;
+    const x = (tile % width) + 0.5;
+    const y = Math.floor(tile / width) + 0.5;
+    if (!this.visible(x, y)) return;
+    // Bursts whose life has run out make room for new ones.
+    let live = 0;
+    for (let i = 0; i < this.bursts.length; i++) {
+      if ((this.bursts[i] as number) > now) this.bursts[live++] = this.bursts[i] as number;
+    }
+    this.bursts.length = live;
+    if (live >= BURST_CAP) return;
+    this.bursts.push(now + COLLAPSE_LIFE);
+    const radius = COLLAPSE_DEPTH * this.blast;
+    if (!this.moving) {
+      this.emit({ ...ringOf(x, y, now, radius * 2, radius * 2), alpha: 0.7, life: 1 });
+      return;
+    }
+    this.emit(ringOf(x, y, now, radius * 0.4, radius * 2));
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2 + this.random() * 0.8;
+      const speed = radius * (0.7 + this.random() * 0.5);
+      this.emit({
+        x,
+        y,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+        birth: now,
+        life: 0.6 + this.random() * 0.3,
+        size0: 1.2,
+        size1: 0.3,
+        minPixels: 3,
+        color: i % 2 === 0 ? EMBER : FLASH,
+        alpha: 0.9,
+        shape: "dot",
+      });
+    }
+  }
+
+  /**
+   * A capital fell or was razed (R-CAP-03, R-CAP-04): a gold ring that spreads
+   * far from its tile, and a short flash over it. Held still it is one disc
+   * that only fades.
+   */
+  capitalFell(tile: number, now: number): void {
+    const { width } = this.options;
+    const x = (tile % width) + 0.5;
+    const y = Math.floor(tile / width) + 0.5;
+    if (!this.visible(x, y)) return;
+    const radius = CAPITAL_DEPTH * this.blast;
+    if (!this.moving) {
+      this.emit(disc(x, y, now, 1.6, radius * 2, radius * 2, GOLD, 0.4, 14));
+      return;
+    }
+    this.emit({ ...ringOf(x, y, now, radius * 0.3, radius * 2.4), color: GOLD, life: 1.6 });
+    this.emit(disc(x, y, now, 0.5, radius * 0.8, radius * 1.6, FLASH, 0.8, 14));
+  }
+
+  /** Where the pulse of a threatened capital is drawn, or nothing once it is safe. */
+  setThreat(tile: number | undefined): void {
+    this.threat = tile;
+  }
+
+  /** Whether a capital is under threat and pulsing, which keeps frames coming. */
+  get pulsing(): boolean {
+    return this.threat !== undefined && this.moving;
+  }
+
+  /** A slow ring around a threatened capital, every PULSE_CAPITAL seconds (R-CAP-05). */
+  tick(now: number): void {
+    if (this.threat === undefined || !this.moving || now - this.threatAt < CAPITAL_PULSE) return;
+    const { width } = this.options;
+    const x = (this.threat % width) + 0.5;
+    const y = Math.floor(this.threat / width) + 0.5;
+    if (!this.visible(x, y)) return;
+    this.threatAt = now;
+    const radius = CAPITAL_DEPTH * this.blast * 0.5;
+    this.emit({
+      ...ringOf(x, y, now, radius * 0.4, radius * 2),
+      color: EMBER,
+      alpha: 0.55,
+      life: 1.6,
+    });
+  }
+
+  /**
+   * A warship fires at a ship: a flash at the muzzle, a streak of bright dots
+   * that crosses the water, a burst where it lands. Held still, only a soft
+   * ring on the target says that a shot was made.
+   */
+  private fired(
+    fromX: number,
+    fromY: number,
+    toX: number,
+    toY: number,
+    color: string,
+    now: number,
+  ): void {
+    if ((!this.visible(fromX, fromY) && !this.visible(toX, toY)) || this.budget <= 0) return;
+    this.budget--;
+    if (!this.moving) {
+      this.emit({ ...disc(toX, toY, now, 1.2, 2.2, 3.2, SHOT, 0.5, 10), shape: "ring" });
+      return;
+    }
+    this.emit(disc(fromX, fromY, now, 0.22, 1.6, 3.4, SHOT, 0.95, 9));
+    const steps = 6;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / (steps + 1);
+      this.emit({
+        ...disc(
+          fromX + (toX - fromX) * t,
+          fromY + (toY - fromY) * t,
+          now,
+          0.16,
+          1,
+          0.6,
+          "#FFFFFF",
+          0.95,
+          4,
+        ),
+        birth: now + t * 0.22,
+      });
+    }
+    const land = now + 0.24;
+    this.emit({ ...disc(toX, toY, land, 0.45, 1.2, 3.6, SHOT, 0.95, 11), birth: land });
+    this.emit({ ...disc(toX, toY, land, 0.7, 1, 5, color, 0.9, 12), shape: "ring", birth: land });
+  }
+
+  private appeared(unit: Seen, now: number): void {
+    if (!this.moving || !this.visible(unit.x, unit.y) || this.budget <= 0) return;
+    if (unit.kind === "missile" || unit.kind === "heavyMissile") {
+      this.budget--;
+      const big = unit.kind === "heavyMissile" ? 1.6 : 1;
+      this.ring(unit.x, unit.y, now, 0.8, 1.5 * big, 9 * big, unit.color, 0.8);
+    } else if (unit.kind === "trade") {
+      // A trade ship leaves its port.
+      this.budget--;
+      this.ring(unit.x, unit.y, now, 1.1, 0.6, 3.2, unit.color, 0.4);
+    }
+  }
+
+  private vanished(unit: Seen, now: number): void {
+    // A missile that vanishes leaves nothing of its own: how it ended arrives apart (struck, intercepted).
+    if (unit.kind === "missile" || unit.kind === "heavyMissile") return;
+    if (!this.visible(unit.x, unit.y) || this.budget <= 0) return;
+    this.budget--;
+    if (unit.kind === "transport") {
+      this.landing(unit, now);
+    } else if (unit.kind === "trade") {
+      // A trade ship docks: a ring on the port, and a coin that floats up.
+      if (!this.moving) return;
+      this.ring(unit.x, unit.y, now, 1.1, 0.6, 3.2, unit.color, 0.4);
+      this.emit({
+        x: unit.x,
+        y: unit.y,
+        dx: 0,
+        dy: -1.4,
+        birth: now,
+        life: 1.1,
+        size0: 1.1,
+        size1: 0.5,
+        minPixels: 4,
+        color: GOLD,
+        alpha: 0.85,
+        shape: "dot",
+      });
+    }
+  }
+
+  /** The blast radius of a missile on this map, in tiles. */
+  blastRadius(heavy: boolean): number {
+    return (heavy ? HEAVY_MISSILE_RADIUS : MISSILE_RADIUS) * this.blast;
+  }
+
+  /** A missile has come down on its target: the flash, the shock ring and the sparks. */
+  struck(x: number, y: number, heavy: boolean, now: number): void {
+    if (!this.visible(x, y)) return;
+    const radius = (heavy ? HEAVY_MISSILE_RADIUS : MISSILE_RADIUS) * this.blast;
+    if (!this.moving) {
+      // Held still: a single disc that only fades.
+      this.emit(disc(x, y, now, 1.4, radius * 1.4, radius * 1.4, FLASH, 0.4, 8));
+      return;
+    }
+    this.emit(disc(x, y, now, 0.4, radius * 0.6, radius * 1.5, FLASH, 0.9, 8));
+    this.ring(x, y, now, 1, radius * 0.4, radius * 2, FLASH, 0.95);
+    for (let i = 0; i < 7; i++) {
+      const angle = (i / 7) * Math.PI * 2 + this.random() * 0.8;
+      const speed = radius * (0.6 + this.random() * 0.5);
+      this.emit({
+        x,
+        y,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+        birth: now,
+        life: 0.7 + this.random() * 0.3,
+        size0: 1.4,
+        size1: 0.3,
+        minPixels: 3,
+        color: i % 2 === 0 ? FLASH : "#FFFFFF",
+        alpha: 0.9,
+        shape: "dot",
+      });
+    }
+  }
+
+  /** A missile was stopped in the air: a burst where it was, short of the blast a strike makes, and a ring on the site that did it. */
+  intercepted(
+    x: number,
+    y: number,
+    heavy: boolean,
+    site: { x: number; y: number } | undefined,
+    now: number,
+  ): void {
+    if (!this.visible(x, y)) return;
+    const radius = (heavy ? HEAVY_MISSILE_RADIUS : MISSILE_RADIUS) * this.blast * 0.35;
+    if (!this.moving) {
+      this.emit(disc(x, y, now, 1.2, radius, radius, AIR, 0.4, 8));
+      return;
+    }
+    this.emit(disc(x, y, now, 0.3, radius * 0.5, radius * 1.2, AIR, 0.85, 8));
+    this.ring(x, y, now, 0.7, radius * 0.4, radius * 1.8, AIR, 0.9);
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 + this.random() * 0.8;
+      const speed = radius * (0.8 + this.random() * 0.6);
+      this.emit({
+        x,
+        y,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+        birth: now,
+        life: 0.5 + this.random() * 0.2,
+        size0: 1,
+        size1: 0.3,
+        minPixels: 3,
+        color: i % 2 === 0 ? AIR : "#FFFFFF",
+        alpha: 0.85,
+        shape: "dot",
+      });
+    }
+    if (site) this.ring(site.x, site.y, now, 0.8, 0.8, 3.6, AIR, 0.7);
+  }
+
+  /** A ring and a few drops where a transport reaches the shore. */
+  private landing(unit: Seen, now: number): void {
+    if (!this.moving) {
+      this.emit(disc(unit.x, unit.y, now, 1, 4, 4, unit.color, 0.45, 8));
+      return;
+    }
+    this.ring(unit.x, unit.y, now, 0.9, 1, 6.5, unit.color, 0.85);
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2 + this.random();
+      const speed = 3 + this.random() * 2;
+      this.emit({
+        x: unit.x,
+        y: unit.y,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed,
+        birth: now,
+        life: 0.55,
+        size0: 1,
+        size1: 0.3,
+        minPixels: 3,
+        color: FOAM,
+        alpha: 0.8,
+        shape: "dot",
+      });
+    }
+  }
+
+  private ring(
+    x: number,
+    y: number,
+    now: number,
+    life: number,
+    size0: number,
+    size1: number,
+    color: string,
+    alpha: number,
+  ): void {
+    if (!this.moving) return;
+    this.emit({
+      x: x + 0.5,
+      y: y + 0.5,
+      dx: 0,
+      dy: 0,
+      birth: now,
+      life,
+      size0,
+      size1,
+      minPixels: 10,
+      color,
+      alpha,
+      shape: "ring",
+    });
+  }
+
+  /** Whether a spot is in the view, with a margin, across the seam of a wrapping map. */
+  private visible(x: number, y: number): boolean {
+    const view = this.view;
+    if (!view) return false;
+    let dx = x - view.centerX;
+    const { width, wrapsX } = this.options;
+    if (wrapsX) dx -= Math.round(dx / width) * width;
+    return (
+      Math.abs(dx) <= view.halfWidth + VIEW_MARGIN &&
+      Math.abs(y - view.centerY) <= view.halfHeight + VIEW_MARGIN
+    );
+  }
+
+  /** A small seeded generator: the effects are for the eye, and a test needs the same ones twice. */
+  private random(): number {
+    this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
+    return this.seed / 2 ** 32;
+  }
+}
+
+function disc(
+  x: number,
+  y: number,
+  now: number,
+  life: number,
+  size0: number,
+  size1: number,
+  color: string,
+  alpha: number,
+  minPixels: number,
+): Particle {
+  return {
+    x: x + 0.5,
+    y: y + 0.5,
+    dx: 0,
+    dy: 0,
+    birth: now,
+    life,
+    size0,
+    size1,
+    minPixels,
+    color,
+    alpha,
+    shape: "dot",
+  };
+}
+
+function ringOf(x: number, y: number, now: number, size0: number, size1: number): Particle {
+  return {
+    x,
+    y,
+    dx: 0,
+    dy: 0,
+    birth: now,
+    life: COLLAPSE_LIFE,
+    size0,
+    size1,
+    minPixels: 10,
+    color: EMBER,
+    alpha: 0.95,
+    shape: "ring",
+  };
+}
