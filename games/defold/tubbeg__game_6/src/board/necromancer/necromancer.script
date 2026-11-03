@@ -1,0 +1,139 @@
+function init(self)
+	self.bone_count = 0
+	self.bones = {}
+	self.score_mult = 1
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function late_update(self, dt)
+	-- This function is called at the end of update cycle but before render
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in
+	-- Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+local function length_table(t)
+	local i = 0
+	for _,_ in pairs(t) do
+		i = i + 1
+	end
+	return i
+end
+
+local function bone_count_ok(self)
+	return length_table(self.bones) < self.max_bones
+end
+
+local function bone_count_ok(self)
+	return length_table(self.bones) < self.max_bones
+end
+
+local function bone_count_ok(self)
+	return length_table(self.bones) < self.max_bones
+end
+
+local function create_bone_object(self)
+	local pos = vmath.vector3(300,300,2)
+	local id = factory.create("#factory", pos)
+	local bone_msg =
+	{
+		mouse_url=msg.url(nil,"mouse",nil),
+		money_url=msg.url(nil,"money",nil),
+		border_url=msg.url(nil,"border",nil)
+	}
+	msg.post(id,"init_bone", bone_msg)
+	return id
+end
+
+local function create_rib(self)
+	local id = create_bone_object(self)
+	msg.post(id, "update_score", {collide=1000,click=100})
+	msg.post(id, "set_bone_type", {type="rib"})
+	msg.post(id, "set_mouse")
+end
+
+local function create_skull(self)
+	local id = create_bone_object(self)
+	msg.post(id, "update_score", {collide=30000,click=100})
+	msg.post(id, "set_bone_type", {type="skull"})
+	msg.post(id, "set_mouse")
+end
+
+local function create_ghost(self)
+	local id = create_bone_object(self)
+	msg.post(id, "update_score", {collide=300000,click=100})
+	msg.post(id, "set_bone_type", {type="ghost"})
+	msg.post(id, "set_mouse")
+end
+
+local function create_oil(self)
+	local id = create_bone_object(self)
+	msg.post(id, "set_bone_type", {type="oil"})
+	msg.post(id, "update_score", {collide=0,click=0})
+	msg.post(id, "set_necromancer", {url=msg.url()})
+end
+
+local function create_bone(self)
+	local id = create_bone_object(self)
+	msg.post(id, "set_mouse")
+end
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("oil_spill") then
+		print("sending message to shop")
+		msg.post("shop", "dead_oil")
+	end
+	if message_id == hash("create_bone") then
+		create_bone(self)
+	end
+	if message_id == hash("create_skull") then
+		create_skull(self)
+	end
+	if message_id == hash("create_ghost") then
+		create_ghost(self)
+	end
+	if message_id == hash("create_rib") then
+		create_rib(self)
+	end
+	if message_id == hash("create_oil") then
+		print("creating oil")
+		create_oil(self)
+	end
+end
+
+function on_input(self, action_id, action)
+	-- Add input-handling code here. The game object this script is attached to
+	-- must have acquired input focus:
+	--
+	--    msg.post(".", "acquire_input_focus")
+	--
+	-- All mapped input bindings will be received. Mouse and touch input will
+	-- be received regardless of where on the screen it happened.
+	-- Learn more: https://defold.com/manuals/input/
+	-- Remove this function if not needed
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
