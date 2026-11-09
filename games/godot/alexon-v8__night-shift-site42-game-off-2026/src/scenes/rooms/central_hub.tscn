@@ -1,0 +1,59 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/interactive/maintenance_terminal.tscn" id="1_term"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.12, 0.14, 0.16, 1)
+roughness = 0.8
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(14, 0.5, 14)
+
+[sub_resource type="BoxMesh" id="BoxMesh_floor"]
+material = SubResource("StandardMaterial3D_floor")
+size = Vector3(14, 0.5, 14)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_clock"]
+size = Vector3(0.6, 0.8, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_clock"]
+albedo_color = Color(0.1, 0.8, 0.3, 1)
+emission_enabled = true
+emission = Color(0.1, 0.8, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_clock"]
+material = SubResource("StandardMaterial3D_clock")
+size = Vector3(0.6, 0.8, 0.2)
+
+[node name="CentralHub" type="Node3D"]
+
+[node name="Floor" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor"]
+shape = SubResource("BoxShape3D_floor")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
+mesh = SubResource("BoxMesh_floor")
+
+[node name="MaintenanceTerminal" parent="." instance=ExtResource("1_term")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2)
+
+[node name="TimeClock" type="StaticBody3D" parent="." groups=["exit_clock"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 1.5, 0)
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TimeClock"]
+shape = SubResource("BoxShape3D_clock")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="TimeClock"]
+mesh = SubResource("BoxMesh_clock")
+
+[node name="HubLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 0)
+light_color = Color(0.85, 0.9, 0.8, 1)
+light_energy = 1.2
+omni_range = 10.0

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#05080c"/>
+      <stop offset="100%" stop-color="#121820"/>
+    </linearGradient>
+    <linearGradient id="polaroidBorder" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8e4d8"/>
+      <stop offset="100%" stop-color="#c8c0b0"/>
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a2530"/>
+      <stop offset="100%" stop-color="#050a10"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="32" fill="url(#bg)"/>
+  
+  <!-- Caution stripes at top -->
+  <g opacity="0.35">
+    <polygon points="10,12 26,12 18,24 2,24" fill="#ffcc00"/>
+    <polygon points="34,12 50,12 42,24 26,24" fill="#ffcc00"/>
+    <polygon points="58,12 74,12 66,24 50,24" fill="#ffcc00"/>
+    <polygon points="82,12 98,12 90,24 74,24" fill="#ffcc00"/>
+    <polygon points="106,12 122,12 114,24 98,24" fill="#ffcc00"/>
+    <polygon points="130,12 146,12 138,24 122,24" fill="#ffcc00"/>
+    <polygon points="154,12 170,12 162,24 146,24" fill="#ffcc00"/>
+    <polygon points="178,12 194,12 186,24 170,24" fill="#ffcc00"/>
+    <polygon points="202,12 218,12 210,24 194,24" fill="#ffcc00"/>
+    <polygon points="226,12 242,12 234,24 218,24" fill="#ffcc00"/>
+  </g>
+  
+  <!-- Polaroid Film Frame -->
+  <g transform="translate(48, 40) rotate(-6, 80, 80)">
+    <rect width="130" height="150" rx="4" fill="url(#polaroidBorder)" stroke="#333" stroke-width="1.5" filter="drop-shadow(2px 6px 12px rgba(0,0,0,0.8))"/>
+    <!-- Photo Area showing shifting corridor -->
+    <rect x="10" y="10" width="110" height="100" fill="#0d141d"/>
+    <!-- Doorway silhouette inside photo -->
+    <polygon points="35,100 35,35 75,35 75,100" fill="#1e2d3d"/>
+    <polygon points="42,100 42,42 68,42 68,100" fill="#00ff66" fill-opacity="0.3"/>
+    <line x1="10" y1="100" x2="35" y2="100" stroke="#00ff66" stroke-width="1.5" opacity="0.8"/>
+    <line x1="75" y1="100" x2="120" y2="100" stroke="#00ff66" stroke-width="1.5" opacity="0.8"/>
+    <!-- Text on Polaroid Bottom -->
+    <text x="65" y="132" text-anchor="middle" fill="#555" font-family="Courier, monospace" font-size="9" font-weight="bold">SECTOR 04 - LOCKED</text>
+  </g>
+  
+  <!-- Digital Clock & Title -->
+  <rect x="30" y="196" width="196" height="42" rx="6" fill="#070c12" stroke="#00ff66" stroke-width="1" stroke-opacity="0.5"/>
+  <text x="50" y="222" fill="#00ff66" font-family="monospace" font-size="14" font-weight="bold">00:00 AM</text>
+  <text x="135" y="222" fill="#ff4444" font-family="monospace" font-size="11" font-weight="bold">SITE-42 SHIFT</text>
+</svg>
