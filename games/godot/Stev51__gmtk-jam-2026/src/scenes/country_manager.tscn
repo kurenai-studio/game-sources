@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://p5ghfysoscyh"]
+
+[ext_resource type="Script" uid="uid://tw8la64kd2co" path="res://scripts/country_manager.gd" id="1_a1wqo"]
+[ext_resource type="Script" uid="uid://6sqxh8xtoasf" path="res://scripts/country.gd" id="2_53xvm"]
+[ext_resource type="Resource" uid="uid://prc5jhijy4y3" path="res://resources/countries/iran.tres" id="3_lgbow"]
+[ext_resource type="Resource" uid="uid://bn8hka7bucwa3" path="res://resources/countries/prc.tres" id="4_wem70"]
+[ext_resource type="Resource" uid="uid://dwqvyl1cfaxye" path="res://resources/countries/russia.tres" id="5_1iocx"]
+[ext_resource type="Resource" uid="uid://b8u45fnvhehgw" path="res://resources/countries/uk.tres" id="6_ndxhw"]
+[ext_resource type="Resource" uid="uid://4j0f3uyu0mjx" path="res://resources/countries/usa.tres" id="7_1ceqe"]
+
+[node name="CountryManager" type="Node" unique_id=885186055]
+script = ExtResource("1_a1wqo")
+countries = Array[ExtResource("2_53xvm")]([ExtResource("3_lgbow"), ExtResource("4_wem70"), ExtResource("5_1iocx"), ExtResource("6_ndxhw"), ExtResource("7_1ceqe")])

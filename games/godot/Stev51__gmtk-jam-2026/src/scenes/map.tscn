@@ -1,0 +1,87 @@
+[gd_scene format=3 uid="uid://c2xgo13ufge3y"]
+
+[ext_resource type="Script" uid="uid://d1boftvcrbjr5" path="res://scripts/map.gd" id="1_mo32q"]
+[ext_resource type="PackedScene" uid="uid://drcjb07re8tdb" path="res://scenes/map_hover_zone.tscn" id="2_0cso3"]
+[ext_resource type="Texture2D" uid="uid://cd80x48c8jh61" path="res://assets/img/map_background.png" id="2_mo32q"]
+[ext_resource type="Texture2D" uid="uid://cedpykkggh4cr" path="res://assets/img/map_countries/usa_outline.png" id="3_2klcf"]
+[ext_resource type="Texture2D" uid="uid://dqhottqoisv33" path="res://assets/img/map_countries/usa_hover.png" id="4_2lpho"]
+[ext_resource type="Resource" uid="uid://4j0f3uyu0mjx" path="res://resources/countries/usa.tres" id="5_c70he"]
+[ext_resource type="Texture2D" uid="uid://bc8im42y03fya" path="res://assets/img/map_countries/uk_outline.png" id="5_wslke"]
+[ext_resource type="Texture2D" uid="uid://4a1qjc78ahu6" path="res://assets/img/map_countries/uk_hover.png" id="6_gw3fx"]
+[ext_resource type="Texture2D" uid="uid://c7t8g7tew2jre" path="res://assets/img/map_countries/russia_outline.png" id="7_n1psn"]
+[ext_resource type="Texture2D" uid="uid://cgxafsbr7yl0y" path="res://assets/img/map_countries/russia_hover.png" id="8_c00ee"]
+[ext_resource type="Resource" uid="uid://b8u45fnvhehgw" path="res://resources/countries/uk.tres" id="8_mo32q"]
+[ext_resource type="Texture2D" uid="uid://y3gdqwu5cfe2" path="res://assets/img/map_countries/iran_outline.png" id="9_p7tei"]
+[ext_resource type="Texture2D" uid="uid://bfh28dhs6ttnh" path="res://assets/img/map_countries/iran_hover.png" id="10_c70he"]
+[ext_resource type="Resource" uid="uid://dwqvyl1cfaxye" path="res://resources/countries/russia.tres" id="11_6k6j1"]
+[ext_resource type="Texture2D" uid="uid://dwotg8cqd5r42" path="res://assets/img/map_countries/prc_outline.png" id="11_mo32q"]
+[ext_resource type="Texture2D" uid="uid://bt3cpfwjaq5e2" path="res://assets/img/map_countries/prc_hover.png" id="12_6k6j1"]
+[ext_resource type="Resource" uid="uid://prc5jhijy4y3" path="res://resources/countries/iran.tres" id="14_m335s"]
+[ext_resource type="Resource" uid="uid://bn8hka7bucwa3" path="res://resources/countries/prc.tres" id="17_sq6bu"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jp26k"]
+size = Vector2(1920, 1080)
+
+[node name="Map" type="Node2D" unique_id=2087630376]
+script = ExtResource("1_mo32q")
+
+[node name="Background" type="Sprite2D" parent="." unique_id=704915741]
+texture = ExtResource("2_mo32q")
+centered = false
+
+[node name="BlankSpaceClicker" type="Area2D" parent="." unique_id=205651551]
+z_index = -1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BlankSpaceClicker" unique_id=94083125]
+visible = false
+position = Vector2(960, 540)
+shape = SubResource("RectangleShape2D_jp26k")
+
+[node name="HoverZones" type="Node2D" parent="." unique_id=544995073]
+
+[node name="USA" parent="HoverZones" unique_id=803343824 instance=ExtResource("2_0cso3")]
+outline_image = ExtResource("3_2klcf")
+hover_image = ExtResource("4_2lpho")
+country = ExtResource("5_c70he")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HoverZones/USA" unique_id=49311630]
+visible = false
+polygon = PackedVector2Array(682, 336, 621, 331, 518, 371, 398, 385, 293, 417, 251, 459, 255, 503, 301, 553, 312, 578, 303, 716, 313, 745, 342, 772, 416, 789, 425, 802, 425, 823, 445, 844, 492, 851, 549, 833, 585, 809, 597, 784, 584, 767, 541, 781, 493, 766, 470, 742, 472, 681, 523, 643, 539, 649, 546, 662, 577, 674, 598, 716, 597, 744, 610, 755, 623, 746, 627, 718, 634, 690, 609, 587, 625, 557, 625, 531, 592, 469, 591, 438, 623, 400, 686, 364)
+
+[node name="UK" parent="HoverZones" unique_id=1816719684 instance=ExtResource("2_0cso3")]
+outline_image = ExtResource("5_wslke")
+hover_image = ExtResource("6_gw3fx")
+country = ExtResource("8_mo32q")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HoverZones/UK" unique_id=1677073442]
+visible = false
+polygon = PackedVector2Array(864, 451, 905, 448, 949, 471, 972, 455, 1007, 454, 1022, 468, 1024, 491, 1070, 522, 1075, 588, 1046, 656, 931, 694, 843, 673, 838, 638, 866, 607, 847, 563)
+
+[node name="Russia" parent="HoverZones" unique_id=1217328066 instance=ExtResource("2_0cso3")]
+outline_image = ExtResource("7_n1psn")
+hover_image = ExtResource("8_c00ee")
+country = ExtResource("11_6k6j1")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HoverZones/Russia" unique_id=1278819096]
+visible = false
+polygon = PackedVector2Array(1790, 290, 1738, 211, 1716, 192, 1552, 164, 1341, 169, 1245, 184, 1213, 210, 1208, 241, 1218, 270, 1214, 293, 1195, 303, 1141, 300, 1126, 313, 1137, 353, 1180, 378, 1211, 409, 1218, 436, 1216, 467, 1234, 488, 1273, 479, 1305, 405, 1373, 405, 1422, 431, 1783, 316)
+
+[node name="Iran" parent="HoverZones" unique_id=1033402550 instance=ExtResource("2_0cso3")]
+outline_image = ExtResource("9_p7tei")
+hover_image = ExtResource("10_c70he")
+country = ExtResource("14_m335s")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HoverZones/Iran" unique_id=49093998]
+visible = false
+polygon = PackedVector2Array(1424, 439, 1420, 455, 1394, 478, 1351, 508, 1345, 541, 1399, 578, 1416, 629, 1440, 650, 1469, 650, 1491, 632, 1504, 610, 1528, 603, 1593, 601, 1619, 581, 1617, 552, 1604, 528, 1541, 495, 1518, 471, 1526, 450, 1581, 426, 1621, 420, 1656, 447, 1678, 482, 1676, 520, 1690, 539, 1709, 545, 1727, 521, 1735, 485, 1737, 420, 1770, 387, 1785, 364, 1783, 322)
+
+[node name="PRC" parent="HoverZones" unique_id=708979358 instance=ExtResource("2_0cso3")]
+outline_image = ExtResource("11_mo32q")
+hover_image = ExtResource("12_6k6j1")
+country = ExtResource("17_sq6bu")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HoverZones/PRC" unique_id=1240041079]
+visible = false
+polygon = PackedVector2Array(1535, 808, 1530, 835, 1535, 851, 1530, 867, 1498, 876, 1472, 860, 1454, 823, 1455, 805, 1441, 779, 1386, 770, 1356, 766, 1348, 729, 1375, 709, 1429, 707, 1467, 695, 1556, 693, 1591, 660, 1619, 647, 1641, 656, 1639, 675, 1614, 734, 1619, 762, 1614, 781, 1586, 802)
+
+[connection signal="input_event" from="BlankSpaceClicker" to="." method="_on_blank_space_clicker_input_event"]
