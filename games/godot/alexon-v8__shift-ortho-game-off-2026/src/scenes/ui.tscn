@@ -1,0 +1,203 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/hud_controller.gd" id="1_script"]
+
+[node name="UI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="TopBar" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 30.0
+offset_top = 24.0
+offset_right = -30.0
+offset_bottom = 90.0
+grow_horizontal = 2
+
+[node name="ChamberTitle" type="Label" parent="TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "CHAMBER 00: SPATIAL FLATTENING"
+
+[node name="ChamberDesc" type="Label" parent="TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.85)
+theme_override_font_sizes/font_size = 14
+text = "Cross the impossible chasm. Press [SHIFT/Q] to collapse depth into Orthographic mode."
+
+[node name="ShiftsLabel" type="Label" parent="TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_font_sizes/font_size = 14
+text = "SHIFTS: 0"
+
+[node name="ModePanel" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -80.0
+offset_right = 260.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="ModeLabel" type="Label" parent="ModePanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "PROJECTION: PERSPECTIVE"
+horizontal_alignment = 1
+
+[node name="ModeDesc" type="Label" parent="ModePanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.8, 1, 0.9)
+theme_override_font_sizes/font_size = 12
+text = "STANDARD 3D EUCLIDEAN SPACE"
+horizontal_alignment = 1
+
+[node name="Crosshair" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dot" type="ColorRect" parent="Crosshair"]
+custom_minimum_size = Vector2(4, 4)
+layout_mode = 2
+color = Color(0.2, 1, 0.8, 0.9)
+
+[node name="HeldInfoPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -45.0
+offset_right = -30.0
+offset_bottom = 45.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HeldInfoPanel"]
+layout_mode = 2
+
+[node name="ObjectTitle" type="Label" parent="HeldInfoPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 14
+text = "[HELD QUANTUM CUBE]"
+
+[node name="ScaleLabel" type="Label" parent="HeldInfoPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "SCALE: 1.00x"
+
+[node name="WeightLabel" type="Label" parent="HeldInfoPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "MASS: 10.0 kg"
+
+[node name="HelpPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -160.0
+offset_right = 240.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="HelpPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="HelpPanel/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="HelpPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "CONTROLS & PROTOCOLS"
+horizontal_alignment = 1
+
+[node name="Text" type="Label" parent="HelpPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "WASD - Move
+SPACE - Jump
+SHIFT / Q / RMB - Shift Projection (Persp <-> Ortho)
+E / LMB - Pick Up / Drop Object
+TAB / T - Snap Camera Yaw (45° steps)
+R / BACKSPACE - Reset Chamber
+H / F1 - Toggle This Guide
+
+ORTHO MECHANICS:
+• In Orthographic mode, depth does not diminish screen size.
+• Distant platforms aligned in screen space become bridged.
+• Moving a held cube in Ortho dynamically shifts its scale based on depth."
+
+[node name="VictoryPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -140.0
+offset_right = 280.0
+offset_bottom = 140.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="VictoryPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="VictoryPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 24
+text = "TRIAL COMPLETE"
+horizontal_alignment = 1
+
+[node name="StatsLabel" type="Label" parent="VictoryPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "ALL CHAMBERS CLEARED"
+horizontal_alignment = 1
