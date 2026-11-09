@@ -1,0 +1,93 @@
+<title>Menús Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: una fila por menú, el de hoy primero y luego los tres estilos lado a lado */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 1100px; margin: 0 auto; display: grid; gap: 36px; }
+  header { display: grid; gap: 10px; }
+  .sello {
+    justify-self: start; font-family: var(--maquina); color: var(--sello);
+    border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px;
+    transform: rotate(-2deg);
+  }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 44px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 18px; color: var(--lcd); margin: 0; }
+  p { margin: 0; color: var(--suave); max-width: 72ch; }
+  header p { color: var(--texto); }
+
+  .estilos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .estilo { background: var(--hoja); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+  .estilo b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .estilo span { font-size: 14px; color: var(--suave); }
+  .estilo .rec { font-family: var(--maquina); color: var(--sello); }
+
+  section { display: grid; gap: 12px; }
+  .fila { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 860px) { .fila { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .fila { grid-template-columns: minmax(0, 1fr); } }
+  figure { margin: 0; display: grid; gap: 6px; min-width: 0; align-content: start; }
+  figcaption { font-family: var(--pixel); font-size: 11px; letter-spacing: .06em; color: var(--suave); }
+  figure.hoy figcaption { color: var(--sello); }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; }
+  img.lcd { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; aspect-ratio: 7 / 4; object-fit: cover; }
+  .nota { font-size: 14px; }
+</style>
+
+<main>
+  <header>
+    <span class="sello">EN REVISIÓN · MENÚS</span>
+    <h1>Un marco para todos los menús</h1>
+    <p>Hoy la pausa, el continuar y la elección de nave van en caja, y el resto es texto suelto. Estas muestras ponen los seis menús bajo un mismo marco, en tres estilos. En los tres, la opción elegida va en tinta con el cursor <code>&gt;</code> y las demás en tono medio. Las muestras están en la paleta verde y las capturas de hoy en la ámbar; el dibujo es el mismo en cualquier paleta.</p>
+  </header>
+
+  <section>
+    <h2>LOS TRES ESTILOS</h2>
+    <div class="estilos">
+      <div class="estilo"><b>A · Carpeta</b><span>Pestaña llena con el título en negativo y el «84» de rótulo, como la carpeta de un expediente. Cuando el título es largo, el rótulo no cabe y se omite.</span></div>
+      <div class="estilo"><b>B · Ficha</b><span>Franja de título en negativo a todo el ancho y el pie separado por una línea punteada, como un formulario oficial. Es el más fácil de leer en la consola.</span><span class="rec">Mi recomendación</span></div>
+      <div class="estilo"><b>C · Mira de radar</b><span>Solo las esquinas, como el marco de las mejoras que elegiste. Es el más liviano y deja ver más el juego detrás, pero los menús quedan menos separados del fondo.</span></div>
+    </div>
+    <p class="nota">Cambios que llevan los tres: la pausa usa el cursor (SEGUIR / SALIR) en vez de «SELECT SALIR»; el modo prueba muestra cuatro filas a la vez y va pasando con arriba y abajo; la misión cumplida lleva el sello CASO CERRADO.</p>
+  </section>
+
+  <div id="menus" style="display: contents"></div>
+</main>
+
+<script>
+  const menus = [
+    ["pausa", "Pausa"],
+    ["prueba", "Modo prueba"],
+    ["ronda", "Ronda completa"],
+    ["iniciales", "Nuevo récord"],
+    ["cumplida", "Misión cumplida"],
+    ["continuar", "Continuar"],
+  ];
+  const estilos = [["carpeta", "A · Carpeta"], ["ficha", "B · Ficha"], ["radar", "C · Mira de radar"]];
+  const lugar = document.getElementById("menus");
+  for (const [clave, nombre] of menus) {
+    const celdas = [`<figure class="hoy"><div class="pantalla"><img class="lcd" src="hoy_${clave}.png" alt="${nombre}, como está hoy"></div><figcaption>Hoy</figcaption></figure>`]
+      .concat(estilos.map(([e, t]) =>
+        `<figure><div class="pantalla"><img class="lcd" src="${clave}_${e}.png" alt="${nombre} con el estilo ${t}"></div><figcaption>${t}</figcaption></figure>`));
+    lugar.insertAdjacentHTML("beforeend", `<section><h2>${nombre.toUpperCase()}</h2><div class="fila">${celdas.join("")}</div></section>`);
+  }
+</script>

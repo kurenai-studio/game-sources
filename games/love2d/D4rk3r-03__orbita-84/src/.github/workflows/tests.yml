@@ -1,0 +1,9 @@
+name: Pruebas
+on: [push, pull_request]
+jobs:
+  logica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y luajit
+      - run: luajit herramientas/probar_logica.lua

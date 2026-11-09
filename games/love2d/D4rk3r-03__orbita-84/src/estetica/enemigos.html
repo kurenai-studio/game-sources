@@ -1,0 +1,100 @@
+<title>Enemigos animados Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: una tarjeta por enemigo con hoy, A y B lado a lado; al final los 14 juntos */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 1100px; margin: 0 auto; display: grid; gap: 36px; }
+  header { display: grid; gap: 10px; }
+  .sello {
+    justify-self: start; font-family: var(--maquina); color: var(--sello);
+    border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px;
+    transform: rotate(-2deg);
+  }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 44px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 18px; color: var(--lcd); margin: 0; }
+  p { margin: 0; color: var(--suave); max-width: 72ch; }
+  header p { color: var(--texto); }
+
+  .estilos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .estilo { background: var(--hoja); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+  .estilo b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .estilo span { font-size: 14px; color: var(--suave); }
+  .estilo .rec { font-family: var(--maquina); color: var(--sello); }
+
+  section { display: grid; gap: 12px; }
+  .fila { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 860px) { .fila { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .fila { grid-template-columns: minmax(0, 1fr); } }
+  figure { margin: 0; display: grid; gap: 6px; min-width: 0; align-content: start; }
+  figcaption { font-family: var(--pixel); font-size: 11px; letter-spacing: .06em; color: var(--suave); }
+  figure.hoy figcaption { color: var(--sello); }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; }
+  img.lcd { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; aspect-ratio: 7 / 4; object-fit: cover; }
+  .nota { font-size: 14px; }
+</style>
+<style>
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .tarjeta { background: var(--hoja); border-radius: 12px; padding: 12px; display: grid; gap: 8px; align-content: start; }
+  .tarjeta .par { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .tarjeta b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .tarjeta span { font-size: 14px; color: var(--suave); }
+  .tarjeta .rec { font-family: var(--maquina); color: var(--sello); }
+  .tarjeta.hoy b { color: var(--sello); }
+</style>
+
+<style>
+  .tarjeta .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tarjeta figure .pantalla img { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; }
+  .tarjeta .caso { font-family: var(--maquina); font-size: 13px; color: var(--suave); }
+  .escenas { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+</style>
+<main>
+  <header>
+    <span class="sello">EN REVISIÓN · ENEMIGOS</span>
+    <h1>Segundo cuadro</h1>
+    <p>Estos catorce dibujos hoy están quietos. El juego los alterna con un segundo cuadro cuatro veces por segundo, así que para cada uno hay dos propuestas, A y B, del mismo tamaño que el dibujo actual. Las cajas de choque no cambian.</p>
+  </header>
+  <section>
+    <h2>LOS 14 JUNTOS</h2>
+    <div class="escenas">
+      <figure><div class="pantalla"><img class="lcd" src="escena_hoy.gif" alt="Los catorce enemigos como están hoy"></div><figcaption>HOY</figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escena_a.gif" alt="Los catorce enemigos con la opción A"></div><figcaption>TODOS EN A</figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escena_b.gif" alt="Los catorce enemigos con la opción B"></div><figcaption>TODOS EN B</figcaption></figure>
+    </div>
+    <p class="nota">Puedes mezclar: elegir A para unos y B para otros. El torpedo es la bala del batiscafo; la vaca y el platillo salen en la portada de la abducción.</p>
+  </section>
+  <section>
+    <h2>UNO POR UNO</h2>
+    <div class="tarjetas" id="tarjetas"></div>
+  </section>
+</main>
+
+<script>
+  const enemigos = [["avispa", "Cabeza gris", "Entorna los ojos", "El cuello se mece"], ["caparazon", "Triángulo belga", "Las luces se pasan al centro", "Puntas que destellan"], ["dardo", "Tic Tac", "La luz late", "Se ladea"], ["espora", "Orbe de Hessdalen", "El núcleo se invierte", "Echa destellos"], ["lazo", "Luces de Lubbock", "Tonos invertidos", "Gira en X"], ["medusa", "Platillo de Arnold", "Patas que se abren", "Luces en el borde"], ["minador", "Cigarro", "Ventanillas que corren", "Abre las escotillas"], ["orbitador", "Círculo de cultivo", "La cruz gira", "El anillo gira"], ["platillo", "Platillo de la portada", "Patas que titilan", "Luces en el borde"], ["torpedo", "Torpedo del batiscafo", "Estela más larga", "Hélice que corta"], ["torreta", "Antena del Área 51", "Los brazos se cierran", "Luz en la punta"], ["francotirador", "Caballero Negro", "Pliega los paneles", "El centro se enciende"], ["roca", "Meteorito", "Rueda", "Grieta encendida"], ["vaca", "Vaca de la portada", "Camina", "Patalea"]];
+  const t = document.getElementById("tarjetas");
+  for (const [n, caso, a, b] of enemigos) {
+    const fig = (sufijo, rotulo, idea) => `<figure><div class="pantalla"><img src="${n}_${sufijo}.gif" alt="${caso}, ${rotulo}: ${idea}"></div><figcaption>${rotulo}</figcaption><span>${idea}</span></figure>`;
+    t.insertAdjacentHTML("beforeend",
+      `<div class="tarjeta"><b>${n.toUpperCase()}</b><span class="caso">${caso}</span><div class="trio">${fig("hoy", "HOY", "Quieto")}${fig("a", "A", a)}${fig("b", "B", b)}</div></div>`);
+  }
+</script>

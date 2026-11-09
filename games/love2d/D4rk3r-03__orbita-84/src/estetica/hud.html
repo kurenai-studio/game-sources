@@ -1,0 +1,99 @@
+<title>Marcador y poderes Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: tres temas (marcador, tiempo perdido, sonda), cada uno con hoy y sus propuestas */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --texto: #e6ecf3;
+    --suave: #a6b5c9;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 1100px; margin: 0 auto; display: grid; gap: 44px; }
+  header, section { display: grid; gap: 14px; }
+  .sello { justify-self: start; font-family: var(--maquina); color: var(--sello); border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px; transform: rotate(-2deg); }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 44px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 20px; color: var(--lcd); margin: 0; }
+  p { margin: 0; color: var(--suave); max-width: 72ch; }
+  header p { color: var(--texto); }
+  .ops { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .op { background: var(--hoja); border-radius: 12px; padding: 12px; display: grid; gap: 10px; align-content: start; }
+  .op b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .op.hoy b { color: var(--sello); }
+  .op .rec { font-family: var(--maquina); color: var(--sello); font-size: 14px; }
+  .op span { font-size: 15px; color: var(--suave); }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; display: grid; gap: 6px; }
+  .pantalla img { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; }
+  .par { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
+  .rotulo { font-family: var(--pixel); font-size: 11px; color: var(--suave); letter-spacing: .06em; }
+  .dato { font-family: var(--maquina); color: var(--texto); font-size: 15px; }
+</style>
+<main>
+  <header>
+    <span class="sello">EN REVISIÓN · PODERES Y MARCADOR</span>
+    <h1>Marcador y poderes</h1>
+    <p>Tres cosas para elegir: cómo se ve el marcador de arriba, cuánto se nota el tiempo perdido y qué hace la sonda cuando la nave es oruga. Todo está dibujado con los sprites reales del juego, a su tamaño de 84x48.</p>
+  </header>
+
+  <section>
+    <h2>EL MARCADOR</h2>
+    <p>Hoy cinco corazones y cinco rayos ocupan casi la mitad de la franja, y el poder guardado queda pegado al puntaje, sin nada que lo distinga. En las propuestas el poder va en una ranura en tono medio con su botón Y. Arriba se ve la franja en grande; abajo, en juego y con el jefe.</p>
+    <div class="ops" id="marcador"></div>
+  </section>
+
+  <section>
+    <h2>TIEMPO PERDIDO</h2>
+    <p>Hoy dura <b>3 segundos</b> y deja el mundo al <b>35 %</b> de su velocidad, sin nada en pantalla que lo marque. Las dos propuestas pasan a <b>6 segundos al 20 %</b> (cinco veces más lento) y suman señales.</p>
+    <div class="ops" id="tiempo"></div>
+  </section>
+
+  <section>
+    <h2>LA SONDA EN LA ORUGA</h2>
+    <p>Hoy la sonda va por encima de la oruga y dispara recto a esa altura: pasa por arriba de lo que anda por el suelo y debajo de lo que vuela. Estas propuestas solo cambian la sonda en tierra; en vuelo y bajo el agua sigue como está.</p>
+    <div class="ops" id="sonda"></div>
+  </section>
+</main>
+
+<script>
+  const marcador = [
+    ["hoy", "Hoy", "", "El ícono guardado (aquí el escudo) se pega al 01250 y parece parte del número."],
+    ["a", "A · Contadores", "Recomendada", "Un corazón y un rayo con su número: de 40 píxeles pasan a 18. Justo después, la ranura con la Y. Lo activo queda a la mitad y la barra del jefe no se mueve."],
+    ["b", "B · El poder primero", "", "La ranura va en la esquina izquierda, lo más lejos posible del puntaje. Sin la Y, porque la ranura ya se reconoce por su lugar."],
+    ["c", "C · Mezcla", "", "Los corazones quedan como hoy; los rayos pasan a número y la ranura va al centro. La barra del jefe se corre 3 píxeles a la derecha."],
+  ];
+  const tiempo = [
+    ["hoy", "Hoy", "", "3 s al 35 %. Se pasa casi sin notarlo."],
+    ["a", "A · Estela", "", "6 s al 20 %. Balas y enemigos dejan una estela en tono medio y una barra punteada bajo el marcador muestra lo que queda."],
+    ["b", "B · Estela y reloj", "Recomendada", "Lo mismo que A, más cuatro esquinas que se van cerrando como una cuenta regresiva y un tic tac que suena cada medio segundo."],
+  ];
+  const sonda = [
+    ["hoy", "Hoy", "", "Dispara recto cada 0,35 s a la altura de la sonda: no le pega ni al rodante ni a la V."],
+    ["a", "A · Apunta", "", "Cada 0,6 s dispara en línea recta al enemigo más cercano, esté en el suelo o en el aire."],
+    ["b", "B · Cohetes", "Recomendada", "Cada 1 s suelta un cohete chico que sube y busca al blanco, como los de la oruga. Dispara menos, pero casi siempre pega."],
+    ["c", "C · Torreta", "", "Baja al suelo delante de la oruga y dispara recto a ras del piso: limpia rodantes y vallas, pero no alcanza lo que vuela."],
+  ];
+  function tarjeta(clave, titulo, rec, idea, imgs) {
+    const rotulo = rec ? `<span class="rec">${rec}</span>` : "";
+    return `<div class="op ${clave === "hoy" ? "hoy" : ""}"><b>${titulo}</b>${rotulo}<div class="pantalla">${imgs}</div><span>${idea}</span></div>`;
+  }
+  document.getElementById("marcador").innerHTML = marcador.map(([c, ti, r, idea]) =>
+    tarjeta(c, ti, r, idea, `<img src="tira_${c}.png" alt="${ti}: la franja del marcador en grande"><div class="par"><img src="${c}.png" alt="${ti} en juego"><img src="${c}_jefe.png" alt="${ti} con el jefe"></div>`)).join("");
+  document.getElementById("tiempo").innerHTML = tiempo.map(([c, ti, r, idea]) =>
+    tarjeta(c, ti, r, idea, `<img src="tiempo_${c}.png" alt="Tiempo perdido, ${ti}">`)).join("");
+  document.getElementById("sonda").innerHTML = sonda.map(([c, ti, r, idea]) =>
+    tarjeta(c, ti, r, idea, `<img src="sonda_${c}.png" alt="Sonda en la oruga, ${ti}">`)).join("");
+</script>

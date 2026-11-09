@@ -1,0 +1,322 @@
+<title>Órbita 84</title>
+<meta name="author" content="D4rk3r">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Un teléfono de plástico azul marino con su pantalla LCD verde: casco arriba, cruceta abajo, notas al pie */
+  :root {
+    --casco: #1d2a3f;
+    --casco-luz: #2b3d58;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --tinta: #42523d;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --tecla: #34496a;
+    --tecla-activa: #c7f0d9;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto);
+    font-family: var(--cuerpo);
+    font-size: 16px;
+    line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 40px;
+  }
+  .telefono {
+    max-width: 720px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, var(--casco-luz), var(--casco) 40%);
+    border-radius: 28px 28px 48px 48px;
+    padding: 20px clamp(12px, 3vw, 28px) 28px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.08), 0 18px 40px rgba(0,0,0,.45);
+    display: grid;
+    gap: 18px;
+  }
+  .marca {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  h1 {
+    font-family: var(--pixel); font-weight: 400; margin: 0;
+    font-size: clamp(26px, 6vw, 40px); letter-spacing: .04em; line-height: 1;
+  }
+  .marca p { margin: 0; color: var(--suave); font-size: 14px; }
+  .bisel {
+    background: var(--bisel);
+    border-radius: 14px;
+    padding: clamp(8px, 2vw, 16px);
+  }
+  .pantalla {
+    position: relative;
+    width: 100%; max-width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--lcd);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  #canvas {
+    position: absolute; inset: 0;
+    width: 100% !important; height: 100% !important;
+    image-rendering: pixelated;
+    visibility: hidden;
+    outline: none;
+  }
+  .portada {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+    background: var(--lcd) url("portada.png") center / cover no-repeat;
+    image-rendering: pixelated;
+  }
+  .portada button, .estado {
+    font-family: var(--pixel); font-size: clamp(16px, 4vw, 22px);
+    color: var(--lcd); background: var(--tinta);
+    border: 3px solid var(--tinta); border-radius: 0;
+    padding: 10px 22px; cursor: pointer;
+    box-shadow: 0 0 0 4px var(--lcd);
+  }
+  .portada button:hover { background: var(--bisel); }
+  .portada button:focus-visible, .tecla:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
+  .estado { cursor: default; }
+
+  .mandos {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 12px;
+    touch-action: none;
+    user-select: none; -webkit-user-select: none;
+  }
+  .cruceta {
+    display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(3, 52px); gap: 4px;
+  }
+  .tecla {
+    font-family: var(--pixel); font-size: 14px; color: var(--texto);
+    background: var(--tecla); border: none; border-radius: 10px;
+    box-shadow: 0 3px 0 var(--bisel);
+    touch-action: none; cursor: pointer;
+  }
+  .tecla.activa { background: var(--tecla-activa); color: var(--tinta); transform: translateY(2px); box-shadow: 0 1px 0 var(--bisel); }
+  .cruceta .arriba { grid-area: 1 / 2; } .cruceta .izquierda { grid-area: 2 / 1; }
+  .cruceta .derecha { grid-area: 2 / 3; } .cruceta .abajo { grid-area: 3 / 2; }
+  .centro { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .centro .tecla { width: 88px; height: 30px; font-size: 11px; border-radius: 15px; }
+  .acciones { display: grid; grid-template-columns: 60px 60px; grid-template-areas: "y a" "b a"; gap: 6px 10px; align-items: center; }
+  .acciones .tecla { width: 60px; height: 60px; border-radius: 50%; font-size: 18px; }
+  .acciones .y { grid-area: y; } .acciones .b { grid-area: b; } .acciones .a { grid-area: a; }
+  .acciones span { display: block; font-family: var(--cuerpo); font-size: 11px; color: var(--suave); text-align: center; margin-top: 4px; }
+
+  .notas {
+    max-width: 720px; margin: 28px auto 0;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px;
+  }
+  .notas section { min-width: 0; }
+  h2 {
+    font-family: var(--pixel); font-weight: 400; font-size: 15px; letter-spacing: .08em;
+    color: var(--lcd); margin: 0 0 10px;
+  }
+  .notas p { margin: 0 0 10px; color: var(--suave); max-width: 65ch; }
+  dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; }
+  dt { font-family: var(--pixel); font-size: 12px; color: var(--texto); white-space: nowrap; }
+  dd { margin: 0; color: var(--suave); }
+  kbd { font-family: var(--pixel); font-size: 12px; background: var(--tecla); border-radius: 4px; padding: 1px 6px; color: var(--texto); }
+  ol { margin: 0; padding-left: 1.4em; color: var(--suave); }
+  ol li::marker { font-family: var(--pixel); color: var(--lcd); }
+  ol b { color: var(--texto); font-weight: 700; }
+
+  @media (pointer: fine) and (hover: hover) { .mandos { display: none; } }
+  /* En pantallas táctiles el juego ocupa todo y dibuja sus propios controles */
+  .pantalla.completa {
+    position: fixed; inset: 0; z-index: 10;
+    width: 100vw; height: 100vh; height: 100dvh; max-width: none;
+    aspect-ratio: auto; border-radius: 0; background: #000;
+  }
+  .pantalla.completa #canvas { touch-action: none; }
+  body.completa { overflow: hidden; }
+  body.completa .mandos { display: none; }
+  @media (max-width: 420px) {
+    .cruceta { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); }
+    .acciones { grid-template-columns: 50px 50px; }
+    .acciones .tecla { width: 50px; height: 50px; }
+    .centro .tecla { width: 70px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .tecla.activa { transform: none; } }
+</style>
+
+<main class="telefono">
+  <div class="marca">
+    <h1>ÓRBITA 84</h1>
+    <p>Pantalla de 84 × 48 píxeles</p>
+  </div>
+  <div class="bisel">
+    <div class="pantalla">
+      <canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+      <div class="portada" id="portada">
+        <button id="jugar" type="button">JUGAR</button>
+      </div>
+    </div>
+  </div>
+  <div class="mandos" aria-label="Controles táctiles">
+    <div class="cruceta">
+      <button class="tecla arriba" data-tecla="ArrowUp" aria-label="Arriba">▲</button>
+      <button class="tecla izquierda" data-tecla="ArrowLeft" aria-label="Izquierda">◀</button>
+      <button class="tecla derecha" data-tecla="ArrowRight" aria-label="Derecha">▶</button>
+      <button class="tecla abajo" data-tecla="ArrowDown" aria-label="Abajo">▼</button>
+    </div>
+    <div class="centro">
+      <button class="tecla" data-tecla="Enter">START</button>
+      <button class="tecla" data-tecla="Tab">SELECT</button>
+    </div>
+    <div class="acciones">
+      <div class="y"><button class="tecla" data-tecla="KeyC">Y</button><span>poder</span></div>
+      <div class="b"><button class="tecla" data-tecla="KeyX">B</button><span>rayo</span></div>
+      <div class="a"><button class="tecla" data-tecla="KeyZ">A</button><span>disparo</span></div>
+    </div>
+  </div>
+</main>
+
+<div class="notas">
+  <section>
+    <h2>CONTROLES</h2>
+    <dl>
+      <dt><kbd>←↑↓→</kbd></dt><dd>Mover la nave</dd>
+      <dt><kbd>Z</kbd></dt><dd>Disparar (mantén apretado). En tierra lanza también cohetes que van a buscar al blanco, y al soltarlo sale un obús cargado: cuanto más lo mantienes, más daño hace, y con la carga llena borra las balas enemigas y corta los anillos de la pirámide</dd>
+      <dt><kbd>X</kbd></dt><dd>Rayo que limpia la pantalla. En tierra sale hacia arriba, o hacia adelante si mantienes <kbd>→</kbd></dd>
+      <dt><kbd>C</kbd></dt><dd>Usar el poder de cápsula guardado (escudo, tiempo perdido, sonda o abducción, que se traga las balas de adelante y las devuelve): se guarda uno a la vez y se ve en la ranura de la Y, arriba</dd>
+      <dt><kbd>Enter</kbd></dt><dd>Abrir el menú de la portada (jugar, nave, récords y opciones) y pausar. En el menú, <kbd>Z</kbd> elige, <kbd>X</kbd> vuelve y <kbd>Enter</kbd> juega directo</dd>
+      <dt><kbd>Tab</kbd></dt><dd>Cambiar el color de la pantalla en el título</dd>
+      <dt><kbd>C</kbd></dt><dd>En el título: cambiar el idioma (español / English)</dd>
+      <dt><kbd>← →</kbd></dt><dd>En el menú, fila NAVE: elegir nave. Cabina: disparo y rayo. Interceptor: disparo doble y pulso, una onda que borra las balas cercanas.</dd>
+    </dl>
+    <p style="margin-top:12px">En el celular, al tocar JUGAR el juego ocupa toda la pantalla con sus propios controles: cruceta a la izquierda, A, B e Y a la derecha, y START y SELECT arriba. Tocar la pantalla del juego vale como A. Se juega mejor con el teléfono horizontal. También funciona con un control conectado.</p>
+    <p>Modo de prueba: en el título pulsa <kbd>X</kbd> (B) tres veces seguidas; una vez más lo quita. Con <kbd>↑</kbd> <kbd>↓</kbd> eliges la fila y con <kbd>←</kbd> <kbd>→</kbd> la cambias: nivel, nave, vuelta (dificultad), daño (NO: invulnerable), choques (muestra dónde golpea cada cosa y dónde recibe daño el jefe) y lento (a 1/2 o 1/4 de velocidad). Durante el juego <kbd>Tab</kbd> (SELECT) salta al jefe. Esas partidas no cuentan para los récords.</p>
+  </section>
+  <section>
+    <h2>DIEZ EXPEDIENTES</h2>
+    <ol>
+      <li><b>Roswell 1947.</b> Espacio abierto. Jefe: el platillo de Roswell, en tres fases: abanicos alternos, muros con un hueco (su silueta avisa dónde) y espiral con balas que se frenan y te buscan.</li>
+      <li><b>Bélgica 1990.</b> Sobre la cordillera. Jefe: el Triángulo Negro; cuando tiembla, apártate de la línea que marca. Dispara recto, luego en tijera, y al final embiste dos veces dejando una estela.</li>
+      <li><b>Phoenix 1997.</b> La nave aterriza y se vuelve oruga: <kbd>↑</kbd> salta, el disparo lanza también cohetes y el rayo apunta al cielo. Jefe: la V de Phoenix: bombas, una cortina con un hueco y bombas que revientan en balas rasantes (su sombra avisa dónde caen).</li>
+      <li><b>Los Hill 1961.</b> La cueva. Jefe: el Gris, que solo recibe daño con los ojos abiertos; cerrado lanza abanicos y una red de dos espirales.</li>
+      <li><b>Lubbock 1951.</b> Lluvia de rocas. Jefe: el tren de luces: cada vagón dispara por turno y, al final, todas las luces se encienden y te buscan.</li>
+      <li><b>Hangar 18.</b> La base. Jefe: la insignia de Socorro y sus escudos; espirales que forman una red y un anillo de balas que se frenan.</li>
+      <li><b>Shag Harbour 1967.</b> Sobre el mar; el agua frena pero no daña. Jefe: el objeto que se hunde; las burbujas avisan por dónde sube y el agua burbujea antes de cada géiser.</li>
+      <li><b>Bermudas 1945.</b> Bajo el agua en batiscafo, con torpedos. Jefe: la pirámide y sus anillos con hueco; al final salen de a dos.</li>
+      <li><b>Lago Baikal 1982.</b> La oruga patina sobre el hielo; cuidado con los agujeros. Jefe: el gigante plateado; una línea avisa si su rayo va bajo (salta) o alto (quédate en el piso).</li>
+      <li><b>Golfo Nuevo 1960.</b> De noche, con la pantalla invertida. Los reflectores de la Armada barren el golfo: lo hundido es intocable a oscuras, pero lo que alumbran se puede tocar (para pegarle, espera a que suba o métete al agua). Desde los buques caen cargas de profundidad que revientan en un anillo de balas. Jefe: el submarino fantasma; alumbrado sube a cota de periscopio, en la fase 2 son dos y en la 3 los reflectores se apagan y solo lo revelan los destellos de las cargas.</li>
+    </ol>
+    <p style="margin-top:12px">Cada enemigo es un ovni famoso: el Tic Tac, el triángulo belga, los foo fighters… Al terminar el décimo expediente eliges seguir, más difícil, o terminar la misión. Cada jefe pelea en tres fases con ataques fijos que se pueden aprender. Entre fase y fase se sacude y se cubre con un escudo (un marco, como el de tu nave): mientras lo tenga, los tiros rebotan, y cuando titila está por volver a pelear. Vencerlo da una vida más, y hacerlo rápido, puntos extra. Si pierdes la última vida puedes continuar ahí mismo (A o START antes de que la cuenta llegue a 0) con tres vidas y el puntaje en cero; para los récords cuenta tu mejor tramo. Los cinco mejores puntajes se anotan con tres iniciales.</p>
+  </section>
+</div>
+
+<script>
+  (function () {
+    var codigos = { ArrowLeft: 37, ArrowUp: 38, ArrowRight: 39, ArrowDown: 40, Enter: 13, Tab: 9, KeyZ: 90, KeyX: 88, KeyC: 67, Space: 32 };
+    var nombres = { KeyZ: "z", KeyX: "x", KeyC: "c", Space: " " };
+
+    // Escape cerraría el juego en el título y F11 no aplica aquí: no se los pasamos.
+    window.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" || e.key === "F11") { e.stopImmediatePropagation(); return; }
+      if ([9, 32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) e.preventDefault();
+    }, true);
+    window.addEventListener("keyup", function (e) {
+      if (e.key === "Escape" || e.key === "F11") e.stopImmediatePropagation();
+    }, true);
+
+    function enviar(tipo, codigo) {
+      var ev = new KeyboardEvent(tipo, { key: nombres[codigo] || codigo, code: codigo, bubbles: true, cancelable: true });
+      Object.defineProperty(ev, "keyCode", { get: function () { return codigos[codigo]; } });
+      Object.defineProperty(ev, "which", { get: function () { return codigos[codigo]; } });
+      document.dispatchEvent(ev);
+    }
+
+    document.querySelectorAll(".tecla").forEach(function (b) {
+      var codigo = b.dataset.tecla, apretada = false;
+      function bajar(e) { e.preventDefault(); if (apretada) return; apretada = true; b.classList.add("activa"); enviar("keydown", codigo); }
+      function subir(e) { if (!apretada) return; apretada = false; b.classList.remove("activa"); enviar("keyup", codigo); }
+      b.addEventListener("pointerdown", function (e) { b.setPointerCapture && b.setPointerCapture(e.pointerId); bajar(e); });
+      b.addEventListener("pointerup", subir);
+      b.addEventListener("pointercancel", subir);
+      b.addEventListener("lostpointercapture", subir);
+      b.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+    });
+
+    var portada = document.getElementById("portada");
+    var boton = document.getElementById("jugar");
+    var lienzo = document.getElementById("canvas");
+
+    function aviso(texto) {
+      portada.innerHTML = "";
+      var p = document.createElement("div");
+      p.className = "estado";
+      p.textContent = texto;
+      portada.appendChild(p);
+    }
+
+    window.Module = {
+      // el juego arranca en el idioma del navegador (en la portada se cambia con Y)
+      arguments: ["./game.love", "--idioma=" + (navigator.language || "es")],
+      INITIAL_MEMORY: 16777216,
+      printErr: console.error.bind(console),
+      canvas: lienzo,
+      totalDependencies: 0,
+      remainingDependencies: 0,
+      setStatus: function (texto) {
+        if (texto) { aviso(texto); return; }
+        if (Module.remainingDependencies === 0) {
+          portada.hidden = true;
+          lienzo.style.visibility = "visible";
+          lienzo.focus();
+          // el juego toma el tamaño real de la pantalla al recibir un "resize"
+          if (completa) setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 100);
+        }
+      },
+      monitorRunDependencies: function (faltan) {
+        this.remainingDependencies = faltan;
+        this.totalDependencies = Math.max(this.totalDependencies, faltan);
+        Module.setStatus(faltan ? "CARGANDO " + (this.totalDependencies - faltan) + "/" + this.totalDependencies : "");
+      }
+    };
+    lienzo.addEventListener("webglcontextlost", function (e) { e.preventDefault(); aviso("RECARGA LA PÁGINA"); });
+    window.addEventListener("error", function () { aviso("NO PUDO CARGAR"); });
+
+    function cargar(src, listo) {
+      var s = document.createElement("script");
+      s.src = src;
+      s.onload = listo || null;
+      s.onerror = function () { aviso("NO PUDO CARGAR"); };
+      document.body.appendChild(s);
+    }
+
+    var tactil = window.matchMedia("(pointer: coarse)").matches;
+    var completa = false;
+    boton.addEventListener("click", function () {
+      if (tactil) {
+        // pantalla completa con los controles táctiles del propio juego
+        completa = true;
+        Module.arguments.push("--tactil");
+        document.body.classList.add("completa");
+        lienzo.parentNode.classList.add("completa");
+        var el = document.documentElement;
+        var pedir = el.requestFullscreen || el.webkitRequestFullscreen;
+        if (pedir) {
+          try {
+            var promesa = pedir.call(el);
+            if (promesa && promesa.then) promesa.then(function () {
+              if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function () {});
+            }).catch(function () {});
+          } catch (e) {}
+        }
+      }
+      aviso("CARGANDO...");
+      cargar("game.js", function () {
+        cargar("love.js", function () { Love(Module); });
+      });
+    });
+    lienzo.addEventListener("pointerdown", function () { lienzo.focus(); });
+  })();
+</script>
