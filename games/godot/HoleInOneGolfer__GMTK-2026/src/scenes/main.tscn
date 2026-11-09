@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://csi86m7rghnqk"]
+
+[ext_resource type="PackedScene" uid="uid://cnt7cah78t0v5" path="res://scenes/player.tscn" id="1_o5qli"]
+[ext_resource type="Script" uid="uid://iwu0djlku0hy" path="res://scripts/main.gd" id="1_tefeu"]
+[ext_resource type="Script" uid="uid://dlvjrsmft6a0v" path="res://scripts/game_area.gd" id="2_sugp2"]
+[ext_resource type="PackedScene" uid="uid://c58cdr1c2rusu" path="res://scenes/collectible_spawner.tscn" id="4_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://1hvy4d6cbgls" path="res://scenes/collectible.tscn" id="5_tefeu"]
+[ext_resource type="PackedScene" uid="uid://dhnlh73oxr0ai" path="res://scenes/ui.tscn" id="6_tipki"]
+
+[node name="Main" type="Node2D" unique_id=1892159346]
+script = ExtResource("1_tefeu")
+
+[node name="Player" parent="." unique_id=1945655462 instance=ExtResource("1_o5qli")]
+
+[node name="GameArea" type="Node2D" parent="." unique_id=2052191291]
+z_index = -5
+script = ExtResource("2_sugp2")
+
+[node name="UI" parent="." unique_id=1292629276 instance=ExtResource("6_tipki")]
+
+[node name="collectible_spawner" parent="." unique_id=1079628434 node_paths=PackedStringArray("player") instance=ExtResource("4_tbgi4")]
+player = NodePath("../Player")
+collectible_scenes = Array[PackedScene]([ExtResource("5_tefeu")])
