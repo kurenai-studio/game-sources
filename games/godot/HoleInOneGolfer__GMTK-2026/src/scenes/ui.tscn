@@ -1,0 +1,299 @@
+[gd_scene format=3 uid="uid://dhnlh73oxr0ai"]
+
+[ext_resource type="Script" uid="uid://ix7xsqvylon5" path="res://scripts/ui.gd" id="1_nt7q6"]
+[ext_resource type="FontFile" uid="uid://d3rcm6lh7epte" path="res://assets/font/Kenney Blocks.ttf" id="2_7dvkv"]
+[ext_resource type="Script" uid="uid://bwcv31ikfnede" path="res://scripts/menu.gd" id="2_x4jx1"]
+[ext_resource type="Script" uid="uid://ct1ic2sc3eo2i" path="res://scripts/shop_panel.gd" id="3_gdt2y"]
+[ext_resource type="Script" uid="uid://vynuhgatjaga" path="res://scripts/settings_panel.gd" id="3_yev5y"]
+[ext_resource type="FontFile" uid="uid://bpcq0f6c8v8wu" path="res://assets/font/Kenney Thick.ttf" id="4_7dvkv"]
+[ext_resource type="FontFile" uid="uid://bsvhn6vgp0bwj" path="res://assets/font/Kenney Bold.ttf" id="4_vdcm2"]
+[ext_resource type="Texture2D" uid="uid://cwjiykoc0y1fu" path="res://assets/icon/shoppingCart.png" id="7_7dvkv"]
+[ext_resource type="Texture2D" uid="uid://c7r6g5su3oxup" path="res://assets/icon/question.png" id="8_vdcm2"]
+[ext_resource type="Texture2D" uid="uid://cab1yd214hvr0" path="res://assets/icon/information.png" id="9_6rmj2"]
+[ext_resource type="Texture2D" uid="uid://cq676kuwqusil" path="res://assets/icon/gear.png" id="10_vsj0x"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_cgfq5"]
+font = ExtResource("2_7dvkv")
+font_size = 40
+
+[sub_resource type="LabelSettings" id="LabelSettings_6rmj2"]
+font = ExtResource("4_vdcm2")
+font_size = 50
+
+[sub_resource type="LabelSettings" id="LabelSettings_sn0t7"]
+font = ExtResource("4_7dvkv")
+font_size = 30
+
+[sub_resource type="LabelSettings" id="LabelSettings_gdt2y"]
+font = ExtResource("4_vdcm2")
+font_size = 13
+
+[sub_resource type="LabelSettings" id="LabelSettings_x4jx1"]
+font_size = 15
+
+[node name="UI" type="CanvasLayer" unique_id=1292629276 node_paths=PackedStringArray("hud_node", "menu_node", "timer_label", "score_label")]
+process_mode = 3
+script = ExtResource("1_nt7q6")
+hud_node = NodePath("HUD")
+menu_node = NodePath("MENU")
+timer_label = NodePath("HUD/VBoxContainer/TimerLabel")
+score_label = NodePath("HUD/VBoxContainer/ScoreLabel")
+
+[node name="HUD" type="Control" parent="." unique_id=917895727]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HUD" unique_id=1699384909]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="TimerLabel" type="Label" parent="HUD/VBoxContainer" unique_id=502582177]
+layout_mode = 2
+text = "00:00"
+label_settings = SubResource("LabelSettings_cgfq5")
+horizontal_alignment = 1
+uppercase = true
+
+[node name="ScoreLabel" type="Label" parent="HUD/VBoxContainer" unique_id=425339463]
+layout_mode = 2
+text = "0"
+label_settings = SubResource("LabelSettings_cgfq5")
+horizontal_alignment = 1
+uppercase = true
+
+[node name="MENU" type="Control" parent="." unique_id=956347263 node_paths=PackedStringArray("start_button", "shop_button", "how_to_play_button", "credits_button", "settings_button", "shop_panel", "how_to_play_panel", "credits_panel", "settings_panel")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_x4jx1")
+start_button = NodePath("MainLayout/Header/Start")
+shop_button = NodePath("MainLayout/CenterContent/SidePanel/ShopButton")
+how_to_play_button = NodePath("MainLayout/CenterContent/SidePanel/HowToPlayButton")
+credits_button = NodePath("MainLayout/CenterContent/SidePanel/CreditsButton")
+settings_button = NodePath("MainLayout/CenterContent/SidePanel/Settings")
+shop_panel = NodePath("MainLayout/CenterContent/ShopPanel")
+how_to_play_panel = NodePath("MainLayout/CenterContent/HowToPlayPanel")
+credits_panel = NodePath("MainLayout/CenterContent/CreditsPanel")
+settings_panel = NodePath("MainLayout/CenterContent/SettingsPanel")
+
+[node name="MainLayout" type="VBoxContainer" parent="MENU" unique_id=173891452]
+propagate_maximum_size = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Header" type="VBoxContainer" parent="MENU/MainLayout" unique_id=1403340877]
+layout_mode = 2
+size_flags_horizontal = 4
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="MENU/MainLayout/Header" unique_id=1510896288]
+layout_mode = 2
+text = "Stardust
+Stroll"
+label_settings = SubResource("LabelSettings_6rmj2")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Start" type="Button" parent="MENU/MainLayout/Header" unique_id=1216083189]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MENU/MainLayout/Header/Start" unique_id=199518333]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="MENU/MainLayout/Header/Start/MarginContainer" unique_id=2017392622]
+layout_mode = 2
+size_flags_vertical = 1
+text = "START"
+label_settings = SubResource("LabelSettings_sn0t7")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CenterContent" type="HBoxContainer" parent="MENU/MainLayout" unique_id=655403105]
+layout_mode = 2
+alignment = 1
+
+[node name="ShopPanel" type="PanelContainer" parent="MENU/MainLayout/CenterContent" unique_id=793732076 node_paths=PackedStringArray("speed_button", "size_button", "time_button")]
+custom_minimum_size = Vector2(350, 200)
+layout_mode = 2
+script = ExtResource("3_gdt2y")
+speed_button = NodePath("ShopGrid/SpeedUpgrade")
+size_button = NodePath("ShopGrid/SizeUpgrade")
+time_button = NodePath("ShopGrid/TimeUpgrade")
+
+[node name="ShopGrid" type="GridContainer" parent="MENU/MainLayout/CenterContent/ShopPanel" unique_id=640713748]
+layout_mode = 2
+columns = 2
+
+[node name="SpeedUpgrade" type="Button" parent="MENU/MainLayout/CenterContent/ShopPanel/ShopGrid" unique_id=86356164]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "+Speed"
+
+[node name="TimeUpgrade" type="Button" parent="MENU/MainLayout/CenterContent/ShopPanel/ShopGrid" unique_id=1116923741]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "+Time"
+
+[node name="SizeUpgrade" type="Button" parent="MENU/MainLayout/CenterContent/ShopPanel/ShopGrid" unique_id=1328586179]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+text = "+Size"
+
+[node name="HowToPlayPanel" type="PanelContainer" parent="MENU/MainLayout/CenterContent" unique_id=965537085]
+custom_minimum_size = Vector2(350, 200)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MENU/MainLayout/CenterContent/HowToPlayPanel" unique_id=371365622]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MENU/MainLayout/CenterContent/HowToPlayPanel/MarginContainer" unique_id=63344266]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MENU/MainLayout/CenterContent/HowToPlayPanel/MarginContainer/VBoxContainer" unique_id=746996098]
+layout_mode = 2
+text = "How To Play"
+label_settings = SubResource("LabelSettings_gdt2y")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MENU/MainLayout/CenterContent/HowToPlayPanel/MarginContainer/VBoxContainer" unique_id=1838176967]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.0
+text = "OBJECTIVE:
+Survive against the clock and race the countdown before time runs out!
+
+CONTROLS:
+• WASD: Move character
+• Mouse: Aim and interact with the shop
+
+GAMEPLAY:
+• Score points and gather currency during rounds.
+• Dodge hazardous obstacles while collecting valuable items to maximize your score.
+• Use the shop between rounds to power up your build.
+• Keep an eye on the timer, every second matters!"
+
+[node name="CreditsPanel" type="PanelContainer" parent="MENU/MainLayout/CenterContent" unique_id=1703624039]
+custom_minimum_size = Vector2(350, 200)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MENU/MainLayout/CenterContent/CreditsPanel" unique_id=459134733]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MENU/MainLayout/CenterContent/CreditsPanel/MarginContainer" unique_id=589874629]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MENU/MainLayout/CenterContent/CreditsPanel/MarginContainer/VBoxContainer" unique_id=1649542429]
+layout_mode = 2
+text = "Credits"
+label_settings = SubResource("LabelSettings_gdt2y")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MENU/MainLayout/CenterContent/CreditsPanel/MarginContainer/VBoxContainer" unique_id=1996398412]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.0
+text = "GMTK 2026 GAME JAM ENTRY
+
+💻 DEVELOPMENT & PROGRAMMING:
+HoleInOneGolfer
+
+🎨 ART:
+Kenney Game Icons
+Kenny Space Shooter Remastered
+Kenny Puzzle Pack 1
+
+✍️ FONTS:
+Kenney Blocks
+Kenney Bold
+Kenney Thick
+
+🎵 AUDIO & MUSIC:
+-
+
+📜 GODOT LICENSE:
+https://godotengine.org/license/
+
+❤️ Thanks for playing!"
+
+[node name="SettingsPanel" type="PanelContainer" parent="MENU/MainLayout/CenterContent" unique_id=1747210978 node_paths=PackedStringArray("volume_slider")]
+custom_minimum_size = Vector2(350, 200)
+layout_mode = 2
+script = ExtResource("3_yev5y")
+volume_slider = NodePath("MarginContainer/VBoxContainer/MasterVolume/MasterVolumeSlider")
+
+[node name="MarginContainer" type="MarginContainer" parent="MENU/MainLayout/CenterContent/SettingsPanel" unique_id=488848331]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MENU/MainLayout/CenterContent/SettingsPanel/MarginContainer" unique_id=1751767068]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MENU/MainLayout/CenterContent/SettingsPanel/MarginContainer/VBoxContainer" unique_id=1902849950]
+layout_mode = 2
+text = "Settings"
+label_settings = SubResource("LabelSettings_gdt2y")
+
+[node name="MasterVolume" type="HBoxContainer" parent="MENU/MainLayout/CenterContent/SettingsPanel/MarginContainer/VBoxContainer" unique_id=1625612918]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MENU/MainLayout/CenterContent/SettingsPanel/MarginContainer/VBoxContainer/MasterVolume" unique_id=2092982430]
+layout_mode = 2
+text = "Master Volume"
+label_settings = SubResource("LabelSettings_x4jx1")
+
+[node name="MasterVolumeSlider" type="HSlider" parent="MENU/MainLayout/CenterContent/SettingsPanel/MarginContainer/VBoxContainer/MasterVolume" unique_id=1152570216]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SidePanel" type="VBoxContainer" parent="MENU/MainLayout/CenterContent" unique_id=1785729234]
+layout_mode = 2
+
+[node name="ShopButton" type="Button" parent="MENU/MainLayout/CenterContent/SidePanel" unique_id=1248621433]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+icon = ExtResource("7_7dvkv")
+icon_alignment = 1
+expand_icon = true
+
+[node name="HowToPlayButton" type="Button" parent="MENU/MainLayout/CenterContent/SidePanel" unique_id=888697631]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+icon = ExtResource("8_vdcm2")
+icon_alignment = 1
+expand_icon = true
+
+[node name="CreditsButton" type="Button" parent="MENU/MainLayout/CenterContent/SidePanel" unique_id=1905698383]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+icon = ExtResource("9_6rmj2")
+icon_alignment = 1
+expand_icon = true
+
+[node name="Settings" type="Button" parent="MENU/MainLayout/CenterContent/SidePanel" unique_id=1074867017]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 2
+icon = ExtResource("10_vsj0x")
+icon_alignment = 1
+expand_icon = true

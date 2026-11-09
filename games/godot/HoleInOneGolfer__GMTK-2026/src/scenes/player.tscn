@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://cnt7cah78t0v5"]
+
+[ext_resource type="Script" uid="uid://bvsgwitvmw1p6" path="res://scripts/player.gd" id="1_3vyb7"]
+[ext_resource type="Texture2D" uid="uid://wc0piyvvanf" path="res://assets/ship_H.png" id="2_g2els"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bhunq"]
+
+[node name="Player" type="CharacterBody2D" unique_id=1945655462]
+script = ExtResource("1_3vyb7")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1130546749]
+zoom = Vector2(2, 2)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1659465595]
+shape = SubResource("CircleShape2D_bhunq")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=504606075]
+rotation = 1.5707964
+scale = Vector2(0.21874999, 0.21874999)
+texture = ExtResource("2_g2els")

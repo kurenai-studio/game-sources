@@ -1,0 +1,77 @@
+name: Build and Publish
+
+on:
+  push:
+    tags:
+      - 'v*' # Workflow only runs when you push a tag like 'v1.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.1
+          include-templates: true
+          use-dotnet: false
+
+      - name: Export
+        run: |
+          mkdir -p builds/html builds/windows
+          # Exporting
+          godot --headless --export-release "Web" builds/html/index.html
+          godot --headless --export-release "Windows Desktop" builds/windows/game.exe
+
+          # Zip the html folder
+          cd builds/html && zip -r ../html.zip . && cd ../..
+
+          # Move the exe to the root of builds folder and remove windows dir
+          mv builds/windows/*.exe builds/game.exe
+          rm -rf builds/windows
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-builds
+          path: |
+            builds/html.zip
+            builds/game.exe
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: game-builds
+          path: builds/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: |
+            builds/html.zip
+            builds/game.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Itch.io
+        uses: Ayowel/butler-to-itch@v2
+        with:
+          butler_key: ${{ secrets.BUTLER_CREDENTIALS }}
+          itch_user: holeinonegolfer
+          itch_game: gmtk-2026
+          version: ${{ github.ref_name }}
+          files: |
+            web builds/html.zip
+            windows builds/game.exe
