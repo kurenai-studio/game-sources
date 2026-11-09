@@ -1,0 +1,54 @@
+# The website at https://$SPPPD_DOMAIN (spppd.xyz). kamal-proxy sits in front, does TLS
+# and health checks /up. Caddy logs no requests (no `log` directive).
+{
+	admin off
+}
+
+:80 {
+	# Old names (SPPPD_OLD_DOMAINS in .env) go to the real one, path and all. Not /up:
+	# kamal-proxy's health check comes in under no particular name.
+	@elsewhere {
+		not host {$SPPPD_DOMAIN:spppd.xyz}
+		not path /up
+	}
+	redir @elsewhere https://{$SPPPD_DOMAIN:spppd.xyz}{uri} permanent
+
+	handle /up {
+		respond "ok" 200
+	}
+
+	# The online server's public status, for /status/. The relay serves it on the
+	# kamal network, where its container is spppd-relay. It's down when the relay is.
+	handle /api/status {
+		reverse_proxy {$SPPPD_RELAY_STATUS:spppd-relay:8081}
+	}
+
+	root * /srv
+	encode zstd gzip
+
+	header {
+		# Umami's script and its reports go to stats.hblabs.xyz; nothing else leaves.
+		Content-Security-Policy "default-src 'self'; script-src 'self' https://stats.hblabs.xyz; connect-src 'self' https://stats.hblabs.xyz; img-src 'self'; media-src 'self'; style-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'none'; object-src 'none'"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+	}
+
+	# Astro names these by their contents, so they never change.
+	@hashed path /_astro/*
+	header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+	@media path /media/* /fonts/*
+	header @media Cache-Control "public, max-age=604800"
+
+	# Downloads come from the GitHub release now. Old links still work.
+	@download path_regexp download ^/download/(spppd-(\d+\.\d+\.\d+)[^/]*)$
+	redir @download https://github.com/vanillaiice/spppd/releases/download/v{re.download.2}/{re.download.1} 302
+
+	file_server
+
+	handle_errors 404 {
+		rewrite * /404.html
+		file_server
+	}
+}
