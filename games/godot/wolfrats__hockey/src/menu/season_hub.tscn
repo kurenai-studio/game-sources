@@ -1,0 +1,159 @@
+[gd_scene format=3 uid="uid://dd8f1k3l4o7u"]
+
+[ext_resource type="Theme" uid="uid://c0b4q46jrp2me" path="res://menu/theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://beg3r2jshvbrn" path="res://menu/season_hub.gd" id="2_wkts3"]
+[ext_resource type="Texture2D" uid="uid://cg1i3w702x3cu" path="res://sprites/rink.png" id="3_rink"]
+
+[sub_resource type="Gradient" id="Gradient_r7j8k"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_b0n7h"]
+gradient = SubResource("Gradient_r7j8k")
+fill_from = Vector2(0.45964918, 0.4415079)
+fill_to = Vector2(1, 0.91265035)
+
+[node name="SeasonHub" type="Control" unique_id=418654411]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_wkts3")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1863586043]
+modulate = Color(0.2, 0.2, 0.2, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_b0n7h")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Background2" type="TextureRect" parent="." unique_id=672831957]
+modulate = Color(0.2, 0.2, 0.2, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_rink")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1287822441]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Title" type="Label" parent="VBoxContainer" unique_id=1726139364]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 48
+text = "SEASON HUB"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=346074233]
+layout_mode = 2
+theme_override_constants/separation = 50
+alignment = 1
+
+[node name="StandingsBox" type="VBoxContainer" parent="VBoxContainer/HBoxContainer" unique_id=2098657406]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Title" type="Label" parent="VBoxContainer/HBoxContainer/StandingsBox" unique_id=668127348]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Standings"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/HBoxContainer/StandingsBox" unique_id=4746354]
+custom_minimum_size = Vector2(500, 300)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="StandingsContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/StandingsBox/ScrollContainer" unique_id=54877640]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MatchupBox" type="VBoxContainer" parent="VBoxContainer/HBoxContainer" unique_id=984826550]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Title" type="Label" parent="VBoxContainer/HBoxContainer/MatchupBox" unique_id=2011295891]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Next Match"
+horizontal_alignment = 1
+
+[node name="MatchupLabel" type="Label" parent="VBoxContainer/HBoxContainer/MatchupBox" unique_id=588961626]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Team A vs Team B"
+horizontal_alignment = 1
+
+[node name="ScheduleBox" type="VBoxContainer" parent="VBoxContainer/HBoxContainer" unique_id=984826551]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Title" type="Label" parent="VBoxContainer/HBoxContainer/ScheduleBox" unique_id=2011295892]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Schedule"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/HBoxContainer/ScheduleBox" unique_id=4746355]
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="ScheduleContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/ScheduleBox/ScrollContainer" unique_id=54877641]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Buttons" type="HBoxContainer" parent="VBoxContainer" unique_id=513619185]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Back" type="Button" parent="VBoxContainer/Buttons" unique_id=1113038403]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Main Menu"
+
+[node name="Reset" type="Button" parent="VBoxContainer/Buttons" unique_id=1113038404]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Reset Season"
+
+[node name="Play" type="Button" parent="VBoxContainer/Buttons" unique_id=718801763]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Play Match"
+
+[connection signal="pressed" from="VBoxContainer/Buttons/Back" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="VBoxContainer/Buttons/Reset" to="." method="_on_reset_pressed"]
+[connection signal="pressed" from="VBoxContainer/Buttons/Play" to="." method="_on_play_pressed"]

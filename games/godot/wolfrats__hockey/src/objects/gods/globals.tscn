@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cf58uv3mr6hvc"]
+
+[ext_resource type="Script" uid="uid://bf8fl04acqr4u" path="res://objects/gods/globals.gd" id="1_c42sn"]
+[ext_resource type="AudioStream" uid="uid://dxuykp2xll1fk" path="res://sounds/HitSlow.wav" id="2_1xyhr"]
+[ext_resource type="AudioStream" uid="uid://bx8v1kkewn1jq" path="res://sounds/HitMedium.wav" id="3_fe7a0"]
+[ext_resource type="AudioStream" uid="uid://be43qu5qu1tmt" path="res://sounds/HitFast.wav" id="4_15ko5"]
+[ext_resource type="AudioStream" uid="uid://buueu87i31fnl" path="res://sounds/Grab.wav" id="5_7c7ov"]
+[ext_resource type="AudioStream" uid="uid://crnanc1kfi547" path="res://sounds/Check.wav" id="6_yjbnx"]
+[ext_resource type="AudioStream" uid="uid://duji0fqmgca3" path="res://sounds/Bump.wav" id="7_3a8lw"]
+[ext_resource type="AudioStream" uid="uid://cncoy6h2ucvb0" path="res://sounds/CheckMiss.wav" id="7_fe7a0"]
+[ext_resource type="AudioStream" uid="uid://8tqgrvihderr" path="res://sounds/Board.wav" id="8_ky27o"]
+[ext_resource type="AudioStream" uid="uid://ddc6l51myte7e" path="res://sounds/Blip.wav" id="9_dayrt"]
+[ext_resource type="AudioStream" uid="uid://bh4q8xaiqnmmo" path="res://sounds/Blip2.wav" id="10_fejva"]
+[ext_resource type="AudioStream" uid="uid://cuwk8lf5okqg8" path="res://sounds/sad.wav" id="12_7c7ov"]
+[ext_resource type="AudioStream" uid="uid://6tmn3dhrgepe" path="res://sounds/horn.wav" id="12_15ko5"]
+
+[node name="Globals" type="CanvasLayer" unique_id=654117998]
+script = ExtResource("1_c42sn")
+
+[node name="Sounds" type="Node2D" parent="." unique_id=233643261]
+
+[node name="HitSlow" type="AudioStreamPlayer2D" parent="Sounds" unique_id=1001419540]
+stream = ExtResource("2_1xyhr")
+
+[node name="HitMedium" type="AudioStreamPlayer2D" parent="Sounds" unique_id=745057330]
+stream = ExtResource("3_fe7a0")
+
+[node name="HitFast" type="AudioStreamPlayer2D" parent="Sounds" unique_id=1969577832]
+stream = ExtResource("4_15ko5")
+
+[node name="Grab" type="AudioStreamPlayer2D" parent="Sounds" unique_id=132630665]
+stream = ExtResource("5_7c7ov")
+
+[node name="Check" type="AudioStreamPlayer2D" parent="Sounds" unique_id=1815036224]
+stream = ExtResource("6_yjbnx")
+
+[node name="CheckMiss" type="AudioStreamPlayer2D" parent="Sounds" unique_id=976466436]
+stream = ExtResource("7_fe7a0")
+
+[node name="Bump" type="AudioStreamPlayer2D" parent="Sounds" unique_id=803498028]
+stream = ExtResource("7_3a8lw")
+
+[node name="Board" type="AudioStreamPlayer2D" parent="Sounds" unique_id=943333172]
+stream = ExtResource("8_ky27o")
+
+[node name="Blip1" type="AudioStreamPlayer2D" parent="Sounds" unique_id=107940577]
+stream = ExtResource("9_dayrt")
+
+[node name="Blip2" type="AudioStreamPlayer2D" parent="Sounds" unique_id=1078156414]
+stream = ExtResource("10_fejva")
+
+[node name="GoalAway" type="AudioStreamPlayer2D" parent="Sounds" unique_id=119238210]
+stream = ExtResource("12_7c7ov")
+
+[node name="GoalHome" type="AudioStreamPlayer2D" parent="Sounds" unique_id=395123061]
+stream = ExtResource("12_15ko5")

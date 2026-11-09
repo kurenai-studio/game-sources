@@ -1,0 +1,734 @@
+[gd_scene format=4 uid="uid://cpenthvxg78pu"]
+
+[ext_resource type="PackedScene" uid="uid://58gvk4r2yio1" path="res://objects/gods/manager.tscn" id="2_4jwb7"]
+[ext_resource type="Texture2D" uid="uid://cg1i3w702x3cu" path="res://sprites/rink.png" id="2_jkole"]
+[ext_resource type="PackedScene" uid="uid://cp3it5rmt88r3" path="res://objects/skaters/goalie.tscn" id="3_jkole"]
+[ext_resource type="PackedScene" uid="uid://dac22ju5kfqrs" path="res://objects/skaters/skater.tscn" id="4_ka43y"]
+[ext_resource type="PackedScene" uid="uid://7mux8lo0ke4" path="res://objects/skaters/player.tscn" id="5_iroi8"]
+[ext_resource type="PackedScene" uid="uid://087q0jqlan76" path="res://objects/environment/puck.tscn" id="7_xvcn5"]
+[ext_resource type="PackedScene" uid="uid://dcs1p006dc6l1" path="res://objects/environment/Goal.tscn" id="8_6d2ki"]
+[ext_resource type="PackedScene" uid="uid://daupcjejdlj5y" path="res://objects/environment/netsprite.tscn" id="8_jkole"]
+[ext_resource type="PackedScene" uid="uid://c7t4freferee" path="res://objects/skaters/referee.tscn" id="9_ref"]
+[ext_resource type="Script" uid="uid://carxvn5etqhdd" path="res://objects/environment/bench.gd" id="10_jkole"]
+[ext_resource type="Texture2D" uid="uid://c2t8p5fi48qsg" path="res://sprites/logos/Clip 1.png" id="11_ka43y"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_ka43y"]
+texture = ExtResource("2_jkole")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+9:0/0 = 0
+10:0/0 = 0
+11:0/0 = 0
+12:0/0 = 0
+13:0/0 = 0
+14:0/0 = 0
+15:0/0 = 0
+16:0/0 = 0
+17:0/0 = 0
+18:0/0 = 0
+19:0/0 = 0
+20:0/0 = 0
+21:0/0 = 0
+22:0/0 = 0
+23:0/0 = 0
+24:0/0 = 0
+25:0/0 = 0
+26:0/0 = 0
+27:0/0 = 0
+28:0/0 = 0
+29:0/0 = 0
+30:0/0 = 0
+31:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+8:1/0 = 0
+9:1/0 = 0
+10:1/0 = 0
+11:1/0 = 0
+12:1/0 = 0
+13:1/0 = 0
+14:1/0 = 0
+15:1/0 = 0
+16:1/0 = 0
+17:1/0 = 0
+18:1/0 = 0
+19:1/0 = 0
+20:1/0 = 0
+21:1/0 = 0
+22:1/0 = 0
+23:1/0 = 0
+24:1/0 = 0
+25:1/0 = 0
+26:1/0 = 0
+27:1/0 = 0
+28:1/0 = 0
+29:1/0 = 0
+30:1/0 = 0
+31:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+8:2/0 = 0
+9:2/0 = 0
+10:2/0 = 0
+11:2/0 = 0
+12:2/0 = 0
+13:2/0 = 0
+14:2/0 = 0
+15:2/0 = 0
+16:2/0 = 0
+17:2/0 = 0
+18:2/0 = 0
+19:2/0 = 0
+20:2/0 = 0
+21:2/0 = 0
+22:2/0 = 0
+23:2/0 = 0
+24:2/0 = 0
+25:2/0 = 0
+26:2/0 = 0
+27:2/0 = 0
+28:2/0 = 0
+29:2/0 = 0
+30:2/0 = 0
+31:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+8:3/0 = 0
+9:3/0 = 0
+10:3/0 = 0
+11:3/0 = 0
+12:3/0 = 0
+13:3/0 = 0
+14:3/0 = 0
+15:3/0 = 0
+16:3/0 = 0
+17:3/0 = 0
+18:3/0 = 0
+19:3/0 = 0
+20:3/0 = 0
+21:3/0 = 0
+22:3/0 = 0
+23:3/0 = 0
+24:3/0 = 0
+25:3/0 = 0
+26:3/0 = 0
+27:3/0 = 0
+28:3/0 = 0
+29:3/0 = 0
+30:3/0 = 0
+31:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+8:4/0 = 0
+9:4/0 = 0
+10:4/0 = 0
+11:4/0 = 0
+12:4/0 = 0
+13:4/0 = 0
+14:4/0 = 0
+15:4/0 = 0
+16:4/0 = 0
+17:4/0 = 0
+18:4/0 = 0
+19:4/0 = 0
+20:4/0 = 0
+21:4/0 = 0
+22:4/0 = 0
+23:4/0 = 0
+24:4/0 = 0
+25:4/0 = 0
+26:4/0 = 0
+27:4/0 = 0
+28:4/0 = 0
+29:4/0 = 0
+30:4/0 = 0
+31:4/0 = 0
+0:5/0 = 0
+1:5/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+5:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+8:5/0 = 0
+9:5/0 = 0
+10:5/0 = 0
+11:5/0 = 0
+12:5/0 = 0
+13:5/0 = 0
+14:5/0 = 0
+15:5/0 = 0
+16:5/0 = 0
+17:5/0 = 0
+18:5/0 = 0
+19:5/0 = 0
+20:5/0 = 0
+21:5/0 = 0
+22:5/0 = 0
+23:5/0 = 0
+24:5/0 = 0
+25:5/0 = 0
+26:5/0 = 0
+27:5/0 = 0
+28:5/0 = 0
+29:5/0 = 0
+30:5/0 = 0
+31:5/0 = 0
+0:6/0 = 0
+1:6/0 = 0
+2:6/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+5:6/0 = 0
+6:6/0 = 0
+7:6/0 = 0
+8:6/0 = 0
+9:6/0 = 0
+10:6/0 = 0
+11:6/0 = 0
+12:6/0 = 0
+13:6/0 = 0
+14:6/0 = 0
+15:6/0 = 0
+16:6/0 = 0
+17:6/0 = 0
+18:6/0 = 0
+19:6/0 = 0
+20:6/0 = 0
+21:6/0 = 0
+22:6/0 = 0
+23:6/0 = 0
+24:6/0 = 0
+25:6/0 = 0
+26:6/0 = 0
+27:6/0 = 0
+28:6/0 = 0
+29:6/0 = 0
+30:6/0 = 0
+31:6/0 = 0
+0:7/0 = 0
+1:7/0 = 0
+2:7/0 = 0
+3:7/0 = 0
+4:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+7:7/0 = 0
+8:7/0 = 0
+9:7/0 = 0
+10:7/0 = 0
+11:7/0 = 0
+12:7/0 = 0
+13:7/0 = 0
+14:7/0 = 0
+15:7/0 = 0
+16:7/0 = 0
+17:7/0 = 0
+18:7/0 = 0
+19:7/0 = 0
+20:7/0 = 0
+21:7/0 = 0
+22:7/0 = 0
+23:7/0 = 0
+24:7/0 = 0
+25:7/0 = 0
+26:7/0 = 0
+27:7/0 = 0
+28:7/0 = 0
+29:7/0 = 0
+30:7/0 = 0
+31:7/0 = 0
+0:8/0 = 0
+1:8/0 = 0
+2:8/0 = 0
+3:8/0 = 0
+4:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+8:8/0 = 0
+9:8/0 = 0
+10:8/0 = 0
+11:8/0 = 0
+12:8/0 = 0
+13:8/0 = 0
+14:8/0 = 0
+15:8/0 = 0
+16:8/0 = 0
+17:8/0 = 0
+18:8/0 = 0
+19:8/0 = 0
+20:8/0 = 0
+21:8/0 = 0
+22:8/0 = 0
+23:8/0 = 0
+24:8/0 = 0
+25:8/0 = 0
+26:8/0 = 0
+27:8/0 = 0
+28:8/0 = 0
+29:8/0 = 0
+30:8/0 = 0
+31:8/0 = 0
+0:9/0 = 0
+1:9/0 = 0
+2:9/0 = 0
+3:9/0 = 0
+4:9/0 = 0
+5:9/0 = 0
+6:9/0 = 0
+7:9/0 = 0
+8:9/0 = 0
+9:9/0 = 0
+10:9/0 = 0
+11:9/0 = 0
+12:9/0 = 0
+13:9/0 = 0
+14:9/0 = 0
+15:9/0 = 0
+16:9/0 = 0
+17:9/0 = 0
+18:9/0 = 0
+19:9/0 = 0
+20:9/0 = 0
+21:9/0 = 0
+22:9/0 = 0
+23:9/0 = 0
+24:9/0 = 0
+25:9/0 = 0
+26:9/0 = 0
+27:9/0 = 0
+28:9/0 = 0
+29:9/0 = 0
+30:9/0 = 0
+31:9/0 = 0
+0:10/0 = 0
+1:10/0 = 0
+2:10/0 = 0
+3:10/0 = 0
+4:10/0 = 0
+5:10/0 = 0
+6:10/0 = 0
+7:10/0 = 0
+8:10/0 = 0
+9:10/0 = 0
+10:10/0 = 0
+11:10/0 = 0
+12:10/0 = 0
+13:10/0 = 0
+14:10/0 = 0
+15:10/0 = 0
+16:10/0 = 0
+17:10/0 = 0
+18:10/0 = 0
+19:10/0 = 0
+20:10/0 = 0
+21:10/0 = 0
+22:10/0 = 0
+23:10/0 = 0
+24:10/0 = 0
+25:10/0 = 0
+26:10/0 = 0
+27:10/0 = 0
+28:10/0 = 0
+29:10/0 = 0
+30:10/0 = 0
+31:10/0 = 0
+0:11/0 = 0
+1:11/0 = 0
+2:11/0 = 0
+3:11/0 = 0
+4:11/0 = 0
+5:11/0 = 0
+6:11/0 = 0
+7:11/0 = 0
+8:11/0 = 0
+9:11/0 = 0
+10:11/0 = 0
+11:11/0 = 0
+12:11/0 = 0
+13:11/0 = 0
+14:11/0 = 0
+15:11/0 = 0
+16:11/0 = 0
+17:11/0 = 0
+18:11/0 = 0
+19:11/0 = 0
+20:11/0 = 0
+21:11/0 = 0
+22:11/0 = 0
+23:11/0 = 0
+24:11/0 = 0
+25:11/0 = 0
+26:11/0 = 0
+27:11/0 = 0
+28:11/0 = 0
+29:11/0 = 0
+30:11/0 = 0
+31:11/0 = 0
+0:12/0 = 0
+1:12/0 = 0
+2:12/0 = 0
+3:12/0 = 0
+4:12/0 = 0
+5:12/0 = 0
+6:12/0 = 0
+7:12/0 = 0
+8:12/0 = 0
+9:12/0 = 0
+10:12/0 = 0
+11:12/0 = 0
+12:12/0 = 0
+13:12/0 = 0
+14:12/0 = 0
+15:12/0 = 0
+16:12/0 = 0
+17:12/0 = 0
+18:12/0 = 0
+19:12/0 = 0
+20:12/0 = 0
+21:12/0 = 0
+22:12/0 = 0
+23:12/0 = 0
+24:12/0 = 0
+25:12/0 = 0
+26:12/0 = 0
+27:12/0 = 0
+28:12/0 = 0
+29:12/0 = 0
+30:12/0 = 0
+31:12/0 = 0
+0:13/0 = 0
+1:13/0 = 0
+2:13/0 = 0
+3:13/0 = 0
+4:13/0 = 0
+5:13/0 = 0
+6:13/0 = 0
+7:13/0 = 0
+8:13/0 = 0
+9:13/0 = 0
+10:13/0 = 0
+11:13/0 = 0
+12:13/0 = 0
+13:13/0 = 0
+14:13/0 = 0
+15:13/0 = 0
+16:13/0 = 0
+17:13/0 = 0
+18:13/0 = 0
+19:13/0 = 0
+20:13/0 = 0
+21:13/0 = 0
+22:13/0 = 0
+23:13/0 = 0
+24:13/0 = 0
+25:13/0 = 0
+26:13/0 = 0
+27:13/0 = 0
+28:13/0 = 0
+29:13/0 = 0
+30:13/0 = 0
+31:13/0 = 0
+0:14/0 = 0
+1:14/0 = 0
+2:14/0 = 0
+3:14/0 = 0
+4:14/0 = 0
+5:14/0 = 0
+6:14/0 = 0
+7:14/0 = 0
+8:14/0 = 0
+9:14/0 = 0
+10:14/0 = 0
+11:14/0 = 0
+12:14/0 = 0
+13:14/0 = 0
+14:14/0 = 0
+15:14/0 = 0
+16:14/0 = 0
+17:14/0 = 0
+18:14/0 = 0
+19:14/0 = 0
+20:14/0 = 0
+21:14/0 = 0
+22:14/0 = 0
+23:14/0 = 0
+24:14/0 = 0
+25:14/0 = 0
+26:14/0 = 0
+27:14/0 = 0
+28:14/0 = 0
+29:14/0 = 0
+30:14/0 = 0
+31:14/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_arvj2"]
+sources/1 = SubResource("TileSetAtlasSource_ka43y")
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4jwb7"]
+size = Vector2(125.5, 45)
+
+[sub_resource type="Gradient" id="Gradient_gmvdi"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_6d2ki"]
+gradient = SubResource("Gradient_gmvdi")
+width = 256
+height = 256
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.85, 0.85)
+
+[node name="Rink" type="Node2D" unique_id=608511731]
+texture_filter = 1
+
+[node name="Floor" type="TileMapLayer" parent="." unique_id=2112835940]
+unique_name_in_owner = true
+z_index = -100
+texture_filter = 1
+position = Vector2(-21, 10)
+scale = Vector2(4, 4)
+tile_map_data = PackedByteArray("AAD//wAAAAAAAAsAAAD//wEAAAAAAAwAAAD//wIAAAAAAA0AAAD//wMAAAAAAA4AAAD//wQAAAAAAA8AAAD//wUAAAAAABAAAAD//wYAAAAAABEAAAD//wcAAAAAABIAAAD//wgAAAAAABMAAAD//wkAAAAAABQAAAD//woAAAAAABUAAAD//wsAAAAAABYAAAD//wwAAAAAABcAAAD//w0AAAAAABgAAAD//w4AAAAAABkAAAAAAAAAAQAAAAAAAAAAAAEAAQAAAAEAAAAAAAIAAQAAAAIAAAAAAAMAAQAAAAMAAAAAAAQAAQAAAAQAAAAAAAUAAQAAAAUAAAAAAAYAAQAAAAYAAAAAAAcAAQAAAAcAAAAAAAgAAQAAAAgAAAAAAAkAAQAAAAkAAAAAAAoAAQAAAAoAAAAAAAsAAQAAAAsAAAAAAAwAAQAAAAwAAAAAAA0AAQAAAA0AAAAAAA4AAQAAAA4AAAABAAAAAQABAAAAAAABAAEAAQABAAEAAAABAAIAAQABAAIAAAABAAMAAQABAAMAAAABAAQAAQABAAQAAAABAAUAAQABAAUAAAABAAYAAQABAAYAAAABAAcAAQABAAcAAAABAAgAAQABAAgAAAABAAkAAQABAAkAAAABAAoAAQABAAoAAAABAAsAAQABAAsAAAABAAwAAQABAAwAAAABAA0AAQABAA0AAAABAA4AAQABAA4AAAACAAAAAQACAAAAAAACAAEAAQACAAEAAAACAAIAAQACAAIAAAACAAMAAQACAAMAAAACAAQAAQACAAQAAAACAAUAAQACAAUAAAACAAYAAQACAAYAAAACAAcAAQACAAcAAAACAAgAAQACAAgAAAACAAkAAQACAAkAAAACAAoAAQACAAoAAAACAAsAAQACAAsAAAACAAwAAQACAAwAAAACAA0AAQACAA0AAAACAA4AAQACAA4AAAADAAAAAQADAAAAAAADAAEAAQADAAEAAAADAAIAAQADAAIAAAADAAMAAQADAAMAAAADAAQAAQADAAQAAAADAAUAAQADAAUAAAADAAYAAQADAAYAAAADAAcAAQADAAcAAAADAAgAAQADAAgAAAADAAkAAQADAAkAAAADAAoAAQADAAoAAAADAAsAAQADAAsAAAADAAwAAQADAAwAAAADAA0AAQADAA0AAAADAA4AAQADAA4AAAAEAAAAAQAEAAAAAAAEAAEAAQAEAAEAAAAEAAIAAQAEAAIAAAAEAAMAAQAEAAMAAAAEAAQAAQAEAAQAAAAEAAUAAQAEAAUAAAAEAAYAAQAEAAYAAAAEAAcAAQAEAAcAAAAEAAgAAQAEAAgAAAAEAAkAAQAEAAkAAAAEAAoAAQAEAAoAAAAEAAsAAQAEAAsAAAAEAAwAAQAEAAwAAAAEAA0AAQAEAA0AAAAEAA4AAQAEAA4AAAAFAAAAAQAFAAAAAAAFAAEAAQAFAAEAAAAFAAIAAQAFAAIAAAAFAAMAAQAFAAMAAAAFAAQAAQAFAAQAAAAFAAUAAQAFAAUAAAAFAAYAAQAFAAYAAAAFAAcAAQAFAAcAAAAFAAgAAQAFAAgAAAAFAAkAAQAFAAkAAAAFAAoAAQAFAAoAAAAFAAsAAQAFAAsAAAAFAAwAAQAFAAwAAAAFAA0AAQAFAA0AAAAFAA4AAQAFAA4AAAAGAAAAAQAGAAAAAAAGAAEAAQAGAAEAAAAGAAIAAQAGAAIAAAAGAAMAAQAGAAMAAAAGAAQAAQAGAAQAAAAGAAUAAQAGAAUAAAAGAAYAAQAGAAYAAAAGAAcAAQAGAAcAAAAGAAgAAQAGAAgAAAAGAAkAAQAGAAkAAAAGAAoAAQAGAAoAAAAGAAsAAQAGAAsAAAAGAAwAAQAGAAwAAAAGAA0AAQAGAA0AAAAGAA4AAQAGAA4AAAAHAAAAAQAHAAAAAAAHAAEAAQAHAAEAAAAHAAIAAQAHAAIAAAAHAAMAAQAHAAMAAAAHAAQAAQAHAAQAAAAHAAUAAQAHAAUAAAAHAAYAAQAHAAYAAAAHAAcAAQAHAAcAAAAHAAgAAQAHAAgAAAAHAAkAAQAHAAkAAAAHAAoAAQAHAAoAAAAHAAsAAQAHAAsAAAAHAAwAAQAHAAwAAAAHAA0AAQAHAA0AAAAHAA4AAQAHAA4AAAAIAAAAAQAIAAAAAAAIAAEAAQAIAAEAAAAIAAIAAQAIAAIAAAAIAAMAAQAIAAMAAAAIAAQAAQAIAAQAAAAIAAUAAQAIAAUAAAAIAAYAAQAIAAYAAAAIAAcAAQAIAAcAAAAIAAgAAQAIAAgAAAAIAAkAAQAIAAkAAAAIAAoAAQAIAAoAAAAIAAsAAQAIAAsAAAAIAAwAAQAIAAwAAAAIAA0AAQAIAA0AAAAIAA4AAQAIAA4AAAAJAAAAAQAJAAAAAAAJAAEAAQAJAAEAAAAJAAIAAQAJAAIAAAAJAAMAAQAJAAMAAAAJAAQAAQAJAAQAAAAJAAUAAQAJAAUAAAAJAAYAAQAJAAYAAAAJAAcAAQAJAAcAAAAJAAgAAQAJAAgAAAAJAAkAAQAJAAkAAAAJAAoAAQAJAAoAAAAJAAsAAQAJAAsAAAAJAAwAAQAJAAwAAAAJAA0AAQAJAA0AAAAJAA4AAQAJAA4AAAAKAAAAAQAKAAAAAAAKAAEAAQAKAAEAAAAKAAIAAQAKAAIAAAAKAAMAAQAKAAMAAAAKAAQAAQAKAAQAAAAKAAUAAQAKAAUAAAAKAAYAAQAKAAYAAAAKAAcAAQAKAAcAAAAKAAgAAQAKAAgAAAAKAAkAAQAKAAkAAAAKAAoAAQAKAAoAAAAKAAsAAQAKAAsAAAAKAAwAAQAKAAwAAAAKAA0AAQAKAA0AAAAKAA4AAQAKAA4AAAALAAAAAQALAAAAAAALAAEAAQALAAEAAAALAAIAAQALAAIAAAALAAMAAQALAAMAAAALAAQAAQALAAQAAAALAAUAAQALAAUAAAALAAYAAQALAAYAAAALAAcAAQALAAcAAAALAAgAAQALAAgAAAALAAkAAQALAAkAAAALAAoAAQALAAoAAAALAAsAAQALAAsAAAALAAwAAQALAAwAAAALAA0AAQALAA0AAAALAA4AAQALAA4AAAAMAAAAAQAMAAAAAAAMAAEAAQAMAAEAAAAMAAIAAQAMAAIAAAAMAAMAAQAMAAMAAAAMAAQAAQAMAAQAAAAMAAUAAQAMAAUAAAAMAAYAAQAMAAYAAAAMAAcAAQAMAAcAAAAMAAgAAQAMAAgAAAAMAAkAAQAMAAkAAAAMAAoAAQAMAAoAAAAMAAsAAQAMAAsAAAAMAAwAAQAMAAwAAAAMAA0AAQAMAA0AAAAMAA4AAQAMAA4AAAANAAAAAQANAAAAAAANAAEAAQANAAEAAAANAAIAAQANAAIAAAANAAMAAQANAAMAAAANAAQAAQANAAQAAAANAAUAAQANAAUAAAANAAYAAQANAAYAAAANAAcAAQANAAcAAAANAAgAAQANAAgAAAANAAkAAQANAAkAAAANAAoAAQANAAoAAAANAAsAAQANAAsAAAANAAwAAQANAAwAAAANAA0AAQANAA0AAAANAA4AAQANAA4AAAAOAAAAAQAOAAAAAAAOAAEAAQAOAAEAAAAOAAIAAQAOAAIAAAAOAAMAAQAOAAMAAAAOAAQAAQAOAAQAAAAOAAUAAQAOAAUAAAAOAAYAAQAOAAYAAAAOAAcAAQAOAAcAAAAOAAgAAQAOAAgAAAAOAAkAAQAOAAkAAAAOAAoAAQAOAAoAAAAOAAsAAQAOAAsAAAAOAAwAAQAOAAwAAAAOAA0AAQAOAA0AAAAOAA4AAQAOAA4AAAAPAAAAAQAPAAAAAAAPAAEAAQAPAAEAAAAPAAIAAQAPAAIAAAAPAAMAAQAPAAMAAAAPAAQAAQAPAAQAAAAPAAUAAQAPAAUAAAAPAAYAAQAPAAYAAAAPAAcAAQAPAAcAAAAPAAgAAQAPAAgAAAAPAAkAAQAPAAkAAAAPAAoAAQAPAAoAAAAPAAsAAQAPAAsAAAAPAAwAAQAPAAwAAAAPAA0AAQAPAA0AAAAPAA4AAQAPAA4AAAAQAAAAAQAQAAAAAAAQAAEAAQAQAAEAAAAQAAIAAQAQAAIAAAAQAAMAAQAQAAMAAAAQAAQAAQAQAAQAAAAQAAUAAQAQAAUAAAAQAAYAAQAQAAYAAAAQAAcAAQAQAAcAAAAQAAgAAQAQAAgAAAAQAAkAAQAQAAkAAAAQAAoAAQAQAAoAAAAQAAsAAQAQAAsAAAAQAAwAAQAQAAwAAAAQAA0AAQAQAA0AAAAQAA4AAQAQAA4AAAARAAAAAQARAAAAAAARAAEAAQARAAEAAAARAAIAAQARAAIAAAARAAMAAQARAAMAAAARAAQAAQARAAQAAAARAAUAAQARAAUAAAARAAYAAQARAAYAAAARAAcAAQARAAcAAAARAAgAAQARAAgAAAARAAkAAQARAAkAAAARAAoAAQARAAoAAAARAAsAAQARAAsAAAARAAwAAQARAAwAAAARAA0AAQARAA0AAAARAA4AAQARAA4AAAASAAAAAQASAAAAAAASAAEAAQASAAEAAAASAAIAAQASAAIAAAASAAMAAQASAAMAAAASAAQAAQASAAQAAAASAAUAAQASAAUAAAASAAYAAQASAAYAAAASAAcAAQASAAcAAAASAAgAAQASAAgAAAASAAkAAQASAAkAAAASAAoAAQASAAoAAAASAAsAAQASAAsAAAASAAwAAQASAAwAAAASAA0AAQASAA0AAAASAA4AAQASAA4AAAATAAAAAQATAAAAAAATAAEAAQATAAEAAAATAAIAAQATAAIAAAATAAMAAQATAAMAAAATAAQAAQATAAQAAAATAAUAAQATAAUAAAATAAYAAQATAAYAAAATAAcAAQATAAcAAAATAAgAAQATAAgAAAATAAkAAQATAAkAAAATAAoAAQATAAoAAAATAAsAAQATAAsAAAATAAwAAQATAAwAAAATAA0AAQATAA0AAAATAA4AAQATAA4AAAAUAAAAAQAUAAAAAAAUAAEAAQAUAAEAAAAUAAIAAQAUAAIAAAAUAAMAAQAUAAMAAAAUAAQAAQAUAAQAAAAUAAUAAQAUAAUAAAAUAAYAAQAUAAYAAAAUAAcAAQAUAAcAAAAUAAgAAQAUAAgAAAAUAAkAAQAUAAkAAAAUAAoAAQAUAAoAAAAUAAsAAQAUAAsAAAAUAAwAAQAUAAwAAAAUAA0AAQAUAA0AAAAUAA4AAQAUAA4AAAAVAAAAAQAVAAAAAAAVAAEAAQAVAAEAAAAVAAIAAQAVAAIAAAAVAAMAAQAVAAMAAAAVAAQAAQAVAAQAAAAVAAUAAQAVAAUAAAAVAAYAAQAVAAYAAAAVAAcAAQAVAAcAAAAVAAgAAQAVAAgAAAAVAAkAAQAVAAkAAAAVAAoAAQAVAAoAAAAVAAsAAQAVAAsAAAAVAAwAAQAVAAwAAAAVAA0AAQAVAA0AAAAVAA4AAQAVAA4AAAAWAAAAAQAWAAAAAAAWAAEAAQAWAAEAAAAWAAIAAQAWAAIAAAAWAAMAAQAWAAMAAAAWAAQAAQAWAAQAAAAWAAUAAQAWAAUAAAAWAAYAAQAWAAYAAAAWAAcAAQAWAAcAAAAWAAgAAQAWAAgAAAAWAAkAAQAWAAkAAAAWAAoAAQAWAAoAAAAWAAsAAQAWAAsAAAAWAAwAAQAWAAwAAAAWAA0AAQAWAA0AAAAWAA4AAQAWAA4AAAAXAAAAAQAXAAAAAAAXAAEAAQAXAAEAAAAXAAIAAQAXAAIAAAAXAAMAAQAXAAMAAAAXAAQAAQAXAAQAAAAXAAUAAQAXAAUAAAAXAAYAAQAXAAYAAAAXAAcAAQAXAAcAAAAXAAgAAQAXAAgAAAAXAAkAAQAXAAkAAAAXAAoAAQAXAAoAAAAXAAsAAQAXAAsAAAAXAAwAAQAXAAwAAAAXAA0AAQAXAA0AAAAXAA4AAQAXAA4AAAAYAAAAAQAYAAAAAAAYAAEAAQAYAAEAAAAYAAIAAQAYAAIAAAAYAAMAAQAYAAMAAAAYAAQAAQAYAAQAAAAYAAUAAQAYAAUAAAAYAAYAAQAYAAYAAAAYAAcAAQAYAAcAAAAYAAgAAQAYAAgAAAAYAAkAAQAYAAkAAAAYAAoAAQAYAAoAAAAYAAsAAQAYAAsAAAAYAAwAAQAYAAwAAAAYAA0AAQAYAA0AAAAYAA4AAQAYAA4AAAAZAAAAAQAZAAAAAAAZAAEAAQAZAAEAAAAZAAIAAQAZAAIAAAAZAAMAAQAZAAMAAAAZAAQAAQAZAAQAAAAZAAUAAQAZAAUAAAAZAAYAAQAZAAYAAAAZAAcAAQAZAAcAAAAZAAgAAQAZAAgAAAAZAAkAAQAZAAkAAAAZAAoAAQAZAAoAAAAZAAsAAQAZAAsAAAAZAAwAAQAZAAwAAAAZAA0AAQAZAA0AAAAZAA4AAQAZAA4AAAAaAAAAAQAaAAAAAAAaAAEAAQAaAAEAAAAaAAIAAQAaAAIAAAAaAAMAAQAaAAMAAAAaAAQAAQAaAAQAAAAaAAUAAQAaAAUAAAAaAAYAAQAaAAYAAAAaAAcAAQAaAAcAAAAaAAgAAQAaAAgAAAAaAAkAAQAaAAkAAAAaAAoAAQAaAAoAAAAaAAsAAQAaAAsAAAAaAAwAAQAaAAwAAAAaAA0AAQAaAA0AAAAaAA4AAQAaAA4AAAAbAAAAAQAbAAAAAAAbAAEAAQAbAAEAAAAbAAIAAQAbAAIAAAAbAAMAAQAbAAMAAAAbAAQAAQAbAAQAAAAbAAUAAQAbAAUAAAAbAAYAAQAbAAYAAAAbAAcAAQAbAAcAAAAbAAgAAQAbAAgAAAAbAAkAAQAbAAkAAAAbAAoAAQAbAAoAAAAbAAsAAQAbAAsAAAAbAAwAAQAbAAwAAAAbAA0AAQAbAA0AAAAbAA4AAQAbAA4AAAAcAAAAAQAcAAAAAAAcAAEAAQAcAAEAAAAcAAIAAQAcAAIAAAAcAAMAAQAcAAMAAAAcAAQAAQAcAAQAAAAcAAUAAQAcAAUAAAAcAAYAAQAcAAYAAAAcAAcAAQAcAAcAAAAcAAgAAQAcAAgAAAAcAAkAAQAcAAkAAAAcAAoAAQAcAAoAAAAcAAsAAQAcAAsAAAAcAAwAAQAcAAwAAAAcAA0AAQAcAA0AAAAcAA4AAQAcAA4AAAAdAAAAAQAdAAAAAAAdAAEAAQAdAAEAAAAdAAIAAQAdAAIAAAAdAAMAAQAdAAMAAAAdAAQAAQAdAAQAAAAdAAUAAQAdAAUAAAAdAAYAAQAdAAYAAAAdAAcAAQAdAAcAAAAdAAgAAQAdAAgAAAAdAAkAAQAdAAkAAAAdAAoAAQAdAAoAAAAdAAsAAQAdAAsAAAAdAAwAAQAdAAwAAAAdAA0AAQAdAA0AAAAdAA4AAQAdAA4AAAAeAAAAAQAeAAAAAAAeAAEAAQAeAAEAAAAeAAIAAQAeAAIAAAAeAAMAAQAeAAMAAAAeAAQAAQAeAAQAAAAeAAUAAQAeAAUAAAAeAAYAAQAeAAYAAAAeAAcAAQAeAAcAAAAeAAgAAQAeAAgAAAAeAAkAAQAeAAkAAAAeAAoAAQAeAAoAAAAeAAsAAQAeAAsAAAAeAAwAAQAeAAwAAAAeAA0AAQAeAA0AAAAeAA4AAQAeAA4AAAAfAAAAAQAfAAAAAAAfAAEAAQAfAAEAAAAfAAIAAQAfAAIAAAAfAAMAAQAfAAMAAAAfAAQAAQAfAAQAAAAfAAUAAQAfAAUAAAAfAAYAAQAfAAYAAAAfAAcAAQAfAAcAAAAfAAgAAQAfAAgAAAAfAAkAAQAfAAkAAAAfAAoAAQAfAAoAAAAfAAsAAQAfAAsAAAAfAAwAAQAfAAwAAAAfAA0AAQAfAA0AAAAfAA4AAQAfAA4AAAA=")
+tile_set = SubResource("TileSet_arvj2")
+
+[node name="Manager" parent="." unique_id=1081534826 instance=ExtResource("2_4jwb7")]
+unique_name_in_owner = true
+y_sort_enabled = true
+
+[node name="Goalie1" parent="Manager" unique_id=152097433 instance=ExtResource("3_jkole")]
+position = Vector2(355, 520)
+home_team = true
+
+[node name="Team1" type="Node2D" parent="Manager" unique_id=7898797]
+y_sort_enabled = true
+
+[node name="Team1_1" parent="Manager/Team1" unique_id=149229949 instance=ExtResource("4_ka43y")]
+position = Vector2(917, 499)
+home_team = true
+
+[node name="Team1_2" parent="Manager/Team1" unique_id=885562940 instance=ExtResource("4_ka43y")]
+position = Vector2(919, 629)
+home_team = true
+stats = 1
+
+[node name="Team1_3" parent="Manager/Team1" unique_id=1556233076 instance=ExtResource("4_ka43y")]
+position = Vector2(817, 415)
+home_team = true
+stats = 2
+
+[node name="Team1_4" parent="Manager/Team1" unique_id=1966509114 instance=ExtResource("4_ka43y")]
+position = Vector2(793, 576)
+home_team = true
+
+[node name="Team1_5" parent="Manager/Team1" unique_id=505868705 node_paths=PackedStringArray("ghost") instance=ExtResource("4_ka43y")]
+position = Vector2(907, 340)
+ghost = NodePath("../../Ghosts/Player")
+home_team = true
+stats = 1
+
+[node name="Goalie2" parent="Manager" unique_id=1083843776 instance=ExtResource("3_jkole")]
+position = Vector2(1672, 521)
+
+[node name="Team2" type="Node2D" parent="Manager" unique_id=1370495656]
+y_sort_enabled = true
+
+[node name="Team2_1" parent="Manager/Team2" unique_id=1353436344 instance=ExtResource("4_ka43y")]
+position = Vector2(1231, 429)
+stats = 1
+
+[node name="Team2_2" parent="Manager/Team2" unique_id=1515226953 instance=ExtResource("4_ka43y")]
+position = Vector2(1150, 347)
+
+[node name="Team2_3" parent="Manager/Team2" unique_id=672984032 instance=ExtResource("4_ka43y")]
+position = Vector2(1149, 631)
+stats = 1
+
+[node name="Team2_4" parent="Manager/Team2" unique_id=1656323142 instance=ExtResource("4_ka43y")]
+position = Vector2(1091, 500)
+
+[node name="Team2_5" parent="Manager/Team2" unique_id=351450480 instance=ExtResource("4_ka43y")]
+position = Vector2(1232, 558)
+stats = 2
+
+[node name="Referee" parent="Manager" unique_id=193240579 instance=ExtResource("9_ref")]
+position = Vector2(1003, 412)
+
+[node name="Ghosts" type="Node2D" parent="Manager" unique_id=1359897304]
+
+[node name="Player" parent="Manager/Ghosts" unique_id=1253797390 instance=ExtResource("5_iroi8")]
+position = Vector2(1008, 471)
+
+[node name="Camera2D" type="Camera2D" parent="Manager/Ghosts/Player" unique_id=1537754657]
+
+[node name="Pucks" type="Node2D" parent="Manager" unique_id=1366822961]
+unique_name_in_owner = true
+
+[node name="Puck" parent="Manager/Pucks" unique_id=1068731431 instance=ExtResource("7_xvcn5")]
+position = Vector2(1007, 486)
+continuous_cd = 1
+max_contacts_reported = 18
+
+[node name="Node" parent="Manager" unique_id=566522780 instance=ExtResource("8_jkole")]
+position = Vector2(288, 495)
+
+[node name="Node2" parent="Manager" unique_id=1482667935 instance=ExtResource("8_jkole")]
+position = Vector2(1718, 495)
+scale = Vector2(-1, 1)
+
+[node name="Logo2R" type="Sprite2D" parent="Manager" unique_id=2104441930]
+visible = false
+modulate = Color(0.8235294, 0.8235294, 0.8235294, 1)
+z_index = -100
+position = Vector2(1058, 520)
+rotation = -1.5707964
+scale = Vector2(2, 2)
+texture = ExtResource("11_ka43y")
+
+[node name="Logo2L" type="Sprite2D" parent="Manager" unique_id=2056127743]
+visible = false
+modulate = Color(0.8221741, 0.8221741, 0.8221741, 1)
+z_index = -100
+position = Vector2(950, 520)
+rotation = 1.5707964
+scale = Vector2(2, 2)
+texture = ExtResource("11_ka43y")
+
+[node name="Logo1C" type="Sprite2D" parent="Manager" unique_id=1914655882]
+visible = false
+modulate = Color(0.8454793, 0.8454793, 0.8454793, 1)
+z_index = -100
+position = Vector2(1002, 520)
+scale = Vector2(3, 3)
+texture = ExtResource("11_ka43y")
+
+[node name="Boards" type="StaticBody2D" parent="." unique_id=897642293]
+unique_name_in_owner = true
+collision_layer = 22
+collision_mask = 31
+
+[node name="BoardsCollision" type="CollisionPolygon2D" parent="Boards" unique_id=1201619783]
+unique_name_in_owner = true
+visible = false
+build_mode = 1
+polygon = PackedVector2Array(106, 305, 104, 725, 144, 857, 262, 936, 1725, 929, 1834, 894, 1909, 792, 1918, 724, 1921, 269, 1845, 181, 1755, 138, 1685, 136, 286, 134, 206, 157, 152, 208)
+
+[node name="HomeGoal" type="StaticBody2D" parent="." unique_id=1254396325]
+collision_layer = 22
+collision_mask = 31
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="HomeGoal" unique_id=1814601784]
+build_mode = 1
+polygon = PackedVector2Array(319, 426, 289, 437, 268, 468, 260, 515, 268, 563, 272, 597, 298, 621, 331, 614, 325, 622, 282, 594, 277, 565, 272, 512, 277, 475, 292, 448)
+
+[node name="Goal" parent="HomeGoal" unique_id=1121408243 instance=ExtResource("8_6d2ki")]
+position = Vector2(301, 509)
+
+[node name="AwayGoal" type="StaticBody2D" parent="." unique_id=877925233]
+collision_layer = 22
+collision_mask = 31
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="AwayGoal" unique_id=1503644293]
+position = Vector2(2023, 1051)
+scale = Vector2(-1, -1)
+build_mode = 1
+polygon = PackedVector2Array(329, 434, 289, 437, 268, 468, 260, 515, 268, 563, 272, 597, 298, 621, 325, 633, 328, 629, 282, 594, 277, 565, 272, 512, 277, 475, 292, 448)
+
+[node name="Goal2" parent="AwayGoal" unique_id=289303226 instance=ExtResource("8_6d2ki")]
+position = Vector2(1710, 516)
+
+[node name="PenaltyBox" type="StaticBody2D" parent="." unique_id=1714978849]
+collision_layer = 22
+collision_mask = 31
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="PenaltyBox" unique_id=1474749175]
+position = Vector2(-0.25683594, 860.322)
+build_mode = 1
+polygon = PackedVector2Array(900, 135, 900, 50, 1100, 50, 1100, 135)
+
+[node name="Line2D" type="Line2D" parent="PenaltyBox" unique_id=969076514]
+position = Vector2(-0.25683594, 860.322)
+points = PackedVector2Array(1100, 50, 1100, 135, 900, 135, 900, 50)
+width = 5.0
+default_color = Color(0, 0, 0, 1)
+
+[node name="HomeBench" type="Area2D" parent="." unique_id=191701502]
+collision_layer = 9
+collision_mask = 9
+script = ExtResource("10_jkole")
+home = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HomeBench" unique_id=2107940131]
+position = Vector2(554.25, 137.5)
+shape = SubResource("RectangleShape2D_4jwb7")
+
+[node name="AwayBench" type="Area2D" parent="." unique_id=274359506]
+collision_layer = 9
+collision_mask = 9
+script = ExtResource("10_jkole")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AwayBench" unique_id=131011547]
+position = Vector2(1452, 151)
+shape = SubResource("RectangleShape2D_4jwb7")
+
+[node name="Lights" type="Node2D" parent="." unique_id=1881172458]
+unique_name_in_owner = true
+
+[node name="Light1" type="PointLight2D" parent="Lights" unique_id=2008568119]
+position = Vector2(638.1423, 801.724)
+color = Color(1, 0, 0.24564552, 1)
+energy = 2.0
+texture = SubResource("GradientTexture2D_6d2ki")
+height = 8.0
+
+[node name="Light2" type="PointLight2D" parent="Lights" unique_id=1697791339]
+position = Vector2(1036.3894, 260.0924)
+color = Color(0.48514813, 0.2971665, 0.12292649, 1)
+energy = 2.0
+texture = SubResource("GradientTexture2D_6d2ki")
+height = 8.0
+
+[node name="Light3" type="PointLight2D" parent="Lights" unique_id=895278428]
+position = Vector2(1475.7749, 637.8594)
+color = Color(0.9662165, 1, 0.95977885, 1)
+energy = 2.0
+texture = SubResource("GradientTexture2D_6d2ki")
+height = 8.0
+
+[node name="CanvasModulate" type="CanvasModulate" parent="." unique_id=1007415911]
+color = Color(0.43632764, 0.43632764, 0.43632764, 1)
+
+[connection signal="body_entered" from="HomeBench" to="HomeBench" method="_on_bench_body_entered"]
+[connection signal="body_entered" from="AwayBench" to="AwayBench" method="_on_bench_body_entered"]

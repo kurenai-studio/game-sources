@@ -1,0 +1,109 @@
+[gd_scene format=3 uid="uid://df7s0j21e1h8c"]
+
+[ext_resource type="Theme" uid="uid://c0b4q46jrp2me" path="res://menu/theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://b3tgj4rrlq8bn" path="res://menu/score_recap.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://cg1i3w702x3cu" path="res://sprites/rink.png" id="3_rink"]
+
+[sub_resource type="Gradient" id="Gradient_r7j8k"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_b0n7h"]
+gradient = SubResource("Gradient_r7j8k")
+fill_from = Vector2(0.45964918, 0.4415079)
+fill_to = Vector2(1, 0.91265035)
+
+[node name="ScoreRecap" type="Control" unique_id=1364791258]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1850469752]
+modulate = Color(0.2, 0.2, 0.2, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_b0n7h")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Background2" type="TextureRect" parent="." unique_id=672831956]
+modulate = Color(0.2, 0.2, 0.2, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_rink")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1210787917]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=747005268]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="CenterContainer/VBoxContainer" unique_id=131567667]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 48
+text = "FINAL SCORE"
+horizontal_alignment = 1
+
+[node name="ScoreLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=1662137892]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 64
+text = "0 - 0"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/VBoxContainer" unique_id=4746353]
+custom_minimum_size = Vector2(400, 200)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="StatsContainer" type="VBoxContainer" parent="CenterContainer/VBoxContainer/ScrollContainer" unique_id=54877639]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Buttons" type="HBoxContainer" parent="CenterContainer/VBoxContainer" unique_id=1785340324]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Rematch" type="Button" parent="CenterContainer/VBoxContainer/Buttons" unique_id=725844692]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Rematch"
+
+[node name="Continue" type="Button" parent="CenterContainer/VBoxContainer/Buttons" unique_id=484326118]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Continue"
+
+[node name="Menu" type="Button" parent="CenterContainer/VBoxContainer/Buttons" unique_id=484326117]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Main Menu"
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Buttons/Rematch" to="." method="_on_rematch_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Buttons/Continue" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Buttons/Menu" to="." method="_on_menu_pressed"]

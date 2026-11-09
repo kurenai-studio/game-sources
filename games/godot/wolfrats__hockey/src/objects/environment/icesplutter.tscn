@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://d2pdhhcqe2dae"]
+
+[ext_resource type="Script" uid="uid://oubcufmtymr4" path="res://objects/environment/icesplutter.gd" id="1_l8lq1"]
+
+[sub_resource type="Gradient" id="Gradient_l8lq1"]
+colors = PackedColorArray(0.28861377, 0.70951235, 0.84313726, 1, 1, 1, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_s5ldt"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_s5ldt"]
+width = 4
+height = 4
+noise = SubResource("FastNoiseLite_s5ldt")
+color_ramp = SubResource("Gradient_l8lq1")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_s5ldt"]
+particle_flag_disable_z = true
+angle_min = 4.000011
+angle_max = 12.0000105
+direction = Vector3(3, -5, 0)
+spread = 32.932
+initial_velocity_min = 60.0
+initial_velocity_max = 120.0
+gravity = Vector3(0, 98, 0)
+linear_accel_min = -24.04
+linear_accel_max = 54.209995
+
+[node name="Icesputter" type="GPUParticles2D" unique_id=1578832223]
+y_sort_enabled = true
+emitting = false
+amount = 20
+texture = SubResource("NoiseTexture2D_s5ldt")
+one_shot = true
+explosiveness = 0.6
+randomness = 0.1
+visibility_rect = Rect2(-100, -100, 2000, 2000)
+local_coords = true
+trail_enabled = true
+process_material = SubResource("ParticleProcessMaterial_s5ldt")
+script = ExtResource("1_l8lq1")
+
+[connection signal="finished" from="." to="." method="_on_finished"]
