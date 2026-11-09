@@ -1,0 +1,34 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="UXML Template InputPrompt" src="project://database/Assets/UI%20Toolkit/Data/UXML%20Template%20InputPrompt.uxml?fileID=9197481963319205126&amp;guid=0eeb9c9e4d8124749964225e8427fb7c&amp;type=3#UXML Template InputPrompt" />
+    <Style src="project://database/Assets/UI%20Toolkit/Data/USS%20Buttons.uss?fileID=7433441132597879392&amp;guid=d716d25c552436147ac3616116eaa900&amp;type=3#USS Buttons" />
+    <ui:VisualElement style="width: 100%; height: 100%;">
+        <ui:VisualElement name="img-background" style="position: absolute; width: 100%; height: 100%; -unity-background-scale-mode: scale-and-crop; display: none;" />
+        <ui:VisualElement name="center-flex-wrapper" style="justify-content: center; align-items: center; width: 100%; height: 100%;">
+            <ui:VisualElement style="align-items: center; position: absolute; transition-property: scale; transition-duration: 0.1s; transition-timing-function: ease-out-sine;">
+                <ui:VisualElement name="top-flex-wrapper" style="width: 100%; justify-content: space-between; align-items: center; flex-direction: row;">
+                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                        <ui:VisualElement name="img-bomb" style="background-image: url(&apos;project://database/Assets/Sprites/bomb.png?fileID=2800000&amp;guid=1908ef1091c36254892fc20c02d6b419&amp;type=3#bomb&apos;); height: 80px; width: 80px;" />
+                        <ui:Label text="123" name="label-bomb-remaining" style="font-size: 100px; -unity-text-align: middle-left; width: 200px;" />
+                    </ui:VisualElement>
+                    <ui:Button name="btn-restart" style="padding-left: 10px; padding-right: 10px; padding-top: 10px; padding-bottom: 10px;">
+                        <ui:VisualElement style="background-image: url(&apos;project://database/Assets/UI%20Toolkit/UnityThemes/UnityDefaultRuntimeTheme.tss?fileID=2346436936791262179&amp;guid=f1d7111921a9bfb4e8b1dc3cba453162&amp;type=3#console.infoicon&apos;); width: 100px; height: 100px;" />
+                    </ui:Button>
+                    <ui:VisualElement style="flex-direction: row; align-items: center;">
+                        <ui:Label text="123" name="label-elapsed-time" style="font-size: 100px; -unity-text-align: middle-right; width: 200px;" />
+                        <ui:VisualElement name="img-stopwatch" style="background-image: url(&apos;project://database/Assets/Sprites/stopwatch_23f1-fe0f.png?fileID=2800000&amp;guid=f9e663c346e3a614d86b8526843d8d59&amp;type=3#stopwatch_23f1-fe0f&apos;); width: 80px; height: 80px;" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="grid" style="width: 900px; height: 900px; flex-wrap: wrap; flex-direction: row;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Button text="Menu" name="btn-menu" class="btn bg-primary-hoverable color-white-hoverable" style="position: absolute; left: 50px; top: 50px;" />
+        <ui:VisualElement picking-mode="Ignore" style="position: absolute; width: 100%; height: 100%;">
+            <ui:VisualElement name="help-panel" style="background-color: rgba(0, 0, 0, 0.25); width: 450px; top: 50%; translate: 0 -50%; border-top-left-radius: 20px; border-bottom-left-radius: 20px; border-top-right-radius: 20px; border-bottom-right-radius: 20px; left: -400px; transition-property: left; transition-duration: 0.5s;">
+                <ui:VisualElement name="list" picking-mode="Ignore">
+                    <ui:Instance template="UXML Template InputPrompt" name="UXML Template InputPrompt" />
+                </ui:VisualElement>
+                <ui:VisualElement name="btn-help" style="position: absolute; right: 0; top: 50%; width: 69px; height: 69px; translate: 50% -50%; background-image: url(&apos;project://database/Assets/Sprites/sos-button_1f198.png?fileID=2800000&amp;guid=f483f06e264575f47a3e457b25233b37&amp;type=3#sos-button_1f198&apos;); background-color: rgba(228, 228, 228, 0);" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
