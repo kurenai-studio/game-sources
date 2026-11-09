@@ -1,0 +1,39 @@
+{
+  "exclude": [
+    "obj/*",
+    "bin/*",
+    "*/Ex*.png",
+    "Tiled/*.png"
+  ],
+  "logSkipped": true,
+  "references": ["MonoGame.Extended.Content.Pipeline", "FreeTexturePackerPipeline", "FreeTexturePackerReader"],
+  "overrides": {
+    "*/Copy.*": {
+      "copy": true
+    },
+    "*/*set.json": {
+      "importer": "TexturePackerJsonImporter",
+      "processor": "TexturePackerProcessor"
+    },
+    "*/*.fx": {
+      "importer": "EffectImporter",
+      "processor": "EffectProcessor"
+    },
+    "*/*.json": {
+      "copy": true
+    },
+    "*/*.ogg": {
+      "importer": "OggImporter",
+      "processor": "SongProcessor"
+    },
+    "sounds/*.wav": {
+      "importer": "WavImporter",
+      "processor": "SoundEffectProcessor"
+    },
+    "*/*.png": {
+      "processorParams": {
+        "TextureFormat": "NoChange"
+      }
+    }
+  }
+}
