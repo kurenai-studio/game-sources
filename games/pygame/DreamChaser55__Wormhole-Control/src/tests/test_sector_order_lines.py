@@ -1,0 +1,828 @@
+from player_controller import PlayerController
+from unittest.mock import MagicMock, patch
+import pytest
+from display_config import DisplayConfig
+from domain.units import Unit
+from domain.players import Player
+from unit_orders.base import OrderType
+from constants import HullSize, BLUE
+from geometry import Position
+from unit_components.commander import Commander
+from rendering.sector_renderer import SectorViewRenderer
+from rendering.system_renderer import SystemViewRenderer
+from rendering.galaxy_renderer import GalaxyViewRenderer
+
+def test_draw_sector_view_draws_lines_for_all_turn_player_units():
+    # 1. Setup mock game, players, and renderer
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    player2 = Player("Player 2", (255, 0, 0), controller=PlayerController.HUMAN)
+    game.players = [player1, player2]
+    game.current_player_index = 0  # Player 1's turn
+    game.current_system_name = "Sol"
+    game.current_sector_coord = (0, 0)
+    game.selected_objects = []
+    game.sector_view_mouse_hover_object = None
+    game.is_dragging_selection_box = False
+
+    renderer = SectorViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_size.return_value = (1920, 1080)
+    renderer.overlay_surface = MagicMock()
+
+    # 2. Setup StarSystem and Hex
+    system = MagicMock()
+    game.galaxy.systems = {"Sol": system}
+    hex_obj = MagicMock()
+    system.hexes = {(0, 0): hex_obj}
+
+    # 3. Create units with distinct positions
+    # Unit 1: Owned by current turn player (Player 1), has move target, NOT selected/hovered
+    unit1 = Unit(player1, Position(10, 10), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    from unit_components.movement import Engines
+    engines1 = Engines(unit1, speed=10)
+    engines1.move_target = Position(50, 50)
+    unit1.add_component(engines1)
+
+    # Unit 2: Owned by other player (Player 2), has move target, NOT selected/hovered (should NOT draw lines)
+    unit2 = Unit(player2, Position(20, 20), (0, 0), "Sol", "Unit 2", HullSize.MEDIUM, game)
+    engines2 = Engines(unit2, speed=10)
+    engines2.move_target = Position(50, 50)
+    unit2.add_component(engines2)
+
+    # Unit 3: Owned by other player (Player 2), has move target, IS selected (should draw lines)
+    unit3 = Unit(player2, Position(30, 30), (0, 0), "Sol", "Unit 3", HullSize.MEDIUM, game)
+    engines3 = Engines(unit3, speed=10)
+    engines3.move_target = Position(50, 50)
+    unit3.add_component(engines3)
+    game.selected_objects = [unit3]
+
+    hex_obj.celestial_bodies = []
+    hex_obj.units = [unit1, unit2, unit3]
+
+    # Patch pygame.draw functions and sector_coords_to_pixels to return the logical pos coordinates
+    with patch("pygame.draw.line") as mock_draw_line, \
+         patch("pygame.draw.circle"), \
+         patch("pygame.draw.lines"), \
+         patch("pygame.draw.rect"), \
+         patch("pygame.draw.polygon"), \
+         patch("rendering.sector_renderer.sector_grid_renderer.sector_coords_to_pixels", side_effect=lambda p, *args, **kwargs: p), \
+         patch("rendering.sector_renderer.sector_entity_renderer.draw_shape"), \
+         patch("pygame.font.Font"), \
+         patch("pygame.mouse.get_pos", return_value=(0, 0)):
+
+        renderer.draw_sector_view()
+
+        # Extract start coordinate of drawn line calls (the 3rd argument in pygame.draw.line)
+        starts = [call[0][2] for call in mock_draw_line.call_args_list]
+
+        # Unit 1's starting position (10, 10) must be drawn
+        assert (10, 10) in starts
+        # Unit 3's starting position (30, 30) must NOT be drawn (as it is owned by a different player, even though selected)
+        assert (30, 30) not in starts
+        # Unit 2's starting position (20, 20) must NOT be drawn (not turn player, not selected/hovered)
+        assert (20, 20) not in starts
+
+
+def test_system_view_order_lines_only_for_active_player():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    player2 = Player("Player 2", (255, 0, 0), controller=PlayerController.HUMAN)
+    game.players = [player1, player2]
+    game.current_player_index = 0  # Player 1's turn
+    game.current_system_name = "Sol"
+    game.system_view_mouse_hover_hex = None
+
+    renderer = SystemViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.overlay_surface = MagicMock()
+
+    system = MagicMock()
+    system.name = "Sol"
+    system.hexes = {(0, 0): MagicMock()}
+    system.get_units_in_hex.return_value = []
+    game.galaxy.systems = {"Sol": system}
+
+    # Unit 1: Player 1 (active player), selected, has order
+    unit1 = Unit(player1, Position(10, 10), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    commander1 = MagicMock()
+    order1 = MagicMock()
+    order1.order_type = OrderType.MOVE
+    order1.parent_order = None
+    order1.sub_orders = []
+    order1.parameters = {"destination_system_name": "Sol", "destination_hex_coord": (1, 1)}
+    commander1.current_order = order1
+    commander1.orders_queue = []
+    unit1.components[Commander] = commander1
+
+    # Unit 2: Player 2 (inactive player), selected, has order
+    unit2 = Unit(player2, Position(20, 20), (0, 0), "Sol", "Unit 2", HullSize.MEDIUM, game)
+    commander2 = MagicMock()
+    order2 = MagicMock()
+    order2.order_type = OrderType.MOVE
+    order2.parent_order = None
+    order2.sub_orders = []
+    order2.parameters = {"destination_system_name": "Sol", "destination_hex_coord": (2, 2)}
+    commander2.current_order = order2
+    commander2.orders_queue = []
+    unit2.components[Commander] = commander2
+
+    game.selected_objects = [unit1, unit2]
+
+    # Patch system_renderer drawing functions
+    with patch("rendering.system_renderer.pygame.draw.line") as mock_draw_line, \
+         patch("rendering.system_renderer.pygame.draw.circle"), \
+         patch("rendering.system_renderer.hex_to_pixel", side_effect=lambda q, r, *args, **kwargs: Position(q * 10, r * 10)):
+
+         renderer._draw_system_view_order_lines(system)
+
+         # Extract end coordinate of drawn line calls (the 4th argument in pygame.draw.line)
+         ends = [call[0][3] for call in mock_draw_line.call_args_list]
+
+         # Unit 1's destination (1, 1) -> (10, 10) in hex coords must be drawn
+         assert (10, 10) in ends
+         # Unit 2's destination (2, 2) -> (20, 20) in hex coords must NOT be drawn (since Player 2 is not active)
+         assert (20, 20) not in ends
+
+
+def test_galaxy_view_order_lines_only_for_active_player():
+    game = MagicMock()
+    game.galaxy_zoom = 1.0
+    game.galaxy_pan_offset = Position(0, 0)
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    player2 = Player("Player 2", (255, 0, 0), controller=PlayerController.HUMAN)
+    game.players = [player1, player2]
+    game.current_player_index = 0  # Player 1's turn
+    game.current_system_name = "Sol"
+
+    renderer = GalaxyViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.overlay_surface = MagicMock()
+
+    sol_system = MagicMock()
+    sol_system.name = "Sol"
+    sol_system.position = Position(0, 0)
+
+    proxima_system = MagicMock()
+    proxima_system.name = "Proxima"
+    proxima_system.position = Position(100, 100)
+
+    game.galaxy.systems = {"Sol": sol_system, "Proxima": proxima_system}
+
+    # Unit 1: Player 1 (active player), selected, has reach waypoint order
+    unit1 = Unit(player1, Position(0, 0), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    commander1 = MagicMock()
+    order1 = MagicMock()
+    order1.order_type = OrderType.REACH_WAYPOINT
+    order1.parent_order = None
+    order1.sub_orders = []
+    order1.parameters = {"destination_system_name": "Proxima"}
+    commander1.current_order = order1
+    commander1.orders_queue = []
+    unit1.components[Commander] = commander1
+
+    # Unit 2: Player 2 (inactive player), selected, has reach waypoint order
+    unit2 = Unit(player2, Position(0, 0), (0, 0), "Sol", "Unit 2", HullSize.MEDIUM, game)
+    commander2 = MagicMock()
+    order2 = MagicMock()
+    order2.order_type = OrderType.REACH_WAYPOINT
+    order2.parent_order = None
+    order2.sub_orders = []
+    order2.parameters = {"destination_system_name": "Proxima"}
+    commander2.current_order = order2
+    commander2.orders_queue = []
+    unit2.components[Commander] = commander2
+
+    game.selected_objects = [unit1, unit2]
+
+    # Patch galaxy_renderer drawing functions
+    with patch("rendering.galaxy_renderer.pygame.draw.line") as mock_draw_line, \
+         patch("rendering.galaxy_renderer.logical_to_screen_galaxy", side_effect=lambda pos, rect, zoom, pan: pos):
+
+         renderer.draw_galaxy_view_order_lines()
+
+         # Since Unit 1 targets Proxima (100, 100) and is active, it must be drawn.
+         # If both units were drawn, we would have 6 line calls (3 lines per unit).
+         # Since only Unit 1 is active, we expect 3 line calls.
+         assert len(mock_draw_line.call_args_list) == 3
+
+
+@pytest.mark.parametrize("zoom", [0.1, 1.0, 4.0])
+@pytest.mark.parametrize("logical_radius", [1.0, 150.0, 900.0])
+def test_draw_sector_view_draws_four_corner_selection_brackets(zoom, logical_radius):
+    from unit_components.movement import Engines
+    # Setup mock game, player, and renderer
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    game.display_config = DisplayConfig(1920, 1080, False)
+    game.sector_zoom = zoom
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    game.players = [player1]
+    game.current_player_index = 0
+    game.current_system_name = "Sol"
+    game.current_sector_coord = (0, 0)
+    game.sector_view_mouse_hover_object = None
+    game.is_dragging_selection_box = False
+
+    renderer = SectorViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_size.return_value = (1920, 1080)
+    renderer.overlay_surface = MagicMock()
+
+    # Setup StarSystem and Hex
+    system = MagicMock()
+    game.galaxy.systems = {"Sol": system}
+    hex_obj = MagicMock()
+    system.hexes = {(0, 0): hex_obj}
+
+    # Create selected Unit
+    unit = Unit(player1, Position(10, 10), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    unit.add_component(Engines(unit))
+    unit.max_hit_points = 0  # set to 0 to avoid extra healthbar draw lines
+    game.selected_objects = [unit]
+    hex_obj.celestial_bodies = []
+    hex_obj.units = [unit]
+
+    # Patch pygame.draw functions and sector_coords_to_pixels to return the logical pos coordinates
+    with patch("pygame.draw.line"), \
+         patch("pygame.draw.circle"), \
+         patch("pygame.draw.lines") as mock_draw_lines, \
+         patch("pygame.draw.rect"), \
+         patch("pygame.draw.polygon"), \
+         patch("rendering.sector_renderer.sector_grid_renderer.sector_coords_to_pixels", side_effect=lambda p, *args, **kwargs: p), \
+         patch("rendering.sector_renderer.sector_entity_renderer.draw_shape"), \
+         patch("pygame.font.Font"), \
+         patch.object(renderer.entity_renderer, "draw_unit", return_value=logical_radius):
+
+        renderer.draw_sector_view()
+
+        # Selection brackets should call pygame.draw.lines exactly 4 times (one for each corner)
+        assert len(mock_draw_lines.call_args_list) == 4
+
+        # Extract the coordinate list arguments from mock_draw_lines (the 4th argument)
+        called_points_lists = [call[0][3] for call in mock_draw_lines.call_args_list]
+
+        from constants import SECTOR_CIRCLE_RADIUS_LOGICAL
+        expected_pixel_radius = int(logical_radius * game.display_config.sector_radius * zoom / SECTOR_CIRCLE_RADIUS_LOGICAL)
+        r = expected_pixel_radius + 5
+        tick_length = (2 * r) / 4
+
+        left = 10 - r
+        right = 10 + r
+        top = 10 - r
+        bottom = 10 + r
+
+        expected_corners = [
+            [(left + tick_length, top), (left, top), (left, top + tick_length)],
+            [(right - tick_length, top), (right, top), (right, top + tick_length)],
+            [(left + tick_length, bottom), (left, bottom), (left, bottom - tick_length)],
+            [(right - tick_length, bottom), (right, bottom), (right, bottom - tick_length)]
+        ]
+
+        # Verify that all expected corner paths are in the called_points_lists (regardless of order)
+        for expected in expected_corners:
+            assert expected in called_points_lists
+
+        for call in mock_draw_lines.call_args_list:
+            surface, color, closed, points, width = call.args
+            assert surface is renderer.overlay_surface
+            assert color == (51, 51, 255)
+            assert closed is False
+            assert width == 2
+            horizontal_end, corner, vertical_end = points
+            assert abs(horizontal_end[0] - corner[0]) / (right - left) == pytest.approx(0.25)
+            assert abs(vertical_end[1] - corner[1]) / (bottom - top) == pytest.approx(0.25)
+
+
+def test_draw_sector_view_draws_turn_notches():
+    # Setup mock game, player, and renderer
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    game.players = [player1]
+    game.current_player_index = 0
+    game.current_system_name = "Sol"
+    game.current_sector_coord = (0, 0)
+    game.sector_view_mouse_hover_object = None
+    game.is_dragging_selection_box = False
+
+    renderer = SectorViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_size.return_value = (1920, 1080)
+    renderer.overlay_surface = MagicMock()
+
+    # Setup StarSystem and Hex
+    system = MagicMock()
+    game.galaxy.systems = {"Sol": system}
+    hex_obj = MagicMock()
+    system.hexes = {(0, 0): hex_obj}
+
+    # Create Unit with engines
+    unit = Unit(player1, Position(0, 0), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    unit.max_hit_points = 0  # avoid healthbar rendering
+    
+    from unit_components.movement import Engines
+    engines = Engines(unit, speed=10.0)
+    # Give it a move target
+    engines.move_target = Position(35.0, 0.0)
+    unit.add_component(engines)
+    
+    hex_obj.celestial_bodies = []
+    hex_obj.units = [unit]
+
+    # Patch pygame.draw functions and sector_coords_to_pixels to return the logical pos coordinates
+    with patch("pygame.draw.line") as mock_draw_line, \
+         patch("pygame.draw.circle"), \
+         patch("pygame.draw.lines"), \
+         patch("pygame.draw.rect"), \
+         patch("pygame.draw.polygon"), \
+         patch("rendering.sector_renderer.sector_grid_renderer.sector_coords_to_pixels", side_effect=lambda p, *args, **kwargs: p), \
+         patch("rendering.sector_renderer.sector_entity_renderer.draw_shape"), \
+         patch("pygame.font.Font"):
+
+        renderer.draw_sector_view()
+
+        # Let's see the arguments for mock_draw_line.
+        # The main movement line is drawn from (0,0) to (35,0).
+        # The notches are drawn perpendicular to this line at intervals of 10.0.
+        # Since the line is on the x-axis, the notches will be vertical lines at x=10, x=20, x=30.
+        drawn_lines = [call[0] for call in mock_draw_line.call_args_list]
+        
+        found_notches = 0
+        for draw_call in drawn_lines:
+            # draw_call is (surface, color, p_start, p_end, width)
+            p_start, p_end = draw_call[2], draw_call[3]
+            if (p_start == (10, 4) and p_end == (10, -4)) or (p_start == (10, -4) and p_end == (10, 4)):
+                found_notches += 1
+            elif (p_start == (20, 4) and p_end == (20, -4)) or (p_start == (20, -4) and p_end == (20, 4)):
+                found_notches += 1
+            elif (p_start == (30, 4) and p_end == (30, -4)) or (p_start == (30, -4) and p_end == (30, 4)):
+                found_notches += 1
+                
+        assert found_notches == 3
+
+
+def test_system_view_wormhole_lines():
+    from hexgrid_utils import hex_to_pixel
+
+    # Setup mock game, player, and renderer
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    game.current_system_name = "Sol"
+    game.system_view_mouse_hover_hex = None
+    game.selected_objects = []
+    game.system_zoom = 1.0
+    game.system_pan_offset = Position(0, 0)
+    
+    renderer = SystemViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_height.return_value = 720
+    renderer.overlay_surface = MagicMock()
+
+    # Setup StarSystem and Hex with a Wormhole
+    system = MagicMock()
+    system.name = "Sol"
+    system.radius = 3
+    
+    hex_obj = MagicMock()
+    from domain.celestials import Wormhole
+    wh = Wormhole(in_hex=(3, 0), in_system="Sol", exit_system_name="Vega")
+    hex_obj.celestial_bodies = [wh]
+    hex_obj.units = []
+    
+    system.hexes = {(3, 0): hex_obj}
+    game.galaxy.systems = {"Sol": system}
+    
+    # Keep real hex geometry so the wormhole lies inside the system boundary
+    # at every display resolution. Mock only the drawing operations.
+    with patch("rendering.system_renderer.pygame.draw.line") as mock_draw_line, \
+         patch("rendering.system_renderer.pygame.draw.polygon"), \
+         patch("rendering.system_renderer.pygame.draw.circle"), \
+         patch("rendering.system_renderer.pygame.font.Font") as mock_font:
+         
+         # Setup mock font behavior
+         mock_font_instance = MagicMock()
+         mock_font.return_value = mock_font_instance
+         mock_text_surface = MagicMock()
+         mock_font_instance.render.return_value = mock_text_surface
+         mock_text_rect = MagicMock()
+         mock_text_surface.get_rect.return_value = mock_text_rect
+         
+         wormhole_pixel = hex_to_pixel(3, 0)
+         
+         renderer.draw_system_view()
+         
+         # The route extends horizontally outward from the wormhole to the edge.
+         assert mock_draw_line.call_count == 1
+         call_args = mock_draw_line.call_args_list[0][0]
+         # call_args: (surface, color, start_pos, end_pos, width)
+         # Verify color is WORMHOLE_LINE_COLOR
+         from constants import WORMHOLE_LINE_COLOR
+         assert call_args[1] == WORMHOLE_LINE_COLOR
+         # Verify start_pos is the wormhole center.
+         assert call_args[2] == wormhole_pixel.to_tuple()
+         # Verify end_pos.x is greater than start_pos.x (since it extends outwards)
+         assert call_args[3][0] > wormhole_pixel.x
+         # Verify end_pos.y is unchanged (since dy = 0).
+         assert call_args[3][1] == wormhole_pixel.y
+         # Verify width is 2
+         assert call_args[4] == 2
+
+         # Verify font is created and text is rendered with destination name
+         mock_font.assert_called_once()
+         mock_font_instance.render.assert_called_once_with("Vega", True, WORMHOLE_LINE_COLOR)
+
+         # Verify the text rect is correctly aligned based on ux > 0.3 (should be midleft)
+         mock_text_surface.get_rect.assert_called_once()
+         # Verify screen.blit was called to draw the text
+         renderer.screen.blit.assert_called_once_with(mock_text_surface, mock_text_rect)
+
+
+def test_draw_sector_view_patrol_order_path():
+    # 1. Setup mock game, player, and renderer
+    game = MagicMock()
+    game.sector_zoom = 1.0
+    game.sector_pan_offset = Position(0, 0)
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    game.players = [player1]
+    game.current_player_index = 0  # Player 1's turn
+    game.current_system_name = "Sol"
+    game.current_sector_coord = (0, 0)
+    game.selected_objects = []
+    game.sector_view_mouse_hover_object = None
+    game.is_dragging_selection_box = False
+
+    renderer = SectorViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_size.return_value = (1920, 1080)
+    renderer.overlay_surface = MagicMock()
+
+    # 2. Setup StarSystem and Hex
+    system = MagicMock()
+    game.galaxy.systems = {"Sol": system}
+    hex_obj = MagicMock()
+    system.hexes = {(0, 0): hex_obj}
+
+    # 3. Create Unit with Commander component and PatrolOrder
+    unit = Unit(player1, Position(10, 10), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    unit.max_hit_points = 0  # avoid healthbar rendering
+    
+    commander = MagicMock()
+    unit.components[Commander] = commander
+    
+    # Mock PatrolOrder
+    patrol_order = MagicMock()
+    patrol_order.order_type = OrderType.PATROL
+    patrol_order.parameters = {
+        "waypoints": [
+            {"system_name": "Sol", "hex_coord": (0, 0), "position": Position(100, 10)},
+            {"system_name": "Sol", "hex_coord": (0, 0), "position": Position(200, 10)}
+        ]
+    }
+    patrol_order.start_position = Position(10, 10)
+    patrol_order.start_system_name = "Sol"
+    patrol_order.start_hex_coord = (0, 0)
+    patrol_order.current_waypoint_index = 0
+    
+    # Add a MoveOrder sub-order (which should be skipped)
+    sub_move = MagicMock()
+    sub_move.order_type = OrderType.MOVE
+    sub_move.parameters = {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(100, 10)
+    }
+    sub_move.sub_orders = []
+    patrol_order.sub_orders = [sub_move]
+    
+    commander.current_order = patrol_order
+    commander.orders_queue = []
+    
+    hex_obj.celestial_bodies = []
+    hex_obj.units = [unit]
+
+    # Patrol lines now go through draw_dotted_line (not pygame.draw.line directly).
+    # We patch draw_dotted_line in the sector_renderer module and inspect its start/end args.
+    with patch("pygame.draw.line"), \
+         patch("pygame.draw.circle"), \
+         patch("pygame.draw.lines"), \
+         patch("pygame.draw.rect"), \
+         patch("pygame.draw.polygon"), \
+         patch("rendering.sector_renderer.sector_grid_renderer.sector_coords_to_pixels", side_effect=lambda p, *args, **kwargs: p), \
+         patch("rendering.sector_renderer.sector_entity_renderer.draw_shape"), \
+         patch("rendering.sector_renderer.sector_overlay_renderer.draw_dotted_line") as mock_draw_dotted_line, \
+         patch("pygame.font.Font"), \
+         patch("pygame.mouse.get_pos", return_value=(0, 0)):
+
+        def dotted_coords():
+            """Return (start, end) tuples from all draw_dotted_line calls."""
+            result = []
+            for c in mock_draw_dotted_line.call_args_list:
+                args = c[0]  # positional args: surface, color, start, end, ...
+                start = args[2]
+                end = args[3]
+                # Normalise Position objects to (x, y) tuples
+                s = (start.x, start.y) if hasattr(start, 'x') else (float(start[0]), float(start[1]))
+                e = (end.x, end.y) if hasattr(end, 'x') else (float(end[0]), float(end[1]))
+                result.append((s, e))
+            return result
+
+        # CASE 1: current_waypoint_index = 0
+        patrol_order.current_waypoint_index = 0
+        renderer.draw_sector_view()
+        
+        # Patrol lines should trace the closed loop from the unit's current position:
+        # Unit (10,10) -> W1 (100,10) -> W2 (200,10) -> S (10,10) -> W1 (100,10)
+        # Each segment is drawn as a dotted line via draw_dotted_line.
+        coords = dotted_coords()
+        assert ((10.0, 10.0), (100.0, 10.0)) in coords
+        assert ((100.0, 10.0), (200.0, 10.0)) in coords
+        assert ((200.0, 10.0), (10.0, 10.0)) in coords
+        
+        # Reset mock
+        mock_draw_dotted_line.reset_mock()
+        
+        # CASE 2: current_waypoint_index = 1
+        patrol_order.current_waypoint_index = 1
+        renderer.draw_sector_view()
+        
+        # Expected: Unit (10,10) -> W2 (200,10) -> S (10,10) -> W1 (100,10) -> W2 (200,10)
+        coords = dotted_coords()
+        assert ((10.0, 10.0), (200.0, 10.0)) in coords
+        assert ((200.0, 10.0), (10.0, 10.0)) in coords
+        assert ((10.0, 10.0), (100.0, 10.0)) in coords
+        assert ((100.0, 10.0), (200.0, 10.0)) in coords
+
+
+def test_sector_view_movement_with_sub_orders_draws_sequential_lines():
+    """Verify that a movement order with sub-orders (e.g. avoidance waypoints)
+    draws a single sequential path unit -> W1 -> W2 -> D without extra lines to D."""
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    game.players = [player1]
+    game.current_player_index = 0
+    game.current_system_name = "Sol"
+    game.current_sector_coord = (0, 0)
+    game.selected_objects = []
+    game.sector_view_mouse_hover_object = None
+    game.is_dragging_selection_box = False
+
+    renderer = SectorViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_size.return_value = (1920, 1080)
+    renderer.overlay_surface = MagicMock()
+
+    system = MagicMock()
+    game.galaxy.systems = {"Sol": system}
+    hex_obj = MagicMock()
+    system.hexes = {(0, 0): hex_obj}
+
+    unit = Unit(player1, Position(0, 0), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    unit.max_hit_points = 0
+
+    from unit_components.commander import Commander
+    from unit_components.movement import Engines
+    commander = Commander(unit)
+    engines = Engines(unit, speed=100.0)
+    unit.add_component(commander)
+    unit.add_component(engines)
+
+    # Parent MoveOrder to (500, 500)
+    from unit_orders.movement import MoveOrder, ReachWaypointOrder
+    move_order = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(500, 500)
+    })
+
+    # Sub-orders: W1=(100, 100), W2=(200, 200), D=(500, 500)
+    sub1 = ReachWaypointOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(100, 100)
+    }, parent_order=move_order)
+    sub2 = ReachWaypointOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(200, 200)
+    }, parent_order=move_order)
+    sub3 = ReachWaypointOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(500, 500)
+    }, parent_order=move_order)
+
+    move_order.add_sub_order(sub1)
+    move_order.add_sub_order(sub2)
+    move_order.add_sub_order(sub3)
+
+    commander.current_order = move_order
+    commander.orders_queue = []
+    hex_obj.celestial_bodies = []
+    hex_obj.units = [unit]
+
+    # 1. Verify waypoint collection order
+    waypoints = renderer.overlay_renderer.collect_all_waypoints(unit)
+    assert len(waypoints) == 3
+    assert waypoints[0]['position'] == Position(100, 100)
+    assert waypoints[1]['position'] == Position(200, 200)
+    assert waypoints[2]['position'] == Position(500, 500)
+
+    # 2. Verify drawn lines
+    with patch("pygame.draw.line") as mock_draw_line, \
+         patch("pygame.draw.circle"), \
+         patch("pygame.draw.lines"), \
+         patch("pygame.draw.rect"), \
+         patch("pygame.draw.polygon"), \
+         patch("rendering.sector_renderer.sector_grid_renderer.sector_coords_to_pixels", side_effect=lambda p, *args, **kwargs: p), \
+         patch("rendering.sector_renderer.sector_entity_renderer.draw_shape"), \
+         patch("pygame.font.Font"), \
+         patch("pygame.mouse.get_pos", return_value=(0, 0)):
+
+        renderer.draw_sector_view()
+
+        def line_pairs():
+            result = []
+            for call in mock_draw_line.call_args_list:
+                args = call[0]
+                s = args[2]
+                e = args[3]
+                s_tup = (s.x, s.y) if hasattr(s, 'x') else (float(s[0]), float(s[1]))
+                e_tup = (e.x, e.y) if hasattr(e, 'x') else (float(e[0]), float(e[1]))
+                result.append((s_tup, e_tup))
+            return result
+
+        drawn = line_pairs()
+        # Should contain sequential segments:
+        # Unit (0, 0) -> W1 (100, 100)
+        assert ((0.0, 0.0), (100.0, 100.0)) in drawn
+        # W1 (100, 100) -> W2 (200, 200)
+        assert ((100.0, 100.0), (200.0, 200.0)) in drawn
+        # W2 (200, 200) -> D (500, 500)
+        assert ((200.0, 200.0), (500.0, 500.0)) in drawn
+
+        # Should NOT contain direct line from Unit (0, 0) to D (500, 500)
+        assert ((0.0, 0.0), (500.0, 500.0)) not in drawn
+        # Should NOT contain line from D (500, 500) to W1 (100, 100)
+        assert ((500.0, 500.0), (100.0, 100.0)) not in drawn
+
+
+def test_sector_view_attack_with_move_sub_order_sequential():
+    """Verify that an attack order with a movement sub-order draws unit -> move_pos -> target."""
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    player2 = Player("Player 2", (255, 0, 0), controller=PlayerController.OPENAI)
+    game.players = [player1, player2]
+    game.current_player_index = 0
+    game.current_system_name = "Sol"
+    game.current_sector_coord = (0, 0)
+    game.selected_objects = []
+    game.sector_view_mouse_hover_object = None
+    game.is_dragging_selection_box = False
+
+    renderer = SectorViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_size.return_value = (1920, 1080)
+    renderer.overlay_surface = MagicMock()
+
+    system = MagicMock()
+    game.galaxy.systems = {"Sol": system}
+    hex_obj = MagicMock()
+    system.hexes = {(0, 0): hex_obj}
+
+    unit = Unit(player1, Position(0, 0), (0, 0), "Sol", "Attacker", HullSize.MEDIUM, game)
+    unit.max_hit_points = 0
+    target_unit = Unit(player2, Position(400, 400), (0, 0), "Sol", "Target", HullSize.MEDIUM, game)
+    target_unit.id = 999
+    game.galaxy.get_unit_by_id = MagicMock(return_value=target_unit)
+
+    from unit_components.commander import Commander
+    from unit_components.movement import Engines
+    commander = Commander(unit)
+    engines = Engines(unit, speed=100.0)
+    unit.add_component(commander)
+    unit.add_component(engines)
+
+    from unit_orders.combat import AttackOrder
+    from unit_orders.movement import MoveOrder, ReachWaypointOrder
+    attack_order = AttackOrder(unit, {"target_unit_id": 999})
+    move_sub = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(300, 300)
+    }, parent_order=attack_order)
+    wp_sub = ReachWaypointOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(300, 300)
+    }, parent_order=move_sub)
+    move_sub.add_sub_order(wp_sub)
+    attack_sub = AttackOrder(unit, {"target_unit_id": 999}, parent_order=attack_order)
+
+    attack_order.add_sub_order(move_sub)
+    attack_order.add_sub_order(attack_sub)
+    commander.current_order = attack_order
+    commander.orders_queue = []
+
+    waypoints = renderer.overlay_renderer.collect_all_waypoints(unit)
+    assert len(waypoints) == 2
+    assert waypoints[0]['position'] == Position(300, 300)
+    assert waypoints[0]['order_type'] == OrderType.REACH_WAYPOINT
+    assert waypoints[1]['position'] == Position(400, 400)
+    assert waypoints[1]['order_type'] == OrderType.ATTACK
+
+
+def test_sector_view_queued_orders_without_sub_orders_sequential():
+    """Verify that current order and queued order without sub-orders chain sequentially."""
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    player1 = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    game.players = [player1]
+    game.current_player_index = 0
+    game.current_system_name = "Sol"
+    game.current_sector_coord = (0, 0)
+    game.selected_objects = []
+    game.sector_view_mouse_hover_object = None
+    game.is_dragging_selection_box = False
+
+    renderer = SectorViewRenderer(game)
+    renderer.screen = MagicMock()
+    renderer.screen.get_size.return_value = (1920, 1080)
+    renderer.overlay_surface = MagicMock()
+
+    system = MagicMock()
+    game.galaxy.systems = {"Sol": system}
+    hex_obj = MagicMock()
+    system.hexes = {(0, 0): hex_obj}
+
+    unit = Unit(player1, Position(0, 0), (0, 0), "Sol", "Unit 1", HullSize.MEDIUM, game)
+    unit.max_hit_points = 0
+
+    from unit_components.commander import Commander
+    from unit_components.movement import Engines
+    commander = Commander(unit)
+    engines = Engines(unit, speed=100.0)
+    unit.add_component(commander)
+    unit.add_component(engines)
+
+    from unit_orders.movement import MoveOrder, ReachWaypointOrder
+    current_move = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(100, 100)
+    })
+    sub1 = ReachWaypointOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(100, 100)
+    }, parent_order=current_move)
+    current_move.add_sub_order(sub1)
+
+    queued_move = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(200, 200)
+    })
+
+    commander.current_order = current_move
+    commander.orders_queue = [queued_move]
+    hex_obj.celestial_bodies = []
+    hex_obj.units = [unit]
+
+    waypoints = renderer.overlay_renderer.collect_all_waypoints(unit)
+    assert len(waypoints) == 2
+    assert waypoints[0]['position'] == Position(100, 100)
+    assert waypoints[1]['position'] == Position(200, 200)
+
+    with patch("pygame.draw.line") as mock_draw_line, \
+         patch("pygame.draw.circle"), \
+         patch("pygame.draw.lines"), \
+         patch("pygame.draw.rect"), \
+         patch("pygame.draw.polygon"), \
+         patch("rendering.sector_renderer.sector_grid_renderer.sector_coords_to_pixels", side_effect=lambda p, *args, **kwargs: p), \
+         patch("rendering.sector_renderer.sector_entity_renderer.draw_shape"), \
+         patch("pygame.font.Font"), \
+         patch("pygame.mouse.get_pos", return_value=(0, 0)):
+
+        renderer.draw_sector_view()
+
+        def line_pairs():
+            result = []
+            for call in mock_draw_line.call_args_list:
+                args = call[0]
+                s = args[2]
+                e = args[3]
+                s_tup = (s.x, s.y) if hasattr(s, 'x') else (float(s[0]), float(s[1]))
+                e_tup = (e.x, e.y) if hasattr(e, 'x') else (float(e[0]), float(e[1]))
+                result.append((s_tup, e_tup))
+            return result
+
+        drawn = line_pairs()
+        assert ((0.0, 0.0), (100.0, 100.0)) in drawn
+        assert ((100.0, 100.0), (200.0, 200.0)) in drawn

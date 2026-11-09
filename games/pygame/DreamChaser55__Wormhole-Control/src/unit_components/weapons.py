@@ -1,0 +1,446 @@
+import logging
+import math
+import typing
+from typing import Optional, TYPE_CHECKING
+import dataclasses
+
+from .base import UnitComponent
+from .enums import TurretType, TurretVariant, WingType
+from geometry import distance
+from constants import (
+    HullSize, XP_WEAPON_DAMAGE_BONUS
+)
+
+if TYPE_CHECKING:
+    from domain.units import Unit
+    from galaxy import Galaxy
+    from game import Game
+
+logger = logging.getLogger(__name__)
+
+BASE_TURRET_COST: float = 1.0          # flat per turret
+DMG_PER_POINT: float = 5.0             # hull points per unit of damage
+RANGE_PER_POINT: float = 100.0         # hull points per unit of range
+COOLDOWN_BONUS: float = 2.0            # hull points granted by short cooldown
+COMPONENT_TARGET_RANGE_MULTIPLIER: float = 0.5
+
+
+def targeting_range(turret_range: float, target_component_type: Optional[type] = None) -> float:
+    """Range for the selected target, using already variant-scaled turret range."""
+    return turret_range * COMPONENT_TARGET_RANGE_MULTIPLIER if target_component_type is not None else turret_range
+
+
+def turret_numeric_errors(values, path="turret", *, include_current_cooldown=False):
+    """Validate design or effective saved stats without scaling or mutation.
+
+    These are persistence invariants, not balance limits: zero and fractional
+    damage/range are valid, while both cooldown counters require integers.
+    """
+    from state_codec import number
+    errors = []
+    names = ("damage", "range", "cooldown")
+    if include_current_cooldown:
+        names += ("current_cooldown",)
+    for name in names:
+        try:
+            number(values.get(name), f"{path}.{name}", 0, integer="cooldown" in name)
+        except ValueError as exc:
+            errors.append(str(exc))
+        except OverflowError:
+            errors.append(f"{path}.{name}: must be finite.")
+    return errors
+
+
+@dataclasses.dataclass
+class Turret:
+    """
+    A dataclass representing a single turret on a unit.
+    This is not a component, but a data structure used by the Weapons component.
+    """
+    turret_type: TurretType
+    damage: float
+    range: float
+    cooldown: int
+    parent_unit: 'Unit'
+    variant: TurretVariant = TurretVariant.STANDARD
+    current_cooldown: int = 0
+    target: Optional['Unit'] = None
+    target_component_type: Optional[type] = None
+
+    @property
+    def effective_cooldown(self) -> int:
+        """Reset duration if fired here; never rewrite base or remaining cooldown."""
+        from environmental_effects import modifiers_for_unit
+        if self.cooldown <= 0:
+            return self.cooldown
+        reduction = modifiers_for_unit(self.parent_unit).cooldown_reduction
+        return max(1, self.cooldown - reduction)
+
+    def __post_init__(self) -> None:
+        if self.variant == TurretVariant.LONG_RANGE:
+            self.range *= 3.0
+            self.cooldown *= 3
+
+    def to_state(self):
+        from state_codec import encode
+        return {name: encode(getattr(self, name)) for name in
+                ("turret_type", "variant", "damage", "range", "cooldown", "current_cooldown")}
+
+    @classmethod
+    def from_state(cls, data, unit):
+        from state_codec import decode, fields
+        fields(data, ("turret_type", "variant", "damage", "range", "cooldown", "current_cooldown"), "turret")
+        values = {k: decode(v) for k, v in data.items()}
+        if not isinstance(values["turret_type"], TurretType) or not isinstance(values["variant"], TurretVariant):
+            raise ValueError("Invalid turret type or variant")
+        errors = turret_numeric_errors(values, include_current_cooldown=True)
+        if errors:
+            raise ValueError("; ".join(errors))
+        # The save contains effective values. Do not apply variant scaling again.
+        turret = cls.__new__(cls)
+        turret.__dict__.update(values, parent_unit=unit, target=None, target_component_type=None)
+        return turret
+
+    def fire(self) -> None:
+        """
+        Fires at the turret's current target and resets the cooldown.
+        Damage is amplified if the target is marked by Designate Target.
+        The parent unit earns XP equal to the actual damage dealt.
+        """
+        if self.target:
+            # Apply damage amplification from Designate Target (stacks additively)
+            effective_damage = self.damage
+            if self.target.damage_amplification > 0.0:
+                effective_damage = self.damage * (1.0 + self.target.damage_amplification)
+
+            # Apply XP weapon damage bonus from the firing unit
+            effective_damage *= self.parent_unit.xp_multiplier(XP_WEAPON_DAMAGE_BONUS)
+
+            # Apply Orbital Defense attack bonus if within active friendly aura
+            if hasattr(self.parent_unit, 'get_orbital_defense_buffs'):
+                od_atk_bonus, _ = self.parent_unit.get_orbital_defense_buffs()
+                if od_atk_bonus > 0.0:
+                    effective_damage *= (1.0 + od_atk_bonus)
+
+            # Apply weapons sabotage damage reduction
+            if hasattr(self.parent_unit, 'is_sabotaged'):
+                from .enums import SabotageType
+                if self.parent_unit.is_sabotaged(SabotageType.WEAPONS):
+                    effective_damage *= 0.5
+
+            # Anti-strikecraft damage reduced to 25% against other targets
+            if self.variant == TurretVariant.ANTI_STRIKECRAFT and self.target.hull_size != HullSize.STRIKECRAFT_WING:
+                effective_damage *= 0.25
+
+            from strikecraft_abilities import outgoing_multiplier
+            effective_damage *= outgoing_multiplier(self.parent_unit, self.target, self)
+
+            # Record target HP before damage to compute actual damage dealt for XP
+            hp_before = self.target.current_hit_points
+
+            from tactical_abilities import combat_hit
+            combat_hit(self.target, int(effective_damage), self.turret_type, component_type=self.target_component_type, attacker=self.parent_unit)
+
+            # Award XP based on actual HP lost (overkill damage does not grant bonus XP)
+            xp_earned = max(0, hp_before - self.target.current_hit_points)
+            if xp_earned > 0:
+                self.parent_unit.gain_experience(xp_earned)
+
+        self.current_cooldown = self.effective_cooldown
+
+    def update(self) -> None:
+        """
+        Updates the turret's state, primarily its cooldown.
+        """
+        if self.current_cooldown > 0:
+            self.current_cooldown -= 1
+
+
+class Weapons(UnitComponent):
+    """
+    Manages all weapon systems for a unit.
+    """
+    STATE_CONFIG = ()
+    STATE_RUNTIME = ()
+    STATE_REFS = ()
+    STATE_EXTRA = ("turrets",)
+
+    def _extra_state(self):
+        return {"turrets": [t.to_state() for t in self.turrets]}
+
+    def _restore_extra_state(self, runtime):
+        if not isinstance(runtime["turrets"], list):
+            raise ValueError("turrets: expected array")
+        self.turrets = [Turret.from_state(t, self.unit) for t in runtime["turrets"]]
+
+    DISPLAY_NAME: str = "Weapons"
+    SIDEBAR_ORDER: int = 1
+    turrets: list[Turret] = dataclasses.field(default_factory=list)
+
+    def __init__(self, unit: 'Unit', hull_cost: float = 0.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.turrets = []
+
+    @staticmethod
+    def calc_turret_hull_cost(turret: typing.Any) -> float:
+        """Compute the hull cost of a single turret based on its stats."""
+        effective_range = turret.range
+        effective_cooldown = max(1, turret.cooldown)
+
+        variant_val = getattr(turret, "variant", "")
+        variant_name = variant_val.name if hasattr(variant_val, "name") else str(variant_val)
+        if variant_name.upper() == "LONG_RANGE":
+            effective_range *= 3.0
+            effective_cooldown *= 3
+
+        cost = (
+            BASE_TURRET_COST
+            + turret.damage / DMG_PER_POINT
+            + effective_range / RANGE_PER_POINT
+            + COOLDOWN_BONUS / effective_cooldown
+        )
+        return float(cost)
+
+    @staticmethod
+    def calc_hull_cost(turrets: typing.List[typing.Any]) -> float:
+        """Compute the total hull cost of a Weapons component from its turrets."""
+        if not turrets:
+            return 0.0
+        # Canonical catalog costs must not depend on Python's sum() algorithm.
+        return math.fsum(Weapons.calc_turret_hull_cost(t) for t in turrets)
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_sidebar_data(game_state)
+        from component_visibility import unit_details_are_public_in_game
+        show_targets = unit_details_are_public_in_game(self.unit, game_state)
+        xp = self.unit.experience_points
+        xp_dmg_mult = self.unit.xp_multiplier(XP_WEAPON_DAMAGE_BONUS)
+        for i, turret in enumerate(self.turrets):
+            if i > 0:
+                # Add a small vertical space between turrets
+                data.append({
+                    'type': 'label',
+                    'text': '',
+                    'object_id': '#sidebar_info_label',
+                    'height': 5,
+                    'indent_level': 1
+                })
+            
+            variant_str = turret.variant.name.replace('_', ' ').title()
+            type_str = turret.turret_type.name.replace('_', ' ').title()
+            
+            header_text = f"• Turret {i + 1}: {variant_str} {type_str}"
+            data.append({
+                'type': 'label',
+                'text': header_text,
+                'object_id': '#sidebar_info_label',
+                'height': 20,
+                'indent_level': 1
+            })
+            
+            galaxy_ref = getattr(game_state, 'galaxy', None) if game_state else None
+            od_atk_bonus, _ = self.unit.get_orbital_defense_buffs(galaxy_ref) if hasattr(self.unit, 'get_orbital_defense_buffs') else (0.0, 0.0)
+            total_mult = xp_dmg_mult * (1.0 + od_atk_bonus)
+            effective_dmg = turret.damage * total_mult
+            bonus_parts = []
+            if xp > 0:
+                bonus_parts.append(f"+{int((xp_dmg_mult - 1.0) * 100)}% XP")
+            if od_atk_bonus > 0:
+                bonus_parts.append(f"+{int(od_atk_bonus * 100)}% OD")
+            if bonus_parts:
+                stats_text = f"Damage: {turret.damage} ({', '.join(bonus_parts)} → {effective_dmg:.1f}) | Range: {turret.range} | Cooldown: {turret.cooldown}t"
+            else:
+                stats_text = f"Damage: {turret.damage} | Range: {turret.range} | Cooldown: {turret.cooldown}t"
+            data.append({
+                'type': 'label',
+                'text': stats_text + f" | Reset here: {turret.effective_cooldown}t",
+                'object_id': '#sidebar_info_label',
+                'height': 18,
+                'indent_level': 2
+            })
+            
+            cooldown_status = f"On Cooldown ({turret.current_cooldown}t)" if turret.current_cooldown > 0 else "Ready"
+            
+            target_str = "None"
+            if show_targets and turret.target:
+                if turret.target_component_type:
+                    comp_name = getattr(turret.target_component_type, 'DISPLAY_NAME', turret.target_component_type.__name__)
+                    target_str = f"{turret.target.name} ({comp_name})"
+                else:
+                    target_str = f"{turret.target.name} (Hull)"
+                    
+            status_text = f"Status: {cooldown_status}"
+            if show_targets:
+                status_text += f" | Target: {target_str}"
+            data.append({
+                'type': 'label',
+                'text': status_text,
+                'object_id': '#sidebar_info_label',
+                'height': 18,
+                'indent_level': 2
+            })
+        return data
+
+    def get_basic_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_basic_sidebar_data(game_state)
+        if self.is_destroyed:
+            return data
+
+        if not self.turrets:
+            data.append({
+                'type': 'label',
+                'text': "• Turrets: None",
+                'object_id': '#sidebar_status_idle_label',
+                'height': 18,
+                'indent_level': 1
+            })
+            return data
+
+        xp_dmg_mult = self.unit.xp_multiplier(XP_WEAPON_DAMAGE_BONUS)
+        data.append({
+            'type': 'label',
+            'text': f"• Turrets ({len(self.turrets)}):",
+            'object_id': '#sidebar_component_header_label',
+            'height': 18,
+            'indent_level': 1
+        })
+        for i, turret in enumerate(self.turrets, 1):
+            variant_str = turret.variant.name.replace('_', ' ').title()
+            type_str = turret.turret_type.name.replace('_', ' ').title()
+            eff_dmg = turret.damage * xp_dmg_mult
+            cd_str = f" [CD: {turret.current_cooldown}t]" if turret.current_cooldown > 0 else ""
+            turret_obj_id = '#sidebar_status_charging_label' if turret.current_cooldown > 0 else '#sidebar_value_label'
+            data.append({
+                'type': 'label',
+                'text': f"Turret {i}: {variant_str} {type_str} (Dmg {eff_dmg:.1f}, Rng {int(turret.range)}){cd_str}",
+                'object_id': turret_obj_id,
+                'height': 18,
+                'indent_level': 2
+            })
+        return data
+
+
+    def add_turret(self, turret: Turret) -> None:
+        """
+        Adds a pre-configured turret to the unit.
+        """
+        self.turrets.append(turret)
+
+    def eligible_turrets_for(self, target_unit: Optional['Unit'], *, long_range_only: bool = False) -> list[Turret]:
+        """Return the turrets whose hull/wing rules permit this target."""
+        if not target_unit or self.is_destroyed:
+            return []
+        return [t for t in self.turrets
+                if (not long_range_only or t.variant == TurretVariant.LONG_RANGE)
+                and self.turret_accepts_hull(t, target_unit.hull_size)]
+
+    def turret_accepts_hull(self, turret: Turret, hull_size: HullSize) -> bool:
+        """Hardware target-class policy, independent of current operational state."""
+        if hull_size == HullSize.STRIKECRAFT_WING and turret.variant != TurretVariant.ANTI_STRIKECRAFT:
+            return False
+        if self.unit.hull_size == HullSize.STRIKECRAFT_WING:
+            wing = self.unit.strikecraft_wing_component
+            if wing:
+                if wing.wing_type == WingType.FIGHTER and hull_size != HullSize.STRIKECRAFT_WING:
+                    return False
+                if wing.wing_type == WingType.BOMBER and hull_size == HullSize.STRIKECRAFT_WING:
+                    return False
+        return True
+
+    def update(self, galaxy: 'Galaxy') -> None:
+        """
+        Updates all turrets and fires only when the current order hierarchy has
+        an active Attack order for the turret's cached target.
+        """
+        if self.is_destroyed:
+            self.clear_target()
+            return
+
+        from strikecraft_abilities import wing_order
+        run = wing_order(self.unit, 'attack_run')
+        if run:
+            run.update(galaxy)
+
+        for turret in self.turrets:
+            turret.update()
+
+        from titan_abilities import charging
+        if charging(self.unit):
+            self.clear_target()
+            return
+        commander = self.unit.commander_component
+        active_attack = commander.get_active_attack_order() if commander else None
+        visibility_snapshot = None
+        if active_attack and self.unit.owner and galaxy:
+            from visibility import VisibilityService
+            visibility_snapshot = VisibilityService.compute(galaxy, self.unit.owner, record_intel=False)
+        if commander:
+            commander.cancel_hidden_attack(galaxy, visibility_snapshot)
+            active_attack = commander.get_active_attack_order()
+        if active_attack is None:
+            self.clear_target()
+            return
+
+        authorized_target_id = active_attack.parameters.get("target_unit_id")
+        for turret in self.turrets:
+            if (
+                turret.target is not None
+                and turret.target.id != authorized_target_id
+            ):
+                turret.target = None
+                turret.target_component_type = None
+
+        for turret in self.turrets:
+            if turret.target:
+                from domain.players import are_enemies
+                if not are_enemies(self.unit.owner, turret.target.owner):
+                    turret.target = None
+                    turret.target_component_type = None
+                    continue
+                if turret not in self.eligible_turrets_for(turret.target):
+                    turret.target = None
+                    turret.target_component_type = None
+                    continue
+                if turret.target.current_hit_points <= 0:
+                    turret.target = None
+                    turret.target_component_type = None
+                    continue
+
+                if visibility_snapshot is not None:
+                    from visibility import is_unit_visible
+                    if not is_unit_visible(visibility_snapshot, turret.target):
+                        turret.target = None
+                        turret.target_component_type = None
+                        continue
+
+                target_in_same_system = self.unit.in_system == turret.target.in_system
+                target_in_same_hex = self.unit.in_hex == turret.target.in_hex
+                target_in_range = distance(self.unit.position, turret.target.position) < targeting_range(
+                    turret.range, turret.target_component_type)
+
+                if target_in_same_system and target_in_same_hex and target_in_range:
+                    if turret.current_cooldown <= 0:
+                        turret.fire()
+
+        if run and run.status.name == 'IN_PROGRESS' and run.phase == 'release':
+            run.finish_salvo()
+
+    def set_target(self, target_unit: 'Unit', target_component_type: Optional[type] = None) -> None:
+        """Sets the target of the turrets to the specified unit and optionally a specific component."""
+        from domain.players import are_enemies
+        eligible_ids = {id(turret) for turret in self.eligible_turrets_for(target_unit)} if (
+            target_unit and are_enemies(self.unit.owner, target_unit.owner)
+        ) else set()
+        for turret in self.turrets:
+            if id(turret) in eligible_ids:
+                turret.target = target_unit
+                turret.target_component_type = target_component_type
+            else:
+                turret.target = None
+                turret.target_component_type = None
+    
+    def clear_target(self) -> None:
+        """Clears the target of the turrets."""
+        for turret in self.turrets:
+            turret.target = None
+            turret.target_component_type = None

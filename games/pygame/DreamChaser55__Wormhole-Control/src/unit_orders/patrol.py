@@ -1,0 +1,233 @@
+from unit_orders.base import OrderTargetField
+import logging
+from game_logging import format_unit_for_log
+from typing import Dict, Optional, Any, TYPE_CHECKING
+
+from domain.coordinates import HexCoord
+from geometry import Position, distance
+from .base import Order, OrderStatus, OrderType
+from .movement import MoveOrder
+from .combat import AttackOrder, discard_lost_attack_engagement
+
+if TYPE_CHECKING:
+    from galaxy import Galaxy
+    from domain.units import Unit
+
+logger = logging.getLogger(__name__)
+
+
+class PatrolOrder(Order):
+    target_fields = (OrderTargetField('target_unit_id', 'unit', public=True),)
+
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.PATROL, parameters, parent_order)
+        self.start_system_name = None
+        self.start_hex_coord = None
+        self.start_position = None
+        self.patrol_phase = "TO_TARGET" # "TO_TARGET" or "TO_START"
+        self.current_waypoint_index = 0
+
+        if "waypoints" not in self.parameters and all(key in self.parameters for key in ("destination_position", "destination_system_name", "destination_hex_coord")):
+            self.parameters["waypoints"] = [{
+                "system_name": self.parameters["destination_system_name"],
+                "hex_coord": self.parameters["destination_hex_coord"],
+                "position": self.parameters["destination_position"]
+            }]
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        from location_validation import validate_order
+        if not validate_order(self, galaxy_ref):
+            return
+        super().execute(galaxy_ref)
+        if "waypoints" not in self.parameters:
+            self.parameters["waypoints"] = [{"system_name": self.parameters["destination_system_name"], "hex_coord": self.parameters["destination_hex_coord"], "position": self.parameters["destination_position"]}]
+        self.start_system_name = self.unit.in_system
+        self.start_hex_coord = self.unit.in_hex
+        self.start_position = Position(self.unit.position.x, self.unit.position.y)
+        self.current_waypoint_index = 0
+        self._spawn_move_to_current_waypoint()
+
+    def _spawn_move_to_current_waypoint(self) -> None:
+        wps = self.parameters.get("waypoints", [])
+        if not wps:
+            self.status = OrderStatus.FAILED
+            return
+
+        num_wps = len(wps)
+        idx = self.current_waypoint_index
+        if idx < num_wps:
+            self.patrol_phase = "TO_TARGET"
+            wp = wps[idx]
+            move_params = {
+                "destination_system_name": wp["system_name"],
+                "destination_hex_coord": wp["hex_coord"],
+                "destination_position": wp["position"]
+            }
+        else:
+            self.patrol_phase = "TO_START"
+            move_params = {
+                "destination_system_name": self.start_system_name,
+                "destination_hex_coord": self.start_hex_coord,
+                "destination_position": self.start_position
+            }
+        self.add_sub_order(MoveOrder(self.unit, move_params, parent_order=self))
+
+    def add_waypoint(self, system_name: str, hex_coord: HexCoord, position: Position) -> None:
+        from location_validation import location
+        system_name, hex_coord, position = location(system_name, hex_coord, position, getattr(self.unit.game, "galaxy", None))
+        if "waypoints" not in self.parameters:
+            self.parameters["waypoints"] = []
+            if "destination_position" in self.parameters:
+                self.parameters["waypoints"].append({
+                    "system_name": self.parameters["destination_system_name"],
+                    "hex_coord": self.parameters["destination_hex_coord"],
+                    "position": self.parameters["destination_position"]
+                })
+
+        old_len = len(self.parameters["waypoints"])
+        self.parameters["waypoints"].append({
+            "system_name": system_name,
+            "hex_coord": hex_coord,
+            "position": position
+        })
+
+        if self.status == OrderStatus.IN_PROGRESS:
+            if getattr(self, "current_waypoint_index", 0) == old_len:
+                self.current_waypoint_index = old_len + 1
+
+    def get_state_data(self) -> Dict[str, Any]:
+        state_data = super().get_state_data()
+        state_data["current_waypoint_index"] = getattr(self, "current_waypoint_index", 0)
+        if "waypoints" in self.parameters:
+            state_data["parameters"]["waypoints"] = self.parameters["waypoints"]
+        return state_data
+
+    def get_persistence_state(self) -> Dict[str, Any]:
+        return {
+            **super().get_persistence_state(),
+            "start_system_name": self.start_system_name,
+            "start_hex_coord": self.start_hex_coord,
+            "start_position": self.start_position,
+            "patrol_phase": self.patrol_phase,
+            "current_waypoint_index": self.current_waypoint_index,
+        }
+
+    def restore_persistence_state(self, state: Dict[str, Any]) -> None:
+        super().restore_persistence_state(state)
+        self.start_system_name = state["start_system_name"]
+        self.start_hex_coord = state["start_hex_coord"]
+        self.start_position = state["start_position"]
+        self.patrol_phase = state["patrol_phase"]
+        self.current_waypoint_index = int(state["current_waypoint_index"])
+
+    def _find_nearby_enemy(self, galaxy_ref: 'Galaxy') -> Optional['Unit']:
+        weapons = self.unit.weapons_component
+        if not weapons or weapons.is_destroyed or not weapons.turrets:
+            return None
+
+        system = galaxy_ref.systems.get(self.unit.in_system)
+        if not system:
+            return None
+
+        hex_obj = system.hexes.get(self.unit.in_hex)
+        if not hex_obj:
+            return None
+
+        closest_enemy = None
+        min_dist = float('inf')
+
+        visibility_snapshot = None
+        if self.unit.owner and galaxy_ref:
+            from visibility import VisibilityService
+            turn_num = getattr(getattr(self.unit, 'game', None), 'turn_number', None)
+            if turn_num is None:
+                turn_num = getattr(galaxy_ref, 'turn_number', 1)
+                if hasattr(galaxy_ref, 'game') and hasattr(galaxy_ref.game, 'turn_number'):
+                    turn_num = getattr(galaxy_ref.game, 'turn_number', 1)
+            visibility_snapshot = VisibilityService.compute(galaxy_ref, self.unit.owner, turn_number=turn_num)
+
+        from domain.players import are_enemies
+        from visibility import is_unit_visible
+        for unit in hex_obj.units:
+            if are_enemies(self.unit.owner, unit.owner) and unit.current_hit_points > 0:
+                if visibility_snapshot is not None and not is_unit_visible(visibility_snapshot, unit):
+                    continue
+
+                eligible_turrets = weapons.eligible_turrets_for(unit)
+                if not eligible_turrets:
+                    continue
+                max_range_for_unit = max(t.range for t in eligible_turrets)
+
+                dist = distance(self.unit.position, unit.position)
+                if dist <= max_range_for_unit and dist < min_dist:
+                    min_dist = dist
+                    closest_enemy = unit
+
+        return closest_enemy
+
+    def update(self, galaxy_ref: 'Galaxy') -> None:
+        if self.status != OrderStatus.IN_PROGRESS:
+            super().update(galaxy_ref)
+            return
+
+        if discard_lost_attack_engagement(self, galaxy_ref):
+            self._spawn_move_to_current_waypoint()
+
+        # Check if we are currently executing an AttackOrder
+        has_attack_order = False
+        if self.sub_orders:
+            current_sub = self.sub_orders[0]
+            if current_sub.order_type == OrderType.ATTACK:
+                has_attack_order = True
+                target_id = current_sub.parameters.get("target_unit_id")
+                galaxy = (
+                    getattr(getattr(self.unit, "game", None), "galaxy", None)
+                    or galaxy_ref
+                )
+                target_unit = galaxy.get_unit_by_id(target_id) if target_id is not None and galaxy else None
+                from domain.players import are_enemies
+                if (not target_unit or 
+                    target_unit.current_hit_points <= 0 or 
+                    not are_enemies(self.unit.owner, target_unit.owner) or
+                    target_unit.in_system != self.unit.in_system or 
+                    target_unit.in_hex != self.unit.in_hex):
+                    # Target is dead, missing, or fled the sector. Cancel the attack order.
+                    logger.debug(f"[{format_unit_for_log(self.unit)}] Patrol target lost, dead, or fled. Resuming patrol.")
+                    current_sub.cancel()
+                    self.sub_orders.popleft()
+                    # Re-route to current waypoint destination
+                    self._spawn_move_to_current_waypoint()
+                    has_attack_order = False
+
+        if not has_attack_order:
+            # Look for nearby enemies to engage
+            nearby_enemy = self._find_nearby_enemy(galaxy_ref)
+            if nearby_enemy:
+                logger.debug(f"[{format_unit_for_log(self.unit)}] Enemy detected: {format_unit_for_log(nearby_enemy)}. Engaging!")
+                # Cancel current movement sub-orders
+                for sub in list(self.sub_orders):
+                    sub.cancel()
+                self.sub_orders.clear()
+
+                # Spawn attack order
+                attack_params = {"target_unit_id": nearby_enemy.id}
+                self.add_sub_order(AttackOrder(self.unit, attack_params, parent_order=self))
+
+        super().update(galaxy_ref)
+
+    def check_completion_conditions(self) -> None:
+        if self.status != OrderStatus.IN_PROGRESS:
+            return
+
+        # If we reach here and sub-orders are empty, it means the current movement leg has finished.
+        # Transition to the next phase of the patrol loop.
+        wps = self.parameters.get("waypoints", [])
+        num_wps = len(wps)
+        self.current_waypoint_index = (self.current_waypoint_index + 1) % (num_wps + 1)
+        self._spawn_move_to_current_waypoint()
+
+        idx = self.current_waypoint_index
+        if idx < num_wps:
+            logger.debug(f"[{format_unit_for_log(self.unit)}] Patrol leg completed. Heading to waypoint {idx}: {wps[idx]['position']}")
+        else:
+            logger.debug(f"[{format_unit_for_log(self.unit)}] Patrol leg completed. Returning to start: {self.start_position}")

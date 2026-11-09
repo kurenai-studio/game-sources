@@ -1,0 +1,127 @@
+import logging
+from game_logging import format_unit_for_log
+from typing import Optional, TYPE_CHECKING
+
+from .base import UnitComponent
+from geometry import distance
+from constants import REPAIR_CREDIT_COST_PER_HP, REPAIR_RATE_PER_HULL_POINT
+
+if TYPE_CHECKING:
+    from domain.units import Unit
+    from galaxy import Galaxy
+    from game import Game
+
+logger = logging.getLogger(__name__)
+
+class RepairComponent(UnitComponent):
+    """A component that allows a unit to repair damaged friendly units."""
+    STATE_CONFIG = ('repair_rate', 'repair_range', 'credit_cost_per_hp')
+    STATE_RUNTIME = ()
+    STATE_REFS = ('target',)
+    DISPLAY_NAME: str = "Repair"
+    SIDEBAR_ORDER: int = 10
+    repair_rate: float = 10.0
+    repair_range: float = 200.0
+    credit_cost_per_hp: float = REPAIR_CREDIT_COST_PER_HP
+    target: Optional['Unit'] = None
+
+    def __init__(self, unit: 'Unit', repair_rate: float = 10.0, repair_range: float = 200.0, credit_cost_per_hp: float = REPAIR_CREDIT_COST_PER_HP, hull_cost: float = 15.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.repair_rate = repair_rate
+        self.repair_range = repair_range
+        self.credit_cost_per_hp = credit_cost_per_hp
+        self.target = None
+
+    @staticmethod
+    def calc_hull_cost(repair_rate: float) -> float:
+        """Compute the hull cost of a Repair component from repair_rate."""
+        if repair_rate <= 0:
+            return 0.0
+        return float(repair_rate / REPAIR_RATE_PER_HULL_POINT)
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_sidebar_data(game_state)
+        data.append({'type': 'label', 'text': f"Repair Rate: {self.repair_rate} HP/turn", 'object_id': '#sidebar_info_label', 'height': 20})
+        data.append({'type': 'label', 'text': f"Repair Range: {self.repair_range}", 'object_id': '#sidebar_info_label', 'height': 20})
+        from component_visibility import unit_details_are_public_in_game
+        if unit_details_are_public_in_game(self.unit, game_state):
+            target_name = self.target.name if self.target else "None"
+            data.append({'type': 'label', 'text': f"Repair Target: {target_name}", 'object_id': '#sidebar_info_label', 'height': 20})
+        return data
+
+    def get_basic_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_basic_sidebar_data(game_state)
+        if self.is_destroyed:
+            return data
+        tgt_str = f" Target: {self.target.name}" if self.target else " Idle"
+        obj_id = '#sidebar_status_active_label' if self.target else '#sidebar_status_idle_label'
+        from component_visibility import unit_details_are_public_in_game
+        show_target = unit_details_are_public_in_game(self.unit, game_state)
+        suffix = f" ({tgt_str})" if show_target else ""
+        data.append({
+            'type': 'label',
+            'text': f"• Repair Rate: {self.repair_rate:.0f} HP/t{suffix}",
+            'object_id': obj_id if show_target else '#sidebar_value_label',
+            'height': 18,
+            'indent_level': 1
+        })
+        return data
+
+
+    def set_target(self, target_unit: 'Unit') -> None:
+        self.target = target_unit
+
+    def clear_target(self) -> None:
+        self.target = None
+
+    def update(self, galaxy: 'Galaxy') -> None:
+        if self.is_destroyed:
+            return
+
+        from dismantling import offline
+        if not self.target or offline(self.unit) or offline(self.target):
+            return
+
+        target_valid = (
+            self.target.current_hit_points > 0 and
+            self.target.owner == self.unit.owner and
+            self.unit.in_system == self.target.in_system and
+            self.unit.in_hex == self.target.in_hex and
+            distance(self.unit.position, self.target.position) <= self.repair_range
+        )
+
+        if not target_valid:
+            return
+
+        needs_hull_repair = self.target.current_hit_points < self.target.max_hit_points
+        damaged_components = [c for c in self.target.components.values() if c.current_hit_points < c.max_hit_points]
+
+        if not needs_hull_repair and not damaged_components:
+            return
+
+        player = self.unit.owner
+        if player.credits <= 0:
+            logger.debug(f"Repair by {format_unit_for_log(self.unit)} on {format_unit_for_log(self.target)} halted due to insufficient credits.")
+            return
+
+        max_hp_to_repair = min(self.repair_rate, player.credits / self.credit_cost_per_hp)
+        if max_hp_to_repair < 1.0:
+            return
+
+        repair_budget = int(max_hp_to_repair)
+        hp_repaired = 0
+
+        if needs_hull_repair:
+            healed = self.target.heal_hull(repair_budget)
+            hp_repaired += healed
+            repair_budget -= healed
+
+        if repair_budget > 0 and damaged_components:
+            healed = self.target.heal_components(repair_budget)
+            hp_repaired += healed
+            repair_budget -= healed
+
+        if hp_repaired > 0:
+            cost = int(hp_repaired * self.credit_cost_per_hp)
+            player.credits = max(0, player.credits - cost)
+            logger.debug(f"Unit {format_unit_for_log(self.unit)} repaired {format_unit_for_log(self.target)} for {hp_repaired} HP, costing {cost} credits.")

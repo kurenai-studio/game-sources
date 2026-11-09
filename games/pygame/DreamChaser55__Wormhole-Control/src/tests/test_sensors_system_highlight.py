@@ -1,0 +1,227 @@
+from display_config import DisplayConfig
+from player_controller import PlayerController
+from unittest.mock import MagicMock, patch
+import pytest
+import pygame
+from constants import BLUE, HullSize, SENSOR_RANGE_HEX_FILL_COLOR, DARK_RED, SYSTEM_FOG_OF_WAR_COLOR, HEX_GRID_COLOR
+from domain.players import Player
+from domain.units import Unit
+from geometry import Position
+from rendering.system_renderer import SystemViewRenderer
+from unit_components.sensors import Sensors
+"""Tests for sensors inter-sector range hexgrid highlight in System View."""
+
+
+@pytest.fixture
+def system_renderer_setup():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    player = Player("Player 1", BLUE, controller=PlayerController.HUMAN)
+    game.players = [player]
+    game.current_player_index = 0
+    game.current_system_name = "Sol"
+    game.view_mode = 'system'
+    game.selected_unit_tab = 'components'
+    game.selected_component_name = 'Sensors'
+
+    system = MagicMock()
+    system.name = "Sol"
+    system.hexes = {
+        (0, 0): MagicMock(),
+        (1, 0): MagicMock(),
+        (0, 1): MagicMock(),
+        (3, 2): MagicMock(),
+        (10, 10): MagicMock()
+    }
+    game.galaxy.systems = {"Sol": system}
+
+    unit = Unit(player, Position(0, 0), (0, 0), "Sol", "Scout Ship", HullSize.MEDIUM, game)
+    sensors = Sensors(unit, short_range_radius=2000.0, long_range_hexes=5)
+    unit.add_component(sensors)
+    game.selected_objects = [unit]
+
+    renderer = SystemViewRenderer(game)
+    renderer.screen = pygame.Surface((800, 600))
+    renderer.overlay_surface = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+    return renderer, game, system, unit
+
+
+def test_sensors_range_highlight_drawn_when_all_conditions_met(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer._draw_sensors_range_highlight(system)
+
+        # Check hex polygon fill drawing for hexes within range (0,0), (1,0), (0,1), (3,2)
+        assert mock_draw_polygon.called
+        polygon_fill_colors = [call[0][1] for call in mock_draw_polygon.call_args_list]
+        assert SENSOR_RANGE_HEX_FILL_COLOR in polygon_fill_colors
+        # (10, 10) is distance 10 > long_range_hexes 5, so it should not be drawn
+        assert mock_draw_polygon.call_count == 4
+
+
+def test_sensors_range_highlight_hidden_when_tab_is_basic_info(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    game.selected_unit_tab = 'basic_info'
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer._draw_sensors_range_highlight(system)
+        mock_draw_polygon.assert_not_called()
+
+
+def test_sensors_range_highlight_hidden_when_other_component_selected(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    game.selected_component_name = 'Commander'
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer._draw_sensors_range_highlight(system)
+        mock_draw_polygon.assert_not_called()
+
+
+def test_sensors_range_highlight_hidden_when_view_mode_not_system(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    game.view_mode = 'sector'
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer._draw_sensors_range_highlight(system)
+        mock_draw_polygon.assert_not_called()
+
+
+def test_sensors_range_highlight_hidden_for_unit_without_sensors(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    unit.remove_component(Sensors)
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer._draw_sensors_range_highlight(system)
+        mock_draw_polygon.assert_not_called()
+
+
+def test_sensors_range_highlight_hidden_when_sensors_destroyed(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    unit.sensors_component.current_hit_points = 0
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer._draw_sensors_range_highlight(system)
+        mock_draw_polygon.assert_not_called()
+
+
+def test_sensors_range_highlight_hidden_when_long_range_hexes_zero(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    unit.sensors_component.long_range_hexes = 0
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer._draw_sensors_range_highlight(system)
+        mock_draw_polygon.assert_not_called()
+
+
+def test_enemy_presence_dark_red_hex_highlight(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    game.system_view_mouse_hover_hex = None
+
+    target_hex_obj = system.hexes[(1, 0)]
+    hidden_enemy_unit = MagicMock()
+    target_hex_obj.units = [hidden_enemy_unit]
+    game.is_unit_visible.side_effect = lambda u: u != hidden_enemy_unit
+    game.hex_has_presence.side_effect = lambda sys_name, h_coord: h_coord == (1, 0)
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer.draw_system_view()
+
+        # Verify that DARK_RED fill polygon was drawn for hex (1, 0)
+        draw_colors = [call[0][1] for call in mock_draw_polygon.call_args_list]
+        assert DARK_RED in draw_colors
+
+
+def test_system_view_out_of_range_hexes_have_grey_fog_background(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    game.system_view_mouse_hover_hex = None
+    game.is_unit_visible.return_value = True
+    game.hex_has_presence.return_value = False
+
+    # Suppose only (0, 0) and (1, 0) are in sensor range, other hexes are out of range
+    in_range = {(0, 0), (1, 0)}
+    game.get_long_range_sensor_hexes.return_value = in_range
+    game.is_hex_in_long_range_sensor.side_effect = lambda sys_name, coord: coord in in_range
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer.draw_system_view()
+
+        # Hexes out of range: (0, 1), (3, 2), (10, 10) should have SYSTEM_FOG_OF_WAR_COLOR fill
+        # That's 3 out of 5 hexes in system.hexes
+        fog_calls = [call for call in mock_draw_polygon.call_args_list if call[0][1] == SYSTEM_FOG_OF_WAR_COLOR]
+        assert len(fog_calls) == 3
+
+
+def test_system_view_grid_lines_use_brightened_hex_grid_color(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    game.system_view_mouse_hover_hex = None
+    game.is_unit_visible.return_value = True
+    game.hex_has_presence.return_value = False
+    game.get_long_range_sensor_hexes.return_value = set(system.hexes.keys())
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer.draw_system_view()
+
+        # All 5 hexes should draw borders with HEX_GRID_COLOR and width 1
+        border_calls = [
+            call for call in mock_draw_polygon.call_args_list
+            if call[0][1] == HEX_GRID_COLOR and len(call[0]) > 3 and call[0][3] == 1
+        ]
+        assert len(border_calls) == len(system.hexes)
+
+
+def test_system_view_spectator_or_no_viewer_has_no_fog(system_renderer_setup):
+    renderer, game, system, unit = system_renderer_setup
+    game.system_view_mouse_hover_hex = None
+    game.is_unit_visible.return_value = True
+    game.hex_has_presence.return_value = False
+    game.players = []
+    game.current_player_index = None
+    game.visibility = None
+    game.get_long_range_sensor_hexes.return_value = set(system.hexes.keys())
+
+    with patch.object(pygame.draw, 'polygon') as mock_draw_polygon:
+        renderer.draw_system_view()
+
+        fog_calls = [call for call in mock_draw_polygon.call_args_list if call[0][1] == SYSTEM_FOG_OF_WAR_COLOR]
+        assert len(fog_calls) == 0
+
+
+def test_visibility_snapshot_records_long_range_hexes():
+    from galaxy import Galaxy, StarSystem
+    from visibility import VisibilityService, is_hex_in_long_range_sensor
+    galaxy = Galaxy()
+    sys = StarSystem("Sol", Position(0, 0), 5)
+    galaxy.systems["Sol"] = sys
+
+    p1 = Player("P1", BLUE)
+    u = Unit(p1, Position(0, 0), (0, 0), "Sol", "Scout", HullSize.MEDIUM, MagicMock())
+    u.add_component(Sensors(u, short_range_radius=500.0, long_range_hexes=2))
+    sys.hexes[(0, 0)].units.append(u)
+
+    snapshot = VisibilityService.compute(galaxy, p1, turn_number=1, record_intel=False)
+    assert ("Sol", (0, 0)) in snapshot.long_range_hexes
+    assert ("Sol", (1, 0)) in snapshot.long_range_hexes
+    assert ("Sol", (2, 0)) in snapshot.long_range_hexes
+    assert is_hex_in_long_range_sensor(snapshot, "Sol", (0, 0)) is True
+    assert is_hex_in_long_range_sensor(snapshot, "Sol", (2, 0)) is True
+    # Distance 3 is out of range 2
+    assert ("Sol", (3, 0)) not in snapshot.long_range_hexes
+    assert is_hex_in_long_range_sensor(snapshot, "Sol", (3, 0)) is False
+
+
+def test_game_long_range_sensor_helpers():
+    from game import Game
+    game = Game.__new__(Game)
+    game.players = [Player("P1", BLUE)]
+    game.current_player_index = 0
+    from visibility import VisibilitySnapshot
+    snapshot = VisibilitySnapshot(viewer=game.players[0])
+    snapshot.long_range_hexes = {("Sol", (0, 0)), ("Sol", (1, 0))}
+    game.visibility = snapshot
+
+    assert game.is_hex_in_long_range_sensor("Sol", (0, 0)) is True
+    assert game.is_hex_in_long_range_sensor("Sol", (5, 5)) is False
+    assert game.get_long_range_sensor_hexes("Sol") == {(0, 0), (1, 0)}
+    assert game.get_long_range_sensor_hexes("Alpha Centauri") == set()

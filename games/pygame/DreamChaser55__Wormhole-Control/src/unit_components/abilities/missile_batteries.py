@@ -1,0 +1,157 @@
+import logging
+from game_logging import format_unit_for_log
+import math
+from typing import Optional, List, TYPE_CHECKING
+from geometry import Position, distance
+from constants import HullSize
+from domain.coordinates import HexCoord
+from ..enums import AbilityType, TurretType
+from ..weapons import Weapons, Turret
+from .base import AbilityDefinition, AbilityInstance
+
+if TYPE_CHECKING:
+    from galaxy import Galaxy
+    from .component import AbilityComponent
+
+logger = logging.getLogger(__name__)
+
+
+class MissileBatteriesAbility(AbilityInstance):
+    DEFINITION = AbilityDefinition(
+        ability_type=AbilityType.MISSILE_BATTERIES,
+        name="Missile Batteries",
+        description="Deploys 3 missile platforms that automatically attack enemies for 4 turns.",
+        cooldown=10,
+        duration=4,
+        range=0.0,
+        requires_target_unit=False,
+        requires_target_position=False,
+        antimatter_cost=40,
+        required_components=["has_weapon_bays"],
+    )
+
+    def on_activate(
+        self,
+        component: 'AbilityComponent',
+        galaxy: 'Galaxy',
+        target_unit_id: Optional[int] = None,
+        target_position: Optional[Position] = None,
+        target_system_name: Optional[str] = None,
+        target_hex_coord: Optional[HexCoord] = None,
+    ) -> bool:
+        spawned = self._spawn_missile_platforms(component, galaxy, self.definition.duration)
+        self.spawned_unit_ids = spawned
+        logger.debug(f"[{format_unit_for_log(component.unit)}] Missile Batteries: spawned {len(spawned)} platforms.")
+        return True
+
+    def on_turn_update(self, component: 'AbilityComponent', galaxy: 'Galaxy') -> None:
+        self._auto_target_platforms(component, galaxy)
+
+    def on_expire(self, component: 'AbilityComponent', galaxy: 'Galaxy') -> None:
+        from campaign_graph import find_unit
+        ids, self.spawned_unit_ids = self.spawned_unit_ids, []
+        for uid in ids:
+            platform = find_unit(galaxy, uid)
+            if platform and platform.is_temporary:
+                platform.destroy()
+        self.spawned_unit_ids = []
+
+    def _spawn_missile_platforms(
+        self,
+        component: 'AbilityComponent',
+        galaxy: 'Galaxy',
+        lifetime: int,
+        num_platforms: int = 3,
+        deploy_radius: float = 60.0,
+    ) -> List[int]:
+        """Spawns temporary missile platform units around the caster and returns their IDs."""
+        from domain.units import Unit
+        spawned_ids = []
+        for i in range(num_platforms):
+            angle = (2 * math.pi / num_platforms) * i
+            candidate_x = component.unit.position.x + deploy_radius * math.cos(angle)
+            candidate_y = component.unit.position.y + deploy_radius * math.sin(angle)
+            platform_pos = Position(candidate_x, candidate_y)
+
+            platform = Unit(
+                owner=component.unit.owner,
+                position=platform_pos,
+                in_hex=component.unit.in_hex,
+                in_system=component.unit.in_system,
+                name="Missile Platform",
+                hull_size=HullSize.TINY,
+                game=component.unit.game,
+            )
+            platform.lifetime = lifetime
+            platform.is_temporary = True
+
+            # Add a weapons component with a single missile turret
+            weapons_comp = Weapons(platform, hull_cost=0)
+            turret = Turret(
+                turret_type=TurretType.MISSILE,
+                damage=10.0,
+                range=300.0,
+                cooldown=2,
+                parent_unit=platform,
+            )
+            weapons_comp.add_turret(turret)
+            platform.add_component(weapons_comp)
+
+            system = galaxy.systems.get(component.unit.in_system)
+            if system:
+                system.add_unit(platform)
+                spawned_ids.append(platform.id)
+
+        return spawned_ids
+
+    def _auto_target_platforms(self, component: 'AbilityComponent', galaxy: 'Galaxy') -> None:
+        """Issue Attack orders against the nearest enemy for active missile platforms."""
+        from unit_orders.combat import AttackOrder
+        from domain.players import are_enemies
+
+        system = galaxy.systems.get(component.unit.in_system)
+        if not system:
+            return
+
+        for uid in self.spawned_unit_ids:
+            platform = galaxy.get_unit_by_id(uid)
+            if not platform or not platform.weapons_component:
+                continue
+            hex_obj = system.hexes.get(platform.in_hex)
+            if not hex_obj:
+                continue
+
+            closest_enemy = None
+            min_dist = float('inf')
+            max_range = max((t.range for t in platform.weapons_component.turrets), default=0)
+            for candidate in hex_obj.units:
+                if not are_enemies(platform.owner, candidate.owner) or candidate.current_hit_points <= 0:
+                    continue
+                d = distance(platform.position, candidate.position)
+                if d <= max_range and d < min_dist:
+                    min_dist = d
+                    closest_enemy = candidate
+
+            commander = platform.commander_component
+            active_attack = commander.get_active_attack_order() if commander else None
+            active_target_id = (
+                active_attack.parameters.get("target_unit_id")
+                if active_attack
+                else None
+            )
+
+            if closest_enemy is None:
+                if commander:
+                    commander.clear_explicit_orders()
+                else:
+                    platform.weapons_component.clear_target()
+                continue
+
+            if active_target_id == closest_enemy.id:
+                continue
+
+            if commander:
+                commander.clear_explicit_orders()
+                commander.add_order(
+                    AttackOrder(platform, {"target_unit_id": closest_enemy.id})
+                )

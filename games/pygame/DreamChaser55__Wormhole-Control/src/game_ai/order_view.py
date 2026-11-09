@@ -1,0 +1,348 @@
+"""Explicit public serializers: never reuse persistence or raw order state."""
+from __future__ import annotations
+
+from order_history import public_reason
+
+CONTINUOUS = {"stabilize_wormhole", "patrol", "protect", "defend", "continuous_mine", "continuous_resupply", "continuous_trade", "continuous_antimatter_transport"}
+
+
+def enum_name(value):
+    return str(getattr(value, "name", value)).lower() if value is not None else None
+
+
+def point(value):
+    if hasattr(value, "x") and hasattr(value, "y"):
+        return [round(value.x, 2), round(value.y, 2)]
+    return list(value) if isinstance(value, (tuple, list)) and len(value) == 2 else None
+
+
+def construction_progress(unit, order, active):
+    """Summarize the active front chain, never a queued sibling's paid job."""
+    status = enum_name(order.status)
+    if status not in {'pending', 'in_progress'}:
+        return {'phase': status}
+    if not active:
+        return {'phase': 'queued'}
+    constructor = getattr(unit, 'constructor_component', None)
+    chain, node = [], order
+    while node is not None and len(chain) < 32:
+        chain.append(node)
+        node = node.sub_orders[0] if node.sub_orders else None
+    kind = enum_name(order.order_type)
+    prefix = 'construction' if kind == 'construct' else 'refit'
+    job_id = getattr(constructor, prefix + '_order_id', None)
+    job = next((node for node in chain if node.public_id == job_id), None)
+    phase = ('building' if kind == 'construct' else 'refitting') if job else (
+        'approaching' if any(enum_name(node.order_type) == 'move' for node in chain) else 'pending')
+    progress = {'phase': phase}
+    if job:
+        progress.update(turns_completed=getattr(constructor, prefix + '_progress', 0),
+                        turns_required=getattr(constructor, 'time_to_build' if kind == 'construct' else 'refit_time', 0))
+    if not constructor or constructor.is_destroyed or getattr(unit, 'is_disabled', False):
+        progress.update(phase='stalled', waiting_reason='capability_unavailable')
+    return progress
+
+
+def journey_progress(unit, order, known_targets, known_body_ids=None):
+    """Describe the active planned leg using public intent and current equipment."""
+    from types import SimpleNamespace
+    from geometry import distance
+    from antimatter_logistics import estimate_approach
+    from visibility import VisibilityService, known_inhibition_zones
+    nodes, node = [], order
+    for _ in range(7):
+        reference = node.primary_target_reference()
+        if reference is not None:
+            allowed = known_targets
+            if known_body_ids is not None:
+                allowed = (known_body_ids if reference[0] == 'celestial' else known_targets
+                           if reference[0] == 'unit' else known_targets | known_body_ids)
+            if reference[1] not in allowed:
+                return None
+        nodes.append(node)
+        children = list(node.sub_orders)
+        if not children:
+            break
+        node = children[0]
+    moves = [node for node in nodes if enum_name(node.order_type) == 'move']
+    if not moves:
+        return None
+    params = nodes[-1].parameters
+    destination = params.get('destination_position')
+    system_name = params.get('destination_system_name')
+    coord = params.get('destination_hex_coord')
+    if destination is None or system_name is None or coord is None:
+        return None
+    galaxy = getattr(getattr(unit, 'game', None), 'galaxy', None)
+    if galaxy is None:
+        return None
+    local = unit.in_system == system_name and unit.in_hex == coord
+    drive = getattr(unit, 'hyperdrive_component', None)
+    recharge = getattr(drive, 'recharge_time_remaining', 0)
+    recharge = recharge if type(recharge) is int else 0
+    root_params = moves[0].parameters
+    final_local = (unit.in_system == root_params.get('destination_system_name')
+                   and unit.in_hex == root_params.get('destination_hex_coord'))
+    phase = 'approach'
+    if not local:
+        phase = 'recharge' if recharge > 0 else 'jump'
+    elif final_local and drive and enum_name(drive.jump_status) == 'charging':
+        phase = 'arrival'
+    sector = galaxy.systems[unit.in_system].hexes[unit.in_hex]
+    from geometry import is_point_in_circle
+    snapshot = VisibilityService.compute(galaxy, unit.owner, record_intel=False)
+    if local:
+        # Inspect the next nonlocal leg, including when the active waypoint has
+        # its own avoidance children. A system crossing follows entry approach;
+        # a sector jump may require an outward escape first.
+        next_leg = next((sibling.parameters for parent in reversed(nodes[:-1])
+                         for sibling in list(parent.sub_orders)[1:]
+                         if sibling.parameters.get('destination_system_name') is not None
+                         and (sibling.parameters['destination_system_name'] != unit.in_system
+                              or sibling.parameters.get('destination_hex_coord') != unit.in_hex)), None)
+        if next_leg and next_leg['destination_system_name'] != unit.in_system:
+            phase = 'wormhole_approach'
+        elif next_leg and any(is_point_in_circle(unit.position, zone)
+                and not is_point_in_circle(destination, zone)
+                for zone in known_inhibition_zones(sector, unit.owner, snapshot)):
+            phase = 'egress'
+    final = root_params.get('destination_position')
+    estimate = None
+    if final is not None:
+        target = SimpleNamespace(position=final, in_system=root_params['destination_system_name'],
+                                 in_hex=root_params['destination_hex_coord'])
+        estimate = estimate_approach(unit, galaxy, target, approach_range=5.0, known_only=True)
+    turns = min(10000, estimate.turns) if estimate else None
+    from custom_unit_templates import (get_sublight_antimatter_cost_per_turn,
+                                      get_hyperdrive_hex_jump_cost, get_hyperdrive_system_jump_cost)
+    from environmental_effects import sublight_speed, modifiers_for_unit
+    from movement_costs import fuel_free_sublight
+    fuel_step = 0.0
+    if local and distance(unit.position, destination) > 5.0 and not fuel_free_sublight(unit):
+        fuel_step = get_sublight_antimatter_cost_per_turn(unit.hull_size, sublight_speed(unit)) * modifiers_for_unit(unit).fuel_multiplier
+    elif not local and recharge <= 0:
+        fuel_step = (get_hyperdrive_system_jump_cost(unit.hull_size) if unit.in_system != system_name
+                     else get_hyperdrive_hex_jump_cost(unit.hull_size))
+    storage = getattr(unit, 'antimatter_component', None)
+    waiting_reason = None
+    if fuel_step > 0:
+        if storage is None or storage.is_destroyed:
+            phase, waiting_reason = 'blocked', 'storage_unavailable'
+        elif storage.current_amount < fuel_step:
+            phase, waiting_reason = 'waiting_for_fuel', 'insufficient_antimatter'
+    return {'phase': phase, 'remaining_approach_distance': round(distance(unit.position, destination), 2) if local else None,
+            'route_leg': {'system_name': system_name, 'hex_coord': point(coord), 'position': point(destination)},
+            'remaining_route_legs': len(moves[0].sub_orders),
+            'drive_status': enum_name(drive.jump_status) if drive else None,
+            'drive_recharge_owner_turns': recharge,
+            'estimated_remaining_owner_turns': turns,
+            'estimated_remaining_antimatter': round(estimate.fuel, 2) if estimate else None,
+            'next_step_antimatter': round(fuel_step, 2),
+            'waiting_reason': waiting_reason,
+            'estimate_conditional': True,
+            'estimate_note': 'Current route and equipment; assumes unchanged targets/terrain and sufficient fuel. Future blockers may delay arrival.'}
+
+
+def public_journey_progress(game, viewer, unit):
+    """Read an authorized current journey for human travel summaries."""
+    from domain.players import are_allies
+    from visibility import VisibilityService
+    from .rules import detailed_system_names, body_is_notable
+    if not are_allies(viewer, unit.owner):
+        return None
+    galaxy = getattr(game, 'galaxy', None)
+    if galaxy is None or not getattr(unit.commander_component, 'current_order', None):
+        return None
+    snapshot = VisibilityService.compute(galaxy, viewer, record_intel=False)
+    visible = [actor for system in galaxy.systems.values() for sector in system.hexes.values()
+               for actor in sector.units if are_allies(viewer, actor.owner) or actor.id in snapshot.visible_enemy_unit_ids]
+    full = detailed_system_names(galaxy, viewer, visible, snapshot.presence_hexes)
+    bodies = {body.id for name, system in galaxy.systems.items() for sector in system.hexes.values()
+              for body in sector.celestial_bodies if name in full or body_is_notable(viewer, body, snapshot)}
+    layers = order_layers(unit, 'self' if unit.owner == viewer else 'ally', {actor.id for actor in visible}, bodies)
+    return (layers.get('current_order') or {}).get('progress', {}).get('journey')
+
+
+def journey_summary_lines(journey):
+    phase = journey['phase']
+    labels = {'egress': 'Leaving inhibition field', 'wormhole_approach': 'Approaching wormhole entrance',
+              'recharge': 'Waiting for drive recharge',
+              'jump': 'Jumping to next sector', 'arrival': 'Approaching after arrival',
+              'approach': 'Approaching destination', 'waiting_for_fuel': 'Waiting for antimatter',
+              'blocked': 'Antimatter Storage unavailable'}
+    lines = [labels.get(phase, phase.replace('_', ' ').title())]
+    if phase == 'recharge':
+        lines[0] += f" ({journey['drive_recharge_owner_turns']} owner turns)"
+    if journey.get('waiting_reason'):
+        lines.append(f"Next movement step needs {journey['next_step_antimatter']:g} AM")
+    turns = journey.get('estimated_remaining_owner_turns')
+    if turns is not None:
+        lines.append(f"Estimated travel remaining: about {turns:,}{'+' if turns == 10000 else ''} owner turns")
+    else:
+        lines.append('Remaining travel estimate unavailable')
+    return lines
+
+
+def order_layers(unit, relation, visible_ids, body_ids):
+    """Return bounded public order layers without changing orders or visibility.
+
+    relation is the caller's viewer-to-unit relationship; visible_ids and body_ids
+    contain already-authorized unit/deployable and celestial IDs. Enemy units
+    return no layers. A unit without Commander returns empty layer values; self
+    and ally views include details, with editing flags restricted to owned roots.
+
+    Missing or undisclosed target references redact target IDs, parameters and
+    derived child geometry recursively. Fixed player-issued coordinates remain
+    intent. Preserve all explicit roots while bounding expanded children, depth
+    and waypoint previews, reporting omitted counts rather than raw order state.
+    """
+    if relation == "enemy":
+        return {}
+    commander = getattr(unit, "commander_component", None)
+    if commander is None:
+        return {"standing_order": None, "current_order": None, "queued_orders": []}
+    rich = relation in {"self", "ally"}
+    own = relation == "self"
+    budget = [32]
+
+    def serialize(order, origin, depth=0, redacted=False, active=False, root=True):
+        if order is None:
+            return None
+        kind = enum_name(order.order_type)
+        if root and kind == 'return_for_service':
+            origin = 'system'
+        private_agent_order = kind in {"extract_agent", "eliminate_agent"}
+        data = {"type": kind, "status": enum_name(order.status), "origin": origin}
+        if not rich:
+            return data
+        actionable = enum_name(order.status) in {"pending", "in_progress"}
+        params = getattr(order, "parameters", {})
+        reference = order.primary_target_reference()
+        target_id = reference[1] if reference is not None else None
+        target_kind = reference[0] if reference is not None else None
+        known_targets = (body_ids if target_kind == "celestial" else visible_ids
+                         if target_kind == "unit" else visible_ids | body_ids)
+        hidden = redacted or (target_id is not None and target_id not in known_targets)
+        fuel_order = kind in {'continuous_antimatter_transport', 'continuous_resupply'}
+        if fuel_order:
+            source_field = 'source_body_id' if kind == 'continuous_resupply' else 'source_unit_id'
+            source_ids = body_ids if kind == 'continuous_resupply' else visible_ids
+            hidden = hidden or params.get(source_field) not in source_ids
+            hidden = hidden or any(value is not None and value not in visible_ids for value in
+                                   (params.get('target_unit_id'), order.active_destination_unit_id))
+        data.update(order_id=getattr(order, "public_id", None), active=active and actionable,
+                    cancellable=own and origin == "explicit" and root and actionable,
+                    editable=own and origin == "explicit" and root and actionable and kind == "patrol",
+                    target_id=None if hidden else target_id, target_visibility="unavailable" if hidden else "visible" if target_id is not None else None,
+                    failure_reason=public_reason(order.failure_reason) if getattr(order, "failure_reason", None) else None)
+        if hidden:
+            data["parameters"] = {}
+        else:
+            public = {}
+            for key in ("amount", "unit_template_name", "turret_type_override", "defense_type_override", "ability_type", "minefield_type", "standoff_distance", "guard_radius"):
+                value = params.get(key)
+                if type(value) in (str, int, float, bool):
+                    public[key] = value
+            component = params.get("target_component_type")
+            if component is not None:
+                from unit_orders.combat import resolve_component_type
+                from component_visibility import component_is_public
+                resolved = resolve_component_type(component)
+                if resolved and component_is_public(resolved, enemy=True):
+                    public["target_component"] = resolved.__name__
+            for key, output in (("destination_system_name", "system_name"), ("destination_hex_coord", "hex_coord"), ("destination_position", "position"), ("target_system_name", "system_name"), ("target_hex_coord", "hex_coord"), ("target_position", "position")):
+                value = params.get(key)
+                if value is not None:
+                    public[output] = value if output == "system_name" else point(value)
+            if "waypoints" in params:
+                route = params["waypoints"]
+                public["waypoints"] = [{"system_name": w.get("system_name"), "hex_coord": point(w.get("hex_coord")), "position": point(w.get("position"))} for w in route[:16]]
+                public["omitted_waypoints"] = max(0, len(route) - 16)
+            if fuel_order:
+                public.update(source_id=params.get(source_field), target_id=params.get('target_unit_id'),
+                              destination_mode='automatic' if order.automatic else 'manual',
+                              recipient_priority=order.recipient_priority,
+                              minimum_load_fraction=order.minimum_load_fraction)
+            data["parameters"] = public
+        progress = {}
+        if kind == 'return_for_service':
+            progress = {'phase': 'approach'}
+        if kind == 'dismantle_unit' and not hidden:
+            progress = dict(phase=order.phase, turns_completed=order.progress, turns_required=order.duration,
+                            included_unit_ids=[m['unit_id'] for m in order.members])
+        if kind == "stabilize_wormhole" and not hidden:
+            from wormhole_stabilization import state_view
+            progress = state_view(unit, order=order)
+        if kind == 'continuous_mine' and not hidden:
+            progress = order.progress_view(unit.game.galaxy, visible_ids)
+        if fuel_order and not hidden:
+            progress = {'phase': order.public_phase, 'waiting_reason': order.public_waiting_reason,
+                        'return_reason': order.public_return_reason,
+                        'return_reserve': order.return_reserve,
+                        'active_destination_id': order.active_destination_unit_id}
+        if kind in {'attack_run', 'emergency_recovery'}:
+            progress = {'phase': order.phase, 'expires_on_owner_round': params['expires_round']}
+            if kind == 'attack_run':
+                progress['earliest_release_round'] = params['release_round']
+        if kind == "patrol":
+            progress = {"leg": getattr(order, "current_waypoint_index", 0), "phase": enum_name(getattr(order, "patrol_phase", None)), "returns_to_start": True}
+            if not hidden:
+                progress["start_position"] = point(getattr(order, "start_position", None))
+                progress["start_system_name"] = getattr(order, "start_system_name", None)
+                progress["start_hex_coord"] = point(getattr(order, "start_hex_coord", None))
+        elif kind in {"construct", "refit_unit"} and not hidden:
+            progress = construction_progress(unit, order, active)
+        if kind in {"recruit_troops", "invade_planet", "bombard_planet"} and not hidden:
+            progress = {"phase": "approach" if order.has_active_sub_orders() else "awaiting_owner_turn_resolution",
+                        "last_action_round": unit.last_planetary_action_round}
+        if kind in {'colonize', 'load_colonists', 'infiltrate_planet', 'recruit_troops', 'invade_planet', 'bombard_planet'} and not hidden:
+            from planetary_intel import order_phase
+            phase = order_phase(order, unit.game.galaxy)
+            if phase:
+                progress['phase'] = phase
+        if root and active and actionable and not hidden and not private_agent_order:
+            journey = journey_progress(unit, order, visible_ids, body_ids)
+            if journey is not None:
+                progress['journey'] = journey
+                if kind in {'construct', 'refit_unit'} and journey.get('waiting_reason'):
+                    progress.update(phase='stalled', waiting_reason=journey['waiting_reason'])
+        if root and kind in {'construct', 'refit_unit'} and not hidden:
+            data['active_phase'] = progress['phase']
+        data["progress"] = progress
+        children = list(getattr(order, "sub_orders", []))
+        shown = []
+        if depth < 6:
+            for index, child in enumerate(children):
+                if budget[0] <= 0:
+                    break
+                budget[0] -= 1
+                shown.append(serialize(child, "internal", depth + 1, hidden or private_agent_order, active and index == 0, False))
+        data["suborders"] = shown
+        data["omitted_suborders"] = len(children) - len(shown)
+        return data
+
+    current = getattr(commander, "current_order", None)
+    queued = list(getattr(commander, "orders_queue", []))
+    standing = getattr(commander, "standing_order", None)
+    suspended = current is not None or bool(queued)
+    stance = getattr(getattr(commander, "stance", None), "value", None)
+    current_view = serialize(current, "explicit", active=True)
+    engagement = serialize(getattr(standing, "active_attack", None), "stance", active=not suspended)
+    queue_views = []
+    blocker = current if current and enum_name(current.order_type) in CONTINUOUS else None
+    submerged = bool(getattr(unit, 'is_hidden_in_gas_giant', False))
+    def paused(order):
+        return submerged and enum_name(order.status) in {'pending', 'in_progress'} and enum_name(order.order_type) not in {'enter_gas_giant', 'leave_gas_giant'}
+    if current is not None and paused(current):
+        blocker = current
+        if current_view is not None:
+            current_view['active'] = False
+    for order in queued:
+        entry = serialize(order, "explicit")
+        if rich:
+            entry["blocked_by_order_id"] = getattr(blocker, "public_id", None)
+        queue_views.append(entry)
+        if blocker is None and (enum_name(order.order_type) in CONTINUOUS or paused(order)):
+            blocker = order
+    return {"standing_order": {"stance": stance, "suspended": suspended, "engagement": engagement},
+            "current_order": current_view, "queued_orders": queue_views}

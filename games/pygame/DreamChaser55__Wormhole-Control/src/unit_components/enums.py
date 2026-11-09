@@ -1,0 +1,130 @@
+from enum import Enum
+
+class HyperdriveType(Enum):
+    BASIC = "basic"  # Inter-sector travel only
+    ADVANCED = "advanced" # Wormhole travel capable
+
+class CloakingType(Enum):
+    BASIC = "basic"        # Single-unit personal cloak
+    ADVANCED = "advanced"  # Area-of-effect fleet cloak
+
+    @property
+    def display_name(self) -> str:
+        if self == CloakingType.BASIC:
+            return "Basic"
+        elif self == CloakingType.ADVANCED:
+            return "Advanced"
+        return self.name.replace("_", " ").title()
+
+class JumpStatus(Enum):
+    CHARGING = "charging"
+    READY = "ready"
+    JUMPING = "jumping"
+    ERROR = "error"
+
+class UnitStance(Enum):
+    DO_NOTHING = "do_nothing"
+    ATTACK_WEAPON_RANGE = "attack_weapon_range"
+    ATTACK_SAME_SECTOR = "attack_same_sector"
+    ATTACK_INTRA_SYSTEM_JUMP_RANGE = "attack_intra_system_jump_range"
+    ATTACK_SAME_SYSTEM = "attack_same_system"
+
+    @property
+    def display_name(self) -> str:
+        if self == UnitStance.DO_NOTHING:
+            return "Do Nothing"
+        elif self == UnitStance.ATTACK_WEAPON_RANGE:
+            return "Attack in Weapon Range"
+        elif self == UnitStance.ATTACK_SAME_SECTOR:
+            return "Attack in Same Sector"
+        elif self == UnitStance.ATTACK_INTRA_SYSTEM_JUMP_RANGE:
+            return "Attack in Jump Range"
+        elif self == UnitStance.ATTACK_SAME_SYSTEM:
+            return "Attack in Same System"
+        return self.name.replace("_", " ").title()
+
+class TurretType(Enum):
+    MASS_DRIVER = "mass_driver"
+    BEAM = "beam"
+    MISSILE = "missile"
+
+class TurretVariant(Enum):
+    STANDARD = "standard"
+    ANTI_STRIKECRAFT = "anti_strikecraft"
+    LONG_RANGE = "long_range"
+
+class WingType(Enum):
+    FIGHTER = "fighter"
+    BOMBER = "bomber"
+
+class AbilityType(Enum):
+    FLEET_JUMP = "fleet_jump"
+    AEGIS_FIELD = "aegis_field"
+    SIEGE_LANCE = "siege_lance"
+    DEEP_SCAN = "deep_scan"
+    CARRIER_SUPREMACY = "carrier_supremacy"
+    HAZARD_SHIELDING = "hazard_shielding"
+    RADIATION_HARDENING = "radiation_hardening"
+    ANTIMATTER_CONTAINMENT = "antimatter_containment"
+    ATTACK_RUN = "attack_run"
+    EVASIVE_FORMATION = "evasive_formation"
+    EMERGENCY_RECOVERY = "emergency_recovery"
+    TRACKING_LOCK = "tracking_lock"
+    FLAK_BARRAGE = "flak_barrage"
+    ADAPTIVE_FORCEFIELD = "adaptive_forcefield"
+    CLUSTER_WARHEAD = "cluster_warhead"
+    DESIGNATE_TARGET = "designate_target"
+    ION_BOLT = "ion_bolt"
+    MISSILE_BATTERIES = "missile_batteries"
+    REPAIR_CLOUD = "repair_cloud"
+    CAPTURE_UNIT = "capture_unit"
+    DRAIN_ANTIMATTER = "drain_antimatter"
+    MICROJUMP = "microjump"
+    SCAN_FOR_MINEFIELDS = "scan_for_minefields"
+    GHOST_FLEET = "ghost_fleet"
+    TRACTOR_TETHER = "tractor_tether"
+    MINE_CLEARING_SWEEP = "mine_clearing_sweep"
+    GUARDIAN_LINK = "guardian_link"
+    MULTIPLY_ANTIMATTER = "multiply_antimatter"
+    NEBULA_CATALYST = "nebula_catalyst"
+
+
+
+
+class MinefieldType(Enum):
+    ANTI_SHIP = "anti_ship"
+    ANTI_STRIKECRAFT = "anti_strikecraft"
+
+    @property
+    def display_name(self) -> str:
+        if self == MinefieldType.ANTI_SHIP:
+            return "Anti-Ship"
+        elif self == MinefieldType.ANTI_STRIKECRAFT:
+            return "Anti-Strikecraft"
+        return self.name.replace("_", " ").title()
+
+
+class SabotageType(Enum):
+    ENGINES = "engines"
+    WEAPONS = "weapons"
+    DEFENSES = "defenses"
+    HYPERDRIVE = "hyperdrive"
+    SENSORS = "sensors"
+    ANTIMATTER = "antimatter"
+    ECONOMY = "economy"
+    GROWTH = "growth"
+
+    @property
+    def display_name(self) -> str:
+        names = {
+            SabotageType.ENGINES: "Sabotage Engines",
+            SabotageType.WEAPONS: "Sabotage Weapons",
+            SabotageType.DEFENSES: "Sabotage Defenses",
+            SabotageType.HYPERDRIVE: "Sabotage Hyperdrive",
+            SabotageType.SENSORS: "Sabotage Sensors",
+            SabotageType.ANTIMATTER: "Sabotage Antimatter",
+            SabotageType.ECONOMY: "Sabotage Economy",
+            SabotageType.GROWTH: "Sabotage Growth",
+        }
+        return names.get(self, self.name.replace("_", " ").title())
+

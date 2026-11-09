@@ -1,0 +1,165 @@
+"""Unit tests for antimatter consumption by HyperspaceInhibitionFieldEmitter."""
+from display_config import DisplayConfig
+from unittest.mock import MagicMock
+import pytest
+from domain.units import Unit
+from galaxy import Galaxy, StarSystem, Hex
+from domain.coordinates import HexCoord
+from geometry import Position, Circle
+from constants import HullSize
+from unit_components.inhibitor import HyperspaceInhibitionFieldEmitter
+from unit_components.antimatter import AntimatterStorage
+
+
+def make_unit(name="Inhibitor Vessel", in_system="Sol", in_hex=(0, 0), position=None):
+    if position is None:
+        position = Position(0.0, 0.0)
+    mock_game = MagicMock()
+    mock_game.display_config = DisplayConfig()
+    mock_player = MagicMock()
+    mock_player.name = "Player 1"
+    unit = Unit(
+        owner=mock_player,
+        position=position,
+        in_hex=in_hex,
+        in_system=in_system,
+        name=name,
+        hull_size=HullSize.MEDIUM,
+        game=mock_game
+    )
+    return unit
+
+
+def test_inhibitor_antimatter_cost_scaling():
+    """Verify get_antimatter_cost_per_turn computes cost linearly with radius."""
+    mock_unit = MagicMock(spec=Unit)
+    
+    emitter_50 = HyperspaceInhibitionFieldEmitter(unit=mock_unit, radius=50.0)
+    assert emitter_50.get_antimatter_cost_per_turn() == 0.5
+
+    emitter_100 = HyperspaceInhibitionFieldEmitter(unit=mock_unit, radius=100.0)
+    assert emitter_100.get_antimatter_cost_per_turn() == 1.0
+
+    emitter_25 = HyperspaceInhibitionFieldEmitter(unit=mock_unit, radius=25.0)
+    assert emitter_25.get_antimatter_cost_per_turn() == 0.25
+
+
+def test_active_inhibitor_consumes_antimatter_on_update():
+    """Verify active inhibitor consumes antimatter on component update."""
+    unit = make_unit()
+    unit.antimatter_component.current_amount = 50.0
+
+    emitter = HyperspaceInhibitionFieldEmitter(unit=unit, radius=50.0)
+    unit.add_component(emitter)
+    emitter.turn_on()
+
+    assert emitter.is_active is True
+    assert unit.antimatter_component.current_amount == 50.0
+
+    # Perform per-turn update
+    emitter.update()
+
+    assert emitter.is_active is True
+    assert unit.antimatter_component.current_amount == 49.5
+
+
+def test_exact_payment_keeps_field_active_until_next_unpaid_update():
+    unit = make_unit()
+    unit.antimatter_component.current_amount = 0.5
+    emitter = HyperspaceInhibitionFieldEmitter(unit, radius=50.0)
+    unit.add_component(emitter)
+    emitter.turn_on()
+
+    emitter.update()
+    assert emitter.is_active
+    assert unit.antimatter_component.current_amount == 0
+
+    emitter.update()
+    assert not emitter.is_active
+    assert unit.antimatter_component.current_amount == 0
+
+
+def test_active_inhibitor_autodeactivates_when_antimatter_depleted():
+    """Verify inhibitor auto-deactivates when antimatter reserve is insufficient."""
+    unit = make_unit()
+    unit.antimatter_component.current_amount = 0.25
+
+    emitter = HyperspaceInhibitionFieldEmitter(unit=unit, radius=50.0)  # requires 0.5 AM
+    unit.add_component(emitter)
+    emitter.turn_on()
+
+    assert emitter.is_active is True
+
+    # Perform update with insufficient antimatter (0.25 < 0.5)
+    emitter.update()
+
+    assert emitter.is_active is False
+    # Antimatter amount remains unchanged because consumption failed
+    assert unit.antimatter_component.current_amount == 0.25
+
+
+@pytest.mark.parametrize('storage_state', ['insufficient', 'missing', 'destroyed'])
+def test_active_inhibitor_autodeactivates_and_removes_hex_zone(storage_state):
+    """Verify auto-deactivation cleans up dynamic inhibition zone from current sector hex."""
+    galaxy = Galaxy()
+    system = StarSystem("Alpha Centauri", Position(0.0, 0.0))
+    hex_coord = HexCoord(0, 0)
+    hex_obj = Hex(0, 0, in_system="Alpha Centauri")
+    system.hexes[hex_coord] = hex_obj
+    galaxy.systems["Alpha Centauri"] = system
+
+    unit = make_unit(in_system="Alpha Centauri", in_hex=hex_coord)
+    unit.in_galaxy = galaxy
+    unit.id = 12345
+    storage = unit.antimatter_component
+    storage.current_amount = 0.25 if storage_state == 'insufficient' else 50.0
+    if storage_state == 'missing':
+        unit.remove_component(AntimatterStorage)
+    elif storage_state == 'destroyed':
+        storage.current_hit_points = 0
+    fuel_before = storage.current_amount
+
+    emitter = HyperspaceInhibitionFieldEmitter(unit=unit, radius=50.0)
+    unit.add_component(emitter)
+
+    # Register dynamic inhibition zone on hex and turn on emitter
+    emitter.turn_on()
+    hex_obj.dynamic_inhibition_zones[unit.id] = Circle(center=unit.position, radius=emitter.radius)
+    assert unit.id in hex_obj.dynamic_inhibition_zones
+
+    # Update should auto-deactivate and clean up hex zone
+    emitter.update()
+
+    assert emitter.is_active is False
+    assert unit.id not in hex_obj.dynamic_inhibition_zones
+    assert storage.current_amount == fuel_before
+
+
+def test_inactive_inhibitor_does_not_consume_antimatter():
+    """Verify inactive inhibitor does not consume antimatter during update."""
+    unit = make_unit()
+    unit.antimatter_component.current_amount = 50.0
+
+    emitter = HyperspaceInhibitionFieldEmitter(unit=unit, radius=50.0)
+    unit.add_component(emitter)
+    # Emitter is inactive
+
+    emitter.update()
+
+    assert emitter.is_active is False
+    assert unit.antimatter_component.current_amount == 50.0
+
+
+def test_active_inhibitor_without_antimatter_storage_autodeactivates():
+    """Verify active inhibitor without antimatter storage auto-deactivates on update."""
+    unit = make_unit()
+    unit.remove_component(AntimatterStorage)
+    assert unit.antimatter_component is None
+
+    emitter = HyperspaceInhibitionFieldEmitter(unit=unit, radius=50.0)
+    unit.add_component(emitter)
+    emitter.turn_on()
+
+    emitter.update()
+
+    assert emitter.is_active is False

@@ -1,0 +1,105 @@
+import logging
+from game_logging import format_unit_for_log
+from typing import TYPE_CHECKING
+
+from .base import UnitComponent
+
+if TYPE_CHECKING:
+    from domain.units import Unit
+    from domain.celestials import Planet
+    from game import Game
+
+logger = logging.getLogger(__name__)
+
+class ColonyComponent(UnitComponent):
+    """A component that allows a unit to transport population and colonize planets."""
+    STATE_CONFIG = ('max_cargo',)
+    STATE_RUNTIME = ('population_cargo',)
+    STATE_REFS = ()
+    STATE_REAL_FIELDS = ("population_cargo", "max_cargo")
+
+    def validate_state(self):
+        if self.population_cargo > self.max_cargo:
+            raise ValueError("Population cargo exceeds capacity")
+
+    DISPLAY_NAME: str = "Colony"
+    SIDEBAR_ORDER: int = 6
+    population_cargo: int = 0
+    max_cargo: int = 100
+
+    def __init__(self, unit: 'Unit', hull_cost: float = 10.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.population_cargo = 0
+        self.max_cargo = 100
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_sidebar_data(game_state)
+        data.append({'type': 'label', 'text': f"Population Cargo: {self.population_cargo} / {self.max_cargo}", 'object_id': '#sidebar_info_label', 'height': 20})
+        return data
+
+    def get_basic_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_basic_sidebar_data(game_state)
+        if self.is_destroyed:
+            return data
+        data.append({
+            'type': 'label',
+            'text': f"• Population: {self.population_cargo}/{self.max_cargo}",
+            'object_id': '#sidebar_value_label',
+            'height': 18,
+            'indent_level': 1
+        })
+        return data
+
+
+    def load_population(self, planet: 'Planet', amount: int) -> bool:
+        if self.is_destroyed:
+            logger.debug(f"Error: Cannot load population, {format_unit_for_log(self.unit)}'s ColonyComponent is destroyed.")
+            return False
+        if getattr(planet, 'is_colonizable', True) is False:
+            logger.debug(f"Error: Cannot load population from non-colonizable celestial body {planet.name}.")
+            return False
+        if planet.owner != self.unit.owner:
+            logger.debug(f"Error: Cannot load population from unowned planet {planet.name}.")
+            return False
+        if planet.population < amount:
+            logger.debug(f"Error: Not enough population on {planet.name} to load {amount}.")
+            return False
+        if self.population_cargo + amount > self.max_cargo:
+            logger.debug(f"Error: Not enough cargo space to load {amount} population.")
+            return False
+        
+        planet.population -= amount
+        self.population_cargo += amount
+        logger.debug(f"Loaded {amount} population from {planet.name}. Current cargo: {self.population_cargo}")
+        return True
+
+    def unload_population(self, planet: 'Planet', amount: int) -> bool:
+        from planetary_intel import current_ownership
+        if not current_ownership(self.unit.game.galaxy, self.unit.owner, planet):
+            return False
+        if self.is_destroyed:
+            logger.debug(f"Error: Cannot unload population, {format_unit_for_log(self.unit)}'s ColonyComponent is destroyed.")
+            return False
+        if getattr(planet, 'is_colonizable', True) is False:
+            logger.debug(f"Error: Cannot unload population onto non-colonizable celestial body {planet.name}.")
+            return False
+        if self.population_cargo < amount:
+            logger.debug(f"Error: Not enough population in cargo to unload {amount}.")
+            return False
+
+        if planet.owner is None:
+            planet.owner = self.unit.owner
+            from turn_briefing import record
+            record(self.unit.game, self.unit.owner, "development", "Colony established", subject=planet)
+            logger.debug(f"Planet {planet.name} has been colonized by {self.unit.owner.name}.")
+
+        if planet.owner != self.unit.owner:
+            logger.debug("Error: Cannot unload population on planet owned by another player.")
+            return False
+
+        planet.population += amount
+        self.population_cargo -= amount
+        from planetary_intel import refresh
+        refresh(self.unit.game)
+        logger.debug(f"Unloaded {amount} population onto {planet.name}. Current cargo: {self.population_cargo}")
+        return True

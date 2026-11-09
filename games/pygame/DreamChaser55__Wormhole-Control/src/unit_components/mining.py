@@ -1,0 +1,215 @@
+import logging
+from game_logging import format_unit_for_log
+from typing import Optional, TYPE_CHECKING
+
+from .base import UnitComponent
+from geometry import distance
+from constants import MINING_RATE_PER_HULL_POINT, MINING_CARGO_PER_HULL_POINT
+
+if TYPE_CHECKING:
+    from domain.units import Unit
+    from domain.celestials import CelestialBody
+    from galaxy import Galaxy
+    from game import Game
+
+logger = logging.getLogger(__name__)
+
+class MiningComponent(UnitComponent):
+    """A component that allows a unit to extract raw resources from celestial bodies."""
+    STATE_CONFIG = ('mining_rate', 'mining_range', 'max_cargo')
+    STATE_RUNTIME = ('raw_metal_cargo', 'raw_crystal_cargo')
+    STATE_REFS = ('mining_target',)
+    DISPLAY_NAME: str = "Mining"
+    SIDEBAR_ORDER: int = 7
+    mining_rate: float = 10.0
+    mining_range: float = 200.0
+    raw_metal_cargo: float = 0.0
+    raw_crystal_cargo: float = 0.0
+    max_cargo: float = 100.0
+    mining_target: Optional['CelestialBody'] = None
+
+    def __init__(self, unit: 'Unit', mining_rate: float = 10.0, mining_range: float = 200.0, max_cargo: float = 100.0, hull_cost: float = 10.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.mining_rate = mining_rate
+        self.mining_range = mining_range
+        self.raw_metal_cargo = 0.0
+        self.raw_crystal_cargo = 0.0
+        self.max_cargo = max_cargo
+        self.mining_target = None
+
+    @staticmethod
+    def calc_hull_cost(mining_rate: float, max_cargo: float) -> float:
+        """Compute the hull cost of a Mining component from mining_rate and max_mining_cargo."""
+        rate_cost = (mining_rate / MINING_RATE_PER_HULL_POINT) if mining_rate > 0 else 0.0
+        cargo_cost = (max_cargo / MINING_CARGO_PER_HULL_POINT) if max_cargo > 0 else 0.0
+        return float(rate_cost + cargo_cost)
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_sidebar_data(game_state)
+        metal = int(self.raw_metal_cargo)
+        crystal = int(self.raw_crystal_cargo)
+        max_c = int(self.max_cargo)
+        data.append({'type': 'label', 'text': f"Raw Cargo: {metal} Metal, {crystal} Crystal / {max_c}", 'object_id': '#sidebar_info_label', 'height': 20})
+        if self.raw_metal_cargo > 0 or self.raw_crystal_cargo > 0:
+            data.append({
+                'type': 'button',
+                'text': "Unload to Nearest Refinery",
+                'object_id': '#sidebar_expand_button',
+                'action_id': 'unload_resources_nearest',
+                'target_data': self.unit.id,
+                'height': 25
+            })
+        from component_visibility import unit_details_are_public_in_game
+        if unit_details_are_public_in_game(self.unit, game_state) and self.mining_target:
+            data.append({'type': 'label', 'text': f"Mining Target: {self.mining_target.name}", 'object_id': '#sidebar_info_label', 'height': 20})
+        return data
+
+    def get_basic_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_basic_sidebar_data(game_state)
+        if self.is_destroyed:
+            return data
+        metal = int(self.raw_metal_cargo)
+        crystal = int(self.raw_crystal_cargo)
+        max_c = int(self.max_cargo)
+        data.append({
+            'type': 'label',
+            'text': f"• Mining Cargo: {metal} Metal, {crystal} Crystal / {max_c}",
+            'object_id': '#sidebar_value_label',
+            'height': 18,
+            'indent_level': 1
+        })
+        return data
+
+
+    def set_target(self, target: 'CelestialBody') -> None:
+        self.mining_target = target
+
+    def clear_target(self) -> None:
+        self.mining_target = None
+
+    def get_cargo_fullness(self) -> float:
+        """Returns the percentage of cargo that is full (0.0 to 1.0)."""
+        total_cargo = self.raw_metal_cargo + self.raw_crystal_cargo
+        if self.max_cargo <= 0:
+            return 1.0
+        return min(1.0, total_cargo / self.max_cargo)
+
+    def update(self, galaxy: 'Galaxy') -> None:
+        if self.is_destroyed:
+            return
+
+        if not self.mining_target:
+            return
+
+        # Need to be in same system and hex
+        if self.unit.in_system != self.mining_target.in_system or self.unit.in_hex != self.mining_target.in_hex:
+            return
+
+        # Need to be within range
+        if distance(self.unit.position, self.mining_target.position) > self.mining_range:
+            return
+
+        total_cargo = self.raw_metal_cargo + self.raw_crystal_cargo
+        if total_cargo >= self.max_cargo:
+            return
+
+        available_space = self.max_cargo - total_cargo
+        amount_to_mine = min(self.mining_rate, available_space)
+
+        from domain.celestials import MetalAsteroid, Comet
+        if isinstance(self.mining_target, MetalAsteroid):
+            # Infinite yield: we extract mining_rate without depleting the asteroid
+            self.raw_metal_cargo += amount_to_mine
+            logger.debug(f"{format_unit_for_log(self.unit)} mined {amount_to_mine} raw metal from {self.mining_target.name}. Cargo: {self.raw_metal_cargo}/{self.max_cargo}")
+        elif isinstance(self.mining_target, Comet):
+            # Infinite yield: we extract mining_rate without depleting the comet
+            self.raw_crystal_cargo += amount_to_mine
+            logger.debug(f"{format_unit_for_log(self.unit)} mined {amount_to_mine} raw crystal from {self.mining_target.name}. Cargo: {self.raw_crystal_cargo}/{self.max_cargo}")
+
+    def unload_to_refinery(self, unload_metal: bool = True, unload_crystal: bool = True) -> tuple[float, float]:
+        """Empties cargo and returns a tuple of (metal_amount, crystal_amount) unloaded."""
+        metal_amount = self.raw_metal_cargo if unload_metal else 0.0
+        crystal_amount = self.raw_crystal_cargo if unload_crystal else 0.0
+        if unload_metal:
+            self.raw_metal_cargo = 0.0
+        if unload_crystal:
+            self.raw_crystal_cargo = 0.0
+        return metal_amount, crystal_amount
+
+
+class MetalRefineryComponent(UnitComponent):
+    """A component that instantly converts raw metal into player metal upon delivery."""
+    STATE_CONFIG = ('unload_range',)
+    STATE_RUNTIME = ()
+    STATE_REFS = ()
+    DISPLAY_NAME: str = "Metal Refinery"
+    SIDEBAR_ORDER: int = 8
+    unload_range: float = 300.0
+
+    def __init__(self, unit: 'Unit', unload_range: float = 300.0, hull_cost: float = 20.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.unload_range = unload_range
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_sidebar_data(game_state)
+        data.append({'type': 'label', 'text': "Metal Refinery Active", 'object_id': '#sidebar_info_label', 'height': 20})
+        return data
+
+    def get_basic_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_basic_sidebar_data(game_state)
+        if self.is_destroyed:
+            return data
+        data.append({
+            'type': 'label',
+            'text': "• Metal Refining: Active",
+            'object_id': '#sidebar_status_active_label',
+            'height': 18,
+            'indent_level': 1
+        })
+        return data
+
+    def accept_resources(self, amount: float) -> None:
+        if self.is_destroyed:
+            return
+        if self.unit.owner:
+            self.unit.owner.metal += amount
+            logger.debug(f"{format_unit_for_log(self.unit)} refined {amount} raw metal instantly for {self.unit.owner.name}.")
+
+
+class CrystalRefineryComponent(UnitComponent):
+    """A component that instantly converts raw crystal into player crystal upon delivery."""
+    STATE_CONFIG = ('unload_range',)
+    STATE_RUNTIME = ()
+    STATE_REFS = ()
+    DISPLAY_NAME: str = "Crystal Refinery"
+    SIDEBAR_ORDER: int = 9
+    unload_range: float = 300.0
+
+    def __init__(self, unit: 'Unit', unload_range: float = 300.0, hull_cost: float = 20.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.unload_range = unload_range
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_sidebar_data(game_state)
+        data.append({'type': 'label', 'text': "Crystal Refinery Active", 'object_id': '#sidebar_info_label', 'height': 20})
+        return data
+
+    def get_basic_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_basic_sidebar_data(game_state)
+        if self.is_destroyed:
+            return data
+        data.append({
+            'type': 'label',
+            'text': "• Crystal Refining: Active",
+            'object_id': '#sidebar_status_active_label',
+            'height': 18,
+            'indent_level': 1
+        })
+        return data
+
+    def accept_resources(self, amount: float) -> None:
+        if self.is_destroyed:
+            return
+        if self.unit.owner:
+            self.unit.owner.crystal += amount
+            logger.debug(f"{format_unit_for_log(self.unit)} refined {amount} raw crystal instantly for {self.unit.owner.name}.")

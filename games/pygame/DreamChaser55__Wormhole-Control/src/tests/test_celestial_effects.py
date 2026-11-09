@@ -1,0 +1,729 @@
+"""Comprehensive tests for celestial body traits, environmental hazards, and tactical cover."""
+from display_config import DisplayConfig
+
+import pytest
+from domain.units import Unit
+from domain.celestials import Star, Planet, Moon, ColonizableAsteroid, MetalAsteroid, Comet, AsteroidField, IceField, DebrisField, Nebula, Storm, Wormhole
+from domain.players import Player
+from constants import (
+    PlanetType, StarType, NebulaType, StormType, HullSize,
+    ICE_FIELD_BEAM_DEFENSE_BONUS, DEBRIS_FIELD_DEFENSE_BONUS,
+    BLACK_HOLE_EVENT_HORIZON_DAMAGE,
+    BLACK_HOLE_INHIBITION_RADIUS, STORM_PLASMA_DAMAGE_PER_TURN, STORM_MAGNETIC_AM_DRAIN_PER_TURN,
+    STORM_RADIATION_COMPONENT_DAMAGE_PER_TURN
+)
+from geometry import Position
+from unit_components.colony import ColonyComponent
+from unit_components.mining import MiningComponent
+from unit_components.antimatter import AntimatterHarvester
+from unit_components.movement import Engines
+from unit_components.sensors import Sensors
+from unit_orders.colony import ColonizeOrder, LoadColonistsOrder
+from visibility import VisibilityService, is_unit_in_asteroid_field
+
+
+class MockGalaxy:
+    def __init__(self):
+        self.systems = {}
+        self.turn_number = 1
+
+    def get_celestial_body_by_id(self, body_id):
+        for system in self.systems.values():
+            for _, body in system.get_all_celestial_bodies():
+                if body.id == body_id:
+                    return body
+        return None
+
+
+class MockSystem:
+    def __init__(self, name="Sol"):
+        self.name = name
+        self.hexes = {}
+        self.star = None
+
+    def get_all_units(self):
+        units = []
+        for hex_coord, hex_obj in self.hexes.items():
+            for unit in hex_obj.units:
+                units.append((unit, hex_coord))
+        return units
+
+    def get_all_celestial_bodies(self):
+        bodies = []
+        for hex_coord, hex_obj in self.hexes.items():
+            for body in hex_obj.celestial_bodies:
+                bodies.append((hex_coord, body))
+        return bodies
+
+
+class MockHex:
+    def __init__(self, coord=(0, 0)):
+        self.coord = coord
+        self.units = []
+        self.celestial_bodies = []
+        self.dynamic_inhibition_zones = {}
+
+
+class MockGame:
+    display_config = DisplayConfig()
+    def __init__(self):
+        self.galaxy = MockGalaxy()
+        self.players = []
+        self.current_player_index = 0
+        self.turn_number = 1
+        self.selected_objects = []
+
+
+def create_test_unit(owner, name="Scout", in_system="Sol", in_hex=(0, 0), pos=Position(0, 0), game=None):
+    if game is None:
+        game = MockGame()
+    u = Unit(owner=owner, position=pos, in_hex=in_hex, in_system=in_system, name=name, hull_size=HullSize.SMALL, game=game)
+    return u
+
+
+def test_planet_traits_initialization():
+    """Verify planetary types correctly initialize traits from PLANET_TRAITS."""
+    earth = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.TERRAN)
+    assert earth.is_colonizable is True
+    assert earth.growth_rate == 0.02
+    assert earth.passive_metal == 0.0
+
+    volcanic = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.VOLCANIC)
+    assert volcanic.is_colonizable is True
+    assert volcanic.passive_metal == 5.0
+    assert volcanic.growth_rate == 0.008
+
+    ice = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.ICE)
+    assert ice.is_colonizable is True
+    assert ice.passive_crystal == 2.0
+
+    jupiter = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.GAS_GIANT)
+    assert jupiter.is_colonizable is False
+    assert jupiter.harvest_multiplier == 0.0
+    assert jupiter.inhibition_field_radius == 3500.0
+    assert jupiter.collision_radius == 675.0
+
+
+def test_star_types_initialization():
+    """Verify extreme star parameters."""
+    black_hole = Star(in_system="Core", star_type=StarType.BLACK_HOLE)
+    assert black_hole.inhibition_field_radius == BLACK_HOLE_INHIBITION_RADIUS
+
+    blue_giant = Star(in_system="Orion", star_type=StarType.BLUE_GIANT)
+    assert blue_giant.inhibition_field_radius == 3750.0
+    assert blue_giant.collision_radius == 900.0
+
+
+def test_gas_giant_uncolonizable_orders():
+    """Verify Colonize and LoadColonists orders reject Gas Giants."""
+    p1 = Player("Player 1", (0, 100, 255))
+    unit = create_test_unit(p1)
+    colony_comp = ColonyComponent(unit)
+    colony_comp.population_cargo = 50
+    unit.add_component(colony_comp)
+
+    gas_giant = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.GAS_GIANT)
+    gas_giant.position = Position(0, 0)
+
+    galaxy = MockGalaxy()
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+    hex_obj.units.append(unit)
+    hex_obj.celestial_bodies.append(gas_giant)
+    system.hexes[(0, 0)] = hex_obj
+    galaxy.systems["Sol"] = system
+
+    # Direct ColonyComponent load and unload
+    assert colony_comp.unload_population(gas_giant, 10) is False
+    assert colony_comp.load_population(gas_giant, 10) is False
+
+    # ColonizeOrder preflight / execution
+    colonize_order = ColonizeOrder(unit, {"target_id": gas_giant.id})
+    colonize_order.execute(galaxy)
+    assert colonize_order.status.name == "FAILED"
+    assert colonize_order.failure_reason == "target_not_colonizable"
+
+    # LoadColonistsOrder execution
+    load_order = LoadColonistsOrder(unit, {"target_id": gas_giant.id, "amount": 10})
+    load_order.execute(galaxy)
+    assert load_order.status.name == "FAILED"
+    assert load_order.failure_reason == "target_not_colonizable"
+
+
+def test_asteroid_field_non_mineable_and_metal_asteroid_mineable():
+    """Verify AsteroidField cannot be mined for metal, but MetalAsteroid can."""
+    p1 = Player("Player 1", (0, 100, 255))
+    unit = create_test_unit(p1)
+    mining = MiningComponent(unit)
+    unit.add_component(mining)
+
+    galaxy = MockGalaxy()
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+    hex_obj.units.append(unit)
+
+    asteroid_field = AsteroidField(in_hex=(0, 0), in_system="Sol")
+    asteroid_field.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(asteroid_field)
+
+    metal_asteroid = MetalAsteroid(in_hex=(0, 0), in_system="Sol")
+    metal_asteroid.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(metal_asteroid)
+
+    system.hexes[(0, 0)] = hex_obj
+    galaxy.systems["Sol"] = system
+
+    # Target AsteroidField -> no raw metal mined
+    mining.set_target(asteroid_field)
+    mining.update(galaxy)
+    assert mining.raw_metal_cargo == 0.0
+
+    # Target MetalAsteroid -> successfully mined
+    mining.set_target(metal_asteroid)
+    mining.update(galaxy)
+    assert mining.raw_metal_cargo == 10.0
+
+
+def test_ice_field_and_debris_field_tactical_cover():
+    """Verify tactical cover defense bonus against beam (IceField) and kinetic/missile (DebrisField)."""
+    p1 = Player("Player 1", (0, 100, 255))
+    game = MockGame()
+    galaxy = game.galaxy
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    unit = create_test_unit(p1, pos=Position(100, 100), game=game)
+    hex_obj.units.append(unit)
+
+    ice_field = IceField(in_hex=(0, 0), in_system="Sol")
+    ice_field.position = Position(100, 100)
+    hex_obj.celestial_bodies.append(ice_field)
+
+    system.hexes[(0, 0)] = hex_obj
+    galaxy.systems["Sol"] = system
+
+    # In IceField: beam cover bonus should be 10%
+    assert unit.get_environmental_cover_bonus("beam") == pytest.approx(ICE_FIELD_BEAM_DEFENSE_BONUS)
+    assert unit.get_environmental_cover_bonus("missile") == 0.0
+
+    # Switch IceField to DebrisField
+    hex_obj.celestial_bodies.remove(ice_field)
+    debris_field = DebrisField(in_hex=(0, 0), in_system="Sol")
+    debris_field.position = Position(100, 100)
+    hex_obj.celestial_bodies.append(debris_field)
+
+    # In DebrisField: mass_driver and missile cover bonus should be 10%
+    assert unit.get_environmental_cover_bonus("mass_driver") == pytest.approx(DEBRIS_FIELD_DEFENSE_BONUS)
+    assert unit.get_environmental_cover_bonus("missile") == pytest.approx(DEBRIS_FIELD_DEFENSE_BONUS)
+    assert unit.get_environmental_cover_bonus("beam") == 0.0
+
+
+def test_antimatter_harvesting_from_gas_giant_and_hydrogen_nebula():
+    """Verify Gas Giants are not antimatter sources and cannot be harvested, while Hydrogen Nebulae can (0.4x)."""
+    from game_ai.rules import is_antimatter_source
+
+    p1 = Player("Player 1", (0, 100, 255))
+    unit = create_test_unit(p1, pos=Position(0, 0))
+    am_comp = unit.antimatter_component
+    am_comp.max_capacity = 200.0
+    am_comp.current_amount = 50.0
+
+    harvester = AntimatterHarvester(unit, harvest_rate=10.0)
+    unit.add_component(harvester)
+
+    galaxy = MockGalaxy()
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+    hex_obj.units.append(unit)
+
+    gas_giant = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.GAS_GIANT)
+    gas_giant.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(gas_giant)
+
+    system.hexes[(0, 0)] = hex_obj
+    galaxy.systems["Sol"] = system
+
+    # Gas Giant is not an antimatter source and cannot be harvested
+    assert is_antimatter_source(gas_giant) is False
+    source = harvester.find_nearby_star(galaxy)
+    assert source is None
+    harvester.update(galaxy)
+    assert harvester.is_harvesting is False
+    assert am_comp.current_amount == pytest.approx(50.0)
+
+    # Swap Gas Giant for Hydrogen Nebula
+    hex_obj.celestial_bodies.remove(gas_giant)
+    nebula = Nebula(in_hex=(0, 0), in_system="Sol", nebula_type=NebulaType.HYDROGEN)
+    nebula.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(nebula)
+
+    # Hydrogen Nebula is a valid antimatter source
+    assert is_antimatter_source(nebula) is True
+    source = harvester.find_nearby_star(galaxy)
+    assert source == nebula
+    harvester.update(galaxy)
+    assert harvester.is_harvesting is True
+    # 50 + 10 * 0.4 = 54
+    assert am_comp.current_amount == pytest.approx(54.0)
+
+
+def test_environmental_hazards_in_turn_processor():
+    """Verify Plasma Storm damage, Magnetic Storm AM drain, and Black Hole event horizon damage."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    # Unit 1: in Plasma Storm
+    u1 = create_test_unit(p1, name="Ship1", pos=Position(100, 100), game=game)
+    u1.current_hit_points = 100
+    hex_obj.units.append(u1)
+
+    storm_plasma = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.PLASMA)
+    storm_plasma.position = Position(100, 100)
+    hex_obj.celestial_bodies.append(storm_plasma)
+
+    # Unit 2: in Magnetic Storm
+    u2 = create_test_unit(p1, name="Ship2", pos=Position(500, 500), game=game)
+    am_comp = u2.antimatter_component
+    am_comp.current_amount = 50.0
+    hex_obj.units.append(u2)
+
+    storm_mag = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.MAGNETIC)
+    storm_mag.position = Position(500, 500)
+    hex_obj.celestial_bodies.append(storm_mag)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    processor._process_environmental_hazards(p1)
+
+    # Plasma storm inflicts STORM_PLASMA_DAMAGE_PER_TURN (8)
+    assert u1.current_hit_points == 100 - int(STORM_PLASMA_DAMAGE_PER_TURN)
+
+    # Magnetic storm drains STORM_MAGNETIC_AM_DRAIN_PER_TURN (6)
+    assert am_comp.current_amount == pytest.approx(50.0 - STORM_MAGNETIC_AM_DRAIN_PER_TURN)
+
+
+def test_radiation_storm_damages_component_in_turn_processor():
+    """Verify Radiation Storm inflicts 4 damage to a functional component."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    u = create_test_unit(p1, name="RadShip", pos=Position(100, 100), game=game)
+    eng = Engines(u, speed=20.0, hull_cost=2.0)
+    u.add_component(eng)
+    hex_obj.units.append(u)
+
+    storm_rad = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.RADIATION)
+    storm_rad.position = Position(100, 100)
+    hex_obj.celestial_bodies.append(storm_rad)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    # Sum initial HP of all components
+    initial_total_comp_hp = sum(c.current_hit_points for c in u.components.values())
+
+    processor._process_environmental_hazards(p1)
+
+    final_total_comp_hp = sum(c.current_hit_points for c in u.components.values())
+    # Exactly STORM_RADIATION_COMPONENT_DAMAGE_PER_TURN (4) damage applied across components
+    assert initial_total_comp_hp - final_total_comp_hp == int(STORM_RADIATION_COMPONENT_DAMAGE_PER_TURN)
+
+
+def test_radiation_storm_injectable_rng_selection():
+    """Verify TurnProcessor uses injected RNG to select the targeted component deterministically."""
+    from unittest.mock import MagicMock
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    u = create_test_unit(p1, name="RadShip", pos=Position(0, 0), game=game)
+    eng = Engines(u, speed=20.0, hull_cost=2.0)
+    u.add_component(eng)
+    sensors = u.get_component(Sensors)
+    hex_obj.units.append(u)
+
+    storm_rad = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.RADIATION)
+    storm_rad.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(storm_rad)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    # Inject mock RNG that chooses the Engines component
+    mock_rng = MagicMock()
+    mock_rng.choice.side_effect = lambda comps: next(c for c in comps if isinstance(c, Engines))
+
+    processor = TurnProcessor(game, rng=mock_rng)
+
+    eng_initial_hp = eng.current_hit_points
+    sensors_initial_hp = sensors.current_hit_points
+
+    processor._process_environmental_hazards(p1)
+
+    assert eng.current_hit_points == eng_initial_hp - int(STORM_RADIATION_COMPONENT_DAMAGE_PER_TURN)
+    assert sensors.current_hit_points == sensors_initial_hp
+
+
+def test_radiation_storm_skips_destroyed_components():
+    """Verify Radiation Storm only damages functional components and skips destroyed ones."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    u = create_test_unit(p1, name="RadShip", pos=Position(0, 0), game=game)
+    eng = Engines(u, speed=20.0, hull_cost=2.0)
+    u.add_component(eng)
+    # Destroy all components except Engines
+    for c in u.components.values():
+        if c is not eng:
+            c.current_hit_points = 0
+
+    hex_obj.units.append(u)
+
+    storm_rad = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.RADIATION)
+    storm_rad.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(storm_rad)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    eng_hp_before = eng.current_hit_points
+    processor._process_environmental_hazards(p1)
+
+    assert eng.current_hit_points == eng_hp_before - int(STORM_RADIATION_COMPONENT_DAMAGE_PER_TURN)
+
+
+def test_radiation_storm_all_components_destroyed_safe():
+    """Verify no exceptions when all components are destroyed."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    u = create_test_unit(p1, name="RadShip", pos=Position(0, 0), game=game)
+    for c in u.components.values():
+        c.current_hit_points = 0
+
+    hex_obj.units.append(u)
+
+    storm_rad = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.RADIATION)
+    storm_rad.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(storm_rad)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    # Should safely complete with no errors
+    processor._process_environmental_hazards(p1)
+
+
+def test_radiation_storm_outside_radius_no_damage():
+    """Verify units outside the radiation storm radius take no component damage."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    # Place unit well outside STORM_RADIUS (3600.0)
+    u = create_test_unit(p1, name="SafeShip", pos=Position(5000, 5000), game=game)
+    hex_obj.units.append(u)
+
+    storm_rad = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.RADIATION)
+    storm_rad.position = Position(0, 0)
+    hex_obj.celestial_bodies.append(storm_rad)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    initial_hp_map = {type(c): c.current_hit_points for c in u.components.values()}
+    processor._process_environmental_hazards(p1)
+
+    for comp_type, hp in initial_hp_map.items():
+        assert u.get_component(comp_type).current_hit_points == hp
+
+
+def test_black_hole_event_horizon_hazard():
+    """Verify Black Hole event horizon damages ships within 750 radius."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    system.star = Star(in_system="Sol", star_type=StarType.BLACK_HOLE)
+    system.star.position = Position(0, 0)
+
+    hex_obj = MockHex((0, 0))
+    u1 = create_test_unit(p1, name="Probe", pos=Position(500, 0), game=game)  # Distance 500 <= 750
+    u1.current_hit_points = 100
+    hex_obj.units.append(u1)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    processor._process_environmental_hazards(p1)
+
+    assert u1.current_hit_points == 100 - int(BLACK_HOLE_EVENT_HORIZON_DAMAGE)
+
+
+def test_passive_resource_generation_from_colonized_planets():
+    """Verify colonized planets generate passive metal/crystal for owner."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.metal = 0.0
+    p1.crystal = 0.0
+    p1.credits = 0.0
+
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    volcanic = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.VOLCANIC)
+    volcanic.owner = p1
+    volcanic.population = 10.0  # Pop > 0
+    hex_obj.celestial_bodies.append(volcanic)
+
+    ice = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.ICE)
+    ice.owner = p1
+    ice.population = 10.0
+    hex_obj.celestial_bodies.append(ice)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    processor._process_resource_generation(p1)
+
+    assert p1.metal == pytest.approx(volcanic.passive_metal)
+    assert p1.crystal == pytest.approx(ice.passive_crystal)
+
+
+def test_asteroid_field_radar_stealth():
+    """Verify units inside AsteroidField are concealed from enemy long-range sensor presence."""
+    p1 = Player("Viewer", (0, 100, 255))
+    p2 = Player("Enemy", (255, 0, 0))
+
+    game = MockGame()
+    galaxy = game.galaxy
+    system = MockSystem("Sol")
+
+    # Observer unit for P1 with long-range radar in hex (0, 0)
+    obs_unit = create_test_unit(p1, name="Observer", in_hex=(0, 0), pos=Position(0, 0), game=game)
+    sensors = Sensors(obs_unit, short_range_radius=300.0, long_range_hexes=2, hull_cost=0)
+    obs_unit.add_component(sensors)
+
+    # Enemy unit in hex (1, 0) inside an AsteroidField
+    enemy_unit = create_test_unit(p2, name="EnemyShip", in_hex=(1, 0), pos=Position(100, 100), game=game)
+
+    hex0 = MockHex((0, 0))
+    hex0.units.append(obs_unit)
+
+    hex1 = MockHex((1, 0))
+    hex1.units.append(enemy_unit)
+    ast_field = AsteroidField(in_hex=(1, 0), in_system="Sol")
+    ast_field.position = Position(100, 100)
+    hex1.celestial_bodies.append(ast_field)
+
+    system.hexes[(0, 0)] = hex0
+    system.hexes[(1, 0)] = hex1
+    galaxy.systems["Sol"] = system
+
+    # Check is_unit_in_asteroid_field helper
+    assert is_unit_in_asteroid_field(enemy_unit, galaxy) is True
+    assert is_unit_in_asteroid_field(obs_unit, galaxy) is False
+
+    # Compute visibility snapshot for Viewer
+    snapshot = VisibilityService.compute(galaxy, p1, turn_number=1)
+
+    # Enemy unit should NOT appear in presence_hexes because AsteroidField conceals from long-range radar
+    assert ("Sol", (1, 0)) not in snapshot.presence_hexes
+    assert enemy_unit.id not in snapshot.visible_enemy_unit_ids
+
+
+def test_debris_field_speed_hazard():
+    """Verify moving at speed > 50 through DebrisField causes abrasion damage."""
+    from turn_processor import TurnProcessor
+
+    p1 = Player("Player 1", (0, 100, 255))
+    p1.is_human = False
+    game = MockGame()
+    game.players.append(p1)
+    processor = TurnProcessor(game)
+
+    system = MockSystem("Sol")
+    hex_obj = MockHex((0, 0))
+
+    u = create_test_unit(p1, name="FastShip", pos=Position(100, 100), game=game)
+    u.current_hit_points = 100
+    eng = Engines(u, speed=120.0)
+    eng.move_target = Position(200, 200)
+    u.add_component(eng)
+    hex_obj.units.append(u)
+
+    debris = DebrisField(in_hex=(0, 0), in_system="Sol")
+    debris.position = Position(100, 100)
+    hex_obj.celestial_bodies.append(debris)
+
+    system.hexes[(0, 0)] = hex_obj
+    game.galaxy.systems["Sol"] = system
+
+    processor._process_environmental_hazards(p1, {u.id: 90.0})
+
+    # FastShip took DEBRIS_FIELD_HAZARD_DAMAGE (2)
+    assert u.current_hit_points == 98
+
+
+def test_all_celestial_inhibition_radii():
+    """Verify all celestial bodies have their +25% inhibition radii correctly configured."""
+    # Baseline Stars (e.g. G_TYPE, PULSAR, NEUTRON_STAR, etc.)
+    g_star = Star(in_system="Sol", star_type=StarType.G_TYPE)
+    assert g_star.inhibition_field_radius == 3375.0
+
+    pulsar = Star(in_system="Deep", star_type=StarType.PULSAR)
+    assert pulsar.inhibition_field_radius == 3375.0
+
+    # Black Hole
+    black_hole = Star(in_system="Singularity", star_type=StarType.BLACK_HOLE)
+    assert black_hole.inhibition_field_radius == 4500.0
+
+    # Giant Stars
+    blue_giant = Star(in_system="Orion", star_type=StarType.BLUE_GIANT)
+    assert blue_giant.inhibition_field_radius == 3750.0
+    red_giant = Star(in_system="Antares", star_type=StarType.RED_GIANT)
+    assert red_giant.inhibition_field_radius == 3750.0
+
+    # Planets
+    standard_types = [
+        PlanetType.TERRAN, PlanetType.OCEANIC, PlanetType.DESERT,
+        PlanetType.ICE, PlanetType.BARREN, PlanetType.VOLCANIC, PlanetType.GREENHOUSE
+    ]
+    for p_type in standard_types:
+        planet = Planet(in_hex=(0, 0), in_system="Sol", planet_type=p_type)
+        assert planet.inhibition_field_radius == 3000.0, f"Expected 3000.0 for {p_type.name}, got {planet.inhibition_field_radius}"
+
+    ferrous = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.FERROUS)
+    assert ferrous.inhibition_field_radius == 3250.0
+
+    gas_giant = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.GAS_GIANT)
+    assert gas_giant.inhibition_field_radius == 3500.0
+
+    # Moons, Asteroids, Comets, Wormholes
+    moon = Moon(in_hex=(0, 0), in_system="Sol")
+    assert moon.inhibition_field_radius == 2250.0
+
+    colonizable_ast = ColonizableAsteroid(in_hex=(0, 0), in_system="Sol")
+    assert colonizable_ast.inhibition_field_radius == 1500.0
+
+    metal_ast = MetalAsteroid(in_hex=(0, 0), in_system="Sol")
+    assert metal_ast.inhibition_field_radius == 1500.0
+
+    comet = Comet(in_hex=(0, 0), in_system="Sol")
+    assert comet.inhibition_field_radius == 1000.0
+
+    wormhole = Wormhole(in_hex=(0, 0), in_system="Sol", exit_system_name="Alpha Centauri")
+    assert wormhole.inhibition_field_radius == 1875.0
+
+    # Zero inhibition bodies
+    assert AsteroidField(in_hex=(0, 0), in_system="Sol").inhibition_field_radius == 0.0
+    assert IceField(in_hex=(0, 0), in_system="Sol").inhibition_field_radius == 0.0
+    assert DebrisField(in_hex=(0, 0), in_system="Sol").inhibition_field_radius == 0.0
+    assert Nebula(in_hex=(0, 0), in_system="Sol", nebula_type=NebulaType.HYDROGEN).inhibition_field_radius == 0.0
+    assert Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.PLASMA).inhibition_field_radius == 0.0
+
+
+def test_gas_giant_antimatter_removal_integration():
+    """Verify Gas Giants no longer show antimatter reservoir in sidebar, context menus, rules, or AI commands."""
+    from unittest.mock import MagicMock
+    from gui.sidebar.panels_world import build_celestial_body_panel
+    from input_processor.context_menu_builder import build_sector_context_menu_options
+    from game_ai.rules import is_antimatter_source
+    from game_ai.observation import _body_view
+    from game_ai.commands import CommandGateway
+
+    p1 = Player("Player 1", (0, 100, 255))
+    unit = create_test_unit(p1, pos=Position(0, 0))
+    harvester = AntimatterHarvester(unit, harvest_rate=10.0)
+    unit.add_component(harvester)
+
+    gas_giant = Planet(in_hex=(0, 0), in_system="Sol", planet_type=PlanetType.GAS_GIANT)
+
+    # 1. Rules: is_antimatter_source is False
+    assert is_antimatter_source(gas_giant) is False
+
+    # 2. Sidebar: no "Antimatter Reservoir" label
+    mock_game = MagicMock()
+    mock_game.display_config = DisplayConfig()
+    mock_game.players = [p1]
+    mock_game.current_player_index = 0
+    sidebar_data = build_celestial_body_panel(mock_game, gas_giant)
+    sidebar_texts = [item.get("text", "") for item in sidebar_data]
+    assert not any("Antimatter Reservoir" in text for text in sidebar_texts)
+
+    # 3. Context menu: no "continuous_resupply"
+    mock_game.selected_objects = [unit]
+    mock_game.current_player = p1
+    options, _ = build_sector_context_menu_options(mock_game, gas_giant, gas_giant.position)
+    option_ids = [opt[1] for opt in options if isinstance(opt, tuple)]
+    assert "continuous_resupply" not in option_ids
+
+    # 4. AI Observation: harvest_multiplier is 0.0
+    body_obs = _body_view(gas_giant, p1)
+    assert body_obs.get("harvest_multiplier", 0.0) == 0.0
+    from game_ai.contracts import Command, CommandBatch
+
+    # 5. CommandGateway rejection
+    mock_game.galaxy.get_celestial_body_by_id = MagicMock(return_value=gas_giant)
+    mock_game.galaxy.get_unit_by_id = MagicMock(return_value=unit)
+    gateway = CommandGateway(mock_game)
+    batch = CommandBatch((Command("continuous_resupply", (unit.id,), source_id=gas_giant.id),))
+    result = gateway.apply_batch(p1, batch)
+    assert not result.accepted
+    assert any("The resupply target is not a star or hydrogen nebula." in err.message for err in result.errors)

@@ -1,0 +1,72 @@
+import logging
+from game_logging import format_unit_for_log
+from typing import Optional, TYPE_CHECKING
+from geometry import Position
+from domain.coordinates import HexCoord
+from ..enums import AbilityType
+from .base import AbilityDefinition, AbilityInstance
+
+if TYPE_CHECKING:
+    from galaxy import Galaxy
+    from .component import AbilityComponent
+
+logger = logging.getLogger(__name__)
+
+
+class DesignateTargetAbility(AbilityInstance):
+    DEFINITION = AbilityDefinition(
+        ability_type=AbilityType.DESIGNATE_TARGET,
+        name="Designate Target",
+        description="Marks an enemy unit. Friendly units deal +50% damage against it for 4 turns.",
+        cooldown=6,
+        duration=4,
+        range=450.0,
+        requires_target_unit=True,
+        requires_target_position=False,
+        antimatter_cost=15,
+        required_components=["has_sensors"],
+    )
+
+    def on_activate(
+        self,
+        component: 'AbilityComponent',
+        galaxy: 'Galaxy',
+        target_unit_id: Optional[int] = None,
+        target_position: Optional[Position] = None,
+        target_system_name: Optional[str] = None,
+        target_hex_coord: Optional[HexCoord] = None,
+    ) -> bool:
+        if target_unit_id is None:
+            logger.debug(f"[{format_unit_for_log(component.unit)}] Designate Target requires a target unit.")
+            return False
+        target_unit = galaxy.get_unit_by_id(target_unit_id)
+        if not target_unit:
+            logger.debug(f"[{format_unit_for_log(component.unit)}] Designate Target: target unit {target_unit_id} not found.")
+            return False
+
+        from domain.players import are_allies
+        if are_allies(target_unit.owner, component.unit.owner):
+            logger.debug(f"[{format_unit_for_log(component.unit)}] Designate Target: target unit {format_unit_for_log(target_unit)} is friendly/allied.")
+            return False
+
+        self.target_unit_id = target_unit_id
+        self.restore_effect(component, galaxy)
+        logger.debug(f"[{format_unit_for_log(component.unit)}] Designate Target applied to {format_unit_for_log(target_unit)}. Amplification now: {target_unit.damage_amplification:.2f}.")
+        return True
+
+    def on_expire(self, component: 'AbilityComponent', galaxy: 'Galaxy') -> None:
+        if self.target_unit_id is not None:
+            from campaign_graph import find_unit
+            target_unit = find_unit(galaxy, self.target_unit_id)
+            if target_unit:
+                from timed_effects import remove
+                remove(target_unit, component.unit.id, self.definition.ability_type)
+                logger.debug(f"[{format_unit_for_log(component.unit)}] Designate Target expired on {format_unit_for_log(target_unit)}. Amplification now: {target_unit.damage_amplification:.2f}.")
+        self.target_unit_id = None
+
+    def restore_effect(self, component, galaxy):
+        from campaign_graph import find_unit
+        from timed_effects import add
+        target = find_unit(galaxy, self.target_unit_id)
+        if target:
+            add(target, component.unit.id, self.definition.ability_type, "amplification", 0.5)

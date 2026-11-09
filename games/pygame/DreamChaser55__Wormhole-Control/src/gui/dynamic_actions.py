@@ -1,0 +1,215 @@
+"""Payload builder registry mapping sidebar buttons and dropdowns to GUI actions."""
+import typing
+import pygame
+
+
+def _shift_pressed() -> bool:
+    """Helper to check if any Shift key is currently held down."""
+    keys = pygame.key.get_pressed()
+    return bool(keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT])
+
+
+def build_button_payload(gui, action_id: str, target_data: typing.Any) -> typing.Optional[dict]:
+    """Translates a dynamic sidebar button action ID and target payload into a GUI action dict.
+
+    Args:
+        gui: Target GUI_Handler instance.
+        action_id (str): Action string associated with the button.
+        target_data (typing.Any): Associated unit ID, tuple, or metadata.
+
+    Returns:
+        typing.Optional[dict]: Constructed action payload dict or None if unhandled.
+    """
+    if action_id in ('select_deployable', 'choose_catalyst_nebula', 'cancel_tactical_ability', 'toggle_resistance_ability', 'recover_tactical_cache', 'attack_deployable'):
+        return {'action': action_id, 'target_data': target_data, 'shift_pressed': _shift_pressed()}
+    if action_id in {'dismantle_wing', 'set_wing_production_enabled', 'cancel_dismantling'}:
+        return {'action': action_id, 'target_data': target_data, 'shift_pressed': _shift_pressed()}
+    if action_id == 'upgrade_planetary_defenses':
+        return {'action': action_id, 'target_data': target_data}
+    if action_id == 'unload_resources_nearest':
+        return {
+            'action': 'unload_resources_nearest',
+            'unit_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'lay_minefield_anti_strikecraft':
+        return {
+            'action': 'lay_minefield',
+            'minefield_type': 'anti_strikecraft',
+            'unit_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'lay_minefield_anti_ship':
+        return {
+            'action': 'lay_minefield',
+            'minefield_type': 'anti_ship',
+            'unit_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'lay_minefield':
+        return {
+            'action': 'lay_minefield',
+            'unit_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'ci_sweep':
+        return {
+            'action': 'ci_sweep',
+            'unit_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'toggle_celestial_rules':
+        from domain.celestials import CelestialBody
+        from gui.sidebar.celestial_formatting import rules_section_key
+        game = gui.game_instance
+        selected = game.selected_objects
+        if len(selected) == 1 and isinstance(selected[0], CelestialBody) and selected[0].id == target_data:
+            scroll = gui.side_bar_scroll_container
+            gui.sidebar_scroll_anchor = (gui.sidebar_scroll_identity,
+                                         -scroll.get_container().get_relative_rect().y)
+            gui.toggle_section_expansion(rules_section_key(game, selected[0]))
+            game.sidebar_needs_update = True
+        return {'action': 'ui_handled'}
+    elif action_id == 'toggle_orders_queue':
+        section_key = f"{target_data}_orders_queue"
+        gui.toggle_section_expansion(section_key)
+        gui.game_instance.sidebar_needs_update = True
+        return {'action': 'ui_handled'}
+    elif action_id == 'cycle_stance':
+        return {
+            'action': 'cycle_stance',
+            'unit_id': target_data
+        }
+    elif action_id == 'deploy_ship':
+        carrier_id, docked_unit_id = target_data
+        return {
+            'action': 'deploy_ship',
+            'carrier_id': carrier_id,
+            'docked_unit_id': docked_unit_id
+        }
+    elif action_id == 'select_wing_production':
+        carrier_id, slot_index = target_data
+        return {
+            'action': 'select_wing_production',
+            'slot_index': slot_index,
+            'carrier_id': carrier_id
+        }
+    elif action_id == 'launch_all_wings':
+        return {
+            'action': 'launch_all_wings',
+            'carrier_id': target_data
+        }
+    elif action_id == 'recall_ship':
+        carrier_id, launched_unit_id = target_data
+        return {
+            'action': 'recall_ship',
+            'carrier_id': carrier_id,
+            'launched_unit_id': launched_unit_id
+        }
+    elif action_id == 'use_ability':
+        return {
+            'action': 'use_ability',
+            'ability_type_str': target_data.get('ability_type_str'),
+            'requires_target_unit': target_data.get('requires_target_unit', False),
+            'requires_target_position': target_data.get('requires_target_position', False),
+        }
+    elif action_id == 'select_individual_unit':
+        return {
+            'action': 'select_individual_unit',
+            'unit_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'select_minefield':
+        return {
+            'action': 'select_minefield',
+            'minefield_id': target_data,
+        }
+    elif action_id == 'remove_minefield':
+        return {
+            'action': 'remove_minefield',
+            'minefield_id': target_data,
+        }
+    elif action_id == 'select_celestial_body':
+        return {
+            'action': 'select_celestial_body',
+            'body_id': target_data,
+        }
+    elif action_id == 'select_hex':
+        return {
+            'action': 'select_hex',
+            'hex_coord': target_data,
+        }
+    elif action_id == 'switch_unit_sidebar_tab':
+        return {
+            'action': 'switch_unit_sidebar_tab',
+            'tab_name': target_data
+        }
+    elif action_id == 'stop_unit':
+        return {
+            'action': 'stop_unit',
+            'unit_id': target_data
+        }
+    elif action_id == 'order_unit_leave_gas_giant':
+        return {
+            'action': 'order_unit_leave_gas_giant',
+            'unit_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'order_all_leave_gas_giant':
+        return {
+            'action': 'order_all_leave_gas_giant',
+            'gas_giant_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'enter_gas_giant':
+        return {
+            'action': 'enter_gas_giant',
+            'gas_giant_id': target_data,
+            'shift_pressed': _shift_pressed()
+        }
+    elif action_id == 'stop_selected_units':
+        return {
+            'action': 'stop_selected_units'
+        }
+    elif action_id == 'select_constructor_unit':
+        return {
+            'action': 'select_constructor_unit',
+            'unit_id': target_data
+        }
+    elif action_id == 'cancel_construction_job':
+        return {
+            'action': 'cancel_construction_job',
+            'unit_id': target_data
+        }
+    elif action_id:
+        return {
+            'action': action_id,
+            'target_data': target_data
+        }
+    return None
+
+
+def build_dropdown_payload(gui, action_id: str, target_data: typing.Any, selected_text: str) -> dict:
+    """Translates a dynamic sidebar dropdown change into a GUI action dict.
+
+    Args:
+        gui: Target GUI_Handler instance.
+        action_id (str): Action string associated with dropdown.
+        target_data (typing.Any): Target unit ID or metadata.
+        selected_text (str): Currently selected option text.
+
+    Returns:
+        dict: Action payload dictionary.
+    """
+    if action_id == 'set_stance':
+        return {
+            'action': 'set_stance',
+            'unit_id': target_data,
+            'stance_display_name': selected_text
+        }
+    else:
+        return {
+            'action': action_id,
+            'target_data': target_data,
+            'selected_text': selected_text
+        }

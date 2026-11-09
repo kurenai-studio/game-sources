@@ -1,0 +1,155 @@
+"""Keyboard event handling, camera panning, focus management, and global hotkeys."""
+import logging
+import pygame
+import pygame_gui
+from geometry import Position
+from game_camera import camera_input_blocked, cancel_camera_drag
+
+logger = logging.getLogger(__name__)
+
+
+def handle_keyboard_panning(game, gui, time_delta: float) -> None:
+    """Pan the active map camera from directional arrow keys.
+
+    Args:
+        game: Target Game instance.
+        gui: Target GUI_Handler instance.
+        time_delta (float): Elapsed frame time in seconds.
+    """
+    if camera_input_blocked(game, gui):
+        return
+    keys = pygame.key.get_pressed()
+
+    if game.view_mode in ('galaxy', 'system', 'sector') and game.game_started:
+        if game.view_mode == 'galaxy':
+            pan_offset = game.galaxy_pan_offset
+            anchor_pixel_attr = 'galaxy_zoom_anchor_pixel'
+        elif game.view_mode == 'system':
+            if hasattr(game, 'ensure_system_camera'):
+                game.ensure_system_camera()
+            pan_offset = game.system_pan_offset
+            anchor_pixel_attr = 'system_zoom_anchor_pixel'
+        else:
+            pan_offset = game.sector_pan_offset
+            anchor_pixel_attr = 'zoom_anchor_pixel'
+        if isinstance(pan_offset, Position):
+            pan_amount = 500.0 * time_delta
+
+            def is_pressed(k):
+                try:
+                    return keys[k]
+                except (IndexError, KeyError, TypeError):
+                    return False
+
+            dx, dy = 0.0, 0.0
+            if is_pressed(pygame.K_LEFT):
+                dx += pan_amount
+            if is_pressed(pygame.K_RIGHT):
+                dx -= pan_amount
+            if is_pressed(pygame.K_UP):
+                dy += pan_amount
+            if is_pressed(pygame.K_DOWN):
+                dy -= pan_amount
+
+            if dx != 0.0 or dy != 0.0:
+                pan_offset.x += dx
+                pan_offset.y += dy
+                anchor_pixel = getattr(game, anchor_pixel_attr, None)
+                if anchor_pixel is not None:
+                    anchor_pixel.x += dx
+                    anchor_pixel.y += dy
+
+
+def handle_key_down(game, gui, event: pygame.event.Event) -> bool:
+    """Processes KEYDOWN events and hotkeys.
+
+    Args:
+        game: Target Game instance.
+        gui: Target GUI_Handler instance.
+        event (pygame.event.Event): Pygame KEYDOWN event.
+
+    Returns:
+        bool: True if the event was consumed or intercepted by modals/focus, False otherwise.
+    """
+    editor = getattr(gui, 'unit_editor_window', None)
+    if editor and editor.is_visible is True and getattr(editor, '_description_dialog', None):
+        if event.key == pygame.K_ESCAPE:
+            editor.close_description()
+        return True
+
+    # If a text entry field has active focus, intercept KEYDOWN to block shortcuts and handle ESC
+    is_typing = False
+    if hasattr(gui, 'is_any_text_entry_focused'):
+        val = gui.is_any_text_entry_focused()
+        if isinstance(val, bool):
+            is_typing = val
+    if is_typing:
+        if event.key == pygame.K_ESCAPE:
+            if hasattr(gui, 'manager') and hasattr(gui.manager, 'ui_group') and hasattr(gui.manager.ui_group, 'sprites'):
+                for sprite in gui.manager.ui_group.sprites():
+                    if isinstance(sprite, (pygame_gui.elements.UITextEntryLine, pygame_gui.elements.UITextEntryBox)):
+                        if sprite.is_focused:
+                            sprite.unfocus()
+        return True
+
+    # If the in-game menu is open, block all further game-world input processing for this event.
+    if gui.is_ingame_menu_open():
+        if event.key == pygame.K_ESCAPE:
+            if hasattr(gui, 'load_save_window') and gui.load_save_window and gui.load_save_window.alive():
+                gui.load_save_window.kill()
+                gui.load_save_window = None
+            else:
+                gui.toggle_ingame_menu()
+        return True
+
+    # Similarly, block game-world input when the unit editor is open.
+    if gui.is_unit_editor_open():
+        if event.key == pygame.K_ESCAPE:
+            gui.close_unit_editor()
+        return True
+
+    # Block game-world input when the retrofit wizard is open.
+    if hasattr(gui, 'is_retrofit_wizard_open') and gui.is_retrofit_wizard_open() is True:
+        if event.key == pygame.K_ESCAPE:
+            gui.close_retrofit_wizard()
+        return True
+
+    # Block game-world input when the communications window is open.
+    if hasattr(gui, 'is_communications_window_open') and gui.is_communications_window_open() is True:
+        if event.key == pygame.K_ESCAPE:
+            gui.close_communications_window()
+        return True
+
+    if event.key == pygame.K_ESCAPE:
+        if gui.is_mouse_over_context_menu((-1, -1)):
+            gui.close_context_menu()
+        elif game.pending_ability is not None:
+            # Cancel ability targeting mode
+            logger.debug("Ability targeting cancelled via ESC.")
+            game.pending_ability = None
+            game.sidebar_needs_update = True
+        elif game.view_mode == 'about':
+            game.view_mode = 'main_menu'
+            gui.show_main_menu()
+        elif game.view_mode in ['galaxy', 'system', 'sector']:
+            gui.toggle_ingame_menu()
+    elif event.key == pygame.K_g and game.game_started:
+        cancel_camera_drag(game)
+        game.view_mode = 'galaxy'
+        game.update_view_specific_labels()
+    elif event.key == pygame.K_r and game.game_started and game.view_mode == 'galaxy':
+        cancel_camera_drag(game)
+        game.reset_galaxy_camera()
+    elif event.key == pygame.K_s and game.game_started and game.current_system_name:
+        cancel_camera_drag(game)
+        game.view_mode = 'system'
+        if hasattr(game, 'ensure_system_camera'):
+            game.ensure_system_camera()
+        game.selected_objects.clear()
+        game.update_view_specific_labels()
+    elif event.key == pygame.K_c and game.game_started:
+        gui.toggle_communications_window()
+    elif event.key == pygame.K_e and game.game_started:
+        game.end_turn()
+
+    return False

@@ -1,0 +1,819 @@
+import logging
+from game_logging import format_unit_for_log
+
+logger = logging.getLogger(__name__)
+
+import typing
+import math
+import random
+from dataclasses import dataclass, field
+from campaign_graph import sync_docked_sector
+from constants import LOGICAL_GALAXY_SIZE, SECTOR_CIRCLE_RADIUS_LOGICAL, StarType, PlanetType, NebulaType, StormType, SQRT3, MAX_MINEFIELDS_PER_HEX, FieldDensity
+from domain.coordinates import HexCoord
+from geometry import Vector, Position, Circle, hex_distance
+from domain.units import Unit
+from domain.celestials import Star, Planet, Wormhole, Moon, ColonizableAsteroid, MetalAsteroid, CelestialBody, Nebula, Storm, Comet, DebrisField, AsteroidField, IceField
+from constants import HullSize
+from domain.minefields import Minefield
+import json
+import os
+import typing as _t
+if _t.TYPE_CHECKING:
+    from game_settings import GameSettings
+
+CLASS_MAPPING = {
+    "Moon": Moon,
+    "ColonizableAsteroid": ColonizableAsteroid,
+    "MetalAsteroid": MetalAsteroid,
+    "AsteroidField": AsteroidField,
+    "IceField": IceField,
+    "Nebula": Nebula,
+    "Storm": Storm,
+    "Comet": Comet,
+    "DebrisField": DebrisField,
+}
+
+def _load_spawn_rates():
+    file_path = os.path.join(os.path.dirname(__file__), "data", "spawn_rates.json")
+    with open(file_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    body_types = []
+    weights = []
+    for class_name, weight in data.items():
+        if class_name in CLASS_MAPPING:
+            body_types.append(CLASS_MAPPING[class_name])
+            weights.append(weight)
+        else:
+            logger.warning(f"Unknown celestial body class in spawn_rates.json: {class_name}")
+    return body_types, weights
+
+BODY_TYPES_TO_SPAWN, SPAWN_WEIGHTS = _load_spawn_rates()
+
+def _load_star_names():
+    file_path = os.path.join(os.path.dirname(__file__), "data", "star_names.json")
+    with open(file_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+STAR_NAMES = _load_star_names()
+
+# Galaxy generation parameters
+NUM_SYSTEMS = 15
+GALAXY_PADDING = 50.0 # Logical distance from edge for system placement
+MIN_SYSTEM_DISTANCE = 50.0
+MAX_SYSTEM_DISTANCE = 350.0
+SECOND_NEAREST_WORMHOLE_PROB = 1/3 # Probability of connecting a system to the second nearest system
+COMET_OUTSKIRTS_BIAS = 0.85 # Preference probability to spawn comets on system outskirts
+WORMHOLE_UNSTABLE_PROB = 0.30 # Probability of generating an unstable wormhole (40-95% stability)
+WORMHOLE_UNSTABLE_MIN = 40
+WORMHOLE_UNSTABLE_MAX = 95
+
+# System populations scale with radius, not the number of sectors.
+PLANET_COUNT_VARIATION_NUMERATOR = 3
+PLANET_COUNT_VARIATION_DENOMINATOR = 10
+SECONDARY_BODIES_PER_RADIUS_MIN = 2
+SECONDARY_BODIES_PER_RADIUS_MAX = 3
+# Inner, middle and outer thirds of the system. Each column totals 100;
+# nonzero weights allow rare exceptions without guaranteeing any planet type.
+PLANET_ZONE_WEIGHTS = {
+    PlanetType.VOLCANIC: (25, 5, 1),
+    PlanetType.GREENHOUSE: (20, 5, 1),
+    PlanetType.FERROUS: (20, 10, 5),
+    PlanetType.BARREN: (15, 10, 10),
+    PlanetType.DESERT: (10, 15, 3),
+    PlanetType.TERRAN: (3, 25, 2),
+    PlanetType.OCEANIC: (2, 20, 3),
+    PlanetType.ICE: (1, 5, 35),
+    PlanetType.GAS_GIANT: (4, 5, 40),
+}
+
+# --- Hex Class ---
+@dataclass
+class Hex:
+    """Represents a single cell in a star system's hex grid, which corresponds to a sector map."""
+    q: int
+    r: int
+    in_system: str
+    celestial_bodies: typing.List['CelestialBody'] = field(default_factory=list)
+    units: typing.List['Unit'] = field(default_factory=list)
+    minefields: typing.List['Minefield'] = field(default_factory=list)
+    deployables: list = field(default_factory=list)
+    catalyst_patches: list = field(default_factory=list)
+    
+    # Inhibition field attributes
+    boundary_circle: Circle = field(init=False)
+    static_inhibition_zones: typing.List[Circle] = field(init=False, default_factory=list)
+    dynamic_inhibition_zones: typing.Dict[int, Circle] = field(init=False, default_factory=dict)
+
+    def __post_init__(self):
+        """Initializes fields that depend on other attributes."""
+        self.boundary_circle = Circle(
+            center=Position(0, 0),
+            radius=SECTOR_CIRCLE_RADIUS_LOGICAL
+        )
+
+    def get_all_inhibition_zones(self) -> typing.List[Circle]:
+        """Returns a combined list of static and dynamic inhibition zones."""
+        return self.static_inhibition_zones + list(self.dynamic_inhibition_zones.values())
+
+    def update_static_inhibition_zones(self):
+        """
+        Calculates and populates the static inhibition zones based on the
+        celestial bodies currently in this hex.
+        """
+        self.static_inhibition_zones.clear()
+        for body in self.celestial_bodies:
+            if hasattr(body, 'inhibition_field_radius') and body.inhibition_field_radius > 0:
+                self.static_inhibition_zones.append(Circle(body.position, body.inhibition_field_radius))
+
+    def coordinates(self) -> HexCoord:
+        return (self.q, self.r)
+
+    def add_celestial_body(self, body: 'CelestialBody'):
+        self.celestial_bodies.append(body)
+
+    def remove_celestial_body(self, body: 'CelestialBody'):
+        if body in self.celestial_bodies:
+            self.celestial_bodies.remove(body)
+
+    def add_unit(self, unit: 'Unit'):
+        self.units.append(unit)
+
+    def remove_unit(self, unit: 'Unit'):
+        if unit in self.units:
+            self.units.remove(unit)
+
+    def can_add_minefield(self) -> bool:
+        return len(self.minefields) < MAX_MINEFIELDS_PER_HEX
+
+    def add_minefield(self, minefield: 'Minefield') -> bool:
+        if len(self.minefields) < MAX_MINEFIELDS_PER_HEX:
+            self.minefields.append(minefield)
+            return True
+        return False
+
+    def remove_minefield(self, minefield: 'Minefield'):
+        if minefield in self.minefields:
+            self.minefields.remove(minefield)
+
+    def is_empty(self) -> bool:
+        """Check if the hex contains any celestial bodies, units, or minefields."""
+        return not self.celestial_bodies and not self.units and not self.minefields
+
+# --- Star System Class ---
+class StarSystem:
+    """Represents a single star system with a hex grid and contents."""
+    def __init__(self, name: str, position: Position, radius: int = 3):
+        """Initializes a StarSystem.
+
+        Args:
+            name: Unique name for the system (e.g., 'Sol'), also used as the identifier.
+            position: Position object representing the system's logical position in the galaxy view.
+            radius: The radius of the hexagonal grid within the system.
+        """
+        self.name = name
+        self.position = position
+        self.radius = radius
+        self.hexes: typing.Dict[HexCoord, Hex] = {}
+        self.celestial_bodies_by_id: typing.Dict[int, 'CelestialBody'] = {}
+        self.generate_grid()
+        self.spawn_celestial_bodies()
+
+    def generate_grid(self):
+        """Generates the hexagonal grid coordinates for the system."""
+        for q in range(-self.radius, self.radius + 1):
+            r1 = max(-self.radius, -q - self.radius)
+            r2 = min(self.radius, -q + self.radius)
+            for r in range(r1, r2 + 1):
+                self.hexes[(q, r)] = Hex(q, r, in_system=self.name)
+
+    def spawn_celestial_bodies(self):
+        """Populate the system with independent, radius-based body budgets."""
+        star_type = random.choice(list(StarType))
+        star = Star(in_system=self.name, star_type=star_type)
+        self.add_celestial_body(star)
+
+        available_hexes = [h for h in self.hexes.values() if h.coordinates() != (0, 0)]
+        random.shuffle(available_hexes)
+
+        delta = self.radius * PLANET_COUNT_VARIATION_NUMERATOR // PLANET_COUNT_VARIATION_DENOMINATOR
+        num_planets = random.randint(self.radius - delta, self.radius + delta)
+        num_secondary = random.randint(
+            self.radius * SECONDARY_BODIES_PER_RADIUS_MIN,
+            self.radius * SECONDARY_BODIES_PER_RADIUS_MAX,
+        )
+        self._spawn_planets(available_hexes, num_planets)
+        self._spawn_secondary_bodies(available_hexes, num_secondary)
+
+        for hex_obj in self.hexes.values():
+            hex_obj.update_static_inhibition_zones()
+
+    def _spawn_planets(self, available_hexes: list[Hex], count: int):
+        """Use distinct radial rings before adding at most one extra per ring."""
+        rings = range(1, self.radius + 1)
+        selected_rings = random.sample(rings, min(count, self.radius))
+        if count > self.radius:
+            selected_rings.extend(random.sample(rings, count - self.radius))
+
+        planet_hexes: list[HexCoord] = []
+        for ring in selected_rings:
+            candidates = [h for h in available_hexes if hex_distance(h.coordinates(), (0, 0)) == ring]
+            if planet_hexes:
+                separations = [
+                    min(hex_distance(h.coordinates(), coord) for coord in planet_hexes)
+                    for h in candidates
+                ]
+                # Prefer nonadjacent planets; if none fit, keep the full budget
+                # and choose the most separated remaining location on this ring.
+                best_separation = max(separations)
+                candidates = [
+                    h for h, separation in zip(candidates, separations)
+                    if separation >= min(2, best_separation)
+                ]
+            hex_obj = random.choice(candidates)
+            available_hexes.remove(hex_obj)
+            coord = hex_obj.coordinates()
+            planet_hexes.append(coord)
+            # Integer comparisons include exact third-boundaries without
+            # floating-point rounding and use no stellar-type modifiers.
+            zone = 0 if 3 * ring <= self.radius else (1 if 3 * ring <= 2 * self.radius else 2)
+            planet_type = random.choices(
+                list(PLANET_ZONE_WEIGHTS),
+                weights=[weights[zone] for weights in PLANET_ZONE_WEIGHTS.values()],
+                k=1,
+            )[0]
+            self.add_celestial_body(Planet(in_hex=coord, in_system=self.name, planet_type=planet_type))
+
+    def _spawn_secondary_body(self, body_class, available_hexes: list[Hex]):
+        """Place one nonmoon secondary body, retaining the comet outskirts bias."""
+        hex_to_spawn_in = None
+        if body_class == Comet:
+            outskirts_threshold = max(2, math.ceil(self.radius * 0.65))
+            outskirt_candidates = [
+                h for h in available_hexes if hex_distance(h.coordinates(), (0, 0)) >= outskirts_threshold
+            ]
+            if outskirt_candidates and random.random() < COMET_OUTSKIRTS_BIAS:
+                hex_to_spawn_in = random.choice(outskirt_candidates)
+
+        if hex_to_spawn_in is None:
+            hex_to_spawn_in = available_hexes[0]
+        available_hexes.remove(hex_to_spawn_in)
+        coord = hex_to_spawn_in.coordinates()
+
+        if body_class == Nebula:
+            body = Nebula(in_hex=coord, in_system=self.name, nebula_type=random.choice(list(NebulaType)))
+        elif body_class == Storm:
+            body = Storm(in_hex=coord, in_system=self.name, storm_type=random.choice(list(StormType)))
+        elif body_class in (AsteroidField, DebrisField, IceField):
+            density = random.choices(
+                [FieldDensity.LOW, FieldDensity.MEDIUM, FieldDensity.HIGH],
+                weights=[0.45, 0.40, 0.15], k=1,
+            )[0]
+            body = body_class(in_hex=coord, in_system=self.name, density=density)
+        else:
+            body = body_class(in_hex=coord, in_system=self.name)
+        self.add_celestial_body(body)
+
+    def _spawn_secondary_bodies(self, available_hexes: list[Hex], count: int):
+        """Defer moons until other bodies are placed, replacing those that cannot fit."""
+        pending_moons = 0
+        for _ in range(min(count, len(available_hexes))):
+            chosen_body_class = random.choices(BODY_TYPES_TO_SPAWN, weights=SPAWN_WEIGHTS, k=1)[0]
+            if chosen_body_class == Moon:
+                pending_moons += 1
+            else:
+                self._spawn_secondary_body(chosen_body_class, available_hexes)
+
+        planet_hexes = [
+            body.in_hex for body in self.celestial_bodies_by_id.values()
+            if isinstance(body, Planet)
+        ]
+        moon_candidates = [
+            h for h in available_hexes
+            if any(hex_distance(h.coordinates(), coord) == 1 for coord in planet_hexes)
+        ]
+        placed_moons = min(pending_moons, len(moon_candidates))
+        for hex_obj in random.sample(moon_candidates, placed_moons):
+            available_hexes.remove(hex_obj)
+            self.add_celestial_body(Moon(in_hex=hex_obj.coordinates(), in_system=self.name))
+
+        if pending_moons > placed_moons:
+            nonmoon_types, nonmoon_weights = zip(*[
+                (body_type, weight) for body_type, weight in zip(BODY_TYPES_TO_SPAWN, SPAWN_WEIGHTS)
+                if body_type != Moon
+            ])
+            for _ in range(pending_moons - placed_moons):
+                body_class = random.choices(nonmoon_types, weights=nonmoon_weights, k=1)[0]
+                self._spawn_secondary_body(body_class, available_hexes)
+
+    def add_celestial_body(self, body_to_add: CelestialBody):
+        """Adds a celestial body to the specified system's hex and the system's dictionary."""
+        if body_to_add.in_hex in self.hexes:
+            self.hexes[body_to_add.in_hex].add_celestial_body(body_to_add)
+            self.celestial_bodies_by_id[body_to_add.id] = body_to_add
+        else:
+            logger.debug(f"Error: Hex {body_to_add.in_hex} not found in system {self.name}")
+
+    def remove_celestial_body(self, body_to_remove: CelestialBody):
+        """Removes a celestial body from the system."""
+        if body_to_remove.in_hex in self.hexes:
+            self.hexes[body_to_remove.in_hex].remove_celestial_body(body_to_remove)
+            if body_to_remove.id in self.celestial_bodies_by_id:
+                del self.celestial_bodies_by_id[body_to_remove.id]
+        else:
+            logger.debug(f"Error: Hex {body_to_remove.in_hex} not found in system {self.name}")
+
+    def add_unit(self, unit_to_add: Unit):
+        """Adds a unit to the specified system's hex."""
+        hex_coord = unit_to_add.in_hex
+        if hex_coord in self.hexes:
+            self.hexes[hex_coord].add_unit(unit_to_add)
+            unit_to_add.in_system = self.name
+            sync_docked_sector(unit_to_add)
+        else:
+             logger.debug(f"Warning: Attempted to add unit to invalid hex {hex_coord} in system {self.name}")
+
+    def remove_unit(self, unit_to_remove: Unit) -> bool:
+        """Removes a specific unit object from the system's hex. Returns True if successful."""
+        hex_coord = unit_to_remove.in_hex
+        if hex_coord in self.hexes and unit_to_remove in self.hexes[hex_coord].units:
+            self.hexes[hex_coord].remove_unit(unit_to_remove)
+            unit_to_remove.in_system = None
+            return True
+        # Fallback: check all hexes in system in case in_hex is outdated
+        for h_coord, hex_obj in self.hexes.items():
+            if unit_to_remove in hex_obj.units:
+                hex_obj.remove_unit(unit_to_remove)
+                unit_to_remove.in_system = None
+                return True
+        # Also check hidden_units in celestial bodies
+        for hex_obj in self.hexes.values():
+            for body in getattr(hex_obj, 'celestial_bodies', []):
+                if unit_to_remove in getattr(body, 'hidden_units', []):
+                    body.hidden_units.remove(unit_to_remove)
+                    unit_to_remove.is_hidden_in_gas_giant = False
+                    unit_to_remove.hidden_in_gas_giant_id = None
+                    unit_to_remove.in_system = None
+                    return True
+        return False
+
+    def remove_minefield(self, minefield: 'Minefield') -> bool:
+        """Removes a minefield from the system. Returns True if successful."""
+        hex_coord = minefield.in_hex
+        if hex_coord in self.hexes and minefield in getattr(self.hexes[hex_coord], 'minefields', []):
+            self.hexes[hex_coord].remove_minefield(minefield)
+            return True
+        # Fallback: check all hexes in system in case in_hex is outdated
+        for h_coord, hex_obj in self.hexes.items():
+            if minefield in getattr(hex_obj, 'minefields', []):
+                hex_obj.remove_minefield(minefield)
+                return True
+        return False
+
+    def get_units_in_hex(self, hex_coord: HexCoord) -> typing.List[Unit]:
+        """Return the live unit list, or an empty list for an unknown hex."""
+        sector = self.hexes.get(hex_coord)
+        return sector.units if sector is not None else []
+
+    def get_celestial_bodies_in_hex(self, hex_coord: HexCoord) -> typing.List[CelestialBody]:
+        """Return the live body list, or an empty list for an unknown hex."""
+        sector = self.hexes.get(hex_coord)
+        return sector.celestial_bodies if sector is not None else []
+
+    def get_all_units(self) -> typing.List[typing.Tuple[Unit, HexCoord]]:
+        """Returns a list of all units in the system and their hex coordinates."""
+        all_units = []
+        for coord, hex in self.hexes.items():
+            for unit in hex.units:
+                 all_units.append((unit, coord))
+        return all_units
+
+    def get_all_celestial_bodies(self) -> typing.List[typing.Tuple[HexCoord, CelestialBody]]:
+        """Returns a list of all celestial bodies and their hex coordinates."""
+        all_bodies = []
+        for coord, hex_obj in self.hexes.items():
+            for body in hex_obj.celestial_bodies:
+                all_bodies.append((coord, body))
+        return all_bodies
+
+    def move_unit_between_hexes(self, unit: Unit, destination_hex: HexCoord) -> bool:
+        """Moves a unit from its current hex to a destination hex within this system.
+
+        Args:
+            unit: The unit object to move.
+            destination_hex: The target hex coordinate.
+
+        Returns:
+            True if the move was successful, False otherwise.
+        """
+        origin_hex = unit.in_hex
+        if origin_hex == destination_hex:
+            logger.debug(f"Warning: Attempted to move unit {format_unit_for_log(unit)} to its current hex {origin_hex}.")
+            return False # Or True, arguably it's 'moved'
+
+        if destination_hex not in self.hexes:
+            logger.debug(f"Error: Cannot move unit {format_unit_for_log(unit)} to invalid destination hex {destination_hex} in system {self.name}")
+            return False
+
+        # 1. Remove from origin
+        removed = self.remove_unit(unit)
+        if not removed:
+            logger.debug(f"Error: Failed to remove unit {format_unit_for_log(unit)} from origin hex {origin_hex} during move.")
+            # Attempt to find where the unit actually is, if anywhere
+            actual_hex = unit.in_hex
+            logger.debug(f"Unit {format_unit_for_log(unit)} is not in hex {origin_hex} but in {actual_hex}")
+            return False
+
+        # 2. Update unit's internal hex
+        unit.in_hex = destination_hex
+
+        # 3. Add to destination
+        self.add_unit(unit)
+        logger.debug(f"System {self.name}: Moved unit {format_unit_for_log(unit)} from {origin_hex} to {destination_hex}")
+        return True
+
+# --- Galaxy Class ---
+class Galaxy:
+    """Represents the entire game galaxy, containing systems and wormholes."""
+    def __init__(self, num_systems: int = NUM_SYSTEMS, settings: typing.Optional['GameSettings'] = None):
+        self.systems: typing.Dict[str, StarSystem] = {}
+        self.wormholes: typing.Dict[int, Wormhole] = {}
+        self.system_graph: typing.Dict[str, typing.Dict[str, HullSize]] = {}
+
+        # Resolve generation parameters from settings (fall back to module globals)
+        if settings is not None:
+            _min_dist = settings.min_system_distance
+            _max_dist = settings.max_system_distance
+            _wormhole_prob = settings.wormhole_density
+            _radius_min = settings.system_radius_min
+            _radius_max = settings.system_radius_max
+        else:
+            _min_dist = MIN_SYSTEM_DISTANCE
+            _max_dist = MAX_SYSTEM_DISTANCE
+            _wormhole_prob = SECOND_NEAREST_WORMHOLE_PROB
+            _radius_min = 5
+            _radius_max = 8
+
+        self._min_system_distance = _min_dist
+        self._max_system_distance = _max_dist
+        self._wormhole_prob = _wormhole_prob
+        self._radius_min = _radius_min
+        self._radius_max = _radius_max
+
+        self.generation_x_min = int(GALAXY_PADDING)
+        self.generation_y_min = int(GALAXY_PADDING)
+        self.generation_x_max = int(LOGICAL_GALAXY_SIZE.x - GALAXY_PADDING)
+        self.generation_y_max = int(LOGICAL_GALAXY_SIZE.y - GALAXY_PADDING)
+
+        # Ensure max is greater than min (e.g., if padding is too large for bounds)
+        self.generation_x_max = max(self.generation_x_min, self.generation_x_max)
+        self.generation_y_max = max(self.generation_y_min, self.generation_y_max)
+
+        self.generate_galaxy(num_systems)
+
+    def get_unit_by_id(self, unit_id: int) -> typing.Optional[Unit]:
+        """Finds a unit anywhere in the galaxy by its ID."""
+        for system in self.systems.values():
+            for hex_obj in system.hexes.values():
+                for unit in hex_obj.units:
+                    if unit.id == unit_id:
+                        return unit
+                for body in getattr(hex_obj, 'celestial_bodies', []):
+                    for u in getattr(body, 'hidden_units', []):
+                        if u.id == unit_id:
+                            return u
+        return None
+
+    def get_minefield_by_id(self, mf_id: int) -> typing.Optional['Minefield']:
+        """Finds a minefield anywhere in the galaxy by its ID."""
+        for system in self.systems.values():
+            for hex_obj in system.hexes.values():
+                for mf in getattr(hex_obj, 'minefields', []):
+                    if mf.id == mf_id:
+                        return mf
+        return None
+
+    def remove_unit(self, unit: Unit) -> bool:
+        """Removes a unit from the galaxy."""
+        if unit.in_system and unit.in_system in self.systems:
+            if self.systems[unit.in_system].remove_unit(unit):
+                return True
+        # Fallback: search all systems if system reference was missing or wrong
+        for system in self.systems.values():
+            if system.remove_unit(unit):
+                return True
+        logger.debug(f"Warning: Could not remove unit {unit.id} from galaxy.")
+        return False
+
+    def remove_minefield(self, minefield: 'Minefield') -> bool:
+        """Removes a minefield from the galaxy."""
+        if minefield.in_system and minefield.in_system in self.systems:
+            if self.systems[minefield.in_system].remove_minefield(minefield):
+                return True
+        # Fallback: search all systems if system reference was missing or wrong
+        for system in self.systems.values():
+            if system.remove_minefield(minefield):
+                return True
+        logger.debug(f"Warning: Could not remove minefield {minefield.id} from galaxy.")
+        return False
+
+    # --- Incremental Galaxy Generation Method  ---
+    def _sample_system_position(self):
+        """Sample the feasible annulus of an existing system, within map bounds."""
+        anchor = random.choice(list(self.systems.values())).position
+        farthest = math.hypot(max(anchor.x - self.generation_x_min, self.generation_x_max - anchor.x),
+                              max(anchor.y - self.generation_y_min, self.generation_y_max - anchor.y))
+        outer = min(self._max_system_distance, farthest)
+        if self._min_system_distance > outer:
+            return None
+        # Scale before squaring so finite but very large setup distances cannot
+        # overflow. Uniform area sampling avoids bias toward the inner boundary.
+        radius = outer * math.sqrt(random.uniform((self._min_system_distance / outer) ** 2, 1.0))
+        angle = random.uniform(0, 2 * math.pi)
+        position = Vector(anchor.x + radius * math.cos(angle), anchor.y + radius * math.sin(angle))
+        if (self.generation_x_min <= position.x <= self.generation_x_max and
+                self.generation_y_min <= position.y <= self.generation_y_max):
+            return position
+        return None
+
+    def generate_galaxy(self, num_systems: int):
+        """Generates systems and wormholes incrementally."""
+        if num_systems <= 0:
+            logger.debug("Cannot generate 0 or negative systems.")
+            return
+
+        # --- Generate unique system names ---
+        names = list(STAR_NAMES)
+        random.shuffle(names)
+        base_len = len(names)
+        if num_systems > base_len:
+            names.extend([f"System-{i+1}" for i in range(num_systems - base_len)])
+
+        system_names = []
+        used_names = set()
+        for i in range(num_systems):
+            base_name = names[i]
+            system_name = base_name
+            count = 1
+            while system_name in used_names:
+                system_name = f"{base_name}-{count}"
+                count += 1
+            used_names.add(system_name)
+            system_names.append(system_name)
+
+        # --- Place First System ---
+        first_sys_name = system_names[0]
+        first_x = random.randint(self.generation_x_min, self.generation_x_max)
+        first_y = random.randint(self.generation_y_min, self.generation_y_max)
+        radius = random.randint(self._radius_min, self._radius_max)
+        self.systems[first_sys_name] = StarSystem(first_sys_name, Vector(first_x, first_y), radius)
+        logger.debug(f"Placed first system: {first_sys_name} at {self.systems[first_sys_name].position}")
+
+        # --- Place Remaining Systems Incrementally ---
+        max_placement_attempts = 100 # Avoid infinite loops
+        for i in range(1, num_systems):
+            current_sys_name = system_names[i]
+            found_position = False
+            attempts = 0
+
+            while not found_position and attempts < max_placement_attempts:
+                attempts += 1
+                position = self._sample_system_position()
+                if position is None:
+                    continue
+                x, y = position.x, position.y
+
+                # Determine closest existing systems
+                distances = [] # get squared distances
+                for existing_name, existing_sys in self.systems.items():
+                    separation = math.hypot(x - existing_sys.position.x, y - existing_sys.position.y)
+                    distances.append((separation, existing_name))
+
+                if not distances: # Should only happen for the very first system, handled above
+                    break
+
+                distances.sort()
+                nearest_distance, nearest_sys_name = distances[0]
+                second_nearest_sys_name = distances[1][1] if len(distances) > 1 else None
+
+                # Check distance constraints
+                if self._min_system_distance <= nearest_distance <= self._max_system_distance:
+                    # Coords' distance constraints OK - Spawn system
+                    radius = random.randint(self._radius_min, self._radius_max)
+                    new_system_position = Vector(x,y)
+                    self.systems[current_sys_name] = StarSystem(current_sys_name, new_system_position, radius)
+                    logger.debug(f"Placed system {current_sys_name} at {new_system_position} near {nearest_sys_name}")
+
+                    # Connect to closest
+                    self.add_wormhole_pair(current_sys_name, nearest_sys_name)
+                    logger.debug(f"  Added wormhole: {current_sys_name} <-> {nearest_sys_name}")
+
+                    # Connect to second closest (probabilistically)
+                    if second_nearest_sys_name and random.random() < self._wormhole_prob:
+                        # Check if already connected to avoid duplicate wormholes
+                        already_connected = False
+                        origin_system = self.systems[current_sys_name]
+                        for _, hex in origin_system.hexes.items():
+                             for body in hex.celestial_bodies:
+                                 if isinstance(body, Wormhole) and body.exit_system_name == second_nearest_sys_name:
+                                     already_connected = True
+                                     break
+                             if already_connected: break
+
+                        if not already_connected:
+                            self.add_wormhole_pair(current_sys_name, second_nearest_sys_name)
+                            logger.debug(f"  Added 2nd wormhole: {current_sys_name} <-> {second_nearest_sys_name}")
+
+                    found_position = True
+                # else: Coords NOT OK - Loop continues to try new random coords
+
+            if not found_position:
+                raise ValueError(f"Could place only {len(self.systems)} of {num_systems} systems after {max_placement_attempts} attempts. "
+                                 f"Nearest-system spacing must be {self._min_system_distance:g}–{self._max_system_distance:g} "
+                                 f"inside x={self.generation_x_min}–{self.generation_x_max}, y={self.generation_y_min}–{self.generation_y_max}. "
+                                 "Regenerate the map or relax its distance constraints.")
+
+        logger.debug("Finished galaxy generation.")
+        logger.debug(f"Generated {len(self.systems)} systems.")
+        # The number of wormhole connections is half the number of wormhole objects
+        logger.debug(f"Created {len(self.wormholes) // 2} wormhole connections.\n")
+
+        self._build_system_graph()
+
+
+    def _build_system_graph(self):
+        """
+        Builds the system graph and stores it in self.system_graph.
+        This should be called once after galaxy generation is complete.
+        """
+
+        graph: typing.Dict[str, typing.Dict[str, HullSize]] = {name: {} for name in self.systems}
+        for system_name, system_obj in self.systems.items():
+            for _coord, hex_obj in system_obj.hexes.items():
+                for body in hex_obj.celestial_bodies:
+                    if isinstance(body, Wormhole) and body.exit_system_name:
+                        if body.exit_system_name in graph:
+                            # Keep the maximum diameter edge if multiple wormholes exist between system_name and exit_system_name
+                            current_max = graph[system_name].get(body.exit_system_name)
+                            if current_max is None or body.diameter.value > current_max.value:
+                                graph[system_name][body.exit_system_name] = body.diameter
+                        else:
+                            logger.debug(f"Warning: Wormhole in {system_name} points to non-existent system {body.exit_system_name}")
+        self.system_graph = graph
+
+    # --- Wormhole Helper Methods ---
+
+    def find_empty_hex(self, system: StarSystem) -> typing.Optional[HexCoord]:
+        """Finds a random empty hex (no celestial bodies or units)."""
+        potential_hexes = [h for h in system.hexes if system.hexes[h].is_empty()]
+        return random.choice(potential_hexes) if potential_hexes else None
+
+    def find_wormhole_hex(self, system: StarSystem, target_system: StarSystem) -> typing.Optional[HexCoord]:
+        """Finds an empty hex in the system outskirts and in the direction of the target system."""
+        empty_hexes = [h for h in system.hexes if system.hexes[h].is_empty()]
+        if not empty_hexes:
+            return None
+
+        # Calculate direction angle from system to target_system in the galaxy map
+        dx = target_system.position.x - system.position.x
+        dy = target_system.position.y - system.position.y
+        target_angle = math.atan2(dy, dx)
+
+        # Calculate max distance among empty hexes
+        max_dist = max(hex_distance(h, (0, 0)) for h in empty_hexes)
+        # Outskirts threshold: empty hexes in the outer layers (at least max_dist - 1)
+        # Ensure we don't include the center (0, 0)
+        outskirts_threshold = max(1, max_dist - 1)
+
+        candidates = [h for h in empty_hexes if hex_distance(h, (0, 0)) >= outskirts_threshold]
+        if not candidates:
+            candidates = empty_hexes
+
+        # Select the candidate with the smallest angular difference to target_angle
+        best_hex = None
+        min_angle_diff = float('inf')
+
+        for q, r in candidates:
+            # Project axial hex coordinates to relative Cartesian positions to estimate angle.
+            # Using pointy-top hex grid layout projection:
+            # x = SQRT3 * q + SQRT3/2 * r
+            # y = 1.5 * r
+            # This matches the pointy-top projection used by hexgrid_utils.py.
+            hex_x = SQRT3 * q + (SQRT3 / 2.0) * r
+            hex_y = 1.5 * r
+            hex_angle = math.atan2(hex_y, hex_x)
+
+            # Compute shortest angular difference in [0, pi]
+            angle_diff = abs((hex_angle - target_angle + math.pi) % (2.0 * math.pi) - math.pi)
+            
+            if angle_diff < min_angle_diff:
+                min_angle_diff = angle_diff
+                best_hex = (q, r)
+
+        return best_hex
+
+    def add_wormhole_pair(self, sys_name_a: str, sys_name_b: str, diameter: typing.Optional[HullSize] = None):
+        """Creates a pair of linked wormholes between two systems."""
+        system_a = self.systems[sys_name_a]
+        system_b = self.systems[sys_name_b]
+
+        if not system_a or not system_b:
+            logger.debug(f"Error creating wormhole: System not found ({sys_name_a} or {sys_name_b})")
+            return
+
+        hex_a = self.find_wormhole_hex(system_a, system_b)
+        hex_b = self.find_wormhole_hex(system_b, system_a)
+
+        if hex_a is None or hex_b is None:
+            logger.debug(f"Error creating wormhole: Could not find empty hex in {sys_name_a} or {sys_name_b}")
+            return
+
+        # Determine stability for the pair: 70% chance of 100%, 30% chance of 40-95%
+        if random.random() < WORMHOLE_UNSTABLE_PROB:
+            stability = random.randint(WORMHOLE_UNSTABLE_MIN, WORMHOLE_UNSTABLE_MAX)
+        else:
+            stability = 100
+
+        # Determine diameter: 70% TITAN, 15% LARGE, 15% MEDIUM
+        if diameter is None:
+            rand = random.random()
+            if rand < 0.70:
+                diameter = HullSize.TITAN
+            elif rand < 0.85:
+                diameter = HullSize.LARGE
+            else:
+                diameter = HullSize.MEDIUM
+
+        # Create wormholes
+        wh_a = Wormhole(in_hex=hex_a, in_system=sys_name_a, exit_system_name=sys_name_b, stability=stability, diameter=diameter)
+        wh_b = Wormhole(in_hex=hex_b, in_system=sys_name_b, exit_system_name=sys_name_a, stability=stability, diameter=diameter)
+
+        # Link them
+        wh_a.exit_wormhole_id = wh_b.id
+        wh_b.exit_wormhole_id = wh_a.id
+
+        # Add to systems and global list
+        system_a.add_celestial_body(wh_a)
+        system_b.add_celestial_body(wh_b)
+        self.wormholes[wh_a.id] = wh_a
+        self.wormholes[wh_b.id] = wh_b
+
+        # Update inhibition zones for the hexes that received the wormholes
+        if hex_a in system_a.hexes:
+            system_a.hexes[hex_a].update_static_inhibition_zones()
+        if hex_b in system_b.hexes:
+            system_b.hexes[hex_b].update_static_inhibition_zones()
+
+    def move_unit_between_systems(self, unit: Unit, origin_system_name: str, destination_system_name: str, destination_hex: HexCoord) -> bool:
+        """Moves a unit between two star systems.
+
+        Unknown systems and invalid destination hexes return False before any mutation.
+
+        Args:
+            unit: The unit object to move.
+            origin_system_name: The name of the system the unit is starting in.
+            destination_system_name: The name of the system the unit is moving to.
+            destination_hex: The hex coordinate the unit should arrive at in the destination system.
+
+        Returns:
+            True if the move was successful, False otherwise.
+        """
+        origin_system = self.systems.get(origin_system_name)
+        destination_system = self.systems.get(destination_system_name)
+
+        if not origin_system:
+            logger.debug(f"Error: Origin system '{origin_system_name}' not found for unit transfer.")
+            return False
+        if not destination_system:
+            logger.debug(f"Error: Destination system '{destination_system_name}' not found for unit transfer.")
+            return False
+
+        # Validate destination hex exists in the destination system
+        if destination_hex not in destination_system.hexes:
+             logger.debug(f"Error: Cannot move unit {format_unit_for_log(unit)} to invalid destination hex {destination_hex} in system {destination_system_name}")
+             return False
+
+        # 1. Remove from origin system
+        removed = origin_system.remove_unit(unit)
+        if not removed:
+            logger.debug(f"Error: Failed to remove unit {format_unit_for_log(unit)} from origin system {origin_system_name} during transfer.")
+            return False
+
+        # 2. Update unit's system ID and hex
+        unit.in_system = destination_system_name
+        unit.in_hex = destination_hex
+
+        # 3. Add to destination system
+        destination_system.add_unit(unit)
+        if origin_system_name != destination_system_name:
+            from titan_abilities import cancel
+            cancel(unit, 'deep_scan')
+            cancel(unit, 'siege_lance')
+        logger.debug(f"Galaxy: Transferred unit {format_unit_for_log(unit)} from system {origin_system_name} to system {destination_system_name}, into hex {destination_hex}")
+        return True
+
+    def get_celestial_body_by_id(self, body_id: int) -> typing.Optional['CelestialBody']:
+        """Finds and returns a celestial body by its unique ID."""
+        for system in self.systems.values():
+            if body_id in system.celestial_bodies_by_id:
+                return system.celestial_bodies_by_id[body_id]
+        return None

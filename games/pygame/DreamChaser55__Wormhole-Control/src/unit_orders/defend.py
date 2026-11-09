@@ -1,0 +1,264 @@
+from unit_orders.base import OrderTargetField
+"""Positional Defend order instructing a unit to guard a target coordinate or entity."""
+
+import logging
+from game_logging import format_unit_for_log
+from typing import Dict, Optional, Any, TYPE_CHECKING
+
+from geometry import Position, distance
+from constants import DEFAULT_STANDOFF_DISTANCE
+from .base import Order, OrderStatus, OrderType
+from .movement import MoveOrder
+from .combat import AttackOrder, discard_lost_attack_engagement
+
+if TYPE_CHECKING:
+    from galaxy import Galaxy
+    from domain.units import Unit
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_DEFEND_GUARD_RADIUS = 1000.0
+
+
+class DefendOrder(Order):
+    """Order instructing a unit to move to and defend a specific position, hex, or celestial body."""
+    target_fields = (OrderTargetField('target_unit_id', 'unit', public=True), OrderTargetField('target_id', 'object', public=True),)
+
+
+    def __init__(
+        self,
+        unit: 'Unit',
+        parameters: Dict[str, Any] = None,
+        parent_order: Optional[Order] = None,
+    ):
+        super().__init__(unit, OrderType.DEFEND, parameters, parent_order)
+
+    def get_state_data(self) -> Dict[str, Any]:
+        state_data = super().get_state_data()
+        dest_pos = self.parameters.get("destination_position")
+        pos_data = None
+        if dest_pos is not None:
+            if hasattr(dest_pos, "to_tuple"):
+                pos_data = list(dest_pos.to_tuple())
+            elif isinstance(dest_pos, (list, tuple)):
+                pos_data = list(dest_pos)
+            elif hasattr(dest_pos, "x") and hasattr(dest_pos, "y"):
+                pos_data = [dest_pos.x, dest_pos.y]
+
+        hex_coord = self.parameters.get("destination_hex_coord")
+        hex_data = list(hex_coord) if hex_coord is not None else None
+
+        state_data.update(
+            {
+                "destination_system_name": self.parameters.get("destination_system_name"),
+                "destination_hex_coord": hex_data,
+                "destination_position": pos_data,
+                "target_id": self.parameters.get("target_id"),
+                "guard_radius": self.parameters.get("guard_radius", DEFAULT_DEFEND_GUARD_RADIUS),
+            }
+        )
+        return state_data
+
+    def _resolve_destination(self, galaxy_ref: 'Galaxy') -> tuple[Optional[str], Optional[tuple[int, int]], Optional[Position]]:
+        dest_system = self.parameters.get("destination_system_name")
+        dest_hex = self.parameters.get("destination_hex_coord")
+        dest_pos_raw = self.parameters.get("destination_position")
+
+        dest_pos = None
+        if dest_pos_raw is not None:
+            if isinstance(dest_pos_raw, Position):
+                dest_pos = dest_pos_raw
+            elif isinstance(dest_pos_raw, (list, tuple)) and len(dest_pos_raw) == 2:
+                dest_pos = Position(float(dest_pos_raw[0]), float(dest_pos_raw[1]))
+            elif hasattr(dest_pos_raw, "x") and hasattr(dest_pos_raw, "y"):
+                dest_pos = Position(float(dest_pos_raw.x), float(dest_pos_raw.y))
+
+        target_id = self.parameters.get("target_id")
+        if target_id is not None and galaxy_ref:
+            body = None
+            if hasattr(galaxy_ref, "get_celestial_body_by_id"):
+                body = galaxy_ref.get_celestial_body_by_id(target_id)
+            if body is not None:
+                dest_system = getattr(body, "in_system", dest_system)
+                dest_hex = getattr(body, "in_hex", dest_hex)
+                dest_pos = getattr(body, "position", dest_pos)
+
+
+        return dest_system, dest_hex, dest_pos
+
+    def _post_range(self, galaxy_ref):
+        target_id = self.parameters.get('target_id')
+        body = galaxy_ref.get_celestial_body_by_id(target_id) if target_id is not None else None
+        return body.collision_radius + DEFAULT_STANDOFF_DISTANCE if body is not None else 30.0
+
+    def _move_to_post(self, galaxy_ref, dest_system, dest_hex, dest_pos):
+        target_id = self.parameters.get('target_id')
+        body = galaxy_ref.get_celestial_body_by_id(target_id) if target_id is not None else None
+        if body is not None:
+            return MoveOrder.for_celestial_approach(self.unit, body, parent_order=self)
+        return MoveOrder(self.unit, {
+            'destination_system_name': dest_system,
+            'destination_hex_coord': dest_hex,
+            'destination_position': dest_pos,
+        }, parent_order=self)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        from location_validation import validate_order
+        if not validate_order(self, galaxy_ref):
+            return
+        super().execute(galaxy_ref)
+        dest_system, dest_hex, dest_pos = self._resolve_destination(galaxy_ref)
+
+        if dest_system is None or dest_hex is None or dest_pos is None:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"DEFEND order failed for {format_unit_for_log(self.unit)}: could not resolve destination.")
+            return
+
+        in_same_system = self.unit.in_system == dest_system
+        in_same_hex = self.unit.in_hex == dest_hex
+        dist = distance(self.unit.position, dest_pos) if in_same_system and in_same_hex else float('inf')
+
+        if not in_same_system or not in_same_hex or dist > self._post_range(galaxy_ref):
+            self.add_sub_order(self._move_to_post(galaxy_ref, dest_system, dest_hex, dest_pos))
+
+    def _find_nearby_enemy(self, galaxy_ref: 'Galaxy', dest_system: str, dest_hex: tuple[int, int], dest_pos: Position) -> Optional['Unit']:
+        weapons = self.unit.weapons_component
+        if not weapons or weapons.is_destroyed or not weapons.turrets:
+            return None
+
+        if self.unit.in_system != dest_system or self.unit.in_hex != dest_hex:
+            return None
+
+        if not galaxy_ref or not hasattr(galaxy_ref, "systems"):
+            return None
+
+        system = galaxy_ref.systems.get(dest_system)
+        if not system or not hasattr(system, "hexes"):
+            return None
+
+        hex_obj = system.hexes.get(dest_hex)
+        if not hex_obj or not hasattr(hex_obj, "units"):
+            return None
+
+        visibility_snapshot = None
+        if self.unit.owner and galaxy_ref:
+            from visibility import VisibilityService
+            turn_num = getattr(galaxy_ref, "turn_number", 1)
+            if hasattr(galaxy_ref, "game") and hasattr(galaxy_ref.game, "turn_number"):
+                turn_num = getattr(galaxy_ref.game, "turn_number", 1)
+            visibility_snapshot = VisibilityService.compute(galaxy_ref, self.unit.owner, turn_number=turn_num)
+
+        from domain.players import are_enemies
+        from visibility import is_unit_visible
+        guard_radius = float(self.parameters.get("guard_radius", DEFAULT_DEFEND_GUARD_RADIUS))
+        closest_enemy = None
+        min_dist = float('inf')
+
+        for candidate in hex_obj.units:
+            if are_enemies(self.unit.owner, candidate.owner) and candidate.current_hit_points > 0:
+                if visibility_snapshot is not None and not is_unit_visible(visibility_snapshot, candidate):
+                    continue
+
+                if not weapons.eligible_turrets_for(candidate):
+                    continue
+
+                dist_to_defended = distance(dest_pos, candidate.position)
+                dist_to_unit = distance(self.unit.position, candidate.position)
+
+                if dist_to_defended <= guard_radius or dist_to_unit <= guard_radius:
+                    if dist_to_unit < min_dist:
+                        min_dist = dist_to_unit
+                        closest_enemy = candidate
+
+        return closest_enemy
+
+    def update(self, galaxy_ref: 'Galaxy') -> None:
+        if self.status != OrderStatus.IN_PROGRESS:
+            super().update(galaxy_ref)
+            return
+
+        dest_system, dest_hex, dest_pos = self._resolve_destination(galaxy_ref)
+        if dest_system is None or dest_hex is None or dest_pos is None:
+            for child in list(self.sub_orders):
+                child.cancel()
+            self.sub_orders.clear()
+            self.status = OrderStatus.FAILED
+            return
+
+        guard_radius = float(self.parameters.get("guard_radius", DEFAULT_DEFEND_GUARD_RADIUS))
+
+        discard_lost_attack_engagement(self, galaxy_ref)
+
+        # Check if we are currently executing an AttackOrder sub-order
+        has_attack_order = False
+        if self.sub_orders:
+            current_sub = self.sub_orders[0]
+            if current_sub.order_type == OrderType.ATTACK:
+                has_attack_order = True
+                enemy_id = current_sub.parameters.get("target_unit_id")
+                enemy_unit = None
+                if galaxy_ref and hasattr(galaxy_ref, "get_unit_by_id"):
+                    enemy_unit = galaxy_ref.get_unit_by_id(enemy_id) if enemy_id is not None else None
+                from domain.players import are_enemies
+
+                is_in_range = False
+                if (
+                    enemy_unit
+                    and enemy_unit.current_hit_points > 0
+                    and are_enemies(self.unit.owner, enemy_unit.owner)
+                    and enemy_unit.in_system == dest_system
+                    and enemy_unit.in_hex == dest_hex
+                ):
+                    dist_to_defended = distance(dest_pos, enemy_unit.position)
+                    if dist_to_defended <= guard_radius * 1.2:
+                        is_in_range = True
+
+                if not is_in_range:
+                    logger.debug(f"[{format_unit_for_log(self.unit)}] Defend target lost, destroyed, or left perimeter. Resuming position guard.")
+                    current_sub.cancel()
+                    self.sub_orders.popleft()
+                    has_attack_order = False
+
+        if not has_attack_order:
+            # Look for enemies invading the guarded perimeter
+            nearby_enemy = self._find_nearby_enemy(galaxy_ref, dest_system, dest_hex, dest_pos)
+            if nearby_enemy:
+                logger.debug(f"[{format_unit_for_log(self.unit)}] Hostile detected in defended sector: {format_unit_for_log(nearby_enemy)}. Engaging!")
+                for sub in list(self.sub_orders):
+                    sub.cancel()
+                self.sub_orders.clear()
+
+                attack_params = {"target_unit_id": nearby_enemy.id}
+                self.add_sub_order(AttackOrder(self.unit, attack_params, parent_order=self))
+            else:
+                # No enemies: verify station-keeping at the defended coordinate
+                has_movement_order = False
+                if self.sub_orders:
+                    current_sub = self.sub_orders[0]
+                    if current_sub.order_type in [OrderType.MOVE, OrderType.REACH_WAYPOINT]:
+                        has_movement_order = True
+
+                in_same_system_and_hex = (
+                    self.unit.in_system == dest_system and self.unit.in_hex == dest_hex
+                )
+                dist_to_target = (
+                    distance(self.unit.position, dest_pos)
+                    if in_same_system_and_hex
+                    else float("inf")
+                )
+
+                post_range = self._post_range(galaxy_ref)
+                if has_movement_order and in_same_system_and_hex and dist_to_target <= post_range:
+                    logger.debug(f"[{format_unit_for_log(self.unit)}] Arrived at defended post. Holding position.")
+                    if self.sub_orders:
+                        self.sub_orders[0].cancel()
+                        self.sub_orders.popleft()
+                    has_movement_order = False
+
+                if not has_movement_order and (not in_same_system_and_hex or dist_to_target > post_range):
+                    self.add_sub_order(self._move_to_post(galaxy_ref, dest_system, dest_hex, dest_pos))
+
+        super().update(galaxy_ref)
+
+    def check_completion_conditions(self) -> None:
+        pass

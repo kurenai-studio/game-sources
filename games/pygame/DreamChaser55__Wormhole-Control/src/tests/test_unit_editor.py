@@ -1,0 +1,1200 @@
+from display_config import DisplayConfig
+import pytest
+import json
+import os
+import tempfile
+import unittest
+from constants import HullSize
+from custom_unit_templates import (
+    CustomTemplateManager,
+    CustomUnitTemplate,
+    ComponentConfig,
+)
+from unit_templates import UNIT_TEMPLATES, PRIVATE_TEMPLATES
+"""
+tests/test_unit_editor.py
+
+Unit tests for the custom unit template system:
+  - CustomUnitTemplate validation (capacity, hull-size restrictions)
+  - Save / delete / load-from-file persistence round-trip
+  - PRIVATE_TEMPLATES registration
+  - Constructor.refresh_buildable_units integration
+"""
+
+
+# Ensure the project root is on the path
+
+
+def _make_manager(data_file: str) -> CustomTemplateManager:
+    """Return a CustomTemplateManager that uses a temporary data file."""
+    return CustomTemplateManager(data_file=data_file)
+
+
+class TestCustomUnitTemplateValidation(unittest.TestCase):
+    """Tests for CustomUnitTemplate.validate()."""
+
+    def _make_valid(self, hull_size=HullSize.MEDIUM) -> CustomUnitTemplate:
+        t = CustomUnitTemplate("My Ship", hull_size)
+        t.components.has_engine = True
+        return t
+
+    # ------------------------------------------------------------------ #
+    # Basic validation
+    # ------------------------------------------------------------------ #
+
+    def test_valid_design_passes(self):
+        t = self._make_valid()
+        self.assertEqual(t.validate(), [])
+
+    def test_empty_display_name_fails(self):
+        t = self._make_valid()
+        t.display_name = ""
+        errors = t.validate()
+        self.assertTrue(any("Display name" in e for e in errors))
+
+    def test_whitespace_display_name_fails(self):
+        t = self._make_valid()
+        t.display_name = "   "
+        errors = t.validate()
+        self.assertTrue(any("Display name" in e for e in errors))
+
+    def test_no_components_fails(self):
+        t = CustomUnitTemplate("Empty", HullSize.MEDIUM)
+        errors = t.validate()
+        self.assertTrue(any("component" in e.lower() for e in errors))
+
+    def test_over_capacity_fails(self):
+        t = self._make_valid(HullSize.TINY)  # TINY capacity = 20
+        c = t.components
+        # Fill up way past TINY capacity (20)
+        c.has_engine = True               # +5
+        c.has_weapon_bays = True          # +10
+        c.has_repair_component = True     # +15  → total 30, over 20
+        errors = t.validate()
+        self.assertTrue(any("capacity" in e.lower() for e in errors))
+
+    # ------------------------------------------------------------------ #
+    # Hull-size restrictions
+    # ------------------------------------------------------------------ #
+
+    def test_tiny_can_have_basic_hyperdrive(self):
+        t = self._make_valid(HullSize.TINY)
+        t.components.has_hyperdrive = True
+        t.components.hyperdrive_type = "BASIC"
+        errors = t.validate()
+        self.assertFalse(any("hyperdrive" in e.lower() for e in errors))
+
+    def test_tiny_cannot_have_advanced_hyperdrive(self):
+        t = self._make_valid(HullSize.TINY)
+        t.components.has_hyperdrive = True
+        t.components.hyperdrive_type = "ADVANCED"
+        errors = t.validate()
+        self.assertTrue(any("advanced hyperdrive" in e.lower() for e in errors))
+
+    def test_tiny_cannot_have_inhibitor(self):
+        t = self._make_valid(HullSize.TINY)
+        t.components.has_inhibitor = True
+        errors = t.validate()
+        self.assertTrue(any("inhibitor" in e.lower() for e in errors))
+
+    def test_small_can_have_advanced_hyperdrive(self):
+        t = self._make_valid(HullSize.SMALL)
+        t.components.has_hyperdrive = True
+        t.components.hyperdrive_type = "ADVANCED"
+        self.assertEqual(t.validate(), [])
+
+    def test_small_can_have_basic_hyperdrive(self):
+        t = self._make_valid(HullSize.SMALL)
+        t.components.has_hyperdrive = True
+        t.components.hyperdrive_type = "BASIC"
+        self.assertEqual(t.validate(), [])
+
+    def test_medium_can_have_advanced_hyperdrive(self):
+        t = self._make_valid(HullSize.MEDIUM)
+        t.components.has_hyperdrive = True
+        t.components.hyperdrive_type = "ADVANCED"
+        self.assertEqual(t.validate(), [])
+
+    def test_medium_cannot_have_hangar(self):
+        t = self._make_valid(HullSize.MEDIUM)
+        t.components.has_hangar = True
+        errors = t.validate()
+        self.assertTrue(any("hangar" in e.lower() for e in errors))
+
+    def test_large_can_have_hangar(self):
+        t = self._make_valid(HullSize.LARGE)
+        t.components.has_hangar = True
+        self.assertEqual(t.validate(), [])
+
+    def test_huge_can_have_hangar(self):
+        t = self._make_valid(HullSize.HUGE)
+        t.components.has_hangar = True
+        self.assertEqual(t.validate(), [])
+
+    def test_small_cannot_have_strikecraft_bay(self):
+        t = self._make_valid(HullSize.SMALL)
+        t.components.has_strikecraft_bay = True
+        errors = t.validate()
+        self.assertTrue(any("strikecraft" in e.lower() for e in errors) or any("bay" in e.lower() for e in errors))
+
+    def test_medium_can_have_strikecraft_bay(self):
+        t = self._make_valid(HullSize.MEDIUM)
+        t.components.has_strikecraft_bay = True
+        self.assertEqual(t.validate(), [])
+
+    # ------------------------------------------------------------------ #
+    # Build cost / build time
+    # ------------------------------------------------------------------ #
+
+    def test_build_cost_increases_with_components(self):
+        t_bare = self._make_valid(HullSize.MEDIUM)
+        t_loaded = self._make_valid(HullSize.MEDIUM)
+        t_loaded.components.has_weapon_bays = True
+        t_loaded.components.has_repair_component = True
+        self.assertGreater(t_loaded.build_cost, t_bare.build_cost)
+
+    def test_build_time_increases_with_components(self):
+        t_bare = self._make_valid(HullSize.MEDIUM)
+        t_loaded = self._make_valid(HullSize.MEDIUM)
+        for _ in range(10):
+            t_loaded.components.has_weapon_bays = True
+            t_loaded.components.has_repair_component = True
+        self.assertGreaterEqual(t_loaded.build_time, t_bare.build_time)
+
+
+class TestCustomTemplateManagerPersistence(unittest.TestCase):
+    """Tests for save / load round-trip and PRIVATE_TEMPLATES registration."""
+
+    def setUp(self):
+        # Use a temporary file so tests don't pollute the real data file
+        self.tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        )
+        self.tmp.write("{}")
+        self.tmp.close()
+        self.data_file = self.tmp.name
+
+    def tearDown(self):
+        os.unlink(self.data_file)
+
+    def _fresh_manager(self) -> CustomTemplateManager:
+        return CustomTemplateManager(data_file=self.data_file)
+
+    def _make_template(self, name="Test Cruiser", hull=HullSize.MEDIUM) -> CustomUnitTemplate:
+        t = CustomUnitTemplate(name, hull)
+        t.components.has_engine = True
+        t.components.has_weapon_bays = True
+        return t
+
+    def test_save_registers_in_private_templates(self):
+        mgr = self._fresh_manager()
+        t = self._make_template()
+        errs = mgr.save_design(t)
+        self.assertEqual(errs, [])
+        self.assertIn("Test Cruiser", PRIVATE_TEMPLATES)
+        self.assertNotIn("Test Cruiser", UNIT_TEMPLATES)
+
+    def test_saved_template_hull_size_is_enum(self):
+        mgr = self._fresh_manager()
+        mgr.save_design(self._make_template())
+        td = PRIVATE_TEMPLATES["Test Cruiser"]
+        self.assertIsInstance(td["hull_size"], HullSize)
+
+    def test_delete_removes_from_private_templates(self):
+        mgr = self._fresh_manager()
+        mgr.save_design(self._make_template())
+        self.assertIn("Test Cruiser", PRIVATE_TEMPLATES)
+        deleted = mgr.delete_design("Test Cruiser")
+        self.assertTrue(deleted)
+        self.assertNotIn("Test Cruiser", PRIVATE_TEMPLATES)
+
+    def test_persistence_round_trip(self):
+        mgr1 = self._fresh_manager()
+        mgr1.save_design(self._make_template())
+
+        # Load fresh manager from same file
+        mgr2 = self._fresh_manager()
+        mgr2.load_from_file()
+
+        self.assertIn("Test Cruiser", mgr2.designs)
+        design = mgr2.designs["Test Cruiser"]
+        self.assertEqual(design.hull_size, HullSize.MEDIUM)
+        self.assertTrue(design.components.has_engine)
+        self.assertTrue(design.components.has_weapon_bays)
+        self.assertIn("Test Cruiser", PRIVATE_TEMPLATES)
+        self.assertNotIn("Test Cruiser", UNIT_TEMPLATES)
+
+    def test_persistence_hull_size_survives_round_trip(self):
+        mgr1 = self._fresh_manager()
+        t = self._make_template(hull=HullSize.HUGE)
+        mgr1.save_design(t)
+
+        # Verify the JSON has a string (not an enum)
+        with open(self.data_file, "r") as f:
+            raw = json.load(f)
+        self.assertEqual(raw["Test Cruiser"]["hull_size"], "HUGE")
+
+        # Load back and verify enum is restored
+        mgr2 = self._fresh_manager()
+        mgr2.load_from_file()
+        self.assertEqual(mgr2.designs["Test Cruiser"].hull_size, HullSize.HUGE)
+
+    def test_multiple_designs_persist(self):
+        mgr = self._fresh_manager()
+        mgr.save_design(self._make_template("Alpha"))
+        mgr.save_design(self._make_template("Beta", HullSize.LARGE))
+
+        mgr2 = self._fresh_manager()
+        mgr2.load_from_file()
+        self.assertIn("Alpha", mgr2.designs)
+        self.assertIn("Beta", mgr2.designs)
+        self.assertEqual(mgr2.designs["Beta"].hull_size, HullSize.LARGE)
+
+    def test_duplicate_name_rejected_when_new(self):
+        mgr = self._fresh_manager()
+        t1 = self._make_template("Duplicate Ship")
+        err1 = mgr.save_design(t1)
+        self.assertEqual(err1, [])
+
+        t2 = self._make_template("Duplicate Ship")
+        err2 = mgr.save_design(t2)
+        self.assertTrue(any("already exists" in e for e in err2))
+        self.assertEqual(len(mgr.list_design_names()), 1)
+
+    def test_edit_existing_name_succeeds(self):
+        mgr = self._fresh_manager()
+        t1 = self._make_template("Original Ship")
+        err1 = mgr.save_design(t1)
+        self.assertEqual(err1, [])
+
+        # Edit with same name
+        t1.components.has_hyperdrive = True
+        err2 = mgr.save_design(t1, original_name="Original Ship")
+        self.assertEqual(err2, [])
+        self.assertEqual(len(mgr.list_design_names()), 1)
+        self.assertTrue(mgr.designs["Original Ship"].components.has_hyperdrive)
+
+    def test_rename_design_updates_key_and_unit_templates(self):
+        mgr = self._fresh_manager()
+        t1 = self._make_template("Old Name")
+        mgr.save_design(t1)
+        self.assertIn("Old Name", mgr.designs)
+        self.assertIn("Old Name", PRIVATE_TEMPLATES)
+        self.assertNotIn("Old Name", UNIT_TEMPLATES)
+
+        t1.display_name = "New Name"
+        err = mgr.save_design(t1, original_name="Old Name")
+        self.assertEqual(err, [])
+        self.assertNotIn("Old Name", mgr.designs)
+        self.assertNotIn("Old Name", PRIVATE_TEMPLATES)
+        self.assertNotIn("Old Name", UNIT_TEMPLATES)
+        self.assertIn("New Name", mgr.designs)
+        self.assertIn("New Name", PRIVATE_TEMPLATES)
+        self.assertNotIn("New Name", UNIT_TEMPLATES)
+
+    def test_duplicate_name_case_insensitive_rejected(self):
+        mgr = self._fresh_manager()
+        t1 = self._make_template("Duplicate Ship")
+        err1 = mgr.save_design(t1)
+        self.assertEqual(err1, [])
+
+        t2 = self._make_template("duplicate ship")
+        err2 = mgr.save_design(t2)
+        self.assertTrue(any("already exists" in e for e in err2))
+        self.assertEqual(len(mgr.list_design_names()), 1)
+
+    def test_duplicate_builtin_template_name_rejected(self):
+        mgr = self._fresh_manager()
+        t = self._make_template("Shipyard")
+        err = mgr.save_design(t)
+        self.assertTrue(any("already exists" in e for e in err))
+        self.assertEqual(len(mgr.list_design_names()), 0)
+
+    def test_rename_to_existing_name_rejected(self):
+        mgr = self._fresh_manager()
+        t1 = self._make_template("Ship A")
+        mgr.save_design(t1)
+        t2 = self._make_template("Ship B")
+        mgr.save_design(t2)
+
+        t2.display_name = "Ship A"
+        err = mgr.save_design(t2, original_name="Ship B")
+        self.assertTrue(any("already exists" in e for e in err))
+        self.assertIn("Ship B", mgr.designs)
+        self.assertIn("Ship A", mgr.designs)
+
+    def test_case_insensitive_lookup_and_delete(self):
+        mgr = self._fresh_manager()
+        t = self._make_template("Medium Sensor Ship")
+        mgr.save_design(t)
+
+        self.assertIsNotNone(mgr.get_design("medium sensor ship"))
+        self.assertIsNotNone(mgr.get_design("MEDIUM SENSOR SHIP"))
+        self.assertEqual(mgr.list_design_names(), ["Medium Sensor Ship"])
+        self.assertTrue(mgr.delete_design("medium sensor ship"))
+        self.assertEqual(len(mgr.list_design_names()), 0)
+
+
+class TestUnitEditorGuiComponents(unittest.TestCase):
+    """Verifies that all valid components are supported by the unit editor GUI."""
+
+    def test_all_components_in_gui(self):
+        import dataclasses
+        from gui.unit_editor_gui import COMPONENT_ROWS
+
+        gui_keys = {row["key"] for row in COMPONENT_ROWS}
+        config_keys = {f.name for f in dataclasses.fields(ComponentConfig) if f.name.startswith("has_") and f.name != "has_counter_intelligence"}
+
+        self.assertEqual(config_keys, gui_keys)
+
+    def test_antimatter_harvester_custom_template(self):
+        from constants import HullSize, ANTIMATTER_HARVESTER_HULL_COST
+        from custom_unit_templates import CustomUnitTemplate
+        from unit_templates import UNIT_TEMPLATES, PRIVATE_TEMPLATES
+
+        # Hull cost calculation includes harvester cost (15)
+        comp = ComponentConfig(has_antimatter_storage=True, antimatter_capacity=150.0, has_antimatter_harvester=True)
+        template = CustomUnitTemplate(
+            display_name="Harvester Ship",
+            hull_size=HullSize.LARGE,
+            components=comp,
+        )
+        self.assertEqual(template.validate(), [])
+        self.assertIn("has_antimatter_harvester", comp.__dataclass_fields__)
+        self.assertTrue(template.total_hull_cost >= ANTIMATTER_HARVESTER_HULL_COST)
+
+        # Restrictions: STRIKECRAFT_WING & TINY forbidden
+        tiny_template = CustomUnitTemplate(
+            display_name="Tiny Harvester",
+            hull_size=HullSize.TINY,
+            components=comp,
+        )
+        errors = tiny_template.validate()
+        self.assertTrue(any("has_antimatter_harvester" in e for e in errors))
+
+        # Persistence & Dict conversion using temporary data file
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".json")
+        tmp.write(b"{}")
+        tmp.close()
+        try:
+            mgr = _make_manager(tmp.name)
+            save_errors = mgr.save_design(template)
+            self.assertEqual(save_errors, [])
+            retrieved = mgr.get_design("Harvester Ship")
+            self.assertIsNotNone(retrieved)
+            self.assertTrue(retrieved.components.has_antimatter_harvester)
+
+            # PRIVATE_TEMPLATES dict entry
+            unit_dict = PRIVATE_TEMPLATES.get("Harvester Ship")
+            self.assertIsNotNone(unit_dict)
+            self.assertNotIn("Harvester Ship", UNIT_TEMPLATES)
+            self.assertTrue(unit_dict.get("has_antimatter_harvester"))
+            self.assertEqual(unit_dict.get("antimatter_harvester_hull_cost"), ANTIMATTER_HARVESTER_HULL_COST)
+            mgr.delete_design("Harvester Ship")
+        finally:
+            if os.path.exists(tmp.name):
+                os.remove(tmp.name)
+
+
+@pytest.mark.usefixtures("pygame_context")
+class TestUnitEditorWindowSelection(unittest.TestCase):
+    """Unit tests for UnitEditorWindow component selection & dynamic details UI."""
+
+
+    def test_component_selection(self):
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+
+        # Default selected component is "has_engine"
+        self.assertEqual(win._selected_component_key, "has_engine")
+        self.assertIn("has_engine", win._comp_select_btns)
+        self.assertEqual(win._comp_select_btns["has_engine"].text, "▶▶▶")
+        engine_label = win._details_groups["has_engine"][0]
+        self.assertEqual(engine_label.object_ids[-1], "#comp_cost_label")
+        self.assertIs(engine_label.ui_container, win._panel.get_container())
+        self.assertEqual(win._details_hdr.object_ids[-1], "#editor_section_label")
+
+        # Select "has_hyperdrive" via _select_component
+        win._select_component("has_hyperdrive")
+        self.assertEqual(win._selected_component_key, "has_hyperdrive")
+        self.assertEqual(win._details_hdr.text, "Details: Hyperdrive")
+        self.assertEqual(win._comp_select_btns["has_hyperdrive"].text, "▶▶▶")
+        self.assertEqual(win._comp_select_btns["has_engine"].text, ">>>")
+
+        # Select "has_weapon_bays"
+        win._select_component("has_weapon_bays")
+        self.assertEqual(win._selected_component_key, "has_weapon_bays")
+        self.assertEqual(win._details_hdr.text, "Details: Weapons")
+
+        win.kill()
+
+    def test_add_turret_button_event(self):
+        import pygame
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+        win.show()
+
+        # Ensure Add Turret button exists
+        self.assertIsNotNone(win._add_turret_button)
+        initial_turret_count = len(win._turrets)
+
+        # Simulate clicking the Add Turret button
+        event = pygame.event.Event(pygame_gui.UI_BUTTON_PRESSED, {"ui_element": win._add_turret_button})
+        result = win.process_event(event)
+
+        self.assertEqual(result, "ui_handled")
+        self.assertEqual(len(win._turrets), initial_turret_count + 1)
+        win.kill()
+
+    def test_configurable_parameter_widgets(self):
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+
+        # Verify entry widgets exist and contain default text
+        self.assertIsNotNone(win._repair_rate_entry)
+        self.assertEqual(win._repair_rate_entry.get_text(), "10")
+        self.assertIsNotNone(win._mining_rate_entry)
+        self.assertEqual(win._mining_rate_entry.get_text(), "10")
+        self.assertIsNotNone(win._hangar_slots_entry)
+        self.assertEqual(win._hangar_slots_entry.get_text(), "2")
+        self.assertIsNotNone(win._strikecraft_bay_slots_entry)
+        self.assertEqual(win._strikecraft_bay_slots_entry.get_text(), "2")
+        self.assertIsNotNone(win._inhibitor_radius_entry)
+        self.assertEqual(win._inhibitor_radius_entry.get_text(), "100")
+
+        # Test parameter reading from modified entries
+        win._repair_rate_entry.set_text("25")
+        win._repair_range_entry.set_text("300")
+        win._read_repair_params()
+        self.assertEqual(win._comp.repair_rate, 25.0)
+        self.assertEqual(win._comp.repair_range, 300.0)
+
+        win._mining_rate_entry.set_text("15")
+        win._mining_range_entry.set_text("250")
+        win._mining_max_cargo_entry.set_text("200")
+        win._read_mining_params()
+        self.assertEqual(win._comp.mining_rate, 15.0)
+        self.assertEqual(win._comp.mining_range, 250.0)
+        self.assertEqual(win._comp.max_mining_cargo, 200.0)
+
+        win._hangar_slots_entry.set_text("4")
+        win._read_hangar_params()
+        self.assertEqual(win._comp.hangar_slots, 4)
+
+        win._strikecraft_bay_slots_entry.set_text("3")
+        win._read_strikecraft_bay_params()
+        self.assertEqual(win._comp.strikecraft_bay_slots, 3)
+
+        win._inhibitor_radius_entry.set_text("150")
+        win._read_inhibitor_params()
+        self.assertEqual(win._comp.inhibitor_radius, 150.0)
+
+        win.kill()
+
+
+    def test_load_design_dropdown_visibility(self):
+        """Verifies loading a design with hyperdrive unselected keeps hyperdrive dropdown hidden."""
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+        win.show()
+
+        t = CustomUnitTemplate("Test Design", HullSize.MEDIUM)
+        t.components.has_engine = True
+        win._sync_widgets_from_template(t)
+        win._select_component("has_engine")
+
+        self.assertFalse(win._hd_type_dropdown.visible)
+        self.assertIn(win._hd_type_dropdown, win._details_groups["has_hyperdrive"])
+        self.assertIn(win._hd_type_dropdown, win._elements)
+
+        win.kill()
+
+    def test_recreated_dropdown_tab_switching(self):
+        """Verifies component tab switching correctly toggles visibility of recreated dropdowns."""
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+        win.show()
+
+        t = CustomUnitTemplate("Test Design", HullSize.MEDIUM)
+        t.components.has_engine = True
+        t.components.has_hyperdrive = True
+        win._sync_widgets_from_template(t)
+
+        win._select_component("has_hyperdrive")
+        self.assertTrue(win._hd_type_dropdown.visible)
+
+        win._select_component("has_engine")
+        self.assertFalse(win._hd_type_dropdown.visible)
+
+        win.kill()
+
+    def test_component_buttons_fit_panel_bounds(self):
+        """Verifies that component buttons are placed in UIScrollingContainer with full height."""
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+
+        self.assertIsNotNone(win._comp_scroll_container)
+        self.assertTrue(isinstance(win._comp_scroll_container, pygame_gui.elements.UIScrollingContainer))
+        self.assertFalse(win._comp_scroll_container.allow_scroll_x)
+        self.assertIsNone(win._comp_scroll_container.horiz_scroll_bar)
+
+        for key, btn in win._comp_toggles.items():
+            self.assertGreaterEqual(btn.relative_rect.h, 24, f"Component button {key} height is too small: {btn.relative_rect.h}")
+            self.assertEqual(btn.ui_container, win._comp_scroll_container.get_container())
+
+        win.kill()
+
+    def test_summary_view_nested_parameters(self):
+        """Verifies that component parameters in the design summary are nested directly beneath component lines."""
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+        win.show()
+
+        c = win._comp
+        c.has_engine = True
+        c.engine_speed = 150.0
+
+        c.has_hyperdrive = True
+        c.hyperdrive_type = "BASIC"
+        c.hyperdrive_jump_range = 7
+
+        c.has_defenses = True
+        c.armor = 25
+        c.shields = 30
+        c.point_defense = 5
+
+        win._update_summary()
+
+        summary_text = win._summary_box.html_text
+
+        # Verify Engines line and nested speed line
+        eng_pos = summary_text.find("Engines")
+        speed_pos = summary_text.find("speed=150")
+        hd_pos = summary_text.find("Hyperdrive")
+        hd_detail_pos = summary_text.find("type=BASIC  jump_range=7")
+        def_pos = summary_text.find("Defenses")
+        def_detail_pos = summary_text.find("armor=25  shields=30  PD=5")
+
+        self.assertNotEqual(eng_pos, -1)
+        self.assertNotEqual(speed_pos, -1)
+        self.assertNotEqual(hd_pos, -1)
+        self.assertNotEqual(hd_detail_pos, -1)
+        self.assertNotEqual(def_pos, -1)
+        self.assertNotEqual(def_detail_pos, -1)
+
+        # Confirm order: Engines < speed=150 < Hyperdrive < type=BASIC... < Defenses < armor=25...
+        self.assertTrue(eng_pos < speed_pos < hd_pos < hd_detail_pos < def_pos < def_detail_pos)
+
+        win.kill()
+
+    def test_float_defenses_in_editor(self):
+        """Verifies that float defense parameters are displayed and parsed properly without truncation."""
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager, CustomUnitTemplate
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+        win.show()
+
+        # Enable defenses and set defense entries with float strings
+        win._comp.has_defenses = True
+        win._armor_entry.set_text("25.5")
+        win._shields_entry.set_text("30.25")
+        win._pd_entry.set_text("5.75")
+        from gui.unit_editor_gui.param_readers import read_defense_params
+        read_defense_params(win)
+
+        self.assertEqual(win._comp.armor, 25.5)
+        self.assertEqual(win._comp.shields, 30.25)
+        self.assertEqual(win._comp.point_defense, 5.75)
+
+        win._update_summary()
+        summary_text = win._summary_box.html_text
+        self.assertIn("armor=25.5  shields=30.25  PD=5.75", summary_text)
+
+        # Loading template with floats populates text entries formatted with :g
+        t = CustomUnitTemplate("Float Def Ship", HullSize.MEDIUM)
+        t.components.has_defenses = True
+        t.components.armor = 10.5
+        t.components.shields = 20.0
+        t.components.point_defense = 0.5
+        from gui.unit_editor_gui.template_io import sync_widgets_from_template
+        sync_widgets_from_template(win, t)
+
+        self.assertEqual(win._armor_entry.get_text(), "10.5")
+        self.assertEqual(win._shields_entry.get_text(), "20")
+        self.assertEqual(win._pd_entry.get_text(), "0.5")
+
+        win.kill()
+
+    def test_save_as_new_creates_independent_template(self):
+        """Verifies that _do_save_as_new saves a new template without modifying loaded template."""
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from custom_unit_templates import CustomTemplateManager, CustomUnitTemplate
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+        win.show()
+
+        # Save an initial template
+        t1 = CustomUnitTemplate("Frigate Alpha", HullSize.MEDIUM, ComponentConfig(has_engine=True, engine_speed=80.0))
+        tmp_mgr.save_design(t1)
+
+        # Load it into editor
+        win._sync_widgets_from_template(t1)
+        self.assertEqual(win._editing_name, "Frigate Alpha")
+
+        # Modify parameters and name
+        win._engine_speed_entry.set_text("130")
+        win._display_entry.set_text("Frigate Alpha Mk II")
+
+        # Call _do_save_as_new
+        res = win._do_save_as_new()
+        self.assertEqual(res, "design_saved")
+
+        # Verify Frigate Alpha remains untouched
+        orig = tmp_mgr.get_design("Frigate Alpha")
+        self.assertIsNotNone(orig)
+        self.assertEqual(orig.components.engine_speed, 80.0)
+
+        # Verify Frigate Alpha Mk II exists with modified parameters
+        new_copy = tmp_mgr.get_design("Frigate Alpha Mk II")
+        self.assertIsNotNone(new_copy)
+        self.assertEqual(new_copy.components.engine_speed, 130.0)
+
+        # Cleanup
+        tmp_mgr.delete_design("Frigate Alpha")
+        tmp_mgr.delete_design("Frigate Alpha Mk II")
+        win.kill()
+
+
+    def test_unit_editor_summary_predicted_upkeep_display(self):
+        """Verifies that predicted unit upkeep is displayed in the Unit Designer Column 4 summary."""
+        import pygame_gui
+        from gui.unit_editor_gui import UnitEditorWindow
+        from gui.unit_editor_gui import cost_model
+        from custom_unit_templates import CustomTemplateManager
+        from constants import UPKEEP_COST_PER_HULL_POINT
+
+        mgr = pygame_gui.UIManager((1280, 720))
+        tmp_mgr = CustomTemplateManager()
+        win = UnitEditorWindow(mgr, DisplayConfig(1280, 720), tmp_mgr)
+        win.show()
+
+        # By default (MEDIUM hull with default components such as Antimatter Storage)
+        win._update_summary()
+        summary_text = win._summary_box.html_text
+        default_used = cost_model.current_hull_used(win)
+        default_expected_upkeep = default_used * UPKEEP_COST_PER_HULL_POINT
+        self.assertIn("<b>Predicted upkeep:</b>", summary_text)
+        self.assertIn(f"{default_expected_upkeep:.2f} credits/turn", summary_text)
+
+        # Enable engine and weapons
+        win._comp.has_engine = True
+        win._comp.engine_speed = 120.0
+        win._update_summary()
+
+        used = cost_model.current_hull_used(win)
+        expected_upkeep = used * UPKEEP_COST_PER_HULL_POINT
+        self.assertAlmostEqual(cost_model.predicted_upkeep(win), expected_upkeep)
+        self.assertIn(f"<b>Predicted upkeep:</b> {expected_upkeep:.2f} credits/turn", win._summary_box.html_text)
+
+        # Switch hull size to STRIKECRAFT_WING
+        win._hull_size = HullSize.STRIKECRAFT_WING
+        win._update_summary()
+        self.assertEqual(cost_model.predicted_upkeep(win), 0.0)
+        self.assertIn("<b>Predicted upkeep:</b> 0.00 credits/turn (Exempt)", win._summary_box.html_text)
+
+        win.kill()
+
+
+class TestDesignBusinessRules(unittest.TestCase):
+    def test_ability_requires_component_validation_fails(self):
+        """Validation fails if an ability is equipped without its required component."""
+        t = CustomUnitTemplate("Test Ability Fail", HullSize.MEDIUM)
+        t.components.has_engine = True
+        t.components.has_ability_component = True
+        t.components.abilities = ["adaptive_forcefield"]  # Requires has_defenses
+        t.components.has_defenses = False
+        errors = t.validate()
+        self.assertTrue(any("Adaptive Forcefield" in e and "has_defenses" in e for e in errors))
+
+    def test_ability_requires_component_validation_passes(self):
+        """Validation passes if an ability is equipped with its required component."""
+        t = CustomUnitTemplate("Test Ability Pass", HullSize.MEDIUM)
+        t.components.has_engine = True
+        t.components.has_ability_component = True
+        t.components.abilities = ["adaptive_forcefield"]  # Requires has_defenses
+        t.components.has_defenses = True
+        t.components.armor = 5
+        errors = t.validate()
+        self.assertFalse(any("Adaptive Forcefield" in e for e in errors))
+
+    def test_capture_unit_requires_marines_component(self):
+        """Capture Unit ability requires has_marines_component."""
+        t = CustomUnitTemplate("Test Capture Unit", HullSize.MEDIUM)
+        t.components.has_engine = True
+        t.components.has_ability_component = True
+        t.components.abilities = ["capture_unit"]
+        errors = t.validate()
+        self.assertTrue(any("Capture Unit" in e and "has_marines_component" in e for e in errors))
+
+        t.components.has_marines_component = True
+        t.components.marines_count = 10
+        errors = t.validate()
+        self.assertFalse(any("Capture Unit" in e for e in errors))
+
+    def test_predicted_upkeep_calculation_and_template(self):
+        """Verifies calculate_unit_upkeep and CustomUnitTemplate.predicted_upkeep behavior."""
+        from economy import calculate_unit_upkeep
+        from constants import UPKEEP_COST_PER_HULL_POINT
+
+        # Strikecraft Wing is always 0.0
+        self.assertEqual(calculate_unit_upkeep(HullSize.STRIKECRAFT_WING, 5.0), 0.0)
+
+        # Standard hulls scale with used hull capacity * UPKEEP_COST_PER_HULL_POINT
+        self.assertAlmostEqual(calculate_unit_upkeep(HullSize.TINY, 10.0), 10.0 * UPKEEP_COST_PER_HULL_POINT)
+        self.assertAlmostEqual(calculate_unit_upkeep(HullSize.MEDIUM, 35.5), 35.5 * UPKEEP_COST_PER_HULL_POINT)
+        self.assertEqual(calculate_unit_upkeep(HullSize.LARGE, 0.0), 0.0)
+
+        # Template property check
+        t_med = CustomUnitTemplate("Cruiser Test", HullSize.MEDIUM)
+        t_med.components.has_engine = True
+        t_med.components.engine_speed = 100.0
+        expected_upkeep = t_med.total_hull_cost * UPKEEP_COST_PER_HULL_POINT
+        self.assertAlmostEqual(t_med.predicted_upkeep, expected_upkeep)
+
+        t_wing = CustomUnitTemplate("Fighter Test", HullSize.STRIKECRAFT_WING)
+        t_wing.components.has_engine = True
+        self.assertEqual(t_wing.predicted_upkeep, 0.0)
+
+
+def test_wing_editor_load_switch_and_sensor_guard(pygame_context, tmp_path):
+    import pygame_gui
+    from gui.unit_editor_gui.window import UnitEditorWindow
+    from gui.unit_editor_gui.component_state import on_hull_changed
+    from gui.unit_editor_gui.param_readers import read_sensor_params
+    from gui.unit_editor_gui.template_io import sync_widgets_from_template
+    editor = UnitEditorWindow(pygame_gui.UIManager((1280, 720)), DisplayConfig(1280, 720),
+                              CustomTemplateManager(data_file=str(tmp_path / 'designs.json')))
+    try:
+        editor.show()
+        legacy = CustomUnitTemplate('Wing', HullSize.STRIKECRAFT_WING,
+            ComponentConfig(has_mining_component=False, has_sensors=True,
+                            sensor_long_range_hexes=0, has_antimatter_storage=False))
+        sync_widgets_from_template(editor, legacy)
+        assert not editor._comp.has_mining_component
+        assert not editor._comp_toggles['has_mining_component'].is_enabled
+        assert editor._comp.sensor_long_range_hexes == 0
+        assert not editor._sensor_long_range_entry.is_enabled
+        assert editor._sensor_long_range_label.text == 'Intra-sector only'
+        assert not legacy.components.has_mining_component
+        editor._sensor_long_range_entry.set_text('3')
+        read_sensor_params(editor)
+        assert editor._comp.sensor_long_range_hexes == 0
+        assert CustomUnitTemplate('Wing', editor._hull_size, editor._comp).validate() == []
+        on_hull_changed(editor, 'SMALL')
+        assert editor._sensor_long_range_entry.is_enabled
+        assert editor._sensor_long_range_entry.get_text() == '0'
+        assert editor._comp_toggles['has_mining_component'].is_enabled
+        editor._sensor_long_range_entry.set_text('2')
+        read_sensor_params(editor)
+        assert editor._comp.sensor_long_range_hexes == 2
+        on_hull_changed(editor, 'STRIKECRAFT_WING')
+        assert editor._comp.sensor_long_range_hexes == 0
+    finally:
+        editor.kill()
+
+
+@pytest.fixture
+def draft_editor(pygame_context, tmp_path):
+    import pygame_gui
+    from gui.unit_editor_gui import UnitEditorWindow
+    editor = UnitEditorWindow(pygame_gui.UIManager((1280, 720)), DisplayConfig(1280, 720),
+        CustomTemplateManager(data_file=str(tmp_path / 'drafts.json')))
+    editor.show()
+    editor._display_entry.set_text('Draft ship')
+    editor._update_summary()
+    try:
+        yield editor
+    finally:
+        editor.kill()
+
+
+def edit_draft(editor, entry, text):
+    import pygame
+    import pygame_gui
+    entry.set_text(text)
+    return editor.process_event(pygame.event.Event(pygame_gui.UI_TEXT_ENTRY_CHANGED, ui_element=entry))
+
+
+def test_live_draft_errors_preserve_text_values_and_clear_independently(draft_editor):
+    e = draft_editor
+    before = e._comp.engine_speed
+    edit_draft(e, e._engine_speed_entry, 'nan')
+    edit_draft(e, e._hangar_slots_entry, '2.5')
+    assert e._engine_speed_entry.get_text() == 'nan'
+    assert e._comp.engine_speed == before
+    assert not e._save_button.is_enabled and not e._save_as_button.is_enabled
+    assert 'Engines / Speed' in e._summary_box.html_text
+    assert 'Hangar / Slots' in e._summary_box.html_text
+    assert 'last valid numeric values' in e._summary_box.html_text
+    assert e._engine_speed_entry.object_ids[-1] == '#equipment_input_error'
+    e._select_component('has_defenses')
+    assert e._engine_speed_entry.get_text() == 'nan'
+    edit_draft(e, e._engine_speed_entry, '12.25')
+    assert 'engine_speed' not in e._field_errors
+    assert 'hangar_slots' in e._field_errors
+    assert e._engine_speed_entry.tool_tip_text is None
+    assert not e._save_button.is_enabled
+    edit_draft(e, e._hangar_slots_entry, '2')
+    assert e._save_button.is_enabled
+    assert not e._field_errors
+    assert e._comp.engine_speed == 12.25
+
+
+def test_disabled_and_hull_restricted_drafts_stay_reachable(draft_editor):
+    from gui.unit_editor_gui.component_state import toggle_component, on_hull_changed
+    e = draft_editor
+    on_hull_changed(e, 'LARGE')
+    edit_draft(e, e._am_capacity_entry, '150')
+    toggle_component(e, 'has_hangar')
+    edit_draft(e, e._hangar_slots_entry, '')
+    toggle_component(e, 'has_hangar')
+    assert not e._save_button.is_enabled
+    on_hull_changed(e, 'SMALL')
+    assert not e._comp_toggles['has_hangar'].is_enabled
+    assert e._comp_select_btns['has_hangar'].is_enabled
+    e._select_component('has_hangar')
+    assert e._hangar_slots_entry.visible
+    edit_draft(e, e._hangar_slots_entry, '1')
+    assert e._save_button.is_enabled
+    assert not e._comp_select_btns['has_hangar'].is_enabled
+
+
+@pytest.mark.parametrize('saved_design', [False, True])
+def test_reopening_discards_draft_and_preserves_saved_library(draft_editor, saved_design):
+    from copy import deepcopy
+    from pathlib import Path
+    from gui.equipment_input import INPUT_FIELDS
+    from gui.unit_editor_gui.catalog import TURRET_TYPES, TURRET_VARIANTS
+    from gui.unit_editor_gui.widget_factory import replace_dropdown
+    from custom_unit_templates import TurretConfig
+
+    e = draft_editor
+    defaults = ComponentConfig(has_antimatter_storage=True)
+    default_text = {field: getattr(e, spec.widget).get_text() for field, spec in INPUT_FIELDS.items()}
+    template = CustomUnitTemplate('Saved carrier', HullSize.HUGE, ComponentConfig(
+        has_antimatter_storage=True, antimatter_capacity=200, has_engine=True,
+        has_weapon_bays=True, turrets=[TurretConfig('BEAM', 10, 300, 2)],
+        has_ability_component=True, abilities=['drain_antimatter'],
+        hyperdrive_type='ADVANCED', cloaking_type='ADVANCED', wing_type='BOMBER',
+        has_intelligence_component=True, has_counter_intelligence=True,
+    ))
+    if saved_design:
+        assert e.template_manager.save_design(template) == []
+        e._load_design(template.display_name)
+    else:
+        e._on_hull_changed('HUGE')
+        e._display_entry.set_text('')
+        e._toggle_component('has_weapon_bays')
+        e._do_add_turret()
+        e._toggle_component('has_ability_component')
+        e._toggle_ability('drain_antimatter')
+    library = Path(e.template_manager.data_file)
+    before_bytes = library.read_bytes() if library.exists() else None
+    before_registry = deepcopy(PRIVATE_TEMPLATES)
+    assert e._turrets and e._selected_abilities
+    e._select_component('has_weapon_bays')
+    old_turret_widgets = e._turret_labels + e._turret_remove_buttons
+    e._turret_type_dd = replace_dropdown(
+        e, e._turret_type_dd, TURRET_TYPES, 'MISSILE', '#turret_type_dropdown',
+        group_key='has_weapon_bays',
+    )
+    e._turret_variant_dd = replace_dropdown(
+        e, e._turret_variant_dd, TURRET_VARIANTS, 'LONG_RANGE', '#turret_variant_dropdown',
+        group_key='has_weapon_bays',
+    )
+    edit_draft(e, e._turret_dmg_entry, '99')
+    edit_draft(e, e._turret_range_entry, 'bad range')
+    edit_draft(e, e._turret_cd_entry, '1.5')
+    edit_draft(e, e._engine_speed_entry, 'nan')
+    edit_draft(e, e._hangar_slots_entry, '2.5')
+    e._set_status('Previous draft failed', error=True)
+    e._select_component('has_ability_component')
+    for container in (e._comp_scroll_container, e._ability_scroll_container):
+        container.vert_scroll_bar.set_scroll_from_start_percentage(0.7)
+    e.manager.set_focus_set(e._display_entry)
+    e.manager.update(0.1)
+    e.hide()
+    e.show()
+    e.manager.update(0.1)
+
+    assert e._hull_size == HullSize.MEDIUM
+    assert e._hull_dropdown.selected_option[0] == 'MEDIUM'
+    assert e._comp == defaults
+    assert not e._turrets and not e._selected_abilities
+    assert all(not widget.alive() for widget in old_turret_widgets)
+    assert e._editing_name is None and e._display_entry.get_text() == ''
+    assert e._load_dd.selected_option[0] == '— select —'
+    assert e._status_label.text == ''
+    assert e._selected_component_key == 'has_engine'
+    assert e._engine_speed_entry.visible and not e._turret_dmg_entry.visible
+    assert e._turret_type_dd.selected_option[0] == TURRET_TYPES[0]
+    assert e._turret_variant_dd.selected_option[0] == 'STANDARD'
+    assert e._hd_type_dropdown.selected_option[0] == 'BASIC'
+    assert e._cloaking_type_dropdown.selected_option[0] == 'BASIC'
+    assert e._wt_dropdown.selected_option[0] == 'FIGHTER' and not e._wt_dropdown.is_enabled
+    assert not e._field_errors
+    assert not e._save_button.is_enabled and not e._save_as_button.is_enabled
+    assert e._add_turret_button.is_enabled
+    assert 'last valid numeric values' not in e._summary_box.html_text
+    assert 'BEAM' not in e._summary_box.html_text
+    assert e.manager.get_focus_set() is None and not e._display_entry.is_focused
+    for field, spec in INPUT_FIELDS.items():
+        entry = getattr(e, spec.widget)
+        assert entry.get_text() == default_text[field]
+        assert entry.tool_tip_text is None and not entry.is_focused
+    for container in (e._comp_scroll_container, e._ability_scroll_container):
+        assert container.vert_scroll_bar.start_percentage == 0.0
+    if e._summary_box.scroll_bar:
+        assert e._summary_box.scroll_bar.start_percentage == 0.0
+    assert (library.read_bytes() if library.exists() else None) == before_bytes
+    assert PRIVATE_TEMPLATES == before_registry
+    if saved_design:
+        e._load_design(template.display_name)
+        assert e._editing_name == template.display_name
+        assert e._comp == template.components
+
+
+def test_show_while_visible_preserves_draft_and_help(draft_editor):
+    e = draft_editor
+    edit_draft(e, e._engine_speed_entry, 'unfinished')
+    e._select_component('has_hangar')
+    e.show_description('Equipment help', 'Help text')
+    dialog = e._description_dialog
+    e.show()
+    assert e._description_dialog is dialog and dialog.window.alive()
+    e.close_description()
+    assert e.is_visible and e._selected_component_key == 'has_hangar'
+    assert e._display_entry.get_text() == 'Draft ship'
+    assert e._engine_speed_entry.get_text() == 'unfinished'
+    assert 'engine_speed' in e._field_errors
+
+
+@pytest.mark.parametrize('close_path', ['close_button', 'toggle', 'escape', 'hide_all'])
+def test_application_editor_close_paths_start_fresh(game_factory, close_path):
+    import pygame
+    import pygame_gui
+    from game_actions import handle_gui_action
+    from tests.support.pygame_runtime import drain_events
+
+    game = game_factory(display_config=DisplayConfig(1280, 720, False))
+    gui = game.gui
+    game.game_started = True
+    game.view_mode = 'system'
+    gui.show_game_ui()
+    for cycle in range(2):
+        gui.open_unit_editor(game.custom_template_manager)
+        e = gui.unit_editor_window
+        assert e._display_entry.get_text() == '' and e._editing_name is None
+        assert e._comp == ComponentConfig(has_antimatter_storage=True)
+        edit_draft(e, e._display_entry, f'Unsaved {cycle}')
+        edit_draft(e, e._engine_speed_entry, 'bad')
+        drain_events()
+        if close_path in ('close_button', 'toggle'):
+            button = e._close_button if close_path == 'close_button' else gui.unit_editor_button
+            event = pygame.event.Event(pygame_gui.UI_BUTTON_PRESSED, ui_element=button)
+            action = gui.process_event(event)
+            assert action == {'action': 'toggle_unit_editor'}
+            handle_gui_action(game, action)
+        elif close_path == 'escape':
+            pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_ESCAPE))
+            game.input_processor.handle_input()
+        else:
+            gui.hide_all_panels()
+        assert not gui.is_unit_editor_open()
+    gui.open_unit_editor(game.custom_template_manager)
+    assert e._display_entry.get_text() == '' and not e._field_errors
+
+
+def test_hull_change_revalidates_storage_without_clamping(draft_editor):
+    from gui.unit_editor_gui.component_state import on_hull_changed
+    e = draft_editor
+    on_hull_changed(e, 'HUGE')
+    assert e._am_capacity_entry.get_text() == '100'
+    assert e._comp.antimatter_capacity == 100
+    assert '200' in e._field_errors['antimatter_capacity']
+    edit_draft(e, e._am_capacity_entry, '200.25')
+    assert e._save_button.is_enabled
+
+
+@pytest.mark.parametrize('save_path', ['save', 'new', 'overwrite', 'confirmation_new', 'execute'])
+@pytest.mark.parametrize('field,text', [('engine_speed', 'bad input'), ('sensor_short_range', '199.999')])
+def test_every_save_path_rechecks_raw_drafts_and_preserves_library(draft_editor, save_path, field, text):
+    from copy import deepcopy
+    from pathlib import Path
+    from gui.unit_editor_gui.template_io import sync_widgets_from_template, handle_save_dialog_action, execute_save
+    from gui.equipment_input import INPUT_FIELDS
+    e = draft_editor
+    original = CustomUnitTemplate('Original', HullSize.MEDIUM, ComponentConfig(has_engine=True, has_sensors=True))
+    assert e.template_manager.save_design(original) == []
+    sync_widgets_from_template(e, original)
+    library_file = Path(e.template_manager.data_file)
+    before = library_file.read_bytes()
+    registered = deepcopy(PRIVATE_TEMPLATES)
+    # No text-change event: the final action must independently re-read the widget.
+    entry = getattr(e, INPUT_FIELDS[field].widget)
+    entry.set_text(text)
+    if save_path == 'save':
+        result = e._do_save()
+    elif save_path == 'new':
+        e._display_entry.set_text('New name')
+        result = e._do_save_as_new()
+    elif save_path == 'execute':
+        result = execute_save(e, original)
+    else:
+        action = {'action': 'overwrite', 'target_name': 'Original'} if save_path == 'overwrite' else {
+            'action': 'save_as_new', 'new_name': 'New name'}
+        result = handle_save_dialog_action(e, action)
+    assert result != 'design_saved'
+    assert library_file.read_bytes() == before
+    assert PRIVATE_TEMPLATES == registered
+    assert e.template_manager.get_design('Original').components.engine_speed == 100
+    assert e.template_manager.get_design('Original').components.sensor_short_range == 200
+    assert entry.get_text() == text
+    assert not e._save_button.is_enabled
+
+
+def test_sensor_toggle_revalidates_minimum_without_clamping(draft_editor):
+    from gui.unit_editor_gui.component_state import toggle_component
+    e = draft_editor
+    assert not e._comp.has_sensors
+    edit_draft(e, e._sensor_short_range_entry, '199.999')
+    assert not e._field_errors and e._save_button.is_enabled
+    toggle_component(e, 'has_sensors')
+    assert e._sensor_short_range_entry.get_text() == '199.999'
+    assert e._comp.sensor_short_range == 199.999
+    assert '200' in e._field_errors['sensor_short_range']
+    assert 'Sensors / Short-range radius' in e._summary_box.html_text
+    assert e._sensor_short_range_entry.object_ids[-1] == '#equipment_input_error'
+    assert not e._save_button.is_enabled and not e._save_as_button.is_enabled
+    toggle_component(e, 'has_sensors')
+    assert not e._field_errors and e._save_button.is_enabled
+    toggle_component(e, 'has_sensors')
+    edit_draft(e, e._sensor_short_range_entry, '200.0')
+    assert e._comp.sensor_short_range == 200.0
+    assert not e._field_errors and e._save_button.is_enabled and e._save_as_button.is_enabled
+    assert e._sensor_short_range_entry.tool_tip_text is None
+
+
+def test_loading_a_design_clears_old_drafts_and_turret_errors(draft_editor):
+    from gui.unit_editor_gui.template_io import sync_widgets_from_template
+    e = draft_editor
+    edit_draft(e, e._engine_speed_entry, 'bad')
+    edit_draft(e, e._turret_cd_entry, '1.5')
+    template = CustomUnitTemplate('Replacement', HullSize.MEDIUM, ComponentConfig(has_engine=True))
+    sync_widgets_from_template(e, template)
+    assert not e._field_errors
+    assert e._engine_speed_entry.get_text() == '100'
+    assert e._turret_cd_entry.get_text() == '2'
+    assert e._engine_speed_entry.tool_tip_text is None
+    assert e._add_turret_button.is_enabled and e._save_button.is_enabled
+
+
+def test_loading_and_saving_preserves_fractional_precision(draft_editor):
+    from gui.unit_editor_gui.template_io import sync_widgets_from_template, execute_save
+    e = draft_editor
+    original = CustomUnitTemplate('Precise', HullSize.MEDIUM,
+        ComponentConfig(has_engine=True, engine_speed=123.456789012345,
+                        armor=0.000000123456789))
+    sync_widgets_from_template(e, original)
+    assert e._comp == original.components
+    assert execute_save(e, original) == 'design_saved'
+    assert e.template_manager.get_design('Precise').components == original.components
+
+
+def test_turret_drafts_require_explicit_add_and_correction(draft_editor):
+    from gui.unit_editor_gui.turret_editor import do_add_turret
+    e = draft_editor
+    edit_draft(e, e._turret_cd_entry, '0.5')
+    do_add_turret(e)
+    assert not e._turrets and not e._save_button.is_enabled
+    assert not e._add_turret_button.is_enabled
+    edit_draft(e, e._turret_cd_entry, '0')
+    edit_draft(e, e._turret_dmg_entry, '0.25')
+    assert not e._turrets and e._save_button.is_enabled
+    do_add_turret(e)
+    assert len(e._turrets) == 1
+    assert e._turrets[0].damage == .25 and e._turrets[0].cooldown == 0
+
+
+def test_capacity_excess_updates_and_troop_edits_refresh_immediately(draft_editor):
+    from gui.unit_editor_gui.component_state import toggle_component
+    e = draft_editor
+    toggle_component(e, 'has_engine')
+    toggle_component(e, 'has_troop_transport_component')
+    # 5 hull of engines + 5 storage + 40 troops * 0.5 = 30 hull.
+    assert '30 / 50' in e._capacity_label.text
+    assert edit_draft(e, e._troop_capacity_entry, '80') == 'ui_handled'
+    assert '50 / 50' in e._capacity_label.text and e._save_button.is_enabled
+    edit_draft(e, e._engine_speed_entry, '110')
+    assert 'Over by 0.5 hull' in e._capacity_excess_label.text
+    assert 'Over by 0.5 hull' in e._summary_box.html_text
+    assert not e._save_button.is_enabled
+    edit_draft(e, e._troop_capacity_entry, '79')
+    assert not e._capacity_excess_label.text and e._save_button.is_enabled
+
+
+def test_overflowing_derived_costs_do_not_crash_preview_or_save(draft_editor):
+    import pygame
+    from gui.unit_editor_gui.turret_editor import do_add_turret
+    from gui.unit_editor_gui.component_state import toggle_component
+    e = draft_editor
+    toggle_component(e, 'has_weapon_bays')
+    edit_draft(e, e._turret_range_entry, '1e308')
+    edit_draft(e, e._turret_dmg_entry, '1e308')
+    do_add_turret(e)
+    e.draw(pygame.Surface((1280, 720)))
+    assert 'unavailable' in e._summary_box.html_text
+    assert not e._save_button.is_enabled
+    assert e._do_save() != 'design_saved'

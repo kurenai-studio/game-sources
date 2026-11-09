@@ -1,0 +1,684 @@
+from unit_orders.base import OrderTargetField
+import logging
+from game_logging import format_unit_for_log
+from typing import Dict, Optional, Any, TYPE_CHECKING
+
+from geometry import distance
+from unit_targeting import intelligence_distance
+from .base import Order, OrderStatus, OrderType
+from .movement import MoveOrder
+from .colony import ColonyContactOrder
+from unit_components.enums import SabotageType
+
+if TYPE_CHECKING:
+    from galaxy import Galaxy
+    from domain.units import Unit
+    from unit_components.intelligence import Agent
+
+logger = logging.getLogger(__name__)
+
+INTELLIGENCE_OPERATIONAL_RANGE = 500.0
+
+
+class InfiltrateUnitOrder(Order):
+    """Order instructing an Intelligence unit to deploy a covert agent onto an enemy unit in range."""
+    target_fields = (OrderTargetField('target_unit_id', 'unit', public=True),)
+
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.INFILTRATE_UNIT, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        """Validate target_unit_id, approach if needed, then spend one agent capacity.
+
+        A successful operation attaches the owned agent to the hostile unit and
+        completes synchronously when in range. Invalid targets/capacity fail the
+        order; callers enforce player visibility before issuance. Returns None."""
+        super().execute(galaxy_ref)
+
+        target_unit_id = self.parameters.get("target_unit_id")
+        if target_unit_id is None:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_UNIT failed: no target_unit_id provided.")
+            return
+
+        target_unit = galaxy_ref.get_unit_by_id(target_unit_id)
+        if not target_unit:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_UNIT failed: target unit {target_unit_id} not found.")
+            return
+
+        from domain.players import are_allies
+        if are_allies(self.unit.owner, target_unit.owner):
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_UNIT failed: cannot infiltrate friendly or allied unit.")
+            return
+
+        intel_comp = getattr(self.unit, 'intelligence_component', None)
+        if not intel_comp or intel_comp.is_destroyed:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_UNIT failed: unit has no functioning IntelligenceComponent.")
+            return
+
+        if intel_comp.available_agents <= 0:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_UNIT failed: no available agents remaining.")
+            return
+
+        # Check if in same system and hex
+        if self.unit.in_system != target_unit.in_system or self.unit.in_hex != target_unit.in_hex:
+            if not self.has_active_sub_orders():
+                move_sub_order = MoveOrder.for_unit_approach(
+                    self.unit,
+                    target_unit,
+                    INTELLIGENCE_OPERATIONAL_RANGE - 50.0,
+                    parent_order=self,
+                )
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(InfiltrateUnitOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        # In same sector: check distance
+        dist = distance(self.unit.position, target_unit.position)
+        if dist > INTELLIGENCE_OPERATIONAL_RANGE:
+            if not self.has_active_sub_orders():
+                move_sub_order = MoveOrder.for_unit_approach(
+                    self.unit,
+                    target_unit,
+                    INTELLIGENCE_OPERATIONAL_RANGE - 50.0,
+                    parent_order=self,
+                )
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(InfiltrateUnitOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        # Within operational range: deploy agent
+        agent = intel_comp.deploy_agent(target_unit)
+        if agent:
+            self.status = OrderStatus.COMPLETED
+            logger.info(f"[{format_unit_for_log(self.unit)}] Successfully infiltrated enemy unit {format_unit_for_log(target_unit)} with Agent {agent.id}!")
+        else:
+            self.status = OrderStatus.FAILED
+
+    def check_completion_conditions(self) -> None:
+        if self.status == OrderStatus.IN_PROGRESS and not self.sub_orders:
+            self.status = OrderStatus.COMPLETED
+
+
+class InfiltratePlanetOrder(ColonyContactOrder):
+    """Order instructing an Intelligence unit to deploy a covert agent onto an enemy colonized celestial body."""
+    target_fields = (OrderTargetField('target_body_id', 'celestial', public=False),)
+
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.INFILTRATE_PLANET, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        """Resolve target_body_id, then infiltrate.
+
+        The target must be an enemy colony. Approach work precedes deployment;
+        success consumes agent capacity and attaches the agent before completion.
+        Expected rule failures set FAILED; execution rechecks colony disclosure."""
+        if self.status not in {OrderStatus.PENDING, OrderStatus.IN_PROGRESS}:
+            return
+        super().execute(galaxy_ref)
+        from planetary_intel import validate_order_target
+        if not validate_order_target(self, galaxy_ref):
+            return
+
+        target_body_id = self.parameters.get("target_body_id")
+        target_body = galaxy_ref.get_celestial_body_by_id(target_body_id) if target_body_id is not None else None
+        if not target_body:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_PLANET failed: celestial body not found.")
+            return
+
+        target_system, target_hex = target_body.in_system, target_body.in_hex
+        intel_comp = getattr(self.unit, 'intelligence_component', None)
+        if not intel_comp or intel_comp.is_destroyed:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_PLANET failed: unit has no functioning IntelligenceComponent.")
+            return
+
+        if intel_comp.available_agents <= 0:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] INFILTRATE_PLANET failed: no available agents remaining.")
+            return
+
+        if self.unit.in_system != target_system or self.unit.in_hex != target_hex:
+            if not self.has_active_sub_orders():
+                move_sub_order = MoveOrder.for_celestial_approach(
+                    self.unit, target_body, INTELLIGENCE_OPERATIONAL_RANGE - 50.0, parent_order=self)
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(InfiltratePlanetOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        dist = intelligence_distance(self.unit, target_body)
+        if dist > INTELLIGENCE_OPERATIONAL_RANGE:
+            if not self.has_active_sub_orders():
+                move_sub_order = MoveOrder.for_celestial_approach(
+                    self.unit, target_body, INTELLIGENCE_OPERATIONAL_RANGE - 50.0, parent_order=self)
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(InfiltratePlanetOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        from planetary_intel import current_ownership
+        if not current_ownership(galaxy_ref, self.unit.owner, target_body):
+            return
+        agent = intel_comp.deploy_agent(target_body)
+        if agent:
+            self.status = OrderStatus.COMPLETED
+            logger.info(f"[{format_unit_for_log(self.unit)}] Successfully infiltrated colonized body {target_body.name} with Agent {agent.id}!")
+        else:
+            self.status = OrderStatus.FAILED
+
+
+class RelocateAgentOrder(Order):
+    """Order relocating an agent from one infiltrated host to another within operational range."""
+    target_fields = (OrderTargetField('destination_id', 'object', public=False),)
+
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.RELOCATE_AGENT, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        """Move an owned agent from its current host to an in-range hostile host.
+
+        agent_id, target_type and destination_id identify the operation. Source
+        and destination must share a sector; failure preserves the source link.
+        Success moves the same agent and clears its prior sabotage. Returns None."""
+        super().execute(galaxy_ref)
+
+        agent_id = self.parameters.get("agent_id")
+        target_type = self.parameters.get("target_type", "unit")  # "unit" or "planet"
+        dest_id = self.parameters.get("destination_id")
+
+        if agent_id is None or dest_id is None:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] RELOCATE_AGENT failed: missing agent_id or destination_id.")
+            return
+
+        # Find agent and source target
+        agent: Optional['Agent'] = None
+        source_target = None
+        source_sys = None
+        source_hex = None
+
+        for sys_name, sys_obj in galaxy_ref.systems.items():
+            for unit, u_hex in sys_obj.get_all_units():
+                if hasattr(unit, 'infiltrating_agents'):
+                    for a in unit.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            source_target = unit
+                            source_sys = sys_name
+                            source_hex = u_hex
+                            break
+            if agent:
+                break
+            for h_coord, body in sys_obj.get_all_celestial_bodies():
+                if hasattr(body, 'infiltrating_agents'):
+                    for a in body.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            source_target = body
+                            source_sys = sys_name
+                            source_hex = h_coord
+                            break
+            if agent:
+                break
+
+        if not agent or not source_target:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] RELOCATE_AGENT failed: agent {agent_id} not found.")
+            return
+        if agent.owner != self.unit.owner:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] RELOCATE_AGENT failed: agent is unavailable.")
+            return
+
+        # Find destination target
+        dest_target = None
+        if target_type == "unit":
+            dest_target = galaxy_ref.get_unit_by_id(dest_id)
+        else:
+            sys_obj = galaxy_ref.systems.get(source_sys)
+            if sys_obj:
+                for h_coord, body in sys_obj.get_all_celestial_bodies():
+                    if body.id == dest_id:
+                        dest_target = body
+                        break
+
+        if not dest_target:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] RELOCATE_AGENT failed: destination target {dest_id} not found.")
+            return
+
+        from planetary_intel import is_colony_body, current_ownership
+        if is_colony_body(dest_target) and not current_ownership(galaxy_ref, agent.owner, dest_target):
+            self.fail('target_unavailable')
+            return
+
+        dest_owner = getattr(dest_target, 'owner', None)
+        from domain.players import are_allies
+        if not dest_owner or are_allies(self.unit.owner, dest_owner):
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] RELOCATE_AGENT failed: destination target is unowned or friendly/allied.")
+            return
+
+        # Check range between source and destination
+        if source_sys != dest_target.in_system or source_hex != dest_target.in_hex:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] RELOCATE_AGENT failed: destination is in different sector.")
+            return
+
+        if intelligence_distance(source_target, dest_target) > INTELLIGENCE_OPERATIONAL_RANGE:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] RELOCATE_AGENT failed: destination target out of range (> {INTELLIGENCE_OPERATIONAL_RANGE}).")
+            return
+
+        # Transfer agent
+        source_target.remove_agent(agent)
+        agent.attached_to = dest_target
+        agent.active_sabotage = None
+        agent.is_discovered = False
+        dest_target.infiltrating_agents.append(agent)
+        self.status = OrderStatus.COMPLETED
+        from domain.units import Unit
+        source_label = format_unit_for_log(source_target) if isinstance(source_target, Unit) else source_target.name
+        destination_label = format_unit_for_log(dest_target) if isinstance(dest_target, Unit) else dest_target.name
+        logger.info(f"Agent {agent.id} successfully relocated from {source_label} to {destination_label}.")
+
+
+class SabotageOrder(Order):
+    """Order commanding an infiltrated agent to sabotage a specific system or colony function."""
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.SABOTAGE, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        """Set sabotage_type on the hostile host of the owned agent_id.
+
+        Resolves the attached agent, validates the target kind, and applies host
+        side effects immediately. Completes or fails via order status; no approach
+        work or ship resource charge is created. Returns None."""
+        super().execute(galaxy_ref)
+
+        agent_id = self.parameters.get("agent_id")
+        sabotage_type_val = self.parameters.get("sabotage_type")
+
+        if agent_id is None or not sabotage_type_val:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] SABOTAGE order failed: missing agent_id or sabotage_type.")
+            return
+
+        sab_type = SabotageType(sabotage_type_val) if isinstance(sabotage_type_val, str) else sabotage_type_val
+
+        # Locate agent
+        agent: Optional['Agent'] = None
+        target_obj = None
+
+        for sys_name, sys_obj in galaxy_ref.systems.items():
+            for u, _ in sys_obj.get_all_units():
+                if hasattr(u, 'infiltrating_agents'):
+                    for a in u.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            target_obj = u
+                            break
+            if agent:
+                break
+            for _, b in sys_obj.get_all_celestial_bodies():
+                if hasattr(b, 'infiltrating_agents'):
+                    for a in b.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            target_obj = b
+                            break
+            if agent:
+                break
+
+        if not agent or not target_obj:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] SABOTAGE order failed: agent {agent_id} not found.")
+            return
+
+        if agent.owner != self.unit.owner:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] SABOTAGE order failed: agent is unavailable.")
+            return
+
+        from domain.units import Unit
+        from domain.celestials import Planet, Moon, ColonizableAsteroid
+        allowed = (
+            {SabotageType.ENGINES, SabotageType.WEAPONS, SabotageType.DEFENSES,
+             SabotageType.HYPERDRIVE, SabotageType.SENSORS, SabotageType.ANTIMATTER}
+            if isinstance(target_obj, Unit)
+            else {SabotageType.ECONOMY, SabotageType.GROWTH}
+            if isinstance(target_obj, (Planet, Moon, ColonizableAsteroid))
+            else set()
+        )
+        if sab_type not in allowed:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] SABOTAGE order failed: sabotage type unavailable for host.")
+            return
+
+        success = target_obj.apply_sabotage(agent, sab_type)
+        if success:
+            self.status = OrderStatus.COMPLETED
+            target_label = format_unit_for_log(target_obj) if isinstance(target_obj, Unit) else target_obj.name
+            logger.info(f"Agent {agent.id} commenced sabotage {sab_type.name} on {target_label}.")
+        else:
+            self.status = OrderStatus.FAILED
+
+
+class CISweepOrder(Order):
+    """Order instructing a Counter-Intelligence vessel to scan the area for enemy agents."""
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.CI_SWEEP, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        """Spend sweep costs once and discover hostile agents on nearby allied assets.
+
+        Requires a functional CI suite, cooldown readiness, credits and antimatter.
+        After validation, costs and cooldown commit even if no agents are found.
+        Discovery changes agent state; this operation does not eliminate agents."""
+        super().execute(galaxy_ref)
+
+        from constants import CI_SWEEP_CREDIT_COST, CI_SWEEP_ANTIMATTER_COST, CI_SWEEP_COOLDOWN_TURNS
+
+        intel_comp = getattr(self.unit, 'intelligence_component', None)
+        if not intel_comp or intel_comp.is_destroyed or not intel_comp.has_counter_intelligence:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] CI_SWEEP failed: unit lacks functional Counter-Intelligence suite.")
+            return
+
+        if intel_comp.ci_cooldown_remaining > 0:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] CI_SWEEP failed: Counter-Intelligence suite is on cooldown ({intel_comp.ci_cooldown_remaining} turns remaining).")
+            return
+
+        if not self.unit.owner or getattr(self.unit.owner, 'credits', 0.0) < CI_SWEEP_CREDIT_COST:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] CI_SWEEP failed: insufficient empire credits (requires {CI_SWEEP_CREDIT_COST}).")
+            return
+
+        am_comp = getattr(self.unit, 'antimatter_component', None)
+        if not am_comp or am_comp.is_destroyed or am_comp.current_amount < CI_SWEEP_ANTIMATTER_COST:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] CI_SWEEP failed: insufficient antimatter (requires {CI_SWEEP_ANTIMATTER_COST}).")
+            return
+
+        sys_obj = galaxy_ref.systems.get(self.unit.in_system)
+        if not sys_obj:
+            self.status = OrderStatus.FAILED
+            return
+
+        hex_obj = sys_obj.hexes.get(self.unit.in_hex)
+        if not hex_obj:
+            self.status = OrderStatus.FAILED
+            return
+
+        # Deduct costs and apply cooldown
+        self.unit.owner.credits -= CI_SWEEP_CREDIT_COST
+        am_comp.consume(CI_SWEEP_ANTIMATTER_COST)
+        intel_comp.ci_cooldown_remaining = CI_SWEEP_COOLDOWN_TURNS
+
+        discovered_count = 0
+        from domain.players import are_allies, are_enemies
+        for target_u in hex_obj.units:
+            if are_allies(self.unit.owner, target_u.owner) and hasattr(target_u, 'infiltrating_agents'):
+                if distance(self.unit.position, target_u.position) <= INTELLIGENCE_OPERATIONAL_RANGE:
+                    for agent in target_u.infiltrating_agents:
+                        if are_enemies(self.unit.owner, agent.owner):
+                            agent.is_discovered = True
+                            discovered_count += 1
+
+        for body in hex_obj.celestial_bodies:
+            body_owner = getattr(body, 'owner', None)
+            if are_allies(self.unit.owner, body_owner) and hasattr(body, 'infiltrating_agents'):
+                if intelligence_distance(self.unit, body) <= INTELLIGENCE_OPERATIONAL_RANGE:
+                    for agent in body.infiltrating_agents:
+                        if are_enemies(self.unit.owner, agent.owner):
+                            agent.is_discovered = True
+                            discovered_count += 1
+
+        self.status = OrderStatus.COMPLETED
+        from turn_briefing import record, refresh_discoveries
+        record(self.unit.game, self.unit.owner, "intelligence", "CI Sweep completed", subject=self.unit)
+        refresh_discoveries(self.unit.game)
+        logger.info(f"[{format_unit_for_log(self.unit)}] CI Sweep complete! Discovered {discovered_count} enemy agent(s). (Cost: {CI_SWEEP_CREDIT_COST}c, {CI_SWEEP_ANTIMATTER_COST}am, Cooldown: {CI_SWEEP_COOLDOWN_TURNS}t)")
+
+
+class EliminateAgentOrder(Order):
+    """Order instructing a Counter-Intelligence vessel to eliminate a discovered enemy agent."""
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.ELIMINATE_AGENT, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        """Approach and remove the discovered hostile agent_id from an allied host.
+
+        Revalidates host relationship and discovery before elimination. Invalid
+        references fail the order; out-of-range work inserts a Move child.
+        Visibility eligibility belongs to the command/input boundary. Returns None."""
+        super().execute(galaxy_ref)
+
+        agent_id = self.parameters.get("agent_id")
+        if agent_id is None:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] ELIMINATE_AGENT failed: no agent_id provided.")
+            return
+
+        intel_comp = getattr(self.unit, 'intelligence_component', None)
+        if not intel_comp or intel_comp.is_destroyed or not intel_comp.has_counter_intelligence:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] ELIMINATE_AGENT failed: unit lacks Counter-Intelligence suite.")
+            return
+
+        # Find agent & host
+        agent: Optional['Agent'] = None
+        host_target = None
+        host_sys = None
+        host_hex = None
+        host_is_unit = False
+
+        for sys_name, sys_obj in galaxy_ref.systems.items():
+            for u, u_hex in sys_obj.get_all_units():
+                if hasattr(u, 'infiltrating_agents'):
+                    for a in u.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            host_target = u
+                            host_sys = sys_name
+                            host_hex = u_hex
+                            host_is_unit = True
+                            break
+            if agent:
+                break
+            for h_coord, b in sys_obj.get_all_celestial_bodies():
+                if hasattr(b, 'infiltrating_agents'):
+                    for a in b.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            host_target = b
+                            host_sys = sys_name
+                            host_hex = h_coord
+                            break
+            if agent:
+                break
+
+        if not agent or not host_target:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] ELIMINATE_AGENT failed: agent {agent_id} not found.")
+            return
+
+        from domain.players import are_allies, are_enemies
+        if (
+            not agent.is_discovered
+            or not are_enemies(self.unit.owner, agent.owner)
+            or not are_allies(self.unit.owner, getattr(host_target, 'owner', None))
+        ):
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] ELIMINATE_AGENT failed: agent is unavailable.")
+            return
+
+        if self.unit.in_system != host_sys or self.unit.in_hex != host_hex:
+            if not self.has_active_sub_orders():
+                if host_is_unit:
+                    move_sub_order = MoveOrder.for_unit_approach(
+                        self.unit,
+                        host_target,
+                        INTELLIGENCE_OPERATIONAL_RANGE - 50.0,
+                        parent_order=self,
+                    )
+                else:
+                    move_sub_order = MoveOrder.for_celestial_approach(
+                        self.unit, host_target, INTELLIGENCE_OPERATIONAL_RANGE - 50.0, parent_order=self)
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(EliminateAgentOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        dist = intelligence_distance(self.unit, host_target)
+        if dist > INTELLIGENCE_OPERATIONAL_RANGE:
+            if not self.has_active_sub_orders():
+                if host_is_unit:
+                    move_sub_order = MoveOrder.for_unit_approach(
+                        self.unit,
+                        host_target,
+                        INTELLIGENCE_OPERATIONAL_RANGE - 50.0,
+                        parent_order=self,
+                    )
+                else:
+                    move_sub_order = MoveOrder.for_celestial_approach(
+                        self.unit, host_target, INTELLIGENCE_OPERATIONAL_RANGE - 50.0, parent_order=self)
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(EliminateAgentOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        # Eliminate agent
+        host_target.remove_agent(agent)
+        agent.attached_to = None
+        # Notify owner's component if still linked
+        owner_unit = agent.source_unit
+        if owner_unit and getattr(owner_unit, 'intelligence_component', None):
+            owner_unit.intelligence_component.remove_agent_reference(agent)
+
+        self.status = OrderStatus.COMPLETED
+        host_label = format_unit_for_log(host_target) if host_is_unit else host_target.name
+        logger.info(f"[{format_unit_for_log(self.unit)}] Successfully neutralized and eliminated Agent {agent.id} from {host_label}!")
+
+    def check_completion_conditions(self) -> None:
+        if self.status == OrderStatus.IN_PROGRESS and not self.sub_orders:
+            self.status = OrderStatus.COMPLETED
+
+
+class ExtractAgentOrder(Order):
+    """Order extracting an agent back into the parent Intelligence unit."""
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.EXTRACT_AGENT, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        """Recover an owned agent_id into this intelligence ship when in range.
+
+        Resolves the live host and checks receiver capacity before removal.
+        Approach work is inserted when needed; success releases the host link
+        and restores onboard agent capacity. Rule failures set FAILED."""
+        super().execute(galaxy_ref)
+
+        agent_id = self.parameters.get("agent_id")
+        if agent_id is None:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] EXTRACT_AGENT failed: no agent_id provided.")
+            return
+
+        intel_comp = getattr(self.unit, 'intelligence_component', None)
+        if not intel_comp or intel_comp.is_destroyed:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] EXTRACT_AGENT failed: unit lacks functional IntelligenceComponent.")
+            return
+
+        # Locate agent
+        agent: Optional['Agent'] = None
+        host_target = None
+        host_sys = None
+        host_hex = None
+        host_is_unit = False
+
+        for sys_name, sys_obj in galaxy_ref.systems.items():
+            for u, u_hex in sys_obj.get_all_units():
+                if hasattr(u, 'infiltrating_agents'):
+                    for a in u.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            host_target = u
+                            host_sys = sys_name
+                            host_hex = u_hex
+                            host_is_unit = True
+                            break
+            if agent:
+                break
+            for h_coord, b in sys_obj.get_all_celestial_bodies():
+                if hasattr(b, 'infiltrating_agents'):
+                    for a in b.infiltrating_agents:
+                        if a.id == agent_id:
+                            agent = a
+                            host_target = b
+                            host_sys = sys_name
+                            host_hex = h_coord
+                            break
+            if agent:
+                break
+
+        if not agent or not host_target:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] EXTRACT_AGENT failed: agent {agent_id} not found.")
+            return
+
+        if agent.owner != self.unit.owner:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] EXTRACT_AGENT failed: agent is unavailable.")
+            return
+        if intel_comp.agents_count >= intel_comp.agents_capacity:
+            self.status = OrderStatus.FAILED
+            logger.debug(f"[{format_unit_for_log(self.unit)}] EXTRACT_AGENT failed: no free agent capacity.")
+            return
+
+        if self.unit.in_system != host_sys or self.unit.in_hex != host_hex:
+            if not self.has_active_sub_orders():
+                if host_is_unit:
+                    move_sub_order = MoveOrder.for_unit_approach(
+                        self.unit,
+                        host_target,
+                        INTELLIGENCE_OPERATIONAL_RANGE - 50.0,
+                        parent_order=self,
+                    )
+                else:
+                    move_sub_order = MoveOrder.for_celestial_approach(
+                        self.unit, host_target, INTELLIGENCE_OPERATIONAL_RANGE - 50.0, parent_order=self)
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(ExtractAgentOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        dist = intelligence_distance(self.unit, host_target)
+        if dist > INTELLIGENCE_OPERATIONAL_RANGE:
+            if not self.has_active_sub_orders():
+                if host_is_unit:
+                    move_sub_order = MoveOrder.for_unit_approach(
+                        self.unit,
+                        host_target,
+                        INTELLIGENCE_OPERATIONAL_RANGE - 50.0,
+                        parent_order=self,
+                    )
+                else:
+                    move_sub_order = MoveOrder.for_celestial_approach(
+                        self.unit, host_target, INTELLIGENCE_OPERATIONAL_RANGE - 50.0, parent_order=self)
+                self.add_sub_order(move_sub_order)
+                self.add_sub_order(ExtractAgentOrder(self.unit, self.parameters, parent_order=self))
+            return
+
+        success = intel_comp.retrieve_agent(agent)
+        if success:
+            self.status = OrderStatus.COMPLETED
+            logger.info(f"[{format_unit_for_log(self.unit)}] Successfully extracted Agent {agent.id} back into unit.")
+        else:
+            self.status = OrderStatus.FAILED
+
+    def check_completion_conditions(self) -> None:
+        if self.status == OrderStatus.IN_PROGRESS and not self.sub_orders:
+            self.status = OrderStatus.COMPLETED

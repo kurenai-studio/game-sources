@@ -1,0 +1,343 @@
+import dataclasses
+import logging
+from game_logging import format_unit_for_log
+from typing import Dict, List, Optional, TYPE_CHECKING
+from geometry import Position
+from domain.coordinates import HexCoord
+from ..base import UnitComponent
+from ..enums import AbilityType
+from .base import AbilityInstance
+from .registry import ABILITY_CLASSES
+
+if TYPE_CHECKING:
+    from domain.units import Unit
+    from galaxy import Galaxy
+    from game import Game
+
+logger = logging.getLogger(__name__)
+
+ABILITY_BASE_COST: int = 10
+ABILITY_COST_PER_ABILITY: int = 5
+
+
+class AbilityComponent(UnitComponent):
+    """
+    Manages the set of special abilities available to a unit.
+
+    Each ability has its own cooldown and active-duration tracking. This component
+    is responsible for ticking cooldowns, applying ongoing effects each turn
+    (e.g. Repair Cloud healing, Designate Target marking), and cleaning up expired
+    effects. If this component is destroyed the unit cannot use any abilities.
+    """
+    STATE_CONFIG = ()
+    STATE_RUNTIME = ()
+    STATE_REFS = ()
+    STATE_EXTRA = ("abilities",)
+
+    def _extra_state(self):
+        return {"abilities": [a.to_state() for a in self.abilities.values()]}
+
+    def _restore_extra_state(self, runtime):
+        if not isinstance(runtime["abilities"], list):
+            raise ValueError("abilities: expected array")
+        self.abilities = {}
+        for state in runtime["abilities"]:
+            instance = AbilityInstance.from_state(state)
+            key = instance.definition.ability_type
+            if key in self.abilities:
+                raise ValueError(f"Duplicate ability {key.value}")
+            self.abilities[key] = instance
+
+    DISPLAY_NAME: str = "Abilities"
+    SIDEBAR_ORDER: int = 14
+    abilities: Dict[AbilityType, AbilityInstance] = dataclasses.field(default_factory=dict)
+
+    def __init__(self, unit: 'Unit', ability_types: List[AbilityType] = (), hull_cost: float = 10.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.abilities: Dict[AbilityType, AbilityInstance] = {}
+        for atype in ability_types:
+            cls = ABILITY_CLASSES.get(atype)
+            if cls:
+                self.abilities[atype] = cls()
+            else:
+                logger.warning(f"[AbilityComponent] Unknown ability type: {atype}")
+
+    @staticmethod
+    def calc_hull_cost(abilities: List[str]) -> float:
+        """Compute the hull cost of an Ability component from its list of selected abilities."""
+        from titan_balance import TITAN_ABILITIES, ABILITY_HULL_COST
+        return float(ABILITY_BASE_COST + sum(ABILITY_HULL_COST if getattr(a, "value", a) in TITAN_ABILITIES else ABILITY_COST_PER_ABILITY for a in abilities))
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        status = "DESTROYED" if self.is_destroyed else f"HP: {self.current_hit_points}/{self.max_hit_points}"
+        data = [{
+            'type': 'label',
+            'text': f"Ability System [{status}]",
+            'object_id': '#sidebar_section_header_label',
+            'height': 28,
+        }]
+
+        # Show targeting-mode guidance indicator
+        pending = getattr(game_state, 'pending_ability', None)
+        if pending and isinstance(pending, (tuple, list)) and len(pending) > 0 and isinstance(pending[0], str):
+            ability_info = pending
+            pending_name = ability_info[0].replace('_', ' ').title()
+            req_unit = ability_info[1] if len(ability_info) > 1 else False
+            req_pos = ability_info[2] if len(ability_info) > 2 else False
+
+            data.append({
+                'type': 'label',
+                'text': f"\u25b6 TARGETING: {pending_name}",
+                'object_id': '#sidebar_hit_points_light_damage_label',
+                'height': 22,
+            })
+            if req_unit:
+                instruction = "Right-Click target unit to cast"
+            elif req_pos:
+                instruction = "Right-Click target location to cast"
+            else:
+                instruction = "Right-Click to cast"
+            data.append({
+                'type': 'label',
+                'text': f"  {instruction}",
+                'object_id': '#sidebar_info_label',
+                'height': 20,
+            })
+            data.append({
+                'type': 'label',
+                'text': "  (Press ESC to cancel)",
+                'object_id': '#sidebar_info_label',
+                'height': 18,
+            })
+
+        for ability_type, instance in self.abilities.items():
+            defn = instance.definition
+            if defn.activation_mode == 'toggle':
+                from environmental_resistance import availability, SPECS as RESISTANCES
+                blocker = availability(self.unit, ability_type.value, not instance.is_active)
+                data.append({'type': 'label', 'text': f"{defn.name}: {'Active' if instance.is_active else 'Inactive'}",
+                             'object_id': '#sidebar_section_header_label', 'height': 28})
+                data.append({
+                    'type': 'button', 'text': f"{'Disable' if instance.is_active else 'Enable'} ({defn.ongoing_antimatter:g} AM/turn)",
+                    'object_id': '#sidebar_expand_button', 'action_id': 'toggle_resistance_ability',
+                    'target_data': {'unit_id': self.unit.id, 'ability': ability_type.value},
+                    'height': 28, 'enabled': blocker is None and self.unit.owner == game_state.players[game_state.current_player_index],
+                })
+                for hazard in RESISTANCES[ability_type.value].hazards:
+                    data.append({'type': 'label', 'text': f"{RESISTANCES[ability_type.value].reduction:.0%} resistance: {hazard.replace('_', ' ').title()}", 'height': 22})
+                if blocker:
+                    data.append({'type': 'label', 'text': 'Unavailable: ' + blocker.replace('_', ' '), 'height': 22})
+                continue
+            if instance.is_active:
+                cd_str = f"Active ({instance.duration_remaining} turns)"
+                btn_obj_id = '#sidebar_section_header_label'
+            elif instance.cooldown_remaining > 0:
+                cd_str = f"Cooldown: {instance.cooldown_remaining} turns"
+                btn_obj_id = '#sidebar_info_label'
+            else:
+                cd_str = "Ready"
+                btn_obj_id = '#sidebar_expand_button'
+
+            btn_text = f"{defn.name} ({defn.antimatter_cost} AM) [{cd_str}]"
+            data.append({
+                'type': 'button',
+                'text': btn_text,
+                'object_id': btn_obj_id,
+                'action_id': 'use_ability',
+                'target_data': {
+                    'ability_type_str': ability_type.value,
+                    'requires_target_unit': defn.requires_target_unit,
+                    'requires_target_position': defn.requires_target_position,
+                },
+                'height': 28,
+                'enabled': self.can_use(ability_type),
+            })
+            data.append({
+                'type': 'label',
+                'text': f"  {defn.description}",
+                'object_id': '#sidebar_info_label',
+                'height': 18,
+            })
+        return data
+
+    def can_use(self, ability_type: AbilityType, *, ignore_reservations=False, resources=True) -> bool:
+        """Check readiness without mutation, including functional storage for paid casts.
+
+        Projection may bypass the live balance with resources=False, but cannot
+        bypass the presence/functionality of the equipment that must pay.
+        """
+        return self.availability(ability_type, ignore_reservations=ignore_reservations, resources=resources) is None
+
+    def availability(self, ability_type: AbilityType, *, ignore_reservations=False, resources=True):
+        """Return a public readiness blocker, keeping cooldown distinct from damage."""
+        from dismantling import offline
+        if offline(self.unit):
+            return 'capability_unavailable'
+        from tactical_abilities import SPECS, availability
+        if ability_type.value in SPECS:
+            galaxy = self.unit.in_galaxy or getattr(self.unit.game, "galaxy", None)
+            return availability(self.unit, ability_type.value, galaxy, ignore_reservations=ignore_reservations, resources=resources)
+        if self.is_destroyed:
+            return 'capability_unavailable'
+        instance = self.abilities.get(ability_type)
+        if not instance:
+            return 'ability_unavailable'
+        if instance.definition.activation_mode == 'toggle':
+            return 'capability_unavailable'
+        if instance.cooldown_remaining > 0:
+            return 'cooldown_active'
+        if instance.is_active:
+            return 'ability_active'
+        am_comp = self.unit.antimatter_component
+        cost = instance.definition.antimatter_cost
+        if cost > 0:
+            if am_comp is None or am_comp.is_destroyed:
+                return 'capability_unavailable'
+            if resources and am_comp.current_amount < cost:
+                return 'insufficient_resources'
+        return None
+
+    def activate(
+        self,
+        ability_type: AbilityType,
+        galaxy: 'Galaxy',
+        target_unit_id: Optional[int] = None,
+        target_position: Optional[Position] = None,
+        target_system_name: Optional[str] = None,
+        target_hex_coord: Optional[HexCoord] = None,
+        target_body_id: Optional[int] = None,
+    ) -> bool:
+        """
+        Activates the specified ability.
+
+        Ordinary casts pay before applying effects, then set active state and
+        cooldown. A callback rejection refunds that debit once and must leave
+        gameplay state unchanged. Exceptions propagate without a speculative
+        refund, since their effects may already have committed. Tactical casts
+        retain their separate validation and payment path.
+        """
+        from dismantling import offline
+        if offline(self.unit):
+            return False
+        from location_validation import ability_target_kind, location
+        from domain.players import are_allies
+        target = galaxy.get_unit_by_id(target_unit_id) if target_unit_id is not None else None
+        if target is not None and offline(target) and are_allies(self.unit.owner, target.owner):
+            return False
+        if ability_target_kind(ability_type.value) in {"position", "celestial_position"}:
+            try:
+                target_system_name, target_hex_coord, target_position = location(target_system_name, target_hex_coord, target_position, galaxy)
+            except ValueError:
+                return False
+        from tactical_abilities import SPECS, activate
+        if ability_type.value in SPECS:
+            if target_system_name not in (None, self.unit.in_system) or target_hex_coord not in (None, self.unit.in_hex):
+                return False
+            return activate(self.unit, ability_type.value, galaxy, target_body_id if target_body_id is not None else target_unit_id, target_position)
+        if not self.can_use(ability_type):
+            logger.debug(f"[{format_unit_for_log(self.unit)}] Cannot use {ability_type.name}: not ready, component destroyed, or low antimatter.")
+            return False
+
+        instance = self.abilities[ability_type]
+        defn = instance.definition
+
+        from unit_targeting import legacy_target_blocker
+        if legacy_target_blocker(self.unit, ability_type.value, target, galaxy, approach=False, execution=True):
+            return False
+
+        am_comp = self.unit.antimatter_component
+        cost = defn.antimatter_cost
+        if cost > 0 and not am_comp.consume(cost):
+            logger.debug(f"[{format_unit_for_log(self.unit)}] Consume failed before ability activation.")
+            return False
+
+        success = instance.on_activate(
+            component=self,
+            galaxy=galaxy,
+            target_unit_id=target_unit_id,
+            target_position=target_position,
+            target_system_name=target_system_name,
+            target_hex_coord=target_hex_coord,
+        )
+        if not success:
+            # Rejection occurs before gameplay mutation; restore only this cast's
+            # debit. In particular, blocked jumps and unsuccessful capture rolls
+            # retain their existing no-charge/no-cooldown behavior.
+            if cost > 0:
+                am_comp.add(cost)
+            return False
+
+        # --- Mark as active and set cooldown ---
+        instance.is_active = (defn.duration > 0)
+        instance.duration_remaining = defn.duration
+        instance.target_position = target_position
+        instance.cooldown_remaining = defn.cooldown
+        from titan_abilities import reconcile as reconcile_titans
+        reconcile_titans(galaxy)
+        return True
+
+    def _expire_ability(self, ability_type: AbilityType, galaxy: 'Galaxy') -> None:
+        """Cleans up lingering effects when an ability's duration expires."""
+        instance = self.abilities[ability_type]
+        if not instance.is_active and not instance.spawned_unit_ids:
+            return
+        instance.is_active = False
+        instance.on_expire(self, galaxy)
+        instance.duration_remaining = 0
+        instance.target_position = None
+        instance.target_unit_id = None
+        instance.spawned_unit_ids = []
+
+    def on_destroyed(self):
+        galaxy = self.unit.in_galaxy or getattr(self.unit.game, "galaxy", None)
+        for atype in list(self.abilities):
+            self._expire_ability(atype, galaxy)
+
+    def reconcile_effects(self, galaxy):
+        from campaign_graph import find_unit
+        from environmental_resistance import reconcile
+        reconcile(self.unit)
+        for atype, instance in self.abilities.items():
+            if instance.definition.activation_mode == 'toggle':
+                continue
+            target_missing = instance.definition.requires_target_unit and find_unit(galaxy, instance.target_unit_id) is None
+            if instance.is_active and (self.is_destroyed or self.unit.current_hit_points <= 0 or instance.duration_remaining <= 0 or target_missing):
+                self._expire_ability(atype, galaxy)
+            elif instance.is_active:
+                instance.restore_effect(self, galaxy)
+            elif instance.spawned_unit_ids:
+                self._expire_ability(atype, galaxy)
+
+    def update(self, galaxy: 'Galaxy', *, apply_ongoing=True) -> None:
+        """
+        Called once per turn. Ticks cooldowns, applies ongoing ability effects,
+        and expires abilities whose duration has elapsed.
+        """
+        if self.is_destroyed:
+            self.on_destroyed()
+            return
+
+        for ability_type, instance in self.abilities.items():
+            if instance.definition.activation_mode == 'toggle':
+                from environmental_resistance import reconcile
+                reconcile(self.unit)
+                continue
+            from tactical_abilities import SPECS
+            if ability_type.value in SPECS:
+                continue
+            # --- Tick cooldown ---
+            if instance.cooldown_remaining > 0:
+                instance.cooldown_remaining -= 1
+
+            # --- Apply ongoing effects for active abilities ---
+            if instance.is_active:
+                if apply_ongoing and instance.duration_remaining > 0:
+                    instance.on_turn_update(self, galaxy)
+
+                # --- Tick duration ---
+                if instance.duration_remaining > 0:
+                    instance.duration_remaining -= 1
+
+                # --- Check expiry ---
+                if instance.duration_remaining <= 0:
+                    self._expire_ability(ability_type, galaxy)

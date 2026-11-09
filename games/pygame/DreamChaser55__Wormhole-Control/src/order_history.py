@@ -1,0 +1,95 @@
+"""Bounded, save-authoritative explicit-order outcomes (no live target lookups)."""
+import json
+import math
+
+MAX_EVENTS = 128
+MAX_CHARACTERS = 32_000
+PUBLIC_REASONS = frozenset({"wing_service_required", "wing_endurance_expired", "completed", "failed", "cancelled", "execution_failed", "suborder_failed",
+    "invalid_relation", "target_not_disabled", "engines_unavailable", "hyperdrive_unavailable", "sector_unreachable", "system_unreachable",
+    "carrier_out_of_sector", "carrier_unavailable", "bay_unavailable", "unsafe_placement", "jump_inhibited", "invalid_destination", "out_of_range", "capture_resisted",
+    "ability_interrupted", "titan_limit_reached", "firing_blocked", "invalid_target", "link_occupied", "link_cycle",
+    "unit_destroyed", "unit_dismantled", "dismantling_conflict", "target_out_of_range", "ownership_lost", "target_unavailable", "target_not_visible", "capability_unavailable",
+    "assault_repulsed", "insufficient_troops", "cooldown_active", "insufficient_resources", "insufficient_population", "insufficient_capacity", "invalid_parameters",
+    "path_unavailable", "hazard_blocked", "construction_unavailable", "refit_unavailable", "ability_unavailable", "ability_expired"})
+
+
+def public_reason(reason, fallback="execution_failed"):
+    return reason if isinstance(reason, str) and reason in PUBLIC_REASONS else fallback
+
+
+def loading_outcome_view(value):
+    """Only numeric facts from a completed, authorized load cross this boundary."""
+    keys = ('requested_amount', 'loaded_amount', 'retained_population')
+    if not isinstance(value, dict) or not all(
+        type(value.get(key)) in (int, float) and math.isfinite(value[key]) and value[key] >= 0
+        for key in keys
+    ):
+        return None
+    return {key: value[key] for key in keys}
+
+
+
+def bounded_history(events):
+    allowed = {"event_id", "turn", "player_id", "unit_id", "order_id", "type", "outcome", "reason"}
+    cleaned = []
+    for event in events if isinstance(events, list) else []:
+        if not isinstance(event, dict) or type(event.get("event_id")) is not int:
+            continue
+        item = {key: value for key, value in event.items() if key in allowed and type(value) in (str, int)}
+        for key, value in list(item.items()):
+            if isinstance(value, str):
+                item[key] = value[:200]
+        if "reason" in item:
+            item["reason"] = public_reason(item["reason"])
+        if item.get('type') == 'load_colonists' and item.get('outcome') == 'completed':
+            facts = loading_outcome_view(event.get('loading_outcome'))
+            if facts is not None:
+                item['loading_outcome'] = facts
+        cleaned.append(item)
+    cleaned = sorted(cleaned, key=lambda e: e["event_id"])[-MAX_EVENTS:]
+    while cleaned and len(json.dumps(cleaned, ensure_ascii=False)) > MAX_CHARACTERS:
+        cleaned.pop(0)
+    return cleaned
+
+
+def record_outcome(order, outcome=None, reason=None):
+    if not getattr(order, "_journal_root", False) or getattr(order, "_outcome_recorded", False):
+        return
+    owner = getattr(order, "_issuing_player", None)
+    if owner is None:
+        return
+    outcome = outcome or order.status.name.lower()
+    if outcome not in {"completed", "failed", "cancelled"}:
+        return
+    order._outcome_recorded = True
+    sequence = getattr(owner, "order_event_sequence", 0)
+    sequence = (sequence if type(sequence) is int else 0) + 1
+    owner.order_event_sequence = sequence
+    event = {"event_id": sequence, "turn": int(getattr(getattr(order.unit, "game", None), "turn_number", 1)),
+             "player_id": owner.id, "unit_id": order.unit.id, "order_id": order.public_id,
+             "type": order.order_type.name.lower(), "outcome": outcome,
+             "reason": public_reason(reason or getattr(order, "failure_reason", None) or outcome)}
+    if event['type'] == 'load_colonists' and outcome == 'completed':
+        facts = loading_outcome_view(getattr(order, 'loading_outcome', None))
+        if facts is not None:
+            event['loading_outcome'] = facts
+    owner.order_history = bounded_history([*getattr(owner, "order_history", []), event])
+    from turn_briefing import order_outcome
+    order_outcome(order, outcome, event["reason"])
+
+
+def interrupt_unit_orders(unit, reason):
+    commander = getattr(unit, "commander_component", None)
+    if commander:
+        for root in [commander.current_order, *commander.orders_queue]:
+            if root is not None:
+                record_outcome(root, "cancelled", reason)
+
+
+def history_view(player):
+    events = bounded_history(getattr(player, "order_history", []))
+    sequence = getattr(player, "order_event_sequence", 0)
+    return {"events": events, "latest_event_id": sequence,
+            "oldest_event_id": events[0]["event_id"] if events else None,
+            "omitted_count": max(0, sequence - len(events)),
+            "max_events": MAX_EVENTS, "max_serialized_characters": MAX_CHARACTERS}

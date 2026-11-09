@@ -1,0 +1,2304 @@
+"""Validated command gateway from model output to authoritative game orders."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import uuid
+import logging
+from game_logging import format_unit_for_log
+import traceback
+from typing import Any, Callable
+from resource_costs import ResourceCost, RESOURCE_NAMES, resource_balances, fortification_cost
+
+from .contracts import CommandBatch, ContractError
+from .command_spec import COMMAND_SPECS, validate_command, MAX_COMMANDS
+from .rules import (
+    compatible_docking_component,
+    compatible_hangar_component,
+    compatible_strikecraft_bay_component,
+    has_operational_engines,
+    is_colonizable_body,
+    is_mining_target,
+    is_antimatter_source,
+)
+from .intelligence import (
+    discovered_enemy_agent_hosts,
+    find_agent_host,
+    host_kind,
+    relation as intelligence_relation,
+    sabotage_types_for_host,
+)
+
+
+logger = logging.getLogger(__name__)
+
+
+def _log_command_failure(stage, index, command_type, exc):
+    """Record frame locations only: exception text, source lines and locals are private."""
+    frames = [(frame.f_code.co_filename, line) for frame, line in traceback.walk_tb(exc.__traceback__)]
+    safe_type = command_type if isinstance(command_type, str) and command_type in COMMAND_SPECS else "unknown"
+    logger.error("Unexpected command failure stage=%s index=%s type=%s exception=%s frames=%s",
+                 stage, index, safe_type, type(exc).__name__, frames)
+
+@dataclass(frozen=True)
+class CommandError:
+    command_index: int
+    code: str
+    message: str
+
+
+@dataclass(frozen=True)
+class CommandResult:
+    accepted: bool
+    applied_count: int = 0
+    receipts: tuple[str, ...] = ()
+    errors: tuple[CommandError, ...] = ()
+    failure_stage: str | None = "preflight"
+    retryable: bool = True
+    operation_results: tuple[dict[str, Any], ...] = ()
+    may_have_partial_effects: bool = False
+    requires_observation: bool = False
+
+
+class _Rejected(ValueError):
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
+
+
+@dataclass
+class _Prepared:
+    apply: Callable[[], None]
+    receipt: str
+    command_index: int = -1
+    unit_id: int | None = None
+    command_type: str = ""
+    public_order_id: str | None = None
+
+
+class _BatchProjection:
+    """Track batch effects and reservations separately from authoritative state.
+
+    Read the live game and issuing player's orders/resources, then update this
+    ledger in command order. Shared colony and docking capacity includes other
+    players' reservations; construction resources belong to the issuing player.
+    Replacement/cancellation releases pending reservations, while settled effects
+    remain available to later commands. Future travel, income and uncertain
+    outcomes cannot fund immediate operations.
+
+    Validation may mutate projection bookkeeping and raise _Rejected, but never
+    starts orders, pays charges or changes live targets. Discard the entire
+    projection on batch rejection; commit rechecks through authoritative rules.
+    """
+
+    def __init__(self, game: Any, player: Any):
+        self.game = game
+        self.player = player
+        self._order_ledger = {}
+        self._ledger_units = {}
+        self._refunds = ResourceCost()
+        self._settled_cargo = {}
+        self._settled_population = {}
+        self._settled_docks = {}
+        self._containment_changes = set()
+        self._wing_production_enabled = {}
+        self._servicing_wings = {}
+        self._settled_hidden = {}
+        self._unavailable_units = set()
+        self._edit_target = None
+        self._cargo: dict[int, float] = {}
+        self._source_population: dict[int, float] = {}
+        self._planetary_upgrade_spend = ResourceCost()
+        self._planetary_upgrades = set()
+        self._troop_cargo = {}
+        self._planetary_reserved_am = {}
+        self._available = resource_balances(player)
+        self._resource_reservations: list[dict[str, Any]] = []
+        self._docking_slots: dict[int, int] = {}
+        self._inhibitor_states: dict[int, bool] = {}
+        self._cloaking_states: dict[int, bool] = {}
+        self._resistance_states: dict[int, set[str]] = {}
+        self._agent_hosts: dict[int, Any] = {}
+        self._agent_objects: dict[int, Any] = {}
+        self._agent_sabotage: dict[int, str | None] = {}
+        self._ci_credit_spend = 0.0
+        self._ci_antimatter: dict[int, float] = {}
+        self._ci_cooldowns: dict[int, int] = {}
+        self._tactical_spent = {}
+        self._tactical_used = set()
+        self._tactical_links = {}
+        self._tactical_deployments = {}
+        self._multiply_ready = {}
+        self._tactical_gained = {}
+        self._tactical_cancelled = set()
+        self._inhibitor_static_zones: dict[tuple[str, tuple[int, int]], list[Any]] = {}
+        self._inhibitor_dynamic_zones: dict[
+            tuple[str, tuple[int, int]], dict[int, Any]
+        ] = {}
+
+    @classmethod
+    def from_game(cls, game, player):
+        """Seed the same live order ledger for observation and batch validation."""
+        projection = cls(game, player)
+        # Shared capacity includes all deployed ships. Credit reservations are
+        # scoped to the issuing player in _rebuild, including unselected units.
+        for system in getattr(game.galaxy, "systems", {}).values():
+            for sector in getattr(system, "hexes", {}).values():
+                for unit in getattr(sector, "units", ()):
+                    if getattr(unit, "commander_component", None):
+                        projection._ensure_orders(unit)
+        from campaign_graph import iter_units
+        for unit, _ in iter_units(game.galaxy):
+            if unit.commander_component:
+                projection._ensure_orders(unit)
+        return projection
+
+    def _ensure_orders(self, unit):
+        if unit.id in self._order_ledger:
+            return
+        commander = unit.commander_component
+        roots = [getattr(commander, "current_order", None), *list(getattr(commander, "orders_queue", []))]
+        self._ledger_units[unit.id] = unit
+        self._order_ledger[unit.id] = [
+            {"id": getattr(o, "public_id", str(id(o))), "type": o.order_type.name.lower(),
+             "parameters": dict(getattr(o, "parameters", {})), "order": o,
+             "started": o is getattr(commander, "current_order", None),
+             "settled": getattr(o.status, "name", "") not in {"PENDING", "IN_PROGRESS"}}
+            for o in roots if o is not None]
+
+    def target_order(self, command, unit):
+        self._ensure_orders(unit)
+        for entry in self._order_ledger[unit.id]:
+            if entry["id"] == command.order_id and entry["order"] is not None and not entry.get("settled"):
+                return entry
+        raise _Rejected("order_unavailable", "The order is unavailable.")
+
+    def before(self, command, units):
+        self._group_links = {}
+        self._group_titan_count = 0
+        for unit in units:
+            from strikecraft_service import command_blocker
+            if command_blocker(unit, command.type):
+                raise _Rejected('wing_service_required', 'Wing must return to its carrier for servicing.')
+            if command.type == 'deploy_unit' and command.target_id in self._servicing_wings:
+                raise _Rejected('wing_service_required', 'Serviced wing cannot launch until next owner turn.')
+            if command.type == 'deploy_all_wings' and self._servicing_wings:
+                bay = unit.strikecraft_bay_component
+                if bay and unit.id in self._servicing_wings.values():
+                    from strikecraft_abilities import round_now
+                    if not any(w.id not in self._servicing_wings and
+                               (not w.strikecraft_wing_component or w.strikecraft_wing_component.recovery_ready_round <= round_now(self.game.galaxy))
+                               for w in bay.docked_units):
+                        raise _Rejected('wing_service_required', 'Serviced wings cannot launch until next owner turn.')
+            if unit.id in self._unavailable_units:
+                raise _Rejected("unit_unavailable", "A selected unit is unavailable after preceding operations.")
+            self._ensure_orders(unit)
+            removed = []
+            if command.type == "cancel_order":
+                entry = self.target_order(command, unit)
+                self._edit_target = entry
+                removed = [entry]
+                self._order_ledger[unit.id].remove(entry)
+            elif command.type in {"cancel_orders", "clear_explicit_orders"} or (COMMAND_SPECS[command.type].queued and not command.queue):
+                removed = self._order_ledger[unit.id]
+                self._order_ledger[unit.id] = []
+            for entry in removed:
+                order = entry["order"]
+                if order is not None and hasattr(order, "refundable_resources"):
+                    self._refunds += order.refundable_resources(self.player.id)
+            if command.type == "cancel_order":
+                self._settle_front(unit)
+        self._rebuild()
+
+    def dismantling_claims(self):
+        from campaign_graph import find_unit
+        from dismantling import tree
+        claims = []
+        for uid, entries in self._order_ledger.items():
+            for entry in entries:
+                if entry['type'] != 'dismantle_unit' or entry.get('settled'):
+                    continue
+                target = find_unit(self.game.galaxy, entry['parameters'].get('target_unit_id'))
+                members = {u.id for u in tree(target)} if target else set()
+                order = entry['order']
+                working = entry.get('dismantling_working', order is not None and order.phase == 'working')
+                claims.append((uid, members, working))
+        return claims
+
+    def validate_dismantling_interactions(self, command, units):
+        safe = {'rename_unit', 'cancel_order', 'clear_explicit_orders', 'cancel_orders'}
+        locked = set().union(*(members for _, members, working in self.dismantling_claims() if working))
+        if command.type not in safe and any(u.id in locked for u in units):
+            raise _Rejected('dismantling_conflict', 'Unit is offline for dismantling; cancel the executor order first.')
+        if command.type == 'use_ability' and command.target_id in locked:
+            from campaign_graph import find_unit
+            from domain.players import are_enemies
+            target = find_unit(self.game.galaxy, command.target_id)
+            if target is not None and are_enemies(self.player, target.owner):
+                return
+        if command.type not in {'attack', 'attack_long_range', *safe}:
+            if command.target_id in locked or command.source_id in locked:
+                raise _Rejected('dismantling_conflict', 'Target is offline for dismantling.')
+
+    def _rebuild(self):
+        """Replay reservations without mutation: resources are personal, capacity can be shared.
+
+        Foreign orders remain relevant to allied colony population and docking
+        slots, but only this player's unpaid construction can reserve its resources.
+        Paid jobs are already reflected in the live balance and refund ledger.
+        """
+        self._cargo = {}
+        self._source_population = {}
+        self._troop_cargo = {}
+        self._planetary_reserved_am = {}
+        treasury = resource_balances(self.player)
+        self._available = {name: treasury[name] + getattr(self._refunds, name)
+                           - getattr(self._planetary_upgrade_spend, name) for name in RESOURCE_NAMES}
+        self._credits -= self._ci_credit_spend
+        self._resource_reservations = []
+        self._docking_slots = dict(self._settled_docks)
+        for unit_id, entries in self._order_ledger.items():
+            unit = self._ledger_units[unit_id]
+            cargo = self._live_cargo(unit) + self._settled_cargo.get(unit_id, 0)
+            transport = getattr(unit, "troop_transport_component", None)
+            self._troop_cargo[unit_id] = transport.troops if transport else 0
+            for entry in entries:
+                if entry.get("settled"):
+                    continue
+                kind, params, order = entry["type"], entry["parameters"], entry["order"]
+                if kind == "recruit_troops" and unit.owner == self.player:
+                    from planetary_balance import TROOP_CREDIT_COST, TROOP_POPULATION_COST
+                    amount = params["amount"]
+                    self._troop_cargo[unit_id] += amount
+                    self._reserve_credits(unit, entry, amount * TROOP_CREDIT_COST)
+                    source = self.game.galaxy.get_celestial_body_by_id(params.get("target_id"))
+                    from planetary_intel import current_ownership
+                    if source is not None and current_ownership(self.game.galaxy, self.player, source):
+                        self._source_population.setdefault(source.id, float(source.population) - self._settled_population.get(source.id, 0))
+                        self._source_population[source.id] -= amount * TROOP_POPULATION_COST
+                elif kind in {"invade_planet", "bombard_planet"} and unit.owner == self.player:
+                    from planetary_balance import INVASION_AM_COST, SIEGE_AM_COST, DEFEAT_LOSSES
+                    import math
+                    cost = INVASION_AM_COST if kind == "invade_planet" else SIEGE_AM_COST
+                    self._planetary_reserved_am[unit_id] = self._planetary_reserved_am.get(unit_id, 0) + cost
+                    if kind == "invade_planet":
+                        self._troop_cargo[unit_id] -= math.ceil(params["amount"] * DEFEAT_LOSSES)
+                elif kind == "load_colonists":
+                    amount = float(params.get("amount", 0))
+                    cargo += amount
+                    source = self.game.galaxy.get_celestial_body_by_id(params.get("target_id"))
+                    from planetary_intel import current_ownership
+                    if source is not None and current_ownership(self.game.galaxy, self.player, source):
+                        self._source_population.setdefault(source.id, float(source.population) - self._settled_population.get(source.id, 0))
+                        self._source_population[source.id] -= amount
+                elif kind == "colonize":
+                    cargo = 0
+                elif kind == "construct" and unit.owner == self.player and (order is None or not _construction_paid(order)):
+                    build = unit.constructor_component.can_build(params.get("unit_template_name"))
+                    if build:
+                        self._reserve_resources(unit, entry, build.resource_cost)
+                elif kind in {"dock", "dock_in_hangar", "dock_in_strikecraft_bay"}:
+                    target = self.game.galaxy.get_unit_by_id(params.get("target_carrier_id"))
+                    if target is not None:
+                        comp = compatible_docking_component(unit, target)
+                        if comp:
+                            key = id(comp)
+                            self._docking_slots.setdefault(key, self._free_docking_slots(comp))
+                            self._docking_slots[key] -= self._docking_cost(comp, unit)
+            self._cargo[unit_id] = cargo
+
+    @property
+    def _credits(self):
+        return self._available['credits']
+
+    @_credits.setter
+    def _credits(self, value):
+        self._available['credits'] = value
+
+    def _reserve_credits(self, unit, entry, amount):
+        self._reserve_resources(unit, entry, ResourceCost(credits=amount))
+
+    def _reserve_resources(self, unit, entry, cost):
+        for name, amount in cost.to_dict().items():
+            self._available[name] -= amount
+        reservation = {"unit_id": unit.id, "order_id": entry["id"],
+                       "type": entry["type"], "resources": cost.to_dict()}
+        if entry["type"] == "construct":
+            reservation["template_name"] = entry["parameters"]["unit_template_name"]
+        self._resource_reservations.append(reservation)
+
+    def cargo_for(self, unit):
+        self._ensure_orders(unit)
+        if unit.id not in self._cargo:
+            self._rebuild()
+        return self._cargo.get(unit.id, self._live_cargo(unit))
+
+    def hidden_for(self, unit, *, queued=False):
+        """Projected FIFO prerequisites are intent, not a promise of successful exit."""
+        hidden = self._settled_hidden.get(unit.id, bool(getattr(unit, 'is_hidden_in_gas_giant', False)))
+        if queued:
+            self._ensure_orders(unit)
+            for entry in self._order_ledger[unit.id]:
+                if entry.get('settled'):
+                    continue
+                if entry['type'] == 'enter_gas_giant':
+                    hidden = True
+                elif entry['type'] == 'leave_gas_giant':
+                    hidden = False
+        return hidden
+
+    def validate_load(self, command: Any, units: list[Any], body: Any) -> None:
+        amount = float(command.amount or 0)
+        if amount <= 0:
+            raise _Rejected("invalid_value", "load_colonists requires a positive amount.")
+        for unit in units:
+            self.cargo_for(unit)
+        from planetary_intel import current_ownership
+        if current_ownership(self.game.galaxy, self.player, body):
+            available = self._source_population.setdefault(
+                body.id, float(body.population) - self._settled_population.get(body.id, 0)
+            )
+            required = amount * len(units)
+            if required > available:
+                raise _Rejected(
+                    "insufficient_population",
+                    f"Body {body.id} has only {available:g} colonists available; "
+                    f"this command requires {required:g}.",
+                )
+        for unit in units:
+            colony = unit.colony_component
+            capacity = float(getattr(colony, "max_cargo", 0))
+            remaining = capacity - self.cargo_for(unit)
+            if amount > remaining:
+                raise _Rejected(
+                    "insufficient_capacity",
+                    f"Unit {unit.id} can load at most {max(0, remaining):g} colonists.",
+                )
+
+    def validate_construct(self, command: Any, units: list[Any]) -> None:
+        if not command.template_name:
+            return
+        costs = []
+        for unit in units:
+            constructor = getattr(unit, "constructor_component", None)
+            buildable = (
+                constructor.can_build(command.template_name) if constructor else None
+            )
+            if buildable is not None:
+                costs.append(buildable.resource_cost)
+        required = sum(costs, ResourceCost())
+        if not required.affordable(self._available):
+            raise _Rejected(
+                "insufficient_resources",
+                f"Construction requires {required.describe()}. "
+                f"Missing {required.shortfall(self._available).describe()} after order reservations and earlier commands. "
+                "Queued builds also reserve their full cost for each builder. "
+                "Reduce new spending or cancel unwanted pending orders before adding builds; "
+                "future income cannot fund this batch.",
+            )
+
+    @staticmethod
+    def _free_docking_slots(component):
+        from unit_components.strikecraft import StrikecraftBayComponent
+        if isinstance(component, StrikecraftBayComponent):
+            return len(component.free_slot_indices())
+        return int(component.max_slots) - int(component.get_used_slots())
+
+    @staticmethod
+    def _docking_cost(component, unit):
+        from unit_components.strikecraft import StrikecraftBayComponent
+        if isinstance(component, StrikecraftBayComponent) and component.slot_for_wing(unit) is not None:
+            return 0
+        return 1
+
+    def validate_dock_in_hangar(self, command: Any, units: list[Any], target: Any) -> None:
+        components = [compatible_hangar_component(unit, target) for unit in units]
+        if any(component is None for component in components):
+            raise _Rejected(
+                "invalid_target",
+                "The target carrier has no compatible free hangar slots.",
+            )
+        component = components[0]
+        key = id(component)
+        available = self._docking_slots.setdefault(
+            key,
+            self._free_docking_slots(component),
+        )
+        if sum(self._docking_cost(component, unit) for unit in units) > available:
+            raise _Rejected(
+                "insufficient_capacity",
+                f"The target carrier has only {available} compatible hangar slots available.",
+            )
+
+    def validate_dock_in_strikecraft_bay(self, command: Any, units: list[Any], target: Any) -> None:
+        components = [compatible_strikecraft_bay_component(unit, target) for unit in units]
+        if any(component is None for component in components):
+            raise _Rejected(
+                "invalid_target",
+                "The target carrier has no compatible free strikecraft bay slots.",
+            )
+        component = components[0]
+        key = id(component)
+        available = self._docking_slots.setdefault(
+            key,
+            self._free_docking_slots(component),
+        )
+        if sum(self._docking_cost(component, unit) for unit in units) > available:
+            raise _Rejected(
+                "insufficient_capacity",
+                f"The target carrier has only {available} compatible strikecraft bay slots available.",
+            )
+
+    def validate_dock(self, command: Any, units: list[Any], target: Any) -> None:
+        components = [compatible_docking_component(unit, target) for unit in units]
+        if any(component is None for component in components):
+            raise _Rejected(
+                "invalid_target",
+                "The docking target has no compatible free carrier slots.",
+            )
+        component = components[0]
+        if any(candidate is not component for candidate in components):
+            raise _Rejected(
+                "invalid_target", "The selected units require different carrier bays."
+            )
+        key = id(component)
+        available = self._docking_slots.setdefault(
+            key,
+            self._free_docking_slots(component),
+        )
+        if sum(self._docking_cost(component, unit) for unit in units) > available:
+            raise _Rejected(
+                "insufficient_capacity",
+                f"The docking target has only {available} compatible slots available.",
+            )
+
+    def plan_inhibitor_toggles(self, units: list[Any]) -> list[tuple[Any, bool]]:
+        """Validate and project a group of immediate inhibitor toggles atomically."""
+        for unit in units:
+            if getattr(unit, "inhibitor_component", None) is None:
+                raise _Rejected(
+                    "capability_unavailable", f"Unit {unit.id} has no inhibitor."
+                )
+            self._ensure_inhibitor_hex(unit)
+
+        projected_states = dict(self._inhibitor_states)
+        projected_dynamic = {
+            key: dict(zones) for key, zones in self._inhibitor_dynamic_zones.items()
+        }
+        planned: list[tuple[Any, bool]] = []
+
+        for unit in units:
+            component = unit.inhibitor_component
+
+            key = self._inhibitor_key(unit)
+            current_active = projected_states.setdefault(
+                unit.id, bool(getattr(component, "is_active", False))
+            )
+            turn_on = not current_active
+            existing_zones = (
+                self._inhibitor_static_zones[key]
+                + list(projected_dynamic[key].values())
+            )
+            check = component.check_state_change(
+                turn_on,
+                self.game.galaxy,
+                existing_zones=existing_zones,
+            )
+            if not check.allowed:
+                raise _Rejected(
+                    check.code or "inhibitor_unavailable",
+                    f"Unit {unit.id} cannot toggle its inhibitor: {check.message}",
+                )
+
+            if turn_on:
+                projected_dynamic[key][unit.id] = check.proposed_field
+            else:
+                projected_dynamic[key].pop(unit.id, None)
+            projected_states[unit.id] = turn_on
+            planned.append((unit, turn_on))
+
+        self._inhibitor_states = projected_states
+        self._inhibitor_dynamic_zones = projected_dynamic
+        return planned
+
+    def owned_agent(self, agent_id: int) -> tuple[Any, Any]:
+        if agent_id not in self._agent_objects:
+            agent, host = find_agent_host(self.game.galaxy, agent_id)
+            if (
+                agent is None
+                or intelligence_relation(self.player, getattr(agent, "owner", None)) != "self"
+            ):
+                raise _Rejected("agent_unavailable", "The agent is unavailable.")
+            self._agent_objects[agent_id] = agent
+            self._agent_hosts[agent_id] = host
+            sabotage = getattr(agent, "active_sabotage", None)
+            self._agent_sabotage[agent_id] = getattr(sabotage, "value", None)
+        return self._agent_objects[agent_id], self._agent_hosts[agent_id]
+
+    def project_sabotage(self, agent_id: int, sabotage_type: str) -> tuple[Any, Any]:
+        agent, host = self.owned_agent(agent_id)
+        if intelligence_relation(self.player, getattr(host, "owner", None)) != "enemy":
+            raise _Rejected("target_unavailable", "The host is no longer hostile.")
+        if sabotage_type not in sabotage_types_for_host(host):
+            raise _Rejected("invalid_value", "That sabotage type is unavailable for this host.")
+        self._agent_sabotage[agent_id] = sabotage_type
+        return agent, host
+
+    def project_relocation(self, agent_id: int, target: Any) -> tuple[Any, Any]:
+        from unit_targeting import intelligence_distance
+        from unit_orders.intelligence import INTELLIGENCE_OPERATIONAL_RANGE
+
+        agent, host = self.owned_agent(agent_id)
+        if target is host or host_kind(target) not in {"unit", "colony"}:
+            raise _Rejected("target_unavailable", "The target is unavailable.")
+        if intelligence_relation(self.player, getattr(target, "owner", None)) != "enemy":
+            raise _Rejected("target_unavailable", "The target is unavailable.")
+        if (
+            getattr(host, "in_system", None) != getattr(target, "in_system", None)
+            or getattr(host, "in_hex", None) != getattr(target, "in_hex", None)
+            or intelligence_distance(host, target) > INTELLIGENCE_OPERATIONAL_RANGE
+        ):
+            raise _Rejected("target_unavailable", "The target is unavailable.")
+        self._agent_hosts[agent_id] = target
+        self._agent_sabotage[agent_id] = None
+        return agent, host
+
+    def plan_ci_sweeps(self, units: list[Any]) -> list[Any]:
+        from constants import CI_SWEEP_ANTIMATTER_COST, CI_SWEEP_CREDIT_COST, CI_SWEEP_COOLDOWN_TURNS
+
+        planned = []
+        for unit in units:
+            intelligence = getattr(unit, "intelligence_component", None)
+            storage = getattr(unit, "antimatter_component", None)
+            cooldown = self._ci_cooldowns.get(
+                unit.id, int(getattr(intelligence, "ci_cooldown_remaining", 0))
+            )
+            amount = self._ci_antimatter.get(
+                unit.id, float(getattr(storage, "current_amount", 0)) if storage else 0.0
+            )
+            if (
+                intelligence is None
+                or getattr(intelligence, "is_destroyed", False)
+                or not getattr(intelligence, "has_counter_intelligence", False)
+            ):
+                raise _Rejected("capability_unavailable", f"Unit {unit.id} has no functioning Counter-Intelligence suite.")
+            if cooldown > 0:
+                raise _Rejected("capability_unavailable", f"Unit {unit.id} Counter-Intelligence is on cooldown.")
+            if self._credits < CI_SWEEP_CREDIT_COST:
+                raise _Rejected("insufficient_resources", "Counter-Intelligence sweep requires more credits than remain in this batch.")
+            if storage is None or getattr(storage, "is_destroyed", False) or self.tactical_budget(unit) < CI_SWEEP_ANTIMATTER_COST:
+                raise _Rejected("insufficient_resources", f"Unit {unit.id} lacks antimatter for a Counter-Intelligence sweep.")
+            self._ci_credit_spend += CI_SWEEP_CREDIT_COST
+            self._credits -= CI_SWEEP_CREDIT_COST
+            self._ci_antimatter[unit.id] = amount - CI_SWEEP_ANTIMATTER_COST
+            self._ci_cooldowns[unit.id] = CI_SWEEP_COOLDOWN_TURNS
+            planned.append(unit)
+        return planned
+
+    def fuel_amount(self, unit):
+        storage = unit.antimatter_component
+        return self._ci_antimatter.get(unit.id, float(storage.current_amount) if storage else 0) + self._tactical_gained.get(unit.id, 0) - self._tactical_spent.get(unit.id, 0) - self._planetary_reserved_am.get(unit.id, 0)
+
+    def multiplication_preview(self, unit):
+        from antimatter_multiplication import preview
+        excluded = self._unavailable_units | {uid for uid, hidden in self._settled_hidden.items() if hidden}
+        return preview(unit, self.game.galaxy, self.fuel_amount,
+            lambda target: self._multiply_ready.get(target.id, target.multiply_receive_ready_round), excluded)
+
+    def tactical_budget(self, unit):
+        from unit_components.abilities.registry import ABILITY_DEFINITIONS
+        costs = {kind.value: definition.antimatter_cost for kind, definition in ABILITY_DEFINITIONS.items()}
+        available = self.fuel_amount(unit)
+        for entry in self._order_ledger.get(unit.id, ()):
+            kind = entry['parameters'].get('ability_type')
+            if entry['type'] == 'use_ability' and not entry.get('settled') and kind in costs:
+                from titan_abilities import instance
+                lance = instance(unit, 'siege_lance') if kind == 'siege_lance' else None
+                if not (lance and lance.is_active and entry.get('order') and lance.order_id == entry['order'].public_id):
+                    available -= costs[kind]
+        return available
+
+    def tactical_links(self):
+        from tactical_abilities import get_instance, link_valid
+        links = {}
+        for unit in self._ledger_units.values():
+            for kind in ('guardian_link', 'tractor_tether'):
+                inst = get_instance(unit, kind)
+                if inst and inst.is_active and link_valid(unit, inst, self.game.galaxy):
+                    links[(kind, inst.target_unit_id)] = unit.id
+        links.update(self._tactical_links)
+        return {key: source for key, source in links.items() if (source, key[0]) not in self._tactical_cancelled}
+
+    def attack_run_wings(self, unit):
+        from strikecraft_abilities import eligible_bombers
+        wings = []
+        for wing in eligible_bombers(unit, self.game.galaxy, include_recovering=True):
+            self._ensure_orders(wing)
+            entries = [e for e in self._order_ledger[wing.id] if not e.get('settled')]
+            if wing.id not in self._unavailable_units and (not entries or entries[0]['type'] != 'emergency_recovery'):
+                wings.append(wing)
+        return wings
+
+    def validate_tactical(self, command, unit):
+        from tactical_abilities import SPECS, deployments
+        spec = SPECS[command.ability]
+        if command.ability == 'attack_run' and not self.attack_run_wings(unit):
+            raise _Rejected('capability_unavailable', 'No bombers remain eligible after preceding commands.')
+        if command.ability in ('evasive_formation', 'emergency_recovery') and command.target_id in self._unavailable_units:
+            raise _Rejected('target_unavailable', 'Wing is unavailable after preceding commands.')
+        used = set(self._tactical_used)
+        reserved_links = {**self.tactical_links(), **getattr(self, "_group_links", {})}
+        count = self._tactical_deployments.get((unit.id, command.ability), 0)
+        for uid, entries in self._order_ledger.items():
+            for entry in entries:
+                kind = entry['parameters'].get('ability_type')
+                if entry['type'] != 'use_ability' or entry.get('settled') or kind not in SPECS:
+                    continue
+                used.add((uid, kind))
+                if uid == unit.id and kind == command.ability:
+                    count += 1
+                if kind in ('tractor_tether', 'guardian_link'):
+                    reserved_links[(kind, entry['parameters'].get('target_unit_id', entry['parameters'].get('target_id')))] = uid
+        if (unit.id, command.ability) in used:
+            raise _Rejected('capability_unavailable', 'Ability already used or reserved.')
+        if command.ability == 'multiply_antimatter' and not any(not e.get('settled') for e in self._order_ledger.get(unit.id, ())):
+            if sum(amount for _, amount in self.multiplication_preview(unit)) <= spec.cost:
+                raise _Rejected('target_unavailable', 'The pulse would produce no net antimatter.')
+        if spec.cost > self.tactical_budget(unit):
+            raise _Rejected('insufficient_resources', 'Ability fuel is already spent or reserved.')
+        surviving = deployments(self.game.galaxy, unit.id, command.ability)
+        if spec.cap and len(surviving) + count >= spec.cap:
+            raise _Rejected('deployment_cap_reached', 'Deployment limit reached or reserved.')
+        if command.ability in ('tractor_tether', 'guardian_link') and (command.ability, command.target_id) in reserved_links:
+            raise _Rejected('target_unavailable', 'The target already has a link or reserved link.')
+        if command.ability == 'guardian_link':
+            outgoing = {source: target for (kind, target), source in reserved_links.items() if kind == 'guardian_link'}
+            cursor, seen = command.target_id, {unit.id}
+            while cursor in outgoing:
+                if cursor in seen:
+                    raise _Rejected('target_unavailable', 'Guardian cycles are unavailable.')
+                seen.add(cursor)
+                cursor = outgoing[cursor]
+            if cursor == unit.id:
+                raise _Rejected('target_unavailable', 'Guardian cycles are unavailable.')
+
+        if command.ability in ('tractor_tether', 'guardian_link'):
+            self._group_links[(command.ability, command.target_id)] = unit.id
+
+    def record(self, command, units):
+        if command.type == 'set_wing_production_enabled':
+            self._wing_production_enabled[units[0].id] = command.enabled
+        if command.type in {'deploy_unit', 'deploy_all_wings', 'dock', 'dock_in_hangar', 'dock_in_strikecraft_bay'}:
+            self._containment_changes.update(u.id for u in units)
+            if command.target_id is not None:
+                self._containment_changes.add(command.target_id)
+        if command.type == "append_patrol_waypoints":
+            entry = self.target_order(command, units[0])
+            entry["parameters"]["waypoints"] = [*entry["parameters"].get("waypoints", []), *command.waypoints]
+        elif COMMAND_SPECS[command.type].queued:
+            params = {"target_id": command.target_id, "agent_id": command.agent_id, "amount": command.amount,
+                      "unit_template_name": command.template_name, "target_carrier_id": command.target_id,
+                      "turret_type_override": command.turret_type_override, "defense_type_override": command.defense_type_override,
+                      "waypoints": list(command.waypoints or []), "ability_type": command.ability, "target_unit_id": command.target_id, "target_position": command.position,
+                      "target_system_name": command.system_name, "target_hex_coord": command.hex_coord}
+            if command.type == 'construct':
+                from titan_acquisition import intended_hull
+                params['construction_hull_size'] = intended_hull(params, self.player)
+            for unit in units:
+                self._order_ledger[unit.id].append({"id": uuid.uuid4().hex, "type": command.type, "parameters": params, "order": None, "started": False, "settled": False})
+                self._settle_front(unit)
+        self._rebuild()
+
+    def _settle_front(self, unit):
+        """Retain irreversible synchronous effects when later work replaces a root.
+
+        This projects only facts known now. Travel and future resource acquisition
+        remain queued prerequisites; no authoritative orders are constructed here.
+        """
+        entries = [entry for entry in self._order_ledger[unit.id] if not entry.get('settled')]
+        if not entries or entries[0].get("started"):
+            return
+        entry = entries[0]
+        entry["started"] = True
+        params, kind = entry["parameters"], entry["type"]
+        if kind == 'dismantle_unit':
+            from campaign_graph import find_unit
+            from dismantling import evaluate, in_range, tree, bays_for
+            target = find_unit(self.game.galaxy, params.get('target_unit_id'))
+            preview = evaluate(unit, target, self.game.galaxy, check_claims=False)
+            if (not preview.blocker and in_range(unit, target) and not preview.waiting and not unit.is_disabled
+                    and not any(b.unit.is_disabled for b in bays_for(unit, target))):
+                entry['dismantling_working'] = True
+                for member in tree(target):
+                    self._ensure_orders(member)
+                    for prior in self._order_ledger[member.id]:
+                        if prior['order'] is not None:
+                            self._refunds += prior['order'].refundable_resources(self.player.id)
+                    self._order_ledger[member.id] = []
+            return
+        if kind == 'use_ability':
+            from tactical_abilities import SPECS, validate
+            from geometry import Position
+            ability = params.get('ability_type')
+            from titan_balance import TITAN_ABILITIES
+            from titan_acquisition import acquisition
+            if ability in TITAN_ABILITIES or acquisition(kind, params, unit.owner, self.game.galaxy):
+                return
+            if ability in SPECS:
+                raw_point = params.get('target_position')
+                point = raw_point if isinstance(raw_point, Position) else Position(*raw_point) if raw_point is not None else None
+                same_sector = (params.get('target_system_name') == unit.in_system and params.get('target_hex_coord') == unit.in_hex)
+                if (SPECS[ability].target_kind not in ('position', 'celestial_position') or same_sector) and validate(unit, ability, self.game.galaxy, params.get('target_id', params.get('target_unit_id')), point, check_ready=False, resources=False, links=False, participants=False) is None:
+                    if ability == 'multiply_antimatter':
+                        for recipient, amount in self.multiplication_preview(unit):
+                            self._tactical_gained[recipient.id] = self._tactical_gained.get(recipient.id, 0) + amount
+                            self._multiply_ready[recipient.id] = self.game.turn_number + SPECS[ability].cooldown
+                    self._tactical_spent[unit.id] = self._tactical_spent.get(unit.id, 0) + SPECS[ability].cost
+                    self._tactical_used.add((unit.id, ability))
+                    self._tactical_cancelled.discard((unit.id, ability))
+                    if SPECS[ability].cap:
+                        key = (unit.id, ability)
+                        self._tactical_deployments[key] = self._tactical_deployments.get(key, 0) + 1
+                    if ability in ('tractor_tether', 'guardian_link'):
+                        self._tactical_links[(ability, params.get('target_id'))] = unit.id
+                    if ability in ('attack_run', 'emergency_recovery'):
+                        wings = self.attack_run_wings(unit) if ability == 'attack_run' else [self.game.galaxy.get_unit_by_id(params['target_id'])]
+                        for wing in wings:
+                            self._ensure_orders(wing)
+                            for prior in self._order_ledger[wing.id]:
+                                if prior['order'] is not None:
+                                    self._refunds += prior['order'].refundable_resources(self.player.id)
+                            self._order_ledger[wing.id] = [{'id': uuid.uuid4().hex, 'type': ability,
+                                'parameters': {'target_carrier_id': unit.id}, 'order': None,
+                                'started': True, 'settled': False}]
+                            if ability == 'emergency_recovery':
+                                from geometry import distance
+                                from unit_orders.hangar import DOCKING_RANGE
+                                if distance(unit.position, wing.position) <= DOCKING_RANGE:
+                                    self._unavailable_units.add(wing.id)
+                                    self._servicing_wings[wing.id] = unit.id
+                    entry['settled'] = True
+            else:
+                from unit_components.abilities.registry import ABILITY_DEFINITIONS
+                from unit_components.enums import AbilityType
+                from geometry import distance
+                definition = ABILITY_DEFINITIONS.get(AbilityType(ability)) if ability else None
+                target = self.game.galaxy.get_unit_by_id(params.get('target_id', params.get('target_unit_id')))
+                raw_point = params.get('target_position')
+                point = raw_point if isinstance(raw_point, Position) else Position(*raw_point) if raw_point is not None else None
+                in_range = definition is not None
+                if definition and definition.requires_target_unit:
+                    in_range = target is not None and target.in_system == unit.in_system and target.in_hex == unit.in_hex and distance(unit.position, target.position) <= definition.range
+                elif definition and definition.requires_target_position:
+                    in_range = (point is not None and params.get("target_system_name") == unit.in_system
+                                and params.get("target_hex_coord") == unit.in_hex
+                                and (ability == "microjump" or distance(unit.position, point) <= definition.range))
+                if in_range:
+                    self._tactical_spent[unit.id] = self._tactical_spent.get(unit.id, 0) + definition.antimatter_cost
+                    self._tactical_used.add((unit.id, ability))
+                    entry['settled'] = True
+        elif kind == 'enter_gas_giant':
+            from unit_orders.gas_giant import within_gas_giant_range
+            body = self.game.galaxy.get_celestial_body_by_id(params.get('target_id'))
+            if body is not None and within_gas_giant_range(unit, body) and body.can_hide_unit(unit):
+                self._settled_hidden[unit.id] = True
+                entry['settled'] = True
+        elif kind in {"load_colonists", "colonize"}:
+            from unit_orders.colony import within_colony_range
+            from planetary_intel import current_ownership
+            body = self.game.galaxy.get_celestial_body_by_id(params.get("target_id"))
+            if body is not None and within_colony_range(unit, body) and current_ownership(self.game.galaxy, unit.owner, body):
+                if kind == "load_colonists":
+                    amount = float(params.get("amount", 0))
+                    self._settled_cargo[unit.id] = self._settled_cargo.get(unit.id, 0) + amount
+                    self._settled_population[body.id] = self._settled_population.get(body.id, 0) + amount
+                else:
+                    self._settled_cargo[unit.id] = -self._live_cargo(unit)
+                entry["settled"] = True
+        elif kind in {"dock", "dock_in_hangar", "dock_in_strikecraft_bay"}:
+            from geometry import distance
+            from unit_orders.hangar import DOCKING_RANGE
+            target = self.game.galaxy.get_unit_by_id(params.get("target_carrier_id"))
+            if target and unit.in_system == target.in_system and unit.in_hex == target.in_hex and distance(unit.position, target.position) <= DOCKING_RANGE:
+                component = compatible_docking_component(unit, target)
+                if component:
+                    key = id(component)
+                    self._settled_docks.setdefault(key, self._free_docking_slots(component))
+                    self._settled_docks[key] -= self._docking_cost(component, unit)
+                    self._unavailable_units.add(unit.id)
+                    if unit.strikecraft_wing_component:
+                        self._servicing_wings[unit.id] = target.id
+                    entry["settled"] = True
+
+    @staticmethod
+    def _live_cargo(unit):
+        return float(getattr(getattr(unit, "colony_component", None), "population_cargo", 0))
+
+    def _ensure_inhibitor_hex(self, unit: Any) -> None:
+        key = self._inhibitor_key(unit)
+        if key in self._inhibitor_dynamic_zones:
+            return
+        system = getattr(self.game.galaxy, "systems", {}).get(key[0])
+        hex_obj = getattr(system, "hexes", {}).get(key[1]) if system else None
+        if hex_obj is None:
+            component = getattr(unit, "inhibitor_component", None)
+            check = (
+                component.check_state_change(False, self.game.galaxy)
+                if component is not None
+                else None
+            )
+            raise _Rejected(
+                getattr(check, "code", None) or "inhibitor_unavailable",
+                f"Unit {unit.id} cannot toggle its inhibitor: "
+                f"{getattr(check, 'message', 'The unit has no valid sector location.')}",
+            )
+        self._inhibitor_static_zones[key] = list(
+            getattr(hex_obj, "static_inhibition_zones", [])
+        )
+        self._inhibitor_dynamic_zones[key] = dict(
+            getattr(hex_obj, "dynamic_inhibition_zones", {})
+        )
+
+    @staticmethod
+    def _inhibitor_key(unit: Any) -> tuple[str, tuple[int, int]]:
+        hex_coord = getattr(unit, "in_hex", None)
+        if hex_coord is None:
+            return str(getattr(unit, "in_system", "")), ()
+        return str(getattr(unit, "in_system", "")), tuple(hex_coord)
+
+
+def _construction_paid(order):
+    """An approaching root may own its paid job through a descendant."""
+    constructor = getattr(order.unit, 'constructor_component', None)
+    if constructor and constructor.current_construction_target and constructor.construction_order_id == order.public_id:
+        return True
+    return any(_construction_paid(child) for child in order.sub_orders)
+
+
+def resource_budget_view(game: Any, player: Any) -> dict[str, Any]:
+    """Expose the same three-resource budget used by preflight without mutation."""
+    projection = _BatchProjection.from_game(game, player)
+    projection._rebuild()
+    reservations = projection._resource_reservations
+    return {
+        "treasury": resource_balances(player),
+        "reserved": {name: sum(entry['resources'][name] for entry in reservations) for name in RESOURCE_NAMES},
+        "available": dict(projection._available),
+        "reservations": reservations[:64],
+        "omitted_count": max(0, len(reservations) - 64),
+    }
+
+
+def construction_budget(game, player, units, *, queue):
+    """Human group preview shares replacement refunds and reservations with AI."""
+    from .contracts import Command
+    projection = _BatchProjection.from_game(game, player)
+    projection.before(Command(type='construct', unit_ids=tuple(u.id for u in units), queue=queue), units)
+    return dict(projection._available)
+
+
+class CommandGateway:
+    """Preflight a complete batch, then commit it on the game thread."""
+
+    def __init__(self, game: Any):
+        self.game = game
+
+    def apply_batch(self, player: Any, batch: CommandBatch) -> CommandResult:
+        """Preflight atomically; commit can partially apply and requires observation on failure.
+
+        Unexpected errors retain generic public messages and sanitized internal diagnostics.
+        """
+        prepared = []
+        errors = []
+        if len(batch.commands) > MAX_COMMANDS:
+            return CommandResult(False, errors=(CommandError(-1, "invalid_command_contract", "A batch may contain at most 40 commands."),))
+        self._viewer = player
+        self._selected_units = []
+        projection = _BatchProjection.from_game(self.game, player)
+        for index, command in enumerate(batch.commands):
+            try:
+                validate_command(command.to_dict())
+                if command.type == "send_message":
+                    operations = self._prepare_send_message(player, command)
+                    units = []
+                elif command.type == "message_developer":
+                    operations = self._prepare_message_developer(player, command)
+                    units = []
+                elif command.type == "upgrade_planetary_defenses":
+                    units = []
+                    projection._rebuild()
+                    body = self._body(command.target_id)
+                    self._require_current_colony(player, body)
+                    from planetary_warfare import blocker, upgrade
+                    error = blocker(self.game, player, command.type, body, budget=projection._available)
+                    if body.id in projection._planetary_upgrades:
+                        error = "cooldown_active"
+                    if error:
+                        raise _Rejected(error, "Planetary defense upgrade unavailable.")
+                    projection._planetary_upgrades.add(body.id)
+                    projection._planetary_upgrade_spend += fortification_cost(body.fortification_level + 1)
+                    def apply_upgrade(body=body):
+                        self._require_current_colony(player, body)
+                        upgrade(self.game, player, body)
+                    operations = [_Prepared(apply_upgrade, "Planetary defenses upgraded.")]
+                elif COMMAND_SPECS[command.type].player_level:
+                    operations = self._prepare_player_intelligence(player, command, projection)
+                    units = []
+                else:
+                    try:
+                        units = self._owned_units(player, command.unit_ids, include_stored=command.type == 'rename_unit')
+                    except _Rejected:
+                        if command.type in {"cancel_order", "append_patrol_waypoints"}:
+                            raise _Rejected("order_unavailable", "The order is unavailable.")
+                        raise
+                    self._selected_units = units
+                    projection.before(command, units)
+                    from dismantling import projected_offline
+                    locked = set().union(*(members for _, members, working in projection.dismantling_claims() if working))
+                    with projected_offline(locked):
+                        operations = self._prepare(player, command, units, projection)
+                        if not (command.type == 'use_ability' and command.ability == 'multiply_antimatter'):
+                            projection.record(command, units)
+                for offset, operation in enumerate(operations):
+                    operation.command_index = index
+                    operation.command_type = command.type
+                    operation.unit_id = units[offset].id if units else None
+                    prepared.append(operation)
+            except ContractError as exc:
+                errors.append(CommandError(index, "invalid_command_contract", str(exc)))
+            except _Rejected as exc:
+                errors.append(CommandError(index, exc.code, str(exc)))
+            except Exception as exc:
+                _log_command_failure("prepare", index, command.type, exc)
+                errors.append(CommandError(index, "invalid_command", "The command could not be prepared from the current public state."))
+        if errors:
+            return CommandResult(False, errors=tuple(errors))
+
+        results, receipts = [], []
+        for offset, operation in enumerate(prepared):
+            try:
+                if operation.unit_id is not None:
+                    from campaign_graph import find_unit
+                    from strikecraft_service import command_blocker
+                    actor = find_unit(self.game.galaxy, operation.unit_id)
+                    if actor is not None and command_blocker(actor, operation.command_type):
+                        raise _Rejected('wing_service_required', 'Wing must return for servicing.')
+                operation.apply()
+            except Exception as exc:
+                _log_command_failure("commit", operation.command_index, operation.command_type, exc)
+                unavailable = isinstance(exc, _Rejected) and exc.code == 'target_unavailable'
+                results.append(self._operation_result(operation, "failed", uncertain=not unavailable))
+                results.extend(self._operation_result(op, "unattempted") for op in prepared[offset + 1:])
+                self._mark_dirty()
+                return CommandResult(False, applied_count=len(receipts), receipts=tuple(receipts),
+                    errors=(CommandError(operation.command_index,
+                        'target_unavailable' if unavailable else 'commit_failed',
+                        'The target is unavailable.' if unavailable else "Execution failed; earlier operations remain applied and the failing operation may have partial effects. Observe before continuing."),),
+                    failure_stage="commit", retryable=False, operation_results=tuple(results),
+                    may_have_partial_effects=bool(receipts) or not unavailable, requires_observation=True)
+            receipts.append(operation.receipt)
+            results.append(self._operation_result(operation, "applied"))
+            from turn_briefing import refresh_discoveries
+            refresh_discoveries(self.game)
+        self._mark_dirty()
+        return CommandResult(True, applied_count=len(receipts), receipts=tuple(receipts),
+                             failure_stage=None, retryable=False, operation_results=tuple(results))
+
+    @staticmethod
+    def _operation_result(operation, status, uncertain=False):
+        return {"command_index": operation.command_index, "unit_id": operation.unit_id,
+                "type": operation.command_type, "order_id": operation.public_order_id,
+                "status": status, "may_have_partial_effects": uncertain}
+
+    def _mark_dirty(self):
+        if hasattr(self.game, "sidebar_needs_update"):
+            self.game.sidebar_needs_update = True
+        if hasattr(self.game, "visibility_dirty"):
+            self.game.visibility_dirty = True
+
+    def _prepare(
+        self,
+        player: Any,
+        command: Any,
+        units: list[Any],
+        projection: _BatchProjection,
+    ) -> list[_Prepared]:
+        """Return deferred operations for one command over caller-owned units.
+
+        apply_batch has validated the command shape, resolved owned actors and
+        applied preceding commands to projection. Check command-specific targets,
+        capabilities and projected resources before building _Prepared callbacks;
+        _Rejected reports an unavailable or illegal command to the batch caller.
+
+        Preparation may reserve projected state and assign public order UUIDs,
+        but does not create authoritative orders or execute callbacks. At commit,
+        callbacks recheck capabilities and applicable immediate-action rules,
+        create orders, and replace or append explicit work. Starting an order may
+        execute synchronously; later order execution revalidates live conditions.
+        These operations have no rollback guarantee if commit raises.
+        Target disclosure checks can refresh recorded visibility intel even when
+        preparation rejects; absence of command effects is not full query purity.
+        """
+        projection.validate_dismantling_interactions(command, units)
+        if command.type == 'set_wing_production_enabled':
+            unit = units[0]
+            self._require_capability(unit, command.type)
+            def set_enabled():
+                self._require_capability(unit, command.type)
+                unit.strikecraft_bay_component.production_enabled = command.enabled
+            return [_Prepared(set_enabled, 'Updated automatic wing production.')]
+        if command.type == 'dismantle_unit':
+            from campaign_graph import find_unit
+            from dismantling import evaluate
+            unit = units[0]
+            target = find_unit(self.game.galaxy, command.target_id)
+            preview = evaluate(unit, target, self.game.galaxy, check_claims=False)
+            if preview.blocker:
+                raise _Rejected(preview.blocker, 'Dismantling is unavailable: ' + preview.blocker.replace('_', ' '))
+            ids = {m['unit_id'] for m in preview.members}
+            if (ids | {unit.id}) & projection._containment_changes:
+                raise _Rejected('dismantling_conflict', 'Issue dismantling after observing the docking or deployment result.')
+            for worker_id, members, _ in projection.dismantling_claims():
+                if ids & members or unit.id in members or worker_id in ids:
+                    raise _Rejected('dismantling_conflict', 'Dismantling claims overlap or form a cycle.')
+        if command.type == "rename_unit":
+            from unit_naming import normalize_unit_name, rename_unit
+            unit = units[0]
+            name = normalize_unit_name(command.new_name)
+            return [_Prepared(lambda: rename_unit(unit, name),
+                              f"Renamed unit {unit.id} to {name}.")]
+        if command.type == "cancel_orders":
+            return [
+                _Prepared(
+                    apply=lambda unit=unit: unit.commander_component.stop_and_idle(),
+                    receipt=f"Stopped {unit.name} and set its stance to Do Nothing.",
+                )
+                for unit in units
+            ]
+
+        if command.type == "clear_explicit_orders":
+            return [_Prepared(lambda unit=unit: unit.commander_component.clear_explicit_orders(), f"Cleared explicit orders for unit {unit.id}.") for unit in units]
+        if command.type == "cancel_order":
+            order = projection._edit_target["order"]
+            return [_Prepared(lambda: units[0].commander_component.cancel_order(order.local_order_id), f"Cancelled order {order.public_id}.", public_order_id=order.public_id)]
+        if command.type == "append_patrol_waypoints":
+            entry = projection.target_order(command, units[0])
+            if entry["type"] != "patrol":
+                raise _Rejected("order_unavailable", "The order is unavailable.")
+            if len(entry["parameters"].get("waypoints", [])) + len(command.waypoints) > 16:
+                raise _Rejected("invalid_value", "The resulting patrol route exceeds 16 waypoints.")
+            waypoints = self._waypoints(command.waypoints)
+            order = entry["order"]
+            def append():
+                for waypoint in waypoints:
+                    order.add_waypoint(waypoint["system_name"], waypoint["hex_coord"], waypoint["position"])
+            return [_Prepared(append, f"Extended patrol {order.public_id}.", public_order_id=order.public_id)]
+
+        if command.type == "cancel_ability":
+            from tactical_abilities import cancel
+            for unit in units:
+                from titan_balance import TITAN_ABILITIES
+                from titan_abilities import effect_valid
+                titan_active = command.ability in TITAN_ABILITIES - {'fleet_jump'} and effect_valid(unit, command.ability, self.game.galaxy) and (unit.id, command.ability) not in projection._tactical_cancelled
+                if not titan_active and not any(kind == command.ability and source == unit.id for (kind, _), source in projection.tactical_links().items()):
+                    raise _Rejected('capability_unavailable', 'This link is not active.')
+                projection._tactical_cancelled.add((unit.id, command.ability))
+            return [_Prepared(apply=lambda unit=unit: cancel(unit, command.ability), receipt='Cancelled ability link.') for unit in units]
+        if command.type == 'toggle_ability':
+            from environmental_resistance import active_kinds, availability, set_enabled
+            unit = units[0]
+            instance = next((inst for kind, inst in unit.ability_component.abilities.items()
+                             if kind.value == command.ability), None) if unit.ability_component else None
+            if instance is not None and instance.definition.activation_mode != 'toggle':
+                raise _Rejected('capability_unavailable',
+                    f'Ability {command.ability} uses cast mode; use use_ability with its advertised targeting fields.')
+            states = projection._resistance_states.setdefault(unit.id, active_kinds(unit))
+            enabled = command.ability not in states
+            error = availability(unit, command.ability, enabled, states=states, fuel=projection.fuel_amount(unit))
+            if enabled and projection.hidden_for(unit):
+                error = 'capability_unavailable'
+            if error:
+                raise _Rejected(error, 'Environmental resistance is unavailable or combined upkeep exceeds current antimatter.')
+            if enabled:
+                states.add(command.ability)
+            else:
+                states.discard(command.ability)
+            return [_Prepared(lambda: set_enabled(unit, command.ability, enabled),
+                              f"{'Enabled' if enabled else 'Disabled'} {command.ability} on unit {unit.id}.")]
+        if command.type == "set_wing_production":
+            unit = units[0]
+            self._require_capability(unit, command.type)
+            bay = unit.strikecraft_bay_component
+            choices = (command.template_name, command.turret_type_override, command.defense_type_override)
+            try:
+                bay.validate_slot_index(command.slot_index)
+                bay.validate_production(*choices)
+            except ValueError as exc:
+                raise _Rejected("invalid_parameters", str(exc)) from exc
+            if not bay.can_set_production(command.slot_index, *choices):
+                raise _Rejected("capability_unavailable", "Select production on an operational bay slot that is not constructing.")
+            def apply_production():
+                self._require_capability(unit, command.type)
+                if not bay.set_production(command.slot_index, *choices):
+                    raise _Rejected("capability_unavailable", "Wing production selection is no longer available.")
+            return [_Prepared(apply_production,
+                              f"Selected {command.template_name} production for unit {unit.id}, slot {command.slot_index}.")]
+        if command.type == "set_stance":
+            return self._prepare_stance(units, command.stance)
+        if command.type == "toggle_inhibitor":
+            return self._prepare_inhibitor(units, projection)
+        if command.type == "toggle_cloaking":
+            return self._prepare_cloaking(units, projection)
+        if command.type == "ci_sweep":
+            return self._prepare_ci_sweep(units, projection)
+
+        order_factory, receipt_action = self._order_factory(player, command)
+        if command.type == "load_colonists":
+            target_body = self._body(command.target_id)
+            projection.validate_load(command, units, target_body)
+        elif command.type == "construct":
+            projection.validate_construct(command, units)
+        elif command.type == "dock_in_hangar":
+            projection.validate_dock_in_hangar(
+                command, units, self._visible_unit(player, command.target_id)
+            )
+        elif command.type == "dock_in_strikecraft_bay":
+            projection.validate_dock_in_strikecraft_bay(
+                command, units, self._visible_unit(player, command.target_id)
+            )
+        elif command.type == "dock":
+            projection.validate_dock(
+                command, units, self._visible_unit(player, command.target_id)
+            )
+        operations = []
+        for unit in units:
+            self._require_capability(unit, command.type)
+            self._validate_unit_command(unit, command, projection)
+            if command.type == 'use_ability' and command.ability == 'multiply_antimatter':
+                projection.record(command, [unit])
+            public_order_id = uuid.uuid4().hex
+
+            def apply(unit=unit, factory=order_factory, public_order_id=public_order_id, queue=command.queue):
+                self._require_capability(unit, command.type)
+                if command.type in {'colonize', 'load_colonists', 'infiltrate_planet',
+                                    'recruit_troops', 'bombard_planet', 'invade_planet'}:
+                    self._require_colony_target(player, self._body(command.target_id), command.type)
+                if command.type == 'dismantle_unit':
+                    from campaign_graph import find_unit
+                    from dismantling import evaluate
+                    ignored = () if queue else tuple(o.public_id for o in
+                        [unit.commander_component.current_order, *unit.commander_component.orders_queue] if o)
+                    preview = evaluate(unit, find_unit(self.game.galaxy, command.target_id), self.game.galaxy, ignore_orders=ignored)
+                    if preview.blocker:
+                        raise _Rejected(preview.blocker, 'Dismantling is no longer available.')
+                order = factory(unit)
+                order.public_id = public_order_id
+                if not queue:
+                    unit.commander_component.clear_explicit_orders()
+                unit.commander_component.add_order(order)
+                if order.order_type.name == "CONSTRUCT":
+                    from location_validation import format_location
+                    params = order.parameters
+                    logger.debug("Unit %s ordered to construct %s at %s via command.", format_unit_for_log(unit),
+                                 params["unit_template_name"], format_location(params["target_system_name"],
+                                 params["target_hex_coord"], params["target_position"]))
+
+            operations.append(
+                _Prepared(apply=apply, receipt=f"{command.type} issued for unit {unit.id}.", public_order_id=public_order_id)
+            )
+        return operations
+
+    def _order_factory(self, player: Any, command: Any):
+        """Return an actor-to-order factory and descriptive label for a command.
+
+        The caller validates command shape and actor ownership separately. Resolve
+        destinations and player-visible targets here, enforcing target relations
+        and command parameters; hidden/missing targets use public rejection codes.
+        Actor-specific eligibility and resource projection belong to _prepare.
+
+        Raise _Rejected for invalid or unsupported commands. Building the factory
+        neither constructs nor starts an order: commit invokes it for each actor,
+        and Commander starts the resulting work immediately or after queued work.
+        Enemy-unit and remote-body disclosure checks may record visibility intel.
+        """
+        from geometry import Position
+        if command.type == 'dismantle_unit':
+            from unit_orders.dismantling import DismantleOrder
+            return lambda unit: DismantleOrder(unit, {'target_unit_id': command.target_id}), command.type
+        if command.type == "stabilize_wormhole":
+            from unit_orders.wormhole_stabilizer import StabilizeWormholeOrder
+            self._body(command.target_id)
+            return lambda unit: StabilizeWormholeOrder(unit, {"target_id": command.target_id}), command.type
+        if command.type in {"recruit_troops", "bombard_planet", "invade_planet"}:
+            from unit_orders.planetary import RecruitTroopsOrder, BombardPlanetOrder, InvadePlanetOrder
+            self._require_colony_target(player, self._body(command.target_id), command.type)
+            cls = {"recruit_troops": RecruitTroopsOrder, "bombard_planet": BombardPlanetOrder, "invade_planet": InvadePlanetOrder}[command.type]
+            return lambda unit: cls(unit, {"target_id": command.target_id, **({"amount": command.amount} if command.amount is not None else {})}), command.type
+        from unit_orders.combat import AttackOrder, AttackLongRangeOrder, ProtectOrder
+        from unit_orders.colony import ColonizeOrder, LoadColonistsOrder
+        from unit_orders.construction import ConstructOrder
+        from unit_orders.mining import ContinuousMineOrder, MineOrder, UnloadResourcesOrder
+        from unit_orders.antimatter import ContinuousResupplyOrder, TransferAntimatterOrder
+        from unit_orders.trade import ContinuousTradeOrder, TradeOrder
+        from unit_orders.defend import DefendOrder
+        from unit_orders.hangar import DeployAllWingsOrder, DeployUnitOrder, DockOrder
+        from unit_orders.minelayer import LayMinefieldOrder
+        from unit_orders.movement import MoveOrder
+        from unit_orders.patrol import PatrolOrder
+        from unit_orders.repair import RepairOrder
+        from unit_orders.abilities import UseAbilityOrder
+        from unit_orders.intelligence import InfiltrateUnitOrder, InfiltratePlanetOrder, ExtractAgentOrder, EliminateAgentOrder
+        from unit_orders.gas_giant import EnterGasGiantOrder, LeaveGasGiantOrder
+        from unit_orders.combat import resolve_component_type
+
+        from tactical_abilities import SPECS
+        if command.type == 'use_ability' and command.ability in SPECS:
+            spec = SPECS[command.ability]
+            if spec.target_kind in ('unit', 'celestial_position') and command.target_id is None:
+                raise _Rejected('missing_field', 'This ability requires target_id.')
+            if spec.target_kind in ('position', 'self', 'sector') and command.target_id is not None:
+                raise _Rejected('invalid_command_contract', 'This ability does not use target_id.')
+            if (spec.target_kind in ('position', 'celestial_position')) != (command.position is not None):
+                raise _Rejected('invalid_command_contract', 'Incorrect position for this ability.')
+            if spec.target_kind == 'unit':
+                self._visible_unit(player, command.target_id)
+            elif spec.target_kind == 'celestial_position':
+                self._body(command.target_id)
+            params = {'ability_type': command.ability}
+            if command.target_id is not None:
+                params['target_body_id' if spec.target_kind == 'celestial_position' else 'target_unit_id'] = command.target_id
+            if command.position is not None:
+                params.update(target_position=self._destination(command), target_system_name=command.system_name, target_hex_coord=command.hex_coord)
+            if spec.target_kind == 'sector':
+                from location_validation import location
+                system, coord, _ = location(command.system_name, command.hex_coord, (0, 0), self.game.galaxy)
+                params.update(target_system_name=system, target_hex_coord=coord)
+            def tactical_order(unit):
+                bound = dict(params)
+                return UseAbilityOrder(unit, bound)
+            return (tactical_order, 'Use ' + command.ability)
+        target_unit = None
+        target_body = None
+        if command.type in {
+            "attack",
+            "attack_long_range",
+            "protect",
+            "repair",
+            "unload_resources",
+            "dock",
+            "dock_in_hangar",
+            "dock_in_strikecraft_bay",
+            "transfer_antimatter",
+            "take_antimatter",
+            "trade",
+        } or (command.type == "use_ability" and command.target_id is not None):
+            target_unit = self._visible_combat_target(player, command.target_id) if command.type in {"attack", "attack_long_range"} else self._visible_unit(player, command.target_id)
+        if command.type in {
+            "colonize",
+            "load_colonists",
+            "mine",
+            "continuous_mine",
+            "enter_gas_giant",
+        }:
+            target_body = self._body(command.target_id)
+            if command.type in {'colonize', 'load_colonists'} and is_colonizable_body(target_body):
+                self._require_colony_target(player, target_body, command.type)
+
+        if command.type == "infiltrate_unit":
+            target_unit = self._visible_unit(player, command.target_id)
+            self._require_relation(player, target_unit, "enemy")
+            return (
+                lambda unit: InfiltrateUnitOrder(unit, {"target_unit_id": target_unit.id}),
+                f"Infiltrate {target_unit.name}",
+            )
+        if command.type == "infiltrate_planet":
+            target_body = self._body(command.target_id)
+            self._require_colony_target(player, target_body, command.type)
+            return (
+                lambda unit: InfiltratePlanetOrder(
+                    unit,
+                    {
+                        "target_body_id": target_body.id,
+                        "system": target_body.in_system,
+                        "hex": target_body.in_hex,
+                    },
+                ),
+                f"Infiltrate {target_body.name}",
+            )
+        if command.type == "extract_agent":
+            self._owned_agent(player, command.agent_id)
+            return (
+                lambda unit: ExtractAgentOrder(unit, {"agent_id": command.agent_id}),
+                f"Extract agent {command.agent_id}",
+            )
+        if command.type == "eliminate_agent":
+            self._discovered_enemy_agent(player, command.agent_id)
+            return (
+                lambda unit: EliminateAgentOrder(unit, {"agent_id": command.agent_id}),
+                f"Eliminate discovered agent {command.agent_id}",
+            )
+
+        if command.type == "patrol" and command.waypoints is not None:
+            waypoints = self._waypoints(command.waypoints)
+            return (lambda unit: PatrolOrder(unit, {"waypoints": [dict(wp) for wp in waypoints]}), "Patrol")
+        if command.type in {"move", "patrol"}:
+            destination = self._destination(command)
+            cls = MoveOrder if command.type == "move" else PatrolOrder
+            return (
+                lambda unit: cls(
+                    unit,
+                    {
+                        "destination_system_name": command.system_name,
+                        "destination_hex_coord": command.hex_coord,
+                        "destination_position": destination,
+                    },
+                ),
+                command.type.capitalize(),
+            )
+        if command.type in {"attack", "attack_long_range"}:
+            self._require_relation(player, target_unit, "enemy")
+            target_comp_type = None
+            receipt_suffix = ""
+            if command.target_component is not None:
+                from component_visibility import public_target_components, component_is_public
+                resolved = resolve_component_type(command.target_component)
+                if resolved is None or not component_is_public(resolved, enemy=True) or resolved.__name__ not in public_target_components(target_unit):
+                    raise _Rejected("target_unavailable", "The target subsystem is unavailable.")
+                target_comp_type = resolved.__name__
+                receipt_suffix = f" ({target_comp_type})"
+            attack_params = {"target_unit_id": target_unit.id}
+            if target_comp_type is not None:
+                attack_params["target_component_type"] = target_comp_type
+            order_class = AttackLongRangeOrder if command.type == "attack_long_range" else AttackOrder
+            label = "Attack (long-range only)" if command.type == "attack_long_range" else "Attack"
+            return (
+                lambda unit: order_class(unit, dict(attack_params)),
+                f"{label} {target_unit.name}{receipt_suffix}",
+            )
+        if command.type == "defend":
+            if command.target_id is not None:
+                body = (
+                    self.game.galaxy.get_celestial_body_by_id(command.target_id)
+                    if hasattr(self.game.galaxy, "get_celestial_body_by_id")
+                    else None
+                )
+                if body is not None:
+                    body = self._body(command.target_id)
+                    dest_params = {
+                        "destination_system_name": getattr(body, "in_system", None),
+                        "destination_hex_coord": getattr(body, "in_hex", None),
+                        "destination_position": getattr(body, "position", None),
+                        "target_id": body.id,
+                    }
+                    receipt_dest = getattr(body, "name", f"body {command.target_id}")
+                else:
+                    target_u = self._visible_unit(player, command.target_id)
+                    dest_params = {
+                        "destination_system_name": getattr(target_u, "in_system", None),
+                        "destination_hex_coord": getattr(target_u, "in_hex", None),
+                        "destination_position": getattr(target_u, "position", None),
+                        "target_id": target_u.id,
+                    }
+                    receipt_dest = getattr(target_u, "name", f"unit {command.target_id}")
+            elif (
+                command.system_name is not None
+                and command.hex_coord is not None
+                and command.position is not None
+            ):
+                destination = self._destination(command)
+                dest_params = {
+                    "destination_system_name": command.system_name,
+                    "destination_hex_coord": command.hex_coord,
+                    "destination_position": destination,
+                }
+                receipt_dest = f"{command.system_name} {command.hex_coord}"
+            else:
+                raise _Rejected(
+                    "missing_field",
+                    "defend requires system_name, hex_coord, and position, or target_id.",
+                )
+            return (
+                lambda unit: DefendOrder(unit, dict(dest_params)),
+                f"Defend {receipt_dest}",
+            )
+        if command.type == "protect":
+            self._require_friendly(player, target_unit)
+            return (
+                lambda unit: ProtectOrder(unit, {"target_unit_id": target_unit.id}),
+                f"Protect {target_unit.name}",
+            )
+        if command.type == "colonize":
+            if not is_colonizable_body(target_body):
+                raise _Rejected(
+                    "invalid_target", "The colonization target is not a habitable body."
+                )
+            return (
+                lambda unit: ColonizeOrder(
+                    unit,
+                    {"target_id": target_body.id, "target_name": target_body.name},
+                ),
+                f"Colonize {target_body.name}",
+            )
+        if command.type == "load_colonists":
+            if not is_colonizable_body(target_body):
+                raise _Rejected(
+                    "invalid_target", "Colonists can only be loaded from a colony body."
+                )
+            if command.amount is None or command.amount <= 0:
+                raise _Rejected("invalid_value", "load_colonists requires a positive amount.")
+            return (
+                lambda unit: LoadColonistsOrder(
+                    unit,
+                    {
+                        "target_id": target_body.id,
+                        "target_name": target_body.name,
+                        "amount": command.amount,
+                    },
+                ),
+                f"Load colonists from {target_body.name}",
+            )
+        if command.type == "construct":
+            if not command.template_name or command.position is None:
+                raise _Rejected(
+                    "missing_field", "construct requires template_name, system_name, hex_coord and position."
+                )
+            position = self._destination(command)
+            return (
+                lambda unit: ConstructOrder(
+                    unit,
+                    {
+                        "unit_template_name": command.template_name,
+                        "turret_type_override": command.turret_type_override,
+                        "defense_type_override": command.defense_type_override,
+                        "target_position": Position(position.x, position.y),
+                        "target_system_name": command.system_name,
+                        "target_hex_coord": command.hex_coord,
+                    },
+                ),
+                f"Construct {command.template_name}",
+            )
+        if command.type == "repair":
+            self._require_friendly(player, target_unit)
+            return (
+                lambda unit: RepairOrder(unit, {"target_unit_id": target_unit.id}),
+                f"Repair {target_unit.name}",
+            )
+        if command.type in {"mine", "continuous_mine"}:
+            if not is_mining_target(target_body):
+                raise _Rejected("invalid_target", "The mining target is not mineable.")
+            cls = MineOrder if command.type == "mine" else ContinuousMineOrder
+            return (
+                lambda unit: cls(unit, {"target_id": target_body.id}),
+                f"Mine {target_body.name}",
+            )
+        if command.type == "unload_resources":
+            self._require_friendly(player, target_unit)
+            if not (
+                getattr(target_unit, "metal_refinery_component", None)
+                or getattr(target_unit, "crystal_refinery_component", None)
+            ):
+                raise _Rejected("invalid_target", "The unload target is not a refinery.")
+            return (
+                lambda unit: UnloadResourcesOrder(
+                    unit, {"target_unit_id": target_unit.id}
+                ),
+                f"Unload at {target_unit.name}",
+            )
+        if command.type == "dock_in_hangar":
+            self._require_friendly(player, target_unit)
+            if not all(
+                compatible_hangar_component(unit, target_unit) is not None
+                for unit in self._owned_units(player, command.unit_ids)
+            ):
+                raise _Rejected(
+                    "invalid_target",
+                    "The docking target has no compatible free hangar slots.",
+                )
+            return (
+                lambda unit: DockOrder(unit, {"target_carrier_id": target_unit.id}),
+                f"Dock in Hangar of {target_unit.name}",
+            )
+        if command.type == "dock_in_strikecraft_bay":
+            self._require_friendly(player, target_unit)
+            if not all(
+                compatible_strikecraft_bay_component(unit, target_unit) is not None
+                for unit in self._owned_units(player, command.unit_ids)
+            ):
+                raise _Rejected(
+                    "invalid_target",
+                    "The docking target has no compatible free strikecraft bay slots.",
+                )
+            return (
+                lambda unit: DockOrder(unit, {"target_carrier_id": target_unit.id}),
+                f"Dock in Strikecraft Bay of {target_unit.name}",
+            )
+        if command.type == "dock":
+            self._require_friendly(player, target_unit)
+            if not all(
+                compatible_docking_component(unit, target_unit) is not None
+                for unit in self._owned_units(player, command.unit_ids)
+            ):
+                raise _Rejected(
+                    "invalid_target",
+                    "The docking target has no compatible free carrier slots.",
+                )
+            return (
+                lambda unit: DockOrder(unit, {"target_carrier_id": target_unit.id}),
+                f"Dock with {target_unit.name}",
+            )
+        if command.type == "deploy_unit":
+            if command.target_id is None:
+                raise _Rejected("missing_field", "deploy_unit requires target_id.")
+            return (
+                lambda unit: DeployUnitOrder(
+                    unit, {"docked_unit_id": command.target_id}
+                ),
+                f"Deploy docked unit {command.target_id}",
+            )
+        if command.type == "deploy_all_wings":
+            return (lambda unit: DeployAllWingsOrder(unit), "Deploy all wings")
+        if command.type in {"transfer_antimatter", "take_antimatter"}:
+            self._require_friendly(player, target_unit)
+            from unit_orders.fuel_transport import TakeAntimatterOrder
+            cls = TakeAntimatterOrder if command.type == 'take_antimatter' else TransferAntimatterOrder
+            return (lambda unit: cls(unit, {"target_unit_id": target_unit.id}), command.type)
+        if command.type == 'continuous_antimatter_transport':
+            from unit_orders.fuel_transport import ContinuousAntimatterTransportOrder
+            source = self._visible_unit(player, command.source_id)
+            self._require_friendly(player, source)
+            if command.target_id is not None:
+                target_unit = self._visible_unit(player, command.target_id)
+                self._require_friendly(player, target_unit)
+            return (lambda unit: ContinuousAntimatterTransportOrder(unit,
+                {'source_unit_id': source.id, 'target_unit_id': command.target_id,
+                 'recipient_priority': command.recipient_priority or 'nearest',
+                 'minimum_load_fraction': 1.0 if command.minimum_load_fraction is None else command.minimum_load_fraction}), 'Transport antimatter')
+        if command.type == "continuous_resupply":
+            target_body = self._body(command.source_id)
+            if not is_antimatter_source(target_body):
+                raise _Rejected("invalid_target", "The resupply target is not a star or hydrogen nebula.")
+            if command.target_id is not None:
+                self._require_friendly(player, self._visible_unit(player, command.target_id))
+            return (
+                lambda unit: ContinuousResupplyOrder(
+                    unit,
+                    {"source_body_id": target_body.id, "target_unit_id": command.target_id,
+                     'recipient_priority': command.recipient_priority or 'nearest',
+                     'minimum_load_fraction': 1.0 if command.minimum_load_fraction is None else command.minimum_load_fraction},
+                ),
+                f"Resupply from {target_body.name}",
+            )
+        if command.type == "lay_minefield":
+            minefield_type = command.minefield_type or "anti_ship"
+            if minefield_type not in {"anti_ship", "anti_strikecraft"}:
+                raise _Rejected("invalid_value", "Unknown minefield_type.")
+            return (
+                lambda unit: LayMinefieldOrder(unit, minefield_type=minefield_type),
+                f"Lay {minefield_type} minefield",
+            )
+        if command.type == "trade":
+            self._require_friendly(player, target_unit)
+            if getattr(target_unit, "civilian_habitat_component", None) is None:
+                raise _Rejected(
+                    "invalid_target", "The trade target is not a civilian habitat."
+                )
+            return (
+                lambda unit: TradeOrder(unit, {"target_unit_id": target_unit.id}),
+                f"Trade with {target_unit.name}",
+            )
+        if command.type == "continuous_trade":
+            return (lambda unit: ContinuousTradeOrder(unit), "Begin continuous trade")
+        if command.type == "enter_gas_giant":
+            from constants import PlanetType
+            if getattr(target_body, "planet_type", None) != PlanetType.GAS_GIANT:
+                raise _Rejected("invalid_target", "The target is not a gas giant.")
+            return (
+                lambda unit: EnterGasGiantOrder(unit, {"target_id": target_body.id}),
+                f"Enter gas giant {target_body.name}",
+            )
+        if command.type == "leave_gas_giant":
+            return (
+                lambda unit: LeaveGasGiantOrder(unit, {}),
+                "Leave gas giant atmosphere",
+            )
+        if command.type == "use_ability":
+            return self._ability_factory(command, target_unit)
+        raise _Rejected("unsupported_command", "Unsupported command.")
+
+    def _ability_factory(self, command: Any, target_unit: Any):
+        from unit_components.abilities import ABILITY_DEFINITIONS
+        from unit_components.enums import AbilityType
+        from unit_orders.abilities import UseAbilityOrder
+
+        if not command.ability:
+            raise _Rejected("missing_field", "use_ability requires ability.")
+        try:
+            ability_type = AbilityType(command.ability)
+        except ValueError as exc:
+            raise _Rejected("invalid_value", "Unknown ability.") from exc
+        definition = ABILITY_DEFINITIONS.get(ability_type)
+        if definition is None:
+            raise _Rejected("invalid_value", "Unknown ability.")
+        if definition.requires_target_unit and target_unit is None:
+            raise _Rejected("missing_field", "This ability requires target_id.")
+        if definition.requires_target_position and command.position is None:
+            raise _Rejected("missing_field", "This ability requires position.")
+        if not definition.requires_target_unit and command.target_id is not None:
+            raise _Rejected("invalid_command_contract", "This ability does not use target_id.")
+        if not definition.requires_target_position and command.position is not None:
+            raise _Rejected("invalid_command_contract", "This ability does not use position.")
+        params = {"ability_type": command.ability}
+        if target_unit is not None:
+            params["target_unit_id"] = target_unit.id
+        if command.position is not None:
+            params.update(target_position=self._destination(command), target_system_name=command.system_name, target_hex_coord=command.hex_coord)
+        return (
+            lambda unit: UseAbilityOrder(unit, dict(params)),
+            f"Use {command.ability}",
+        )
+
+    def _prepare_stance(self, units: list[Any], stance_value: str | None):
+        from unit_components.enums import UnitStance
+
+        try:
+            stance = UnitStance(stance_value)
+        except (TypeError, ValueError) as exc:
+            raise _Rejected("invalid_value", "Unknown stance.") from exc
+
+        def validate(unit):
+            self._require_capability(unit, "set_stance")
+            if stance not in unit.commander_component.get_allowed_stances():
+                raise _Rejected(
+                    "capability_unavailable",
+                    f"Stance {stance.value} is unavailable to unit {unit.id}.",
+                )
+
+        def apply(unit):
+            validate(unit)
+            unit.commander_component.set_stance(stance)
+
+        operations = []
+        for unit in units:
+            validate(unit)
+            operations.append(
+                _Prepared(
+                    apply=lambda unit=unit: apply(unit),
+                    receipt=f"Set {unit.name} stance to {stance.value}.",
+                )
+            )
+        return operations
+
+    def _prepare_inhibitor(
+        self, units: list[Any], projection: _BatchProjection
+    ) -> list[_Prepared]:
+        operations = []
+        for unit, turn_on in projection.plan_inhibitor_toggles(units):
+            component = unit.inhibitor_component
+
+            def apply(component=component, turn_on=turn_on):
+                result = component.set_active(turn_on, self.game.galaxy)
+                if not result.allowed:
+                    raise RuntimeError(result.code or "inhibitor state change failed")
+
+            action = "Activated" if turn_on else "Deactivated"
+            operations.append(_Prepared(apply, f"{action} inhibitor on {unit.name}."))
+        return operations
+
+    def _prepare_cloaking(self, units: list[Any], projection: _BatchProjection):
+        operations = []
+        for unit in units:
+            component = getattr(unit, "cloaking_component", None)
+            if component is None or getattr(component, "is_destroyed", False) is True:
+                raise _Rejected(
+                    "capability_unavailable", f"Unit {unit.id} has no functioning cloaking device."
+                )
+
+            turn_on = not projection._cloaking_states.get(unit.id, bool(component.is_active))
+            projection._cloaking_states[unit.id] = turn_on
+            def apply(component=component):
+                if not component.toggle():
+                    raise RuntimeError("cloaking toggle failed")
+
+            operations.append(_Prepared(apply, f"Cloaking {'active' if turn_on else 'inactive'} on unit {unit.id}."))
+        return operations
+
+    def _prepare_player_intelligence(
+        self, player: Any, command: Any, projection: _BatchProjection
+    ) -> list[_Prepared]:
+        if command.agent_id is None:
+            raise _Rejected("agent_unavailable", "The agent is unavailable.")
+        if command.type == "sabotage":
+            projection.project_sabotage(command.agent_id, command.sabotage_type)
+
+            def apply():
+                agent, host = self._owned_agent(player, command.agent_id)
+                if command.sabotage_type not in sabotage_types_for_host(host):
+                    raise RuntimeError("sabotage authorization changed")
+                if not host.apply_sabotage(agent, command.sabotage_type):
+                    raise RuntimeError("sabotage failed")
+                from turn_briefing import record
+                record(self.game, player, "intelligence", "Sabotage activated")
+
+            return [
+                _Prepared(
+                    apply,
+                    f"Agent {command.agent_id} set to {command.sabotage_type} sabotage.",
+                )
+            ]
+        if command.type == "relocate_agent":
+            target = self._public_intelligence_target(player, command.target_id)
+            projection.project_relocation(command.agent_id, target)
+
+            def apply():
+                from geometry import distance
+                from unit_orders.intelligence import INTELLIGENCE_OPERATIONAL_RANGE
+
+                agent, host = self._owned_agent(player, command.agent_id)
+                live_target = self._public_intelligence_target(player, command.target_id)
+                if (
+                    live_target is host
+                    or intelligence_relation(player, getattr(live_target, "owner", None)) != "enemy"
+                    or getattr(host, "in_system", None) != getattr(live_target, "in_system", None)
+                    or getattr(host, "in_hex", None) != getattr(live_target, "in_hex", None)
+                    or distance(host.position, live_target.position) > INTELLIGENCE_OPERATIONAL_RANGE
+                ):
+                    raise RuntimeError("relocation authorization changed")
+                if not host.remove_agent(agent):
+                    raise RuntimeError("agent host changed")
+                live_target.infiltrating_agents.append(agent)
+                agent.attached_to = live_target
+                agent.target_type = "UNIT" if host_kind(live_target) == "unit" else "CELESTIAL_BODY"
+                agent.target_id = live_target.id
+                agent.active_sabotage = None
+                agent.is_discovered = False
+                from turn_briefing import record
+                record(self.game, player, "intelligence", "Agent relocation completed")
+
+            return [
+                _Prepared(
+                    apply,
+                    f"Relocated agent {command.agent_id} to target {command.target_id}.",
+                )
+            ]
+        raise _Rejected("unsupported_command", "Unsupported player-level command.")
+
+    def _prepare_ci_sweep(
+        self, units: list[Any], projection: _BatchProjection
+    ) -> list[_Prepared]:
+        from unit_orders.intelligence import CISweepOrder
+        from unit_orders.base import OrderStatus
+
+        operations = []
+        for unit in projection.plan_ci_sweeps(units):
+            def apply(unit=unit):
+                order = CISweepOrder(unit)
+                order.execute(self.game.galaxy)
+                if order.status != OrderStatus.COMPLETED:
+                    raise RuntimeError("Counter-Intelligence sweep failed")
+
+            operations.append(_Prepared(apply, f"Counter-Intelligence sweep performed by unit {unit.id}."))
+        return operations
+
+    def _prepare_send_message(self, player: Any, command: Any) -> list[_Prepared]:
+        target_id = command.target_id
+        if target_id is None:
+            raise _Rejected("missing_target", "send_message requires target_id (recipient player ID).")
+
+        recipient = None
+        for p in getattr(self.game, "players", []):
+            if getattr(p, "id", None) == target_id:
+                recipient = p
+                break
+        if recipient is None:
+            raise _Rejected("invalid_recipient", f"Player {target_id} does not exist.")
+
+        if getattr(player, "id", None) == target_id:
+            raise _Rejected("invalid_recipient", "Cannot send message to yourself.")
+
+        message_text = command.message
+        if not message_text or not str(message_text).strip():
+            raise _Rejected("empty_message", "send_message requires non-empty message text.")
+
+        clean_text = str(message_text).strip()[:500]
+
+        def apply(sender=player, recipient_id=target_id, text=clean_text):
+            self.game.send_message(sender, recipient_id, text)
+
+        return [
+            _Prepared(
+                apply=apply,
+                receipt=f"Sent transmission to {recipient.name}: '{clean_text}'.",
+            )
+        ]
+
+    def _prepare_message_developer(self, player: Any, command: Any) -> list[_Prepared]:
+        message_text = command.message
+        if not message_text or not str(message_text).strip():
+            raise _Rejected("empty_message", "message_developer requires non-empty message text.")
+
+        clean_text = str(message_text).strip()[:2000]
+
+        def apply(sender=player, text=clean_text):
+            if hasattr(self.game, "record_developer_feedback"):
+                self.game.record_developer_feedback(sender, text)
+            else:
+                logger.info("[Developer Feedback] %s: %s", getattr(sender, "name", "AI"), text)
+
+        return [
+            _Prepared(
+                apply=apply,
+                receipt=f"Delivered message to game developer: '{clean_text}'.",
+            )
+        ]
+
+    def _owned_units(self, player: Any, unit_ids: tuple[int, ...], *, include_stored=False) -> list[Any]:
+        units = []
+        seen = set()
+        for unit_id in unit_ids:
+            if unit_id in seen:
+                continue
+            seen.add(unit_id)
+            unit = self.game.galaxy.get_unit_by_id(unit_id)
+            if unit is None and include_stored:
+                from campaign_graph import find_unit
+                unit = find_unit(self.game.galaxy, unit_id)
+            if unit is None or getattr(unit, "owner", None) is not player:
+                raise _Rejected("unit_unavailable", "A selected unit is unavailable.")
+            if getattr(unit, "commander_component", None) is None:
+                raise _Rejected("capability_unavailable", "A selected unit has no commander.")
+            units.append(unit)
+        return units
+
+    def _owned_agent(self, player: Any, agent_id: int | None) -> tuple[Any, Any]:
+        if agent_id is None:
+            raise _Rejected("agent_unavailable", "The agent is unavailable.")
+        agent, host = find_agent_host(self.game.galaxy, agent_id)
+        if (
+            agent is None
+            or intelligence_relation(player, getattr(agent, "owner", None)) != "self"
+        ):
+            raise _Rejected("agent_unavailable", "The agent is unavailable.")
+        return agent, host
+
+    def _discovered_enemy_agent(self, player: Any, agent_id: int | None) -> tuple[Any, Any]:
+        if agent_id is None:
+            raise _Rejected("agent_unavailable", "The agent is unavailable.")
+        for agent, host in discovered_enemy_agent_hosts(self.game.galaxy, player):
+            if agent.id == agent_id:
+                return agent, host
+        raise _Rejected("agent_unavailable", "The agent is unavailable.")
+
+    def _public_intelligence_target(self, player: Any, target_id: int | None) -> Any:
+        if target_id is None:
+            raise _Rejected("target_unavailable", "The target is unavailable.")
+        unit = self.game.galaxy.get_unit_by_id(target_id)
+        target = self._visible_unit(player, target_id) if unit is not None else self._body(target_id)
+        if host_kind(target) == 'colony':
+            self._require_current_colony(player, target)
+        if host_kind(target) not in {"unit", "colony"}:
+            raise _Rejected("target_unavailable", "The target is unavailable.")
+        return target
+
+    def _visible_combat_target(self, player, target_id):
+        from tactical_abilities import combat_target
+        from visibility import VisibilityService, is_unit_visible
+        target = combat_target(self.game.galaxy, target_id)
+        from domain.deployables import Deployable
+        if not isinstance(target, Deployable):
+            return self._visible_unit(player, target_id)
+        snapshot = VisibilityService.compute(self.game.galaxy, player, record_intel=False)
+        if target is None or not is_unit_visible(snapshot, target):
+            raise _Rejected('target_unavailable', 'The target is unavailable.')
+        return target
+
+    def _visible_unit(self, player: Any, target_id: int | None):
+        if target_id is None:
+            raise _Rejected("missing_field", "This command requires target_id.")
+        unit = self.game.galaxy.get_unit_by_id(target_id)
+        if unit is None:
+            raise _Rejected("target_unavailable", "The target is unavailable.")
+        if self._relation(player, unit.owner) == "enemy":
+            from visibility import VisibilityService
+
+            snapshot = VisibilityService.compute(
+                self.game.galaxy,
+                player,
+                turn_number=getattr(self.game, "turn_number", 1),
+            )
+            if unit.id not in snapshot.visible_enemy_unit_ids:
+                raise _Rejected("target_unavailable", "The target is unavailable.")
+        return unit
+
+    def _body(self, target_id: int | None):
+        if target_id is None:
+            raise _Rejected("missing_field", "This command requires target_id.")
+        body = self.game.galaxy.get_celestial_body_by_id(target_id)
+        from .rules import body_is_public
+        if body is None or not body_is_public(self.game, self._viewer, body, self._selected_units):
+            raise _Rejected("target_unavailable", "The target is unavailable.")
+        return body
+
+    def _require_current_colony(self, player, body):
+        from planetary_intel import current_ownership
+        if not current_ownership(self.game.galaxy, player, body):
+            raise _Rejected('target_unavailable', 'The target is unavailable.')
+
+    def _require_colony_target(self, player, body, kind):
+        from planetary_intel import colony_target_blocker
+        error = colony_target_blocker(self.game, player, body, kind)
+        if error:
+            raise _Rejected(error, 'The target is unavailable.' if error == 'target_unavailable'
+                            else 'The target is unavailable for this colony action.')
+
+    def _waypoints(self, raw):
+        result = []
+        for waypoint in raw:
+            system, coord, position = self._navigation_location(
+                waypoint["system_name"], waypoint["hex_coord"], waypoint["position"])
+            result.append({"system_name": system, "hex_coord": coord, "position": position})
+        return result
+
+    def _navigation_location(self, system_name, hex_coord, position):
+        from location_validation import location, navigation_location
+        from .rules import body_is_public
+        try:
+            site = location(system_name, hex_coord, position, self.game.galaxy)
+            bodies = [body for body in self.game.galaxy.systems[site[0]].hexes[site[1]].celestial_bodies
+                      if getattr(body, 'collision_radius', 0) > 0
+                      and body_is_public(self.game, self._viewer, body, self._selected_units)]
+            return navigation_location(*site, self.game.galaxy, bodies=bodies)
+        except ValueError as exc:
+            raise _Rejected("invalid_destination", str(exc)) from exc
+
+    def _destination(self, command: Any):
+        from location_validation import location
+        if command.type in {'move', 'patrol', 'defend'}:
+            return self._navigation_location(command.system_name, command.hex_coord, command.position)[2]
+        try:
+            return location(command.system_name, command.hex_coord, command.position, self.game.galaxy)[2]
+        except ValueError as exc:
+            raise _Rejected("invalid_destination", str(exc)) from exc
+
+    def _require_capability(self, unit: Any, command_type: str) -> None:
+        from .rules import capability_blocker
+        if capability_blocker(unit, command_type):
+            raise _Rejected("capability_unavailable", f"Unit {unit.id} cannot perform {command_type}.")
+        if command_type == "defend":
+            if (
+                not has_operational_engines(unit)
+                or getattr(unit, "weapons_component", None) is None
+            ):
+                raise _Rejected(
+                    "capability_unavailable",
+                    f"Unit {unit.id} cannot perform defend (requires engines and weapons).",
+                )
+        if command_type == "lay_minefield" and not any(
+            component.__class__.__name__ == "MinelayerComponent"
+            for component in getattr(unit, "components", {}).values()
+        ):
+            raise _Rejected(
+                "capability_unavailable",
+                f"Unit {unit.id} cannot perform {command_type}.",
+            )
+
+    def _validate_unit_command(
+        self, unit: Any, command: Any, projection: _BatchProjection
+    ) -> None:
+        """Check one owned actor against live rules and preceding batch effects.
+
+        The caller supplies a shape-validated command and checks base capability.
+        Use projection for hidden state, cargo, resources and reserved abilities;
+        live equipment, target disclosure and location rules still apply. Tactical
+        checks may update projection bookkeeping without applying command effects.
+        Enemy-target disclosure checks may also refresh recorded visibility intel.
+
+        Return None on acceptance or raise _Rejected with a public code/reason.
+        This is issuance validation, not a promise of arrival or completion:
+        commit callbacks and executing orders check the applicable live conditions.
+        """
+        from titan_acquisition import acquisition, capacity
+        params = {"unit_template_name": command.template_name, "ability_type": command.ability, "target_unit_id": command.target_id}
+        if acquisition(command.type, params, unit.owner, self.game.galaxy):
+            slots = capacity(self.game.galaxy, unit.owner, ledger=projection._order_ledger)
+            if slots["available"] <= projection._group_titan_count:
+                raise _Rejected("titan_limit_reached", "One surviving Titan or reserved acquisition is allowed per player.")
+            projection._group_titan_count += 1
+        hidden = projection.hidden_for(unit, queued=command.queue)
+        if hidden and command.type != "leave_gas_giant":
+            raise _Rejected("invalid_state", "Submerged units cannot execute orders while hidden in a gas giant atmosphere.")
+
+        from unit_targeting import UTILITY_BODY_COMMANDS, UTILITY_UNIT_COMMANDS, utility_approach_blocker
+        if command.type in UTILITY_BODY_COMMANDS | UTILITY_UNIT_COMMANDS:
+            target = (self._body(command.target_id) if command.type in UTILITY_BODY_COMMANDS
+                      else self._visible_unit(unit.owner, command.target_id))
+            error = utility_approach_blocker(unit, target, self.game.galaxy, command.type)
+            if error:
+                raise _Rejected(error, "Utility approach unavailable: " + error.replace('_', ' ') + ".")
+
+        if command.type == "stabilize_wormhole":
+            from wormhole_stabilization import blocker
+            error = blocker(self.game, unit.owner, unit, self._body(command.target_id))
+            if error:
+                raise _Rejected(error, "Wormhole stabilization unavailable for this unit or route.")
+        elif command.type in {"recruit_troops", "bombard_planet", "invade_planet"}:
+            from planetary_warfare import blocker
+            body = self._body(command.target_id)
+            error = blocker(self.game, unit.owner, command.type, body, unit, command.amount,
+                            troops=projection._troop_cargo.get(unit.id),
+                            population=projection._source_population.get(body.id),
+                            credits=projection._credits, fuel=projection.fuel_amount(unit))
+            if error:
+                raise _Rejected(error, "Planetary action unavailable for the selected cargo, resources or target.")
+        elif command.type == "move":
+            from constants import HullSize
+            from domain.celestials import is_position_in_magnetic_storm, is_position_blocked_by_celestial_field
+            dest_pos = self._destination(command)
+            if getattr(unit, "hull_size", None) == HullSize.STRIKECRAFT_WING:
+                if is_position_in_magnetic_storm(self.game.galaxy, command.system_name, tuple(command.hex_coord), dest_pos):
+                    raise _Rejected("hazard_blocked", "Strikecraft wings cannot enter magnetic storms.")
+            if is_position_blocked_by_celestial_field(self.game.galaxy, command.system_name, tuple(command.hex_coord), dest_pos, unit):
+                raise _Rejected("hazard_blocked", f"Unit '{unit.name}' ({unit.hull_size.name}) is too large to enter this dense celestial field.")
+        elif command.type == "patrol":
+            from constants import HullSize
+            from domain.celestials import is_position_in_magnetic_storm, is_position_blocked_by_celestial_field
+            if command.waypoints:
+                for wp in self._waypoints(command.waypoints):
+                    if getattr(unit, "hull_size", None) == HullSize.STRIKECRAFT_WING:
+                        if is_position_in_magnetic_storm(self.game.galaxy, wp["system_name"], wp["hex_coord"], wp["position"]):
+                            raise _Rejected("hazard_blocked", "Strikecraft wings cannot enter magnetic storms.")
+                    if is_position_blocked_by_celestial_field(self.game.galaxy, wp["system_name"], wp["hex_coord"], wp["position"], unit):
+                        raise _Rejected("hazard_blocked", f"Unit '{unit.name}' ({unit.hull_size.name}) is too large to enter this dense celestial field.")
+            elif command.system_name is not None and command.position is not None:
+                dest_pos = self._destination(command)
+                if getattr(unit, "hull_size", None) == HullSize.STRIKECRAFT_WING:
+                    if is_position_in_magnetic_storm(self.game.galaxy, command.system_name, tuple(command.hex_coord), dest_pos):
+                        raise _Rejected("hazard_blocked", "Strikecraft wings cannot enter magnetic storms.")
+                if is_position_blocked_by_celestial_field(self.game.galaxy, command.system_name, tuple(command.hex_coord), dest_pos, unit):
+                    raise _Rejected("hazard_blocked", f"Unit '{unit.name}' ({unit.hull_size.name}) is too large to enter this dense celestial field.")
+        elif command.type == "defend":
+            from constants import HullSize
+            from domain.celestials import is_position_in_magnetic_storm, is_position_blocked_by_celestial_field
+            if command.position is not None and command.system_name is not None and command.hex_coord is not None:
+                from geometry import Position
+                defend_pos = Position(*command.position)
+                if getattr(unit, "hull_size", None) == HullSize.STRIKECRAFT_WING:
+                    if is_position_in_magnetic_storm(self.game.galaxy, command.system_name, tuple(command.hex_coord), defend_pos):
+                        raise _Rejected("hazard_blocked", "Strikecraft wings cannot enter magnetic storms.")
+                if is_position_blocked_by_celestial_field(self.game.galaxy, command.system_name, tuple(command.hex_coord), defend_pos, unit):
+                    raise _Rejected("hazard_blocked", f"Unit '{unit.name}' ({unit.hull_size.name}) is too large to enter this dense celestial field.")
+        elif command.type in {"attack", "attack_long_range"}:
+            target = self._visible_combat_target(unit.owner, command.target_id)
+            check = getattr(unit.weapons_component, "eligible_turrets_for", None)
+            if callable(check) and not check(target, long_range_only=command.type == "attack_long_range"):
+                raise _Rejected("capability_unavailable", "No eligible weapons for this target.")
+            from unit_targeting import attack_blocker
+            error = attack_blocker(unit, target, self.game.galaxy,
+                                   long_range_only=command.type == "attack_long_range",
+                                   target_component=command.target_component)
+            if error:
+                raise _Rejected(error, "Attack approach unavailable: " + error.replace('_', ' ') + ".")
+        elif command.type == "colonize":
+            if projection.cargo_for(unit) <= 0:
+                queue_hint = (
+                    " Queue a valid load_colonists command before colonize with "
+                    "colonize.queue=true, or omit colonize this turn."
+                )
+                raise _Rejected(
+                    "capability_unavailable",
+                    f"Unit {unit.id} has no colonists.{queue_hint}",
+                )
+        elif command.type == "construct":
+            constructor = unit.constructor_component
+            if not command.template_name or not constructor.can_build(command.template_name):
+                raise _Rejected(
+                    "invalid_value", f"Unit {unit.id} cannot build that template."
+                )
+            from construction_customization import validate_template_overrides
+            from unit_templates import get_template
+            try:
+                validate_template_overrides(get_template(command.template_name, unit.owner),
+                                            command.turret_type_override, command.defense_type_override)
+            except ValueError as exc:
+                raise _Rejected("invalid_value", str(exc)) from exc
+            target_pos = self._destination(command)
+            if not has_operational_engines(unit):
+                from geometry import Position, distance
+                build_range = getattr(constructor, "build_range", 500.0)
+                unit_pos = getattr(unit, "position", None)
+                if unit_pos is not None:
+                    if not isinstance(unit_pos, Position):
+                        unit_pos = Position(getattr(unit_pos, "x", 0), getattr(unit_pos, "y", 0))
+                    if (unit.in_system != command.system_name or unit.in_hex != command.hex_coord
+                            or distance(unit_pos, target_pos) > build_range):
+                        raise _Rejected(
+                            "target_out_of_range",
+                            f"Unit {unit.id} is stationary and cannot construct outside its build range ({build_range:g} units)."
+                        )
+        elif command.type == "dock_in_hangar":
+            hull = getattr(getattr(unit, "hull_size", None), "name", "").lower()
+            if hull != "tiny":
+                raise _Rejected(
+                    "capability_unavailable",
+                    f"Unit {unit.id} cannot dock in a hangar (only tiny ships supported).",
+                )
+        elif command.type == "dock_in_strikecraft_bay":
+            hull = getattr(getattr(unit, "hull_size", None), "name", "").lower()
+            if hull != "strikecraft_wing":
+                raise _Rejected(
+                    "capability_unavailable",
+                    f"Unit {unit.id} cannot dock in a strikecraft bay (only strikecraft wings supported).",
+                )
+        elif command.type == "dock":
+            hull = getattr(getattr(unit, "hull_size", None), "name", "").lower()
+            if hull not in {"tiny", "strikecraft_wing"}:
+                raise _Rejected(
+                    "capability_unavailable", f"Unit {unit.id} is too large to dock."
+                )
+        elif command.type == "deploy_unit":
+            if command.target_id is None:
+                raise _Rejected("missing_field", "deploy_unit requires target_id.")
+            docked = []
+            for component_name in ("hangar_component", "strikecraft_bay_component"):
+                component = getattr(unit, component_name, None)
+                docked.extend(getattr(component, "docked_units", []) or [])
+            docked_unit = next((du for du in docked if du.id == command.target_id), None)
+            if not docked_unit:
+                raise _Rejected(
+                    "target_unavailable", "The docked unit is unavailable."
+                )
+            from domain.celestials import is_position_in_magnetic_storm
+            from constants import HullSize
+            if getattr(docked_unit, "hull_size", None) == HullSize.STRIKECRAFT_WING:
+                from strikecraft_abilities import round_now
+                if docked_unit.strikecraft_wing_component and docked_unit.strikecraft_wing_component.recovery_ready_round > round_now(self.game.galaxy):
+                    raise _Rejected('wing_service_required', 'Recovered wing cannot relaunch until next owner turn.')
+                if is_position_in_magnetic_storm(self.game.galaxy, unit.in_system, unit.in_hex, unit.position):
+                    raise _Rejected(
+                        "hazard_blocked", "Cannot launch strikecraft wings in a magnetic storm."
+                    )
+        elif command.type == "deploy_all_wings":
+            bay = getattr(unit, "strikecraft_bay_component", None)
+            if bay is None:
+                raise _Rejected(
+                    "capability_unavailable",
+                    f"Unit {unit.id} has no strikecraft bay.",
+                )
+            from strikecraft_abilities import round_now
+            if bay.docked_units and all(w.strikecraft_wing_component and w.strikecraft_wing_component.recovery_ready_round > round_now(self.game.galaxy) for w in bay.docked_units):
+                raise _Rejected('wing_service_required', 'Recovered wings cannot relaunch until next owner turn.')
+            from domain.celestials import is_position_in_magnetic_storm
+            if is_position_in_magnetic_storm(self.game.galaxy, unit.in_system, unit.in_hex, unit.position):
+                raise _Rejected(
+                    "hazard_blocked", "Cannot launch strikecraft wings in a magnetic storm."
+                )
+        elif command.type == "enter_gas_giant":
+            from constants import HullSize
+            if getattr(unit, "hull_size", None) == HullSize.STRIKECRAFT_WING:
+                raise _Rejected("invalid_unit", "Strikecraft wings cannot enter gas giant atmospheres.")
+            if not getattr(unit, "engines_component", None) or not unit.engines_component.is_operational:
+                raise _Rejected("capability_unavailable", "Unit requires operational engines to enter a gas giant.")
+            if hidden:
+                raise _Rejected("invalid_state", "Unit is already submerged in a gas giant atmosphere.")
+        elif command.type == "leave_gas_giant":
+            if not hidden:
+                raise _Rejected("invalid_state", "Unit is not submerged in a gas giant atmosphere.")
+        elif command.type in {'continuous_resupply', 'continuous_antimatter_transport'}:
+            from antimatter_logistics import continuous_route_blocker
+            harvesting = command.type == 'continuous_resupply'
+            source = self._body(command.source_id) if harvesting else self._visible_unit(unit.owner, command.source_id)
+            target = self._visible_unit(unit.owner, command.target_id) if command.target_id is not None else None
+            error = continuous_route_blocker(unit, source, target, self.game.galaxy, harvesting=harvesting)
+            if error:
+                raise _Rejected(error, 'Antimatter route unavailable: ' + error.replace('_', ' ') + '.')
+        elif command.type in {'transfer_antimatter', 'take_antimatter'}:
+            from antimatter_logistics import exchange_blocker
+            target = self._visible_unit(unit.owner, command.target_id)
+            error = exchange_blocker(unit, target, self.game.galaxy)
+            if error:
+                raise _Rejected(error, 'Antimatter endpoint unavailable.')
+            if not command.queue:
+                source, recipient = (target, unit) if command.type == 'take_antimatter' else (unit, target)
+                if projection.fuel_amount(source) <= 0 or projection.fuel_amount(recipient) >= recipient.antimatter_component.max_capacity:
+                    raise _Rejected('capability_unavailable', 'No antimatter can be exchanged now.')
+        elif command.type == "use_ability":
+            from tactical_abilities import SPECS, validate
+            if command.position is not None:
+                self._destination(command)
+            if command.ability == "microjump" and (command.system_name != unit.in_system or command.hex_coord != unit.in_hex):
+                raise _Rejected("out_of_range", "Microjump requires the current sector.")
+            from titan_balance import TITAN_ABILITIES
+            if command.ability in TITAN_ABILITIES:
+                from titan_abilities import validate as titan_validate
+                from geometry import Position
+                error = titan_validate(unit, command.ability, self.game.galaxy, command.target_id, Position(*command.position) if command.position is not None else None, system_name=command.system_name, hex_coord=command.hex_coord, ignore_reservations=True, resources=False)
+                if error:
+                    raise _Rejected(error, 'Titan ability unavailable: ' + error.replace('_', ' '))
+                projection.validate_tactical(command, unit)
+                return
+            if command.ability in SPECS:
+                if command.system_name not in (None, unit.in_system) or (command.hex_coord is not None and tuple(command.hex_coord) != tuple(unit.in_hex)):
+                    raise _Rejected('out_of_range', 'Tactical positions must be in the current sector.')
+                from geometry import Position
+                error = validate(unit, command.ability, self.game.galaxy, command.target_id,
+                    Position(*command.position) if command.position is not None else None, approach=True, ignore_reservations=True, resources=False, links=False, participants=False)
+                if error:
+                    raise _Rejected(error, 'Ability cannot be issued for this target or current resources.')
+                projection.validate_tactical(command, unit)
+                return
+            from unit_components.enums import AbilityType
+
+            try:
+                ability_type = AbilityType(command.ability)
+            except (TypeError, ValueError) as exc:
+                raise _Rejected("invalid_value", "Unknown ability.") from exc
+            pending_duplicate = any(e['type'] == 'use_ability' and not e.get('settled') and e['parameters'].get('ability_type') == command.ability for e in projection._order_ledger.get(unit.id, ()))
+            if (unit.id, command.ability) in projection._tactical_used or pending_duplicate:
+                raise _Rejected('capability_unavailable', 'Ability already used or reserved.')
+            instance = unit.ability_component.abilities.get(ability_type)
+            if instance is not None and instance.definition.activation_mode == 'toggle':
+                raise _Rejected('capability_unavailable',
+                    f'Ability {command.ability} uses toggle mode; use toggle_ability with queue=false and no target.')
+            if instance and unit.antimatter_component and projection.tactical_budget(unit) < instance.definition.antimatter_cost:
+                raise _Rejected('insufficient_resources', 'Ability fuel is already spent or reserved.')
+            blocker = unit.ability_component.availability(ability_type, resources=False)
+            if blocker:
+                raise _Rejected(
+                    blocker,
+                    f"Ability {command.ability} is unavailable on unit {unit.id}.",
+                )
+            from unit_targeting import LEGACY_UNIT_ABILITIES, legacy_target_blocker
+            if command.ability in LEGACY_UNIT_ABILITIES:
+                error = legacy_target_blocker(unit, command.ability, self._visible_unit(unit.owner, command.target_id), self.game.galaxy)
+                if error:
+                    raise _Rejected(error, "Ability target unavailable: " + error.replace('_', ' ') + ".")
+        elif command.type in {"infiltrate_unit", "infiltrate_planet"}:
+            intelligence = getattr(unit, "intelligence_component", None)
+            if intelligence is None or int(getattr(intelligence, "available_agents", 0)) <= 0:
+                raise _Rejected("capability_unavailable", f"Unit {unit.id} has no available agents.")
+        elif command.type == "extract_agent":
+            intelligence = getattr(unit, "intelligence_component", None)
+            if (
+                intelligence is None
+                or int(getattr(intelligence, "available_agents", 0))
+                >= int(getattr(intelligence, "agents_capacity", 0))
+            ):
+                raise _Rejected("insufficient_capacity", f"Unit {unit.id} has no free agent capacity.")
+        elif command.type == "eliminate_agent":
+            intelligence = getattr(unit, "intelligence_component", None)
+            if not getattr(intelligence, "has_counter_intelligence", False):
+                raise _Rejected("capability_unavailable", f"Unit {unit.id} has no Counter-Intelligence suite.")
+    def _require_friendly(self, player: Any, target: Any) -> None:
+        if target is None or self._relation(player, getattr(target, "owner", target)) == "enemy":
+            raise _Rejected("invalid_relation", "The target must be friendly.")
+
+    def _require_relation(self, player: Any, target: Any, relation: str) -> None:
+        if self._relation(player, getattr(target, "owner", None)) != relation:
+            raise _Rejected("invalid_relation", f"The target must be {relation}.")
+
+    @staticmethod
+    def _relation(player: Any, owner: Any) -> str:
+        if owner is player or getattr(owner, "id", None) == getattr(player, "id", None):
+            return "self"
+        if owner is not None and player.is_allied_with(owner):
+            return "ally"
+        return "enemy"

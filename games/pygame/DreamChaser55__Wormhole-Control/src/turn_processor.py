@@ -1,0 +1,799 @@
+import logging
+from game_logging import format_unit_for_log
+
+logger = logging.getLogger(__name__)
+
+import random
+import typing
+
+from domain.coordinates import HexCoord
+from utils import ProfileTimer
+from geometry import Position, distance, hex_distance, Circle, is_point_in_circle
+from sector_utils import move_towards_position
+from domain.units import Unit
+from domain.celestials import Wormhole, Planet, Moon, ColonizableAsteroid
+from unit_components.enums import JumpStatus
+from unit_components.commander import Commander
+from visibility import VisibilityService
+from constants import (
+    HullSize, XP_JUMP_RANGE_BONUS,
+    CELESTIAL_FIELD_RADIUS, STORM_RADIUS,
+    StormType
+)
+from turn_presentation import NullTurnPresentation, TurnPresentation
+from economy import calculate_income_breakdown, calculate_player_upkeep
+from turn_briefing import record, unit_event
+
+
+class TurnProcessor:
+    def __init__(self, game_instance, rng=None, *, presentation: typing.Optional[TurnPresentation] = None):
+        self.game = game_instance
+        self.presentation = presentation if presentation is not None else (
+            getattr(game_instance, '__dict__', {}).get('turn_presentation') or NullTurnPresentation()
+        )
+        self.rng = rng or getattr(game_instance, 'rng', None) or random
+
+    def end_turn(self):
+        """Resolve the active player, advance play, and present the next owner turn.
+
+        Open the departing player's briefing window and resolve their actions.
+        After the last player, run global effects and increment turn_number (the
+        global round); otherwise advance only the player index. Refresh the next
+        owner's tactical deadlines, freeze their briefing, then invoke presentation
+        and AI scheduling. Return None; errors propagate without rolling back
+        already-resolved phases.
+        """
+        turn_num = getattr(self.game, 'turn_number', 1)
+        current_player = self.game.players[self.game.current_player_index]
+        from turn_briefing import begin_window, finish_window
+        begin_window(self.game, current_player)
+        logger.debug(f"--- Turn {turn_num} - End of {current_player.name}'s Turn ---")
+        self.process_player_turn(current_player)
+
+        is_last_player = (self.game.current_player_index == len(self.game.players) - 1)
+        if is_last_player:
+            self.process_global_end_of_round()
+            if hasattr(self.game, 'turn_number'):
+                self.game.turn_number += 1
+            self.game.current_player_index = 0
+        else:
+            self.game.current_player_index += 1
+
+        new_turn_num = getattr(self.game, 'turn_number', 1)
+        next_player = self.game.players[self.game.current_player_index]
+        logger.debug(f"\n--- Turn {new_turn_num} - Start of {next_player.name}'s Turn ---")
+
+        from tactical_abilities import start_owner_turn
+        start_owner_turn(self.game.galaxy, next_player, new_turn_num)
+        finish_window(self.game, next_player)
+        self.presentation.refresh_player_turn(next_player)
+
+        self.check_and_schedule_ai_turn()
+
+    def check_and_schedule_ai_turn(self):
+        """Delegate presentation delay; domain-only processors do not schedule AI."""
+        self.presentation.schedule_ai_turn()
+
+    def process_turn(self, player=None):
+        """Resolve player (default: active player) without advancing player or round.
+
+        Delegate to process_player_turn and return None. This mutates game state;
+        it does not perform end_turn's global effects, briefings or presentation.
+        """
+        target_player = player if player is not None else self.game.players[self.game.current_player_index]
+        self.process_player_turn(target_player)
+
+
+    def process_player_turn(self, current_player):
+        """Resolve one owner's End Turn phases without changing the turn/index.
+
+        Mutate movement, hazards, economy, equipment and orders for current_player;
+        interactions and destruction cleanup can affect other players' objects.
+        Ordinary ability counters tick in unit updates; tactical ready/expiry
+        deadlines refresh separately at owner-turn start. Return None, including
+        when the galaxy is absent/empty. Errors propagate with prior effects kept;
+        the full resolution is not idempotent even where a service guards its tick.
+        """
+        with ProfileTimer("Total player turn processing"):
+            turn_num = getattr(self.game, 'turn_number', 1)
+            logger.debug(f"Processing Turn {turn_num} for {current_player.name}...")
+            
+            if not self.game.galaxy or not self.game.galaxy.systems:
+                logger.debug("Warning: Galaxy or systems not initialized in process_turn.")
+                return
+
+            # Support and mandatory wing returns precede movement. Pulls/flak,
+            # mines and environmental hazards resolve before income/upkeep and
+            # unit updates; dismantling and planetary actions follow. Final
+            # support/service reconciliation sees arrivals and resource changes.
+            from wormhole_stabilization import process_support
+            process_support(self.game, current_player)
+            from tactical_abilities import reconcile_links
+            reconcile_links(self.game.galaxy)
+            from strikecraft_service import process as process_wing_service
+            process_wing_service(self.game, current_player, advance=True)
+            from titan_abilities import process as process_titans
+            process_titans(self.game, current_player)
+            from planetary_intel import refresh, revalidate_colony_orders
+            refresh(self.game)
+            revalidate_colony_orders(self.game)
+            with ProfileTimer("Movement processing"):
+                sublight_movements = self._process_movement(current_player)
+            # Remember arrivals before hazards can destroy the observing ship.
+            refresh(self.game)
+
+            process_wing_service(self.game, current_player)
+
+            from tactical_abilities import process_pulls
+            process_pulls(self.game.galaxy, current_player, turn_num)
+
+            from strikecraft_abilities import process_flak
+            process_flak(self.game.galaxy, current_player, turn_num)
+            self._cleanup_dead_units()
+
+            with ProfileTimer("Minefield detonations"):
+                self._process_minefield_detonations(current_player)
+                self._cleanup_dead_units()
+
+            with ProfileTimer("Environmental hazards"):
+                self._process_environmental_hazards(current_player, sublight_movements)
+                self._cleanup_dead_units()
+
+            with ProfileTimer("Resource generation"):
+                self._process_resource_generation(current_player)
+
+            with ProfileTimer("Unit upkeep"):
+                self._process_unit_upkeep(current_player)
+
+            with ProfileTimer("Unit updates"):
+                self._process_unit_updates(current_player)
+                self._cleanup_dead_units()
+
+            from dismantling import process as process_dismantling
+            process_dismantling(self.game, current_player)
+            from planetary_warfare import process_actions
+            process_actions(self.game, current_player)
+            process_support(self.game, current_player)
+
+            process_wing_service(self.game, current_player)
+            reconcile_links(self.game.galaxy)
+            self._cancel_hidden_attacks()
+            refresh(self.game)
+            revalidate_colony_orders(self.game)
+            logger.debug(f"Finished Turn {turn_num} processing for {current_player.name}.")
+
+    def _cancel_hidden_attacks(self):
+        """Settle lost contacts for every owner without running their next orders."""
+        from campaign_graph import iter_units
+        snapshots = {}
+        for unit, _ in iter_units(self.game.galaxy):
+            commander = unit.commander_component
+            if not commander:
+                continue
+            snapshot = None
+            if commander.attack_for_visibility_check() and unit.owner is not None:
+                if unit.owner.id not in snapshots:
+                    snapshots[unit.owner.id] = VisibilityService.compute(
+                        self.game.galaxy, unit.owner, record_intel=False)
+                snapshot = snapshots[unit.owner.id]
+            commander.cancel_hidden_attack(self.game.galaxy, snapshot)
+
+
+    def process_global_end_of_round(self):
+        """Apply growth, planetary recovery and intel after all players have acted.
+
+        Mutate galaxy-wide state using the current global round, without advancing
+        it; end_turn increments the clock afterward. Return None for an absent or
+        empty galaxy as well. Failures propagate without undoing earlier phases.
+        """
+        with ProfileTimer("Total global end of round processing"):
+            turn_num = getattr(self.game, 'turn_number', 1)
+            logger.debug(f"Processing End of Round {turn_num} (Global)...")
+
+            if not self.game.galaxy or not self.game.galaxy.systems:
+                return
+
+            with ProfileTimer("Population growth"):
+                self._process_population_growth()
+                from planetary_warfare import recover
+                recover(self.game)
+
+            with ProfileTimer("Sector intel update"):
+                VisibilityService.update_all_players_intel(self.game.galaxy, self.game.players, turn_num)
+
+            logger.debug(f"Finished End of Round {turn_num} processing.")
+
+    def _pay_movement_fuel(self, unit, cost, *, sublight=False):
+        """Pay one movement attempt before displacement; return whether it may proceed.
+
+        Tankless wings deliberately fly without fuel. Other positive-cost travel
+        requires working storage and a successful debit, not just a tank quantity.
+        Rejected payment records a private problem and leaves navigation unchanged.
+        """
+        storage = unit.antimatter_component
+        from turn_briefing import movement_fuel_state
+        from movement_costs import fuel_free_sublight
+        if sublight and fuel_free_sublight(unit):
+            movement_fuel_state(unit)
+            return True
+        if cost <= 0:
+            movement_fuel_state(unit)
+            return True
+        if storage is None or storage.is_destroyed:
+            reason = "antimatter storage unavailable"
+        elif storage.current_amount < cost:
+            reason = "insufficient antimatter"
+        elif storage.consume(cost):
+            movement_fuel_state(unit)
+            return True
+        else:
+            reason = "antimatter payment failed"
+        action = "Movement" if sublight else "Jump"
+        movement_fuel_state(unit, f"{action} blocked: {reason}")
+        logger.debug("%s %s blocked: %s", format_unit_for_log(unit), action.lower(), reason)
+        return False
+
+    def _process_movement(self, current_player) -> dict[int, float]:
+        """Resolve owned navigation actuators, paying before each displacement.
+
+        Process current_player's deployed units using their authorized active
+        order targets; clear stale actuators rather than moving for old orders.
+        Sublight hazards clip a tentative position before payment and commit.
+        Jump relocation's False result leaves containment unchanged and refunds
+        the debit. Only committed jumps start recharge or roll instability damage.
+        Return positive sublight movements mapped to post-drag speed for hazards;
+        failed payment never produces a movement record.
+        """
+        # A record exists only for positive sublight displacement this phase.
+        sublight_movements: dict[int, float] = {}
+        for system_name, system in self.game.galaxy.systems.items():
+            units_to_move: typing.List[typing.Tuple['Unit', tuple]] = []
+
+            all_units_in_system = system.get_all_units()[:]
+            for unit, current_hex in all_units_in_system:
+                if unit.owner != current_player:
+                    continue
+
+                commander = unit.commander_component
+                if commander:
+                    from strikecraft_service import reconcile_unit
+                    reconcile_unit(unit, self.game.galaxy)
+                    from campaign_graph import is_deployed
+                    if not is_deployed(unit, self.game.galaxy):
+                        continue
+                    from strikecraft_abilities import wing_order
+                    root = wing_order(unit)
+                    if root:
+                        root.update(self.game.galaxy)
+                        from tactical_abilities import deployed
+                        if not deployed(unit, self.game.galaxy):
+                            continue
+                    commander.prepare_for_movement()
+
+                from dismantling import offline
+                if offline(unit):
+                    continue
+
+                # Units disabled by Ion Bolt cannot move
+                if unit.is_disabled:
+                    unit_event(unit, "problem", "Operations blocked: unit disabled", private=True, once=True)
+                    logger.debug(f"   {format_unit_for_log(unit)} is disabled (Ion Bolt) â€” movement skipped.")
+                    continue
+
+                if (
+                    unit.hyperdrive_component
+                    and not unit.hyperdrive_component.is_functional
+                    and (
+                        unit.hyperdrive_component.hex_jump_target
+                        or unit.hyperdrive_component.wormhole_jump_target
+                    )
+                ):
+                    unit_event(unit, "problem", "Jump blocked: hyperdrive unavailable", private=True, once=True)
+                    unit.hyperdrive_component.clear_jump_target(
+                        unit.hyperdrive_component.jump_target_order_id
+                    )
+                    logger.debug(f"   {format_unit_for_log(unit)} cannot jump: Hyperdrive is destroyed or sabotaged. Target cleared.")
+                
+                if unit.hyperdrive_component and unit.hyperdrive_component.wormhole_jump_target:
+                    target_wormhole_obj = unit.hyperdrive_component.wormhole_jump_target
+                    target_order_id = unit.hyperdrive_component.jump_target_order_id
+                    target_sys_name_for_jump = target_wormhole_obj.exit_system_name
+                    exit_wh_id_for_jump = target_wormhole_obj.exit_wormhole_id
+                    if target_sys_name_for_jump and exit_wh_id_for_jump is not None and target_sys_name_for_jump in self.game.galaxy.systems:
+                        units_to_move.append((unit, ("system_jump", target_sys_name_for_jump, target_order_id)))
+                    else:
+                        logger.debug(f"  Wormhole Jump Failed (Queuing): Invalid target system ({target_sys_name_for_jump}) or incomplete exit wormhole data ({exit_wh_id_for_jump}) for {format_unit_for_log(unit)}")
+                        unit.hyperdrive_component.clear_jump_target(target_order_id)
+
+                elif unit.hyperdrive_component and unit.hyperdrive_component.hex_jump_target:
+                    target_hex_for_jump, target_position_for_jump = unit.hyperdrive_component.hex_jump_target
+                    target_order_id = unit.hyperdrive_component.jump_target_order_id
+                    if target_hex_for_jump != current_hex and target_hex_for_jump in system.hexes:
+                        units_to_move.append((unit, ("hex_jump", (target_hex_for_jump, target_position_for_jump), target_order_id)))
+                    else:
+                        # A stale or already-reached waypoint must not survive
+                        # into another turn and become an orphaned actuator.
+                        unit.hyperdrive_component.clear_jump_target(target_order_id)
+
+                elif unit.engines_component and unit.engines_component.move_target:
+                    target_order_id = unit.engines_component.move_target_order_id
+                    if not unit.engines_component.is_operational:
+                        unit_event(unit, "problem", "Movement blocked: engines unavailable", private=True, once=True)
+                        unit.engines_component.clear_move_target(target_order_id)
+                        logger.debug(
+                            f"   {format_unit_for_log(unit)} cannot move sub-light: Engines are destroyed or offline. "
+                            "Movement target cleared."
+                        )
+                        continue
+
+                    from custom_unit_templates import get_sublight_antimatter_cost_per_turn
+                    from environmental_effects import modifiers_for_unit, sublight_speed
+                    effective_speed = sublight_speed(unit)
+                    current_hex_obj = system.hexes.get(unit.in_hex)
+                    sublight_cost = get_sublight_antimatter_cost_per_turn(unit.hull_size, effective_speed)
+                    sublight_cost *= modifiers_for_unit(unit).fuel_multiplier
+
+                    target_pos_in_sector = unit.engines_component.move_target
+                    new_pos = move_towards_position(unit.position, target_pos_in_sector, effective_speed)
+                    hazard_blocked = False
+                    if unit.hull_size == HullSize.STRIKECRAFT_WING and current_hex_obj:
+                        from domain.celestials import Storm
+                        for body in current_hex_obj.celestial_bodies:
+                            if isinstance(body, Storm) and getattr(body, 'storm_type', None) == StormType.MAGNETIC:
+                                storm_radius = getattr(body, 'radius', STORM_RADIUS)
+                                if distance(new_pos, body.position) <= storm_radius:
+                                    diff = unit.position - body.position
+                                    dist_current = diff.magnitude()
+                                    if dist_current > storm_radius:
+                                        dir_vec = diff.normalize()
+                                        new_pos = body.position + dir_vec * (storm_radius + 1.0)
+                                    hazard_blocked = True
+                                    break
+                    if current_hex_obj:
+                        from domain.celestials import AsteroidField, DebrisField, IceField
+                        for body in current_hex_obj.celestial_bodies:
+                            if isinstance(body, (AsteroidField, DebrisField, IceField)):
+                                if hasattr(body, 'can_unit_enter') and not body.can_unit_enter(unit):
+                                    field_radius = getattr(body, 'radius', CELESTIAL_FIELD_RADIUS)
+                                    if distance(new_pos, body.position) <= field_radius:
+                                        diff = unit.position - body.position
+                                        dist_current = diff.magnitude()
+                                        if dist_current > field_radius:
+                                            dir_vec = diff.normalize()
+                                            new_pos = body.position + dir_vec * (field_radius + 1.0)
+                                        hazard_blocked = True
+                                        break
+                    if distance(unit.position, new_pos) > 0:
+                        if not self._pay_movement_fuel(unit, sublight_cost, sublight=True):
+                            continue
+                        sublight_movements[unit.id] = effective_speed
+                    unit.position = new_pos
+                    if hazard_blocked:
+                        unit.engines_component.clear_move_target(target_order_id)
+                        curr_order = getattr(commander, 'current_order', None)
+                        if curr_order:
+                            curr_order.fail("hazard_blocked")
+                    logger.debug(f"   {format_unit_for_log(unit)} moved to {unit.position} (sub-light, speed={effective_speed:.1f})")
+                    
+                    # Sync the active inhibitor field's location with the unit's new sub-light position.
+                    if unit.inhibitor_component and unit.inhibitor_component.is_active:
+                        current_hex_obj = system.hexes[unit.in_hex]
+                        if current_hex_obj:
+                            current_hex_obj.dynamic_inhibition_zones[unit.id] = Circle(
+                                center=unit.position,
+                                radius=unit.inhibitor_component.radius
+                            )
+
+                    dist_after_move = distance(unit.position, target_pos_in_sector)
+                    if dist_after_move < 0.01:
+                        logger.debug(f"   {format_unit_for_log(unit)} arrived at destination {target_pos_in_sector}")
+                        unit.position = target_pos_in_sector
+                        if unit.engines_component:
+                            unit.engines_component.clear_move_target(target_order_id)
+
+            for unit, movement_details in units_to_move:
+                movement_type, movement_data, expected_order_id = movement_details
+                # Other sublight moves or earlier jumps can have removed the
+                # scout supplying this attack's coverage since preparation.
+                if unit.commander_component:
+                    unit.commander_component.cancel_hidden_attack(self.game.galaxy)
+                origin_system = self.game.galaxy.systems[unit.in_system]
+                if not origin_system:
+                    logger.debug(f"   FATAL Error: Could not find origin system {unit.in_system} for unit {unit.id}. Skipping move.")
+                    continue
+
+                if not unit.hyperdrive_component:
+                    logger.debug(f"   LOGIC ERROR: Unit {format_unit_for_log(unit)} in units_to_move for jump but has no hyperdrive_component. Skipping.")
+                    continue
+                hd_comp = unit.hyperdrive_component
+                if (
+                    expected_order_id is not None
+                    and hd_comp.jump_target_order_id != expected_order_id
+                ):
+                    logger.debug(
+                        "   %s jump snapshot ignored: target ownership changed from %s to %s.",
+                        format_unit_for_log(unit),
+                        expected_order_id,
+                        hd_comp.jump_target_order_id,
+                    )
+                    continue
+
+                if movement_type == "system_jump":
+                    if hd_comp.jump_status == JumpStatus.CHARGING:
+                        logger.debug(f"   {format_unit_for_log(unit)} system jump delayed: Hyperdrive charging ({hd_comp.recharge_time_remaining} turns left).")
+                        continue 
+                    
+                    if hd_comp.jump_status == JumpStatus.JUMPING: 
+                        logger.debug(f"   Warning: {format_unit_for_log(unit)} attempting system jump while already JUMPING. Resetting to READY.")
+                        hd_comp.jump_status = JumpStatus.READY 
+                    
+                    if hd_comp.jump_status == JumpStatus.ERROR:
+                        logger.debug(f"   {format_unit_for_log(unit)} cannot system jump: Hyperdrive in ERROR state. Order should re-evaluate or clear target.")
+                        continue
+
+                    if hd_comp.jump_status != JumpStatus.READY:
+                        logger.debug(f"   Error: {format_unit_for_log(unit)} unexpected jump status {hd_comp.jump_status} for system jump. Skipping.")
+                        continue
+                        
+                    hd_comp.jump_status = JumpStatus.JUMPING
+
+                    target_sys_name = typing.cast(str, movement_data)
+                    target_system = self.game.galaxy.systems[target_sys_name]
+                    arrival_hex: typing.Optional[HexCoord] = None
+                    exit_wormhole_obj_for_exec: typing.Optional[Wormhole] = None
+                    can_jump = False
+
+                    # Verify wormhole jump parameters are still valid at the moment of execution,
+                    # as targets could have been cleared or altered since planning.
+                    if not hd_comp.wormhole_jump_target:
+                        logger.debug(f"   Error: Unit {format_unit_for_log(unit)} lost its wormhole_jump_target before system_jump execution. Aborting jump.")
+                        hd_comp.jump_status = JumpStatus.ERROR 
+                    elif not target_system:
+                        logger.debug(f"   Error: Wormhole destination system {target_sys_name} not found. Jump aborted for {format_unit_for_log(unit)}.")
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        hd_comp.clear_jump_target(expected_order_id)
+                    else:
+                        entry_wormhole = hd_comp.wormhole_jump_target
+                        exit_wh_id = entry_wormhole.exit_wormhole_id
+                        if exit_wh_id is None:
+                            logger.debug(f"   Error: Entry wormhole {entry_wormhole.id} for unit {format_unit_for_log(unit)} has no exit_wormhole_id. Aborting jump.")
+                            hd_comp.jump_status = JumpStatus.ERROR
+                            hd_comp.clear_jump_target(expected_order_id)
+                        else:
+                            exit_wormhole_obj_for_exec = self.game.galaxy.wormholes.get(exit_wh_id)
+                            if not exit_wormhole_obj_for_exec:
+                                logger.debug(f"   Error: Exit wormhole object with ID {exit_wh_id} not found in galaxy. Aborting jump for {format_unit_for_log(unit)}.")
+                                hd_comp.jump_status = JumpStatus.ERROR
+                                hd_comp.clear_jump_target(expected_order_id)
+                            elif exit_wormhole_obj_for_exec.in_system != target_sys_name:
+                                logger.debug(f"   Error: Exit wormhole {exit_wormhole_obj_for_exec.id} (in system {exit_wormhole_obj_for_exec.in_system}) does not actually lead to target system {target_sys_name}. Aborting jump for {format_unit_for_log(unit)}.")
+                                hd_comp.jump_status = JumpStatus.ERROR
+                                hd_comp.clear_jump_target(expected_order_id)
+                            else:
+                                arrival_hex = exit_wormhole_obj_for_exec.in_hex
+                                can_jump = arrival_hex in target_system.hexes
+                    
+                    if can_jump and arrival_hex and target_system and exit_wormhole_obj_for_exec:
+                        # A rejected relocation is mutation-free; restore its exact debit.
+                        from custom_unit_templates import get_hyperdrive_system_jump_cost
+                        sys_jump_cost = get_hyperdrive_system_jump_cost(unit.hull_size)
+                        am_comp = unit.antimatter_component
+                        fuel_before = am_comp.current_amount if am_comp is not None else None
+                        if not self._pay_movement_fuel(unit, sys_jump_cost):
+                            hd_comp.jump_status = JumpStatus.ERROR
+                            hd_comp.clear_jump_target(expected_order_id)
+                            continue
+
+                        moved = self.game.galaxy.move_unit_between_systems(
+                            unit=unit,
+                            origin_system_name=origin_system.name, 
+                            destination_system_name=target_sys_name,
+                            destination_hex=arrival_hex 
+                        )
+                        if moved:
+                            unit.position = exit_wormhole_obj_for_exec.position 
+                            logger.debug(f"   {format_unit_for_log(unit)} completed wormhole jump from {origin_system.name} to {target_sys_name}, into hex {arrival_hex}")
+                            
+                            # Apply probabilistic damage for unstable wormholes (< 100 stability)
+                            from wormhole_stabilization import effective_stability
+                            stability = effective_stability(self.game.galaxy, entry_wormhole)
+                            if stability < 100:
+                                damage_chance = (100 - stability) / 100.0
+                                if random.random() < damage_chance:
+                                    # Calculate damage amount (10% to 25% of max hit points)
+                                    damage_percentage = random.uniform(0.10, 0.25)
+                                    damage_amount = int(unit.max_hit_points * damage_percentage)
+                                    damage_amount = max(1, damage_amount)
+                                    
+                                    # 50% chance of component damage
+                                    component_damaged = False
+                                    if random.random() < 0.5:
+                                        # Get eligible components (excluding Commander, and not destroyed)
+                                        eligible_components = [
+                                            comp_type for comp_type, comp in unit.components.items()
+                                            if comp_type != Commander and not comp.is_destroyed
+                                        ]
+                                        if eligible_components:
+                                            target_comp_type = random.choice(eligible_components)
+                                            logger.debug(f"   Wormhole instability damages {format_unit_for_log(unit)}'s {target_comp_type.__name__} component for {damage_amount} damage.")
+                                            spillover = unit.take_component_damage(target_comp_type, damage_amount, cause="wormhole instability")
+                                            if spillover > 0:
+                                                logger.debug(f"   {spillover} damage spilled over to {format_unit_for_log(unit)}'s hull.")
+                                                unit.take_damage(spillover, cause="wormhole instability")
+                                            component_damaged = True
+                                            
+                                    if not component_damaged:
+                                        logger.debug(f"   Wormhole instability damages {format_unit_for_log(unit)}'s hull for {damage_amount} damage.")
+                                        unit.take_damage(damage_amount, cause="wormhole instability")
+
+
+
+                            hd_comp.start_recharge(expected_order_id) # Clears this jump's target and sets status to CHARGING
+                        else:
+                            if fuel_before is not None:
+                                am_comp.current_amount = fuel_before
+                            logger.debug(f"   Error during final wormhole jump execution for {format_unit_for_log(unit)}. Jump aborted.")
+                            hd_comp.jump_status = JumpStatus.ERROR
+                            if hd_comp.wormhole_jump_target: # Ensure target is cleared on failure
+                                 hd_comp.clear_jump_target(expected_order_id)
+                    elif hd_comp.jump_status == JumpStatus.JUMPING: # If can_jump became false after setting to JUMPING
+                        hd_comp.jump_status = JumpStatus.ERROR 
+                        if hd_comp.wormhole_jump_target: # Ensure target is cleared
+                             hd_comp.clear_jump_target(expected_order_id)
+                
+                elif movement_type == "hex_jump":
+                    if hd_comp.jump_status == JumpStatus.CHARGING:
+                        logger.debug(f"   {format_unit_for_log(unit)} hex jump delayed: Hyperdrive charging ({hd_comp.recharge_time_remaining} turns left).")
+                        continue
+            
+                    if hd_comp.jump_status == JumpStatus.JUMPING:
+                        logger.debug(f"   Warning: {format_unit_for_log(unit)} attempting hex jump while already JUMPING. Resetting to READY.")
+                        hd_comp.jump_status = JumpStatus.READY
+            
+                    if hd_comp.jump_status == JumpStatus.ERROR:
+                        logger.debug(f"   {format_unit_for_log(unit)} cannot hex jump: Hyperdrive in ERROR state.")
+                        continue
+
+                    if hd_comp.jump_status != JumpStatus.READY:
+                        logger.debug(f"   Error: {format_unit_for_log(unit)} unexpected jump status {hd_comp.jump_status} for hex jump. Skipping.")
+                        continue
+                        
+                    hd_comp.jump_status = JumpStatus.JUMPING
+
+                    target_hex, target_pos = typing.cast(typing.Tuple[HexCoord, "Position"], movement_data)
+                    
+                    # Validate the hex jump parameters. The destination must be within the same system,
+                    # within jump range, and not blocked by active inhibitor fields at the source or target.
+                    if not hd_comp.hex_jump_target:
+                        logger.debug(f"   Error: Unit {format_unit_for_log(unit)} lost its hex_jump_target before hex_jump execution. Aborting jump.")
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        continue
+
+                    if target_hex not in origin_system.hexes:
+                        logger.debug(f"   Error: Unit {format_unit_for_log(unit)} hex_jump_target {target_hex} is invalid for system {origin_system.name}. Aborting.")
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        hd_comp.clear_jump_target(expected_order_id)
+                        continue
+
+                    effective_jump_range = int(hd_comp.jump_range * unit.xp_multiplier(XP_JUMP_RANGE_BONUS))
+                    if unit.in_hex and hex_distance(unit.in_hex, target_hex) > effective_jump_range:
+                        logger.debug(f"   Error: Unit {format_unit_for_log(unit)} hex_jump to {target_hex} exceeds jump range of {effective_jump_range}. Aborting.")
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        hd_comp.clear_jump_target(expected_order_id)
+                        continue
+
+                    jump_inhibited = False
+                    origin_hex_obj = origin_system.hexes[unit.in_hex]
+                    if origin_hex_obj:
+                        for zone in origin_hex_obj.get_all_inhibition_zones():
+                            if is_point_in_circle(unit.position, zone):
+                                logger.debug(f"   Error: Unit {format_unit_for_log(unit)} cannot jump; origin position is inside an inhibition field.")
+                                jump_inhibited = True
+                                break
+                    if jump_inhibited:
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        hd_comp.clear_jump_target(expected_order_id)
+                        continue
+
+                    destination_hex_obj = origin_system.hexes[target_hex]
+                    if destination_hex_obj:
+                        for zone in destination_hex_obj.get_all_inhibition_zones():
+                            if is_point_in_circle(target_pos, zone):
+                                logger.debug(f"   Error: Unit {format_unit_for_log(unit)} cannot jump; destination position is inside an inhibition field.")
+                                jump_inhibited = True
+                                break
+                    if jump_inhibited:
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        hd_comp.clear_jump_target(expected_order_id)
+                        continue
+                        
+                    # Pay before changing sector membership, refunding rejected relocation.
+                    from custom_unit_templates import get_hyperdrive_hex_jump_cost
+                    hex_jump_cost = get_hyperdrive_hex_jump_cost(unit.hull_size)
+                    am_comp = unit.antimatter_component
+                    fuel_before = am_comp.current_amount if am_comp is not None else None
+                    if not self._pay_movement_fuel(unit, hex_jump_cost):
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        hd_comp.clear_jump_target(expected_order_id)
+                        continue
+
+                    moved = origin_system.move_unit_between_hexes(unit=unit, destination_hex=target_hex)
+                    if moved:
+                        unit.position = target_pos
+                        logger.debug(f"   {format_unit_for_log(unit)} completed hex jump to {target_hex}:{target_pos} in {origin_system.name} system.")
+                        hd_comp.start_recharge(expected_order_id) # Clears this jump's target and sets status to CHARGING
+                    else:
+                        if fuel_before is not None:
+                            am_comp.current_amount = fuel_before
+                        logger.debug(f"   Error during hex jump processing for {format_unit_for_log(unit)} to {target_hex}. Jump aborted.")
+                        hd_comp.jump_status = JumpStatus.ERROR
+                        if hd_comp.hex_jump_target: # Ensure target is cleared on failure
+                             hd_comp.clear_jump_target(expected_order_id)
+
+        return sublight_movements
+
+    def _process_population_growth(self):
+        for system in self.game.galaxy.systems.values():
+            for hexcoord, body in system.get_all_celestial_bodies():
+                if isinstance(body, (Planet, Moon, ColonizableAsteroid)):
+                    body.update_population()
+
+    def _process_environmental_hazards(self, current_player, sublight_movements=None):
+        """Apply public hazard rules once per source after the owner's movement."""
+        if not self.game.galaxy or not self.game.galaxy.systems:
+            return
+        from environmental_effects import describe_body
+        from environmental_resistance import pay_upkeep, retained_fraction
+        movements = sublight_movements or {}
+        for system in self.game.galaxy.systems.values():
+            for hex_coord, sector in system.hexes.items():
+                bodies = list(sector.celestial_bodies)
+                # Some scenarios keep the central star only on the system.
+                star = getattr(system, 'star', None)
+                if hex_coord == (0, 0) and star is not None and star not in bodies:
+                    bodies.append(star)
+                sources = [(body, hazard) for body in bodies for hazard in describe_body(body).hazards]
+                for unit in list(sector.units):
+                    if unit.owner != current_player or unit.current_hit_points <= 0 or getattr(unit, 'is_hidden_in_gas_giant', False):
+                        continue
+                    pay_upkeep(unit)
+                    for body, hazard in sources:
+                        if unit.current_hit_points <= 0:
+                            break
+                        if not hazard.contains(unit.position, body):
+                            continue
+                        if unit.hull_size == HullSize.STRIKECRAFT_WING and not hazard.affects_strikecraft:
+                            continue
+                        if hazard.requires_sublight_movement and movements.get(unit.id, 0) <= hazard.speed_threshold:
+                            continue
+                        amount = hazard.amount * retained_fraction(unit, hazard.kind)
+                        if hazard.target == 'antimatter':
+                            storage = getattr(unit, 'antimatter_component', None)
+                            if storage is None or storage.is_destroyed:
+                                continue
+                            drain = (storage.current_amount * amount
+                                     if hazard.amount_basis == 'fraction_of_current_antimatter'
+                                     else min(amount, storage.current_amount))
+                            if drain > 0 and storage.consume(drain):
+                                unit_event(unit, 'hazard', f'{hazard.kind.title()} AM drain', amount=drain)
+                        elif hazard.target == 'random_non_destroyed_component':
+                            components = unit.components.values()
+                            candidates = [c for c in components if not c.is_destroyed]
+                            if candidates:
+                                component = self.rng.choice(candidates)
+                                unit.take_component_damage(type(component), int(amount), cause=hazard.kind)
+                        else:
+                            unit.take_damage(int(amount), cause=hazard.kind)
+                for obj in list(getattr(sector, 'deployables', ())):
+                    if obj.owner != current_player:
+                        continue
+                    for body, hazard in sources:
+                        if obj.current_hit_points <= 0:
+                            break
+                        if hazard.affects_deployables and hazard.contains(obj.position, body):
+                            obj.take_damage(int(hazard.amount), cause=hazard.kind)
+
+    def _process_resource_generation(self, current_player):
+        """Apply the shared preview once in this owner's income phase, before upkeep."""
+        income = calculate_income_breakdown(self.game.galaxy, current_player)
+        current_player.credits += income.total_credits
+        current_player.metal += income.metal
+        current_player.crystal += income.crystal
+        if income.colony_credits > 0:
+            logger.debug(f"  {current_player.name} generated {income.colony_credits:.2f} credits from taxes.")
+        if income.siphoned_credits > 0:
+            logger.debug(f"  {current_player.name} siphoned {income.siphoned_credits:.2f} credits from infiltrated colonies.")
+        if income.habitat_credits > 0:
+            logger.debug(f"  {current_player.name} generated {income.habitat_credits:.2f} credits from civilian habitat bonuses.")
+
+    def _process_unit_upkeep(self, current_player):
+        """Deducts upkeep costs from the current player's credits for every owned unit.
+
+        Upkeep = unit.current_hull_usage * UPKEEP_COST_PER_HULL_POINT per turn.
+        Temporary units and strikecraft wings are excluded.
+        Credits are clamped to zero (no negative balance).
+        """
+        total_upkeep = calculate_player_upkeep(self.game.galaxy, current_player)
+
+        if total_upkeep > 0:
+            if current_player.credits < total_upkeep:
+                record(self.game, current_player, "problem", "Treasury depleted: insufficient credits for upkeep", amount=total_upkeep)
+
+            current_player.credits = max(0.0, current_player.credits - total_upkeep)
+            logger.debug(f"  {current_player.name} paid {total_upkeep:.2f} credits in unit upkeep.")
+
+    def _process_unit_updates(self, current_player):
+        from campaign_graph import iter_units, is_deployed
+        # Snapshot both collections before updates can spawn or destroy units.
+        deployed = [unit for system in self.game.galaxy.systems.values()
+                    for unit, _ in system.get_all_units() if unit.owner == current_player]
+        stored = [unit for unit, _ in iter_units(self.game.galaxy)
+                  if unit.owner == current_player and not is_deployed(unit, self.game.galaxy)]
+        for unit in deployed:
+            if getattr(unit, "_destroyed", False) is not True:
+                unit.update()
+        for unit in stored:
+            if getattr(unit, "_destroyed", False) is True:
+                continue
+            if getattr(unit, 'is_hidden_in_gas_giant', False) and unit.commander_component:
+                unit.commander_component.update()
+            from dismantling import offline
+            if offline(unit):
+                unit.update()
+                continue
+            # Stored units cannot project effects, but their timers still elapse.
+            if unit.ability_component:
+                unit.ability_component.update(self.game.galaxy, apply_ongoing=False)
+            if unit.lifetime is not None:
+                unit.lifetime -= 1
+                if unit.lifetime <= 0:
+                    unit.destroy()
+
+    def _process_minefield_detonations(self, current_player):
+        """Check final positions once per ship-owner turn, after movement."""
+        from campaign_graph import is_deployed
+        if not self.game.galaxy:
+            return
+
+        for system_name, system in self.game.galaxy.systems.items():
+            for hex_coord, hex_obj in system.hexes.items():
+                minefields = getattr(hex_obj, 'minefields', None)
+                units = getattr(hex_obj, 'units', None)
+                if not minefields or not units:
+                    continue
+
+                minefields_to_remove = []
+                for minefield in list(minefields):
+                    if minefield.mines_remaining <= 0:
+                        minefields_to_remove.append(minefield)
+                        continue
+
+                    for unit in list(units):
+                        if unit.owner != current_player or not is_deployed(unit, self.game.galaxy):
+                            continue
+                        if not minefield.can_target(unit):
+                            continue
+
+                        if distance(unit.position, minefield.position) <= minefield.detonation_radius:
+                            minefield.detonate_against(unit)
+                            if minefield.mines_remaining <= 0:
+                                minefields_to_remove.append(minefield)
+                                break
+
+                for mf in minefields_to_remove:
+                    if hasattr(hex_obj, 'remove_minefield'):
+                        hex_obj.remove_minefield(mf)
+                    elif isinstance(minefields, list) and mf in minefields:
+                        minefields.remove(mf)
+
+    def _cleanup_dead_units(self):
+        """Sweeps all systems and destroys any units with 0 or less hit points."""
+        if not self.game.galaxy:
+            return
+        for system in self.game.galaxy.systems.values():
+            for unit, _ in system.get_all_units():
+                if unit.current_hit_points <= 0:
+                    unit.destroy()
+        from turn_briefing import refresh_discoveries
+        refresh_discoveries(self.game)
+
