@@ -1,0 +1,239 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Shader" path="res://shaders/psx_postprocess.gdshader" id="1_postprocess"]
+[ext_resource type="Script" path="res://scripts/ui_controller.gd" id="2_script"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_psx"]
+shader = ExtResource("1_postprocess")
+shader_parameter/color_depth = 16.0
+shader_parameter/dither_strength = 0.25
+shader_parameter/scanline_strength = 0.15
+shader_parameter/target_resolution = Vector2(480, 360)
+
+[node name="UI_Layer" type="CanvasLayer"]
+
+[node name="PostProcessEffect" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_psx")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_script")
+
+[node name="TopLeft" type="MarginContainer" parent="UI"]
+layout_mode = 1
+offset_left = 24.0
+offset_top = 20.0
+offset_right = 360.0
+offset_bottom = 70.0
+
+[node name="ClockLabel" type="Label" parent="UI/TopLeft"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 18
+text = "[ 00:00 AM ] SITE-42 NIGHT SHIFT"
+
+[node name="TopRight" type="MarginContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -380.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = 200.0
+grow_horizontal = 0
+
+[node name="TicketsContainer" type="VBoxContainer" parent="UI/TopRight"]
+layout_mode = 2
+
+[node name="BottomLeft" type="MarginContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -170.0
+offset_right = 260.0
+offset_bottom = -24.0
+grow_vertical = 0
+
+[node name="PolaroidCard" type="PanelContainer" parent="UI/BottomLeft"]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/BottomLeft/PolaroidCard"]
+layout_mode = 2
+
+[node name="Header" type="Label" parent="UI/BottomLeft/PolaroidCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.75, 1)
+theme_override_font_sizes/font_size = 12
+text = "ACTIVE QUANTUM ANCHOR"
+
+[node name="PhotoTitle" type="Label" parent="UI/BottomLeft/PolaroidCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 13
+text = "SECTOR 01: COOLANT"
+
+[node name="PhotoTime" type="Label" parent="UI/BottomLeft/PolaroidCard/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "TIMESTAMP: 00:00 AM"
+
+[node name="Crosshair" type="CenterContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = -10.0
+offset_right = 10.0
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Dot" type="ColorRect" parent="UI/Crosshair"]
+custom_minimum_size = Vector2(3, 3)
+layout_mode = 2
+color = Color(0.2, 1, 0.4, 0.8)
+
+[node name="Viewfinder" type="Control" parent="UI"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CenterBox" type="ReferenceRect" parent="UI/Viewfinder"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -120.0
+offset_right = 160.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+border_color = Color(0.2, 1, 0.4, 0.8)
+border_width = 2.0
+editor_only = false
+
+[node name="Prompt" type="Label" parent="UI/Viewfinder"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -100.0
+offset_right = 150.0
+offset_bottom = -75.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+text = "[SPACE / Q] SNAP POLAROID ANCHOR"
+horizontal_alignment = 1
+
+[node name="HelpPanel" type="PanelContainer" parent="UI"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -150.0
+offset_right = 220.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="UI/HelpPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="UI/HelpPanel/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="UI/HelpPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 16
+text = "SITE-42 NIGHT SHIFT MANUAL"
+horizontal_alignment = 1
+
+[node name="Body" type="Label" parent="UI/HelpPanel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "WASD - Walk
+E / LMB - Interact / Pick Up Power Cell
+F / RMB - Raise Polaroid Camera
+SPACE / Q - Snap Anchor Photo
+T / G - Toggle Flashlight
+C / TAB - Inspect Held Photo
+H / F1 - Toggle Manual
+
+QUANTUM SHIFT RULES:
+1. When you leave a sector, unobserved doorways shift dynamically.
+2. Photographing a doorway locks its spatial coordinates.
+3. Complete all 3 tickets to unlock the 06:00 AM extraction elevator."
+
+[node name="VictoryPanel" type="PanelContainer" parent="UI"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -120.0
+offset_right = 250.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/VictoryPanel"]
+layout_mode = 2
+alignment = 1
+
+[node name="Header" type="Label" parent="UI/VictoryPanel/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 1, 0.4, 1)
+theme_override_font_sizes/font_size = 22
+text = "06:00 AM — SHIFT COMPLETE"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="UI/VictoryPanel/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "You survived the graveyard shift at Site-42.
+The facility returned to baseline reality.
+Clock-out approved by Central Dispatch."
+horizontal_alignment = 1

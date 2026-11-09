@@ -1,0 +1,52 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/coolant_valve.gd" id="1_script"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_valve"]
+height = 0.4
+radius = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pipe"]
+albedo_color = Color(0.2, 0.22, 0.25, 1)
+metallic = 0.8
+roughness = 0.4
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pipe"]
+material = SubResource("StandardMaterial3D_pipe")
+top_radius = 0.1
+bottom_radius = 0.1
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wheel"]
+albedo_color = Color(0.8, 0.2, 0.1, 1)
+metallic = 0.5
+roughness = 0.3
+
+[sub_resource type="TorusMesh" id="TorusMesh_wheel"]
+material = SubResource("StandardMaterial3D_wheel")
+inner_radius = 0.35
+outer_radius = 0.45
+
+[node name="CoolantValve" type="StaticBody3D"]
+collision_layer = 3
+collision_mask = 3
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+shape = SubResource("CylinderShape3D_valve")
+
+[node name="PipeStem" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, -0.15)
+mesh = SubResource("CylinderMesh_pipe")
+
+[node name="ValveWheel" type="Node3D" parent="."]
+
+[node name="WheelMesh" type="MeshInstance3D" parent="ValveWheel"]
+mesh = SubResource("TorusMesh_wheel")
+
+[node name="StatusLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0.2)
+light_color = Color(1, 0.3, 0.1, 1)
+light_energy = 1.2
+omni_range = 3.0
