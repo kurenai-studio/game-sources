@@ -1,0 +1,11 @@
+"""Entry point: ``python -m app``."""
+
+from app.core.game import Game
+
+
+def main() -> None:
+    Game().run()
+
+
+if __name__ == "__main__":
+    main()

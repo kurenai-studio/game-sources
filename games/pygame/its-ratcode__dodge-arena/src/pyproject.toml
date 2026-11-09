@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dodge-arena"
+dynamic = ["version"]           # read from app/meta.py, the one place it is defined
+description = "A fast arcade dodge game: bolts, lasers, abilities, power-ups and upgrades, all drawn and voiced in code."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "RatCode" }]
+requires-python = ">=3.10"
+dependencies = ["pygame>=2.6"]
+keywords = ["game", "arcade", "pygame", "dodge"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Operating System :: Microsoft :: Windows",
+  "Topic :: Games/Entertainment :: Arcade",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+dodge-arena = "app.__main__:main"
+
+[project.urls]
+Repository = "https://github.com/its-ratcode/dodge-arena"
+Changelog = "https://github.com/its-ratcode/dodge-arena/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "app.meta.VERSION" }
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]          # only the test suite, never other folders
