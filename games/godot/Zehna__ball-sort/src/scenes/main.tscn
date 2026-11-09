@@ -1,0 +1,401 @@
+[gd_scene load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/sound.gd" id="2"]
+[ext_resource type="Script" path="res://scripts/pour_fx.gd" id="3"]
+
+[sub_resource type="Gradient" id="Gradient_1"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.1, 0.11, 0.29, 1, 0.04, 0.05, 0.14, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_1"]
+gradient = SubResource("Gradient_1")
+width = 720
+height = 1280
+fill_from = Vector2(0.5, 0)
+fill_to = Vector2(0.5, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Platform"]
+bg_color = Color(0.96, 0.97, 1, 1)
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 6
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Pill"]
+bg_color = Color(1, 1, 1, 0.08)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 0.18)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonBlue"]
+bg_color = Color(0.23, 0.51, 0.96, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonBlueHover"]
+bg_color = Color(0.3, 0.6, 1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonBluePressed"]
+bg_color = Color(0.18, 0.4, 0.8, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonGreen"]
+bg_color = Color(0.16, 0.65, 0.35, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonGreenHover"]
+bg_color = Color(0.22, 0.75, 0.42, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonGreenPressed"]
+bg_color = Color(0.12, 0.52, 0.28, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonSlate"]
+bg_color = Color(0.2, 0.23, 0.33, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonSlateHover"]
+bg_color = Color(0.27, 0.3, 0.42, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonSlatePressed"]
+bg_color = Color(0.15, 0.17, 0.25, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_WinPanel"]
+bg_color = Color(0.1, 0.11, 0.26, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.85, 0.2, 1)
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 12
+corner_radius_top_left = 28
+corner_radius_top_right = 28
+corner_radius_bottom_right = 28
+corner_radius_bottom_left = 28
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SelectBg"]
+bg_color = Color(0.05, 0.06, 0.16, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonGold"]
+bg_color = Color(0.98, 0.78, 0.15, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonGoldPressed"]
+bg_color = Color(0.85, 0.65, 0.1, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
+
+[node name="Main" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Background" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 0
+texture = SubResource("GradientTexture2D_1")
+
+[node name="TitleLabel" type="Label" parent="."]
+anchor_right = 1.0
+offset_top = 36.0
+offset_right = 720.0
+offset_bottom = 100.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 44
+text = "BALL SORT"
+horizontal_alignment = 1
+
+[node name="LevelButton" type="Button" parent="."]
+offset_left = 24.0
+offset_top = 116.0
+offset_right = 116.0
+offset_bottom = 164.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonSlate")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonSlateHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonSlatePressed")
+text = "Level"
+
+[node name="LevelPill" type="PanelContainer" parent="."]
+offset_left = 132.0
+offset_top = 116.0
+offset_right = 284.0
+offset_bottom = 164.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Pill")
+
+[node name="LevelLabel" type="Label" parent="LevelPill"]
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 22
+text = "LEVEL 1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MovesPill" type="PanelContainer" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -216.0
+offset_top = 116.0
+offset_right = -24.0
+offset_bottom = 164.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Pill")
+
+[node name="MovesLabel" type="Label" parent="MovesPill"]
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Langkah 0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MessageLabel" type="Label" parent="."]
+anchor_right = 1.0
+offset_top = 186.0
+offset_right = 720.0
+offset_bottom = 222.0
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 22
+text = ""
+horizontal_alignment = 1
+
+[node name="TubesContainer" type="Control" parent="."]
+anchor_right = 1.0
+offset_top = 280.0
+offset_right = 720.0
+offset_bottom = 700.0
+
+[node name="Platform" type="Panel" parent="."]
+anchor_right = 1.0
+offset_left = 16.0
+offset_top = 648.0
+offset_right = 704.0
+offset_bottom = 700.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Platform")
+
+[node name="PourFx" type="Control" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3")
+
+[node name="SoundSynth" type="Node" parent="."]
+script = ExtResource("2")
+
+[node name="UndoButton" type="Button" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -190.0
+offset_right = 180.0
+offset_bottom = -110.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonBlue")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonBlueHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonBluePressed")
+text = "↩ Urung"
+
+[node name="AddTubeButton" type="Button" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 196.0
+offset_top = -190.0
+offset_right = 352.0
+offset_bottom = -110.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonGreen")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonGreenHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonGreenPressed")
+text = "＋ Tabung (2)"
+
+[node name="HintButton" type="Button" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 368.0
+offset_top = -190.0
+offset_right = 524.0
+offset_bottom = -110.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonBlue")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonBlueHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonBluePressed")
+text = "Petunjuk"
+
+[node name="RestartButton" type="Button" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 540.0
+offset_top = -190.0
+offset_right = 696.0
+offset_bottom = -110.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonSlate")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonSlateHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonSlatePressed")
+text = "⟳ Ulang"
+
+[node name="HintLabel" type="Label" parent="."]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -90.0
+offset_right = 720.0
+offset_bottom = -50.0
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "Tap tabung untuk pilih, tap tabung lain untuk tuang"
+horizontal_alignment = 1
+
+[node name="WinPanel" type="PanelContainer" parent="."]
+visible = false
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240.0
+offset_top = -170.0
+offset_right = 240.0
+offset_bottom = 170.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_WinPanel")
+
+[node name="VBox" type="VBoxContainer" parent="WinPanel"]
+theme_override_constants/separation = 14
+
+[node name="StarsLabel" type="Label" parent="WinPanel/VBox"]
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 36
+text = "★★★"
+horizontal_alignment = 1
+
+[node name="WinLabel" type="Label" parent="WinPanel/VBox"]
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 34
+text = "Level Selesai!"
+horizontal_alignment = 1
+
+[node name="WinInfoLabel" type="Label" parent="WinPanel/VBox"]
+theme_override_colors/font_color = Color(0.75, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 22
+text = ""
+horizontal_alignment = 1
+
+[node name="NextButton" type="Button" parent="WinPanel/VBox"]
+theme_override_colors/font_color = Color(0.12, 0.09, 0, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonGold")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonGoldPressed")
+text = "Level Berikutnya"
+
+[node name="SelectLevelButton" type="Button" parent="WinPanel/VBox"]
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonSlate")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonSlateHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonSlatePressed")
+text = "Pilih Level"
+
+[node name="LevelSelectPanel" type="PanelContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_SelectBg")
+
+[node name="SelectVBox" type="VBoxContainer" parent="LevelSelectPanel"]
+theme_override_constants/separation = 16
+
+[node name="SelectSpacer" type="Control" parent="LevelSelectPanel/SelectVBox"]
+custom_minimum_size = Vector2(0, 40)
+
+[node name="SelectTitle" type="Label" parent="LevelSelectPanel/SelectVBox"]
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 40
+text = "Pilih Level"
+horizontal_alignment = 1
+
+[node name="SelectSummary" type="Label" parent="LevelSelectPanel/SelectVBox"]
+theme_override_colors/font_color = Color(0.75, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 20
+text = ""
+horizontal_alignment = 1
+
+[node name="SelectGrid" type="GridContainer" parent="LevelSelectPanel/SelectVBox"]
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 5
+alignment = 1
+
+[node name="SelectHint" type="Label" parent="LevelSelectPanel/SelectVBox"]
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 18
+text = "Selesaikan satu level untuk membuka level berikutnya"
+horizontal_alignment = 1
+
+[node name="SoundButton" type="Button" parent="LevelSelectPanel/SelectVBox"]
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonSlate")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonSlateHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonSlatePressed")
+text = "Suara: Nyala"
