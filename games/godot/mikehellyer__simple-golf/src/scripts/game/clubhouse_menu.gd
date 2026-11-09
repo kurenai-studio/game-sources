@@ -1,0 +1,135 @@
+class_name ClubhouseMenu
+extends Control
+## The clubhouse screen: a top bar, plus one panel docked on the right so the
+## room stays in view. The local club (on this computer) and the online
+## society (on a server, shared with friends) are kept clearly apart.
+
+signal view_changed(which: String)
+signal members_changed
+signal quit_requested
+
+var setup: SetupMenu
+var members_panel: MembersPanel
+var settings_panel: SettingsPanel
+var society_panel: SocietyPanel
+var update_banner: UpdateBanner
+var _profiles: PlayerProfiles
+var _tab_play: Button
+var _tab_members: Button
+var _tab_settings: Button
+var _tab_society: Button
+
+
+static func panel_style() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.1, 0.06, 0.88)
+	sb.set_corner_radius_all(12)
+	sb.set_content_margin_all(20)
+	return sb
+
+
+func _ready() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var bar := PanelContainer.new()
+	var sb := panel_style()
+	sb.set_corner_radius_all(0)
+	sb.content_margin_top = 10
+	sb.content_margin_bottom = 10
+	bar.add_theme_stylebox_override("panel", sb)
+	bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	add_child(bar)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	bar.add_child(row)
+	var title := Label.new()
+	title.text = "Simple-Golf Clubhouse"
+	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_color_override("font_color", Color(0.95, 0.82, 0.45))
+	row.add_child(title)
+	var version := Label.new()
+	version.text = "v%s" % Updater.current_version()
+	version.modulate = Color(1, 1, 1, 0.5)
+	row.add_child(version)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(spacer)
+	var local := Label.new()
+	local.text = "Local club:"
+	local.modulate = Color(1, 1, 1, 0.6)
+	row.add_child(local)
+	_tab_play = _tab("New round", "play")
+	row.add_child(_tab_play)
+	_tab_members = _tab("Members & stats", "members")
+	row.add_child(_tab_members)
+	row.add_child(VSeparator.new())
+	_tab_society = _tab("Online society", "society")
+	row.add_child(_tab_society)
+	row.add_child(VSeparator.new())
+	_tab_settings = _tab("Settings", "settings")
+	row.add_child(_tab_settings)
+	var quit := Button.new()
+	quit.text = "Quit"
+	quit.pressed.connect(func() -> void: quit_requested.emit())
+	row.add_child(quit)
+
+	update_banner = UpdateBanner.new()
+	update_banner.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	update_banner.offset_top = 56
+	add_child(update_banner)
+
+	var dock := MarginContainer.new()
+	dock.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+	dock.offset_left = -600
+	dock.offset_top = 70
+	dock.offset_right = -20
+	dock.offset_bottom = -20
+	add_child(dock)
+	setup = SetupMenu.new()
+	setup.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	dock.add_child(setup)
+	members_panel = MembersPanel.new()
+	dock.add_child(members_panel)
+	society_panel = SocietyPanel.new()
+	dock.add_child(society_panel)
+	settings_panel = SettingsPanel.new()
+	settings_panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	dock.add_child(settings_panel)
+	# Make room for the update banner when it's showing.
+	update_banner.shown_changed.connect(func() -> void:
+		dock.offset_top = 112 if update_banner.visible else 70)
+	members_panel.members_changed.connect(func() -> void:
+		setup.refresh_players()
+		members_changed.emit())
+
+
+func _tab(text: String, which: String) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.toggle_mode = true
+	b.pressed.connect(func() -> void: show_tab(which))
+	return b
+
+
+## New members start on "Members & stats" so they can join the club first.
+func open(profiles: PlayerProfiles, status := "") -> void:
+	_profiles = profiles
+	visible = true
+	setup.open(profiles, status)
+	members_panel.open(profiles)
+	show_tab("members" if profiles.members.is_empty() else "play")
+
+
+func show_tab(which: String) -> void:
+	setup.visible = which == "play"
+	members_panel.visible = which == "members"
+	settings_panel.visible = which == "settings"
+	society_panel.visible = which == "society"
+	_tab_society.button_pressed = which == "society"
+	_tab_play.button_pressed = which == "play"
+	_tab_members.button_pressed = which == "members"
+	_tab_settings.button_pressed = which == "settings"
+	if which == "members":
+		members_panel.refresh()
+	view_changed.emit(which)
