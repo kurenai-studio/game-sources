@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deadline District — Godot zombie survival</title>
+<meta name="description" content="Deadline District: an original Godot 4 top-down zombie wave-survival shooter. 10 weapons, barricades, turrets, perks, 8 zombie types, bosses. Play free in your browser.">
+<link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#07080f;--panel:#121522;--edge:#3a2c1c;--or:#ff9e38;--gold:#ffd65a;--ink:#eceef6;--dim:#9aa1b8}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:hidden}
+body{background:radial-gradient(ellipse 80% 60% at 70% 0,#2a1a0a 0,var(--bg) 65%);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--gold)}
+.wrap{max-width:1000px;margin:0 auto;padding:0 16px}
+header{text-align:center;padding:52px 0 26px;position:relative}
+.logo{font:900 clamp(44px,12vw,96px)/.95 Impact,"Arial Black",sans-serif;letter-spacing:.03em;color:var(--or);text-shadow:0 5px 0 #6a2a06,0 0 40px #ff7a1a55;margin:0}
+.sub{letter-spacing:.6em;font-weight:800;margin:10px 0 18px;font-size:clamp(14px,4vw,22px);padding-left:.6em}
+.tag{color:var(--dim);max-width:640px;margin:0 auto 26px}
+.play{display:inline-block;background:linear-gradient(#ffc061,#f07a1a);color:#2a1004;font-weight:900;font-size:22px;padding:16px 38px;border-radius:12px;text-decoration:none;box-shadow:0 6px 0 #7a3608,0 0 44px #ff8a2a66;transition:transform .1s}
+.play:hover{transform:translateY(-2px)}.play:active{transform:translateY(3px);box-shadow:0 3px 0 #7a3608}
+.small{font-size:13px;color:var(--dim);margin-top:12px}
+h2{color:var(--or);font:800 26px Impact,"Arial Black",sans-serif;letter-spacing:.04em;margin:44px 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid #2a2f45;border-left:4px solid var(--or);border-radius:8px;padding:14px 16px}
+.card b{color:var(--gold)}.card p{margin:6px 0 0;color:var(--dim);font-size:14px}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.shots img{width:100%;border:1px solid #2a2f45;border-radius:8px;display:block;background:#000}
+.tags{display:flex;flex-wrap:wrap;gap:8px}.tags span{background:#1b1f30;border:1px solid #2e344c;border-radius:999px;padding:4px 12px;font-size:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}td{padding:6px 8px;border-bottom:1px solid #22263a;vertical-align:top}td:first-child{color:var(--gold);white-space:nowrap}
+footer{text-align:center;color:var(--dim);padding:44px 0 52px;font-size:14px}
+canvas#fx{position:absolute;inset:0;width:100%;height:100%;z-index:-1;opacity:.55}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <h1 class="logo">DEADLINE</h1>
+  <div class="sub">DISTRICT</div>
+  <p class="tag">The whole city pulled an all-nighter, and now it wants your brains. Hold the line with a flashlight, ten upgradable weapons, barricades and turrets in this original top-down zombie wave-survival shooter made in Godot 4.</p>
+  <a class="play" href="play/">&#9654; Play in browser</a>
+  <div class="small">Free · no install · keyboard + mouse or twin-stick touch · best waves save automatically</div>
+</header>
+<main class="wrap">
+  <h2>Screenshots</h2>
+  <div class="shots">
+    <img src="shots/title.jpg" alt="Title screen" loading="lazy" onerror="this.src='docs/screenshots/title.jpg'">
+    <img src="shots/plaza.jpg" alt="Cubicle Plaza gameplay" loading="lazy" onerror="this.src='docs/screenshots/plaza.jpg'">
+    <img src="shots/overpass.jpg" alt="Rush Hour Overpass with tesla gun" loading="lazy" onerror="this.src='docs/screenshots/overpass.jpg'">
+    <img src="shots/boss.jpg" alt="Boss wave in Midnight Mall" loading="lazy" onerror="this.src='docs/screenshots/boss.jpg'">
+  </div>
+  <h2>Features</h2>
+  <div class="grid">
+    <div class="card"><b>10 weapons</b><p>Pistol, SMG, shotgun, rifle, minigun, flamethrower, crossbow, rocket launcher, tesla gun and katana. Each has ammo, reloads and 3 upgrade levels.</p></div>
+    <div class="card"><b>Weapon bench</b><p>Between waves, walk to the bench to buy guns, upgrades, ammo, medkits, repairs and perks.</p></div>
+    <div class="card"><b>Build defenses</b><p>Drop barricades to funnel the horde and auto-turrets to cover your back. Zombies chew through both.</p></div>
+    <div class="card"><b>8 zombies + 3 bosses</b><p>Runners, brutes, spitters, exploders, screamers that buff the horde, shielded riot guards… and a boss every 5 waves.</p></div>
+    <div class="card"><b>Flashlight lighting</b><p>A custom Compatibility-safe shader casts your flashlight cone, muzzle flashes, fire and explosions into the dark.</p></div>
+    <div class="card"><b>3 maps</b><p>Cubicle Plaza, Rush Hour Overpass and Midnight Mall, from Normal to Nightmare.</p></div>
+  </div>
+  <h2>Controls</h2>
+  <table>
+    <tr><td>Move / aim / fire</td><td>WASD or arrows · mouse · hold left click</td></tr>
+    <tr><td>Reload / switch</td><td>R · 1–0, Q or mouse wheel</td></tr>
+    <tr><td>Dash</td><td>Space, Shift or right click</td></tr>
+    <tr><td>Build</td><td>B barricade ($60) · T turret ($300)</td></tr>
+    <tr><td>Bench / next wave</td><td>E near the bench · G or Enter</td></tr>
+    <tr><td>Pause / mute</td><td>Esc or P · M</td></tr>
+    <tr><td>Touch</td><td>Left thumb moves, right thumb aims and fires; on-screen buttons for reload, swap, dash, build, bench, ready and pause</td></tr>
+  </table>
+  <h2>Built with</h2>
+  <div class="tags"><span>Godot 4.3</span><span>GDScript</span><span>GL Compatibility renderer</span><span>Custom canvas shader</span><span>Procedural audio</span><span>Flow-field pathfinding</span><span>GitHub Actions</span><span>GitHub Pages</span></div>
+  <p class="small" style="margin-top:22px">Source code: <a href="https://github.com/JaiGod/deadline-district">github.com/JaiGod/deadline-district</a> · More games: <a href="https://github.com/JaiGod">JaiGod on GitHub</a></p>
+</main>
+<footer>Made by Jaineil Rana (JaKing) · part of <a href="https://github.com/JaiGod">JaiGod</a></footer>
+<script>
+(function(){var c=document.getElementById('fx');if(!c)return;var x=c.getContext('2d'),t=0,ey=[];
+function rs(){c.width=c.offsetWidth;c.height=c.offsetHeight;ey=[];for(var i=0;i<14;i++)ey.push([Math.random(),Math.random(),Math.random()*6]);}
+rs();addEventListener('resize',rs);
+(function f(){t+=0.016;var w=c.width,h=c.height;x.clearRect(0,0,w,h);var a=Math.sin(t*0.4)*0.6+Math.PI/2,px=w/2,py=h*1.05;
+var g=x.createRadialGradient(px,py,0,px,py,h*1.1);g.addColorStop(0,'rgba(255,214,120,.35)');g.addColorStop(1,'rgba(255,214,120,0)');
+x.fillStyle=g;x.beginPath();x.moveTo(px,py);x.arc(px,py,h*1.2,-a-0.35,-a+0.35);x.closePath();x.fill();
+ey.forEach(function(e){var b=(Math.sin(t*1.3+e[2])+1)/2;if(b<0.3)return;x.fillStyle='rgba(255,60,40,'+b+')';var ex=e[0]*w,eyy=e[1]*h*0.8;x.fillRect(ex,eyy,3,3);x.fillRect(ex+7,eyy,3,3);});
+requestAnimationFrame(f);})();})();
+</script>
+</body>
+</html>
