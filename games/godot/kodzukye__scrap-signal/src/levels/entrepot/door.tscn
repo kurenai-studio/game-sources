@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://ceijd4gd1rxos"]
+
+[ext_resource type="Script" uid="uid://diwj53rfcv4nv" path="res://levels/entrepot/door.gd" id="1_riqri"]
+[ext_resource type="Texture2D" uid="uid://bv7imimvd1mmi" path="res://assets/sprites/door_locked.png" id="2_ltwmt"]
+[ext_resource type="Texture2D" uid="uid://qy6a6o0pkhac" path="res://assets/sprites/door_open.png" id="3_xn5p3"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_riqri"]
+size = Vector2(32, 43)
+
+[node name="Door" type="StaticBody2D" unique_id=1014453167]
+z_index = 5
+script = ExtResource("1_riqri")
+locked_sprite = ExtResource("2_ltwmt")
+open_sprite = ExtResource("3_xn5p3")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=928832758]
+texture = ExtResource("2_ltwmt")
+region_enabled = true
+region_rect = Rect2(0, 0, 32, 64)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=978481030]
+position = Vector2(0, 10.5)
+shape = SubResource("RectangleShape2D_riqri")

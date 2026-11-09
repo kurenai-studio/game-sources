@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://dtgu8bwb2urkj"]
+
+[ext_resource type="Script" uid="uid://djg87cikqf4np" path="res://entities/npcs/iris3/iris3.gd" id="1_2eqne"]
+[ext_resource type="Texture2D" uid="uid://cid50eaw0qjo" path="res://assets/sprites/iris_03_active.png" id="1_d3maa"]
+[ext_resource type="Texture2D" uid="uid://b016ruvsevy6j" path="res://assets/sprites/iris_03_inactive.png" id="2_2eqne"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_akc5f"]
+atlas = ExtResource("1_d3maa")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v3lnl"]
+atlas = ExtResource("2_2eqne")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_6gnoj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_akc5f")
+}],
+"loop": true,
+"name": &"active",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_v3lnl")
+}],
+"loop": true,
+"name": &"inactive",
+"speed": 5.0
+}]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_hdity"]
+radius = 16.0
+height = 64.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_xj8dc"]
+size = Vector2(60, 70.75)
+
+[node name="Iris3" type="Area2D" unique_id=1189301001]
+collision_layer = 4
+script = ExtResource("1_2eqne")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=82114676]
+sprite_frames = SubResource("SpriteFrames_6gnoj")
+animation = &"inactive"
+autoplay = "inactive"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1371750176]
+shape = SubResource("CapsuleShape2D_hdity")
+
+[node name="DetectionArea" type="Area2D" parent="." unique_id=1714504994]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=1902204557]
+position = Vector2(-1, 8.625)
+shape = SubResource("RectangleShape2D_xj8dc")

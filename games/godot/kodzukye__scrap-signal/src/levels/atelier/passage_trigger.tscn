@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://b7a8wihtu7fvq"]
+
+[ext_resource type="Script" uid="uid://57f6iqgyfu58" path="res://levels/atelier/passage_trigger.gd" id="1_dtnx3"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_88qw7"]
+
+[node name="PassageTrigger" type="Area2D" unique_id=962713635]
+script = ExtResource("1_dtnx3")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1707410714]
+shape = SubResource("RectangleShape2D_88qw7")

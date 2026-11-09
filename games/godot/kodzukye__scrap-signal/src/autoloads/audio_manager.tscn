@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://xpa5geyvyey"]
+
+[ext_resource type="Script" uid="uid://dsilww05kuakm" path="res://autoloads/audio_manager.gd" id="1_tr7pb"]
+
+[sub_resource type="AudioStreamOggVorbis" id="AudioStreamOggVorbis_y37e5"]
+
+[sub_resource type="AudioStreamOggVorbis" id="AudioStreamOggVorbis_tr7pb"]
+
+[node name="AudioManager" type="Node2D" unique_id=524793407]
+script = ExtResource("1_tr7pb")
+
+[node name="MusicPlayer" type="AudioStreamPlayer" parent="." unique_id=425558069]
+stream = SubResource("AudioStreamOggVorbis_y37e5")
+parameters/looping = true
+
+[node name="SfxPlayer" type="AudioStreamPlayer" parent="." unique_id=1558762042]
+stream = SubResource("AudioStreamOggVorbis_tr7pb")

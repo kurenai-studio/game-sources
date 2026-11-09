@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://c14ty10p5182s"]
+
+[ext_resource type="Script" uid="uid://0sl0y0yfe4vc" path="res://levels/credits.gd" id="1_oat60"]
+
+[node name="Credits" type="Control" unique_id=1938965450]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_oat60")
+
+[node name="Background" type="ColorRect" parent="." unique_id=493907748]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0627451, 0.0627451, 0.0627451, 1)
+
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=444663629]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CreditsLabel" type="Label" parent="ScrollContainer" unique_id=1855173469]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9607843, 0.9411765, 0.9098039, 1)
+theme_override_font_sizes/font_size = 6
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FadeRect" type="ColorRect" parent="." unique_id=1032471178]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

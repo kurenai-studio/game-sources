@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://b1peufx15gr0v"]
+
+[ext_resource type="Script" uid="uid://de0qobntuks5f" path="res://levels/loading_zone.gd" id="1_tolmd"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_re8oc"]
+
+[node name="LoadingZone" type="Area2D" unique_id=2123510357]
+collision_layer = 32
+collision_mask = 2
+script = ExtResource("1_tolmd")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=289173289]
+shape = SubResource("RectangleShape2D_re8oc")
+
+[node name="TransitionLayer" type="CanvasLayer" parent="." unique_id=1179968082]
+
+[node name="FadeRect" type="ColorRect" parent="TransitionLayer" unique_id=820434324]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

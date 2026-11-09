@@ -1,0 +1,82 @@
+[gd_scene format=3 uid="uid://do1aqgu8ljdju"]
+
+[ext_resource type="Script" uid="uid://pmst7ro25o2q" path="res://levels/main_menu.gd" id="1_0ettg"]
+
+[node name="MainMenu" type="Control" unique_id=861495620]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0ettg")
+
+[node name="Background" type="ColorRect" parent="." unique_id=2099576952]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0627451, 0.0627451, 0.0627451, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1603826490]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1527873654]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=1695962453]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "SCRAP SIGNAL"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=148585028]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65882355, 0.61960787, 0.5882353, 1)
+theme_override_font_sizes/font_size = 10
+text = "A robot wakes up."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PressLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=2049105820]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9607843, 0.9411765, 0.9098039, 1)
+theme_override_font_sizes/font_size = 10
+text = "[ Press any key ]"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VersionLabel" type="Label" parent="." unique_id=418821229]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -131.0
+offset_top = -12.0
+offset_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.36078432, 0.3137255, 0.2784314, 1)
+theme_override_font_sizes/font_size = 7
+text = "v1.0 — Gamedev.js Jam 2026   "
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="FadeRect" type="ColorRect" parent="." unique_id=1108228089 groups=["fade_rect"]]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

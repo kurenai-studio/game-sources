@@ -1,0 +1,16 @@
+[gd_scene format=3 uid="uid://fftu7ne6spjy"]
+
+[ext_resource type="Texture2D" uid="uid://bd7x4n7nxdi4d" path="res://assets/sprites/etagere.png" id="1_pfmsg"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_u2a1m"]
+size = Vector2(92.5, 42.5)
+
+[node name="Etagere" type="StaticBody2D" unique_id=2130339636]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1345709968]
+position = Vector2(-1, -32)
+texture = ExtResource("1_pfmsg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=39604345]
+position = Vector2(-1.25, 8.25)
+shape = SubResource("RectangleShape2D_u2a1m")

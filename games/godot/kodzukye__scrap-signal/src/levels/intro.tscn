@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://t1g3j50wteuj"]
+
+[ext_resource type="Script" uid="uid://c5x8jibky45hk" path="res://levels/intro.gd" id="1_8o7kg"]
+
+[node name="Intro" type="Node" unique_id=1077364657]
+script = ExtResource("1_8o7kg")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=335424006]
+follow_viewport_enabled = true
+
+[node name="Background" type="ColorRect" parent="CanvasLayer" unique_id=2005237130]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="LogLabel" type="RichTextLabel" parent="CanvasLayer" unique_id=1899603309]
+offset_right = 321.0
+offset_bottom = 182.0
+theme_override_colors/font_outline_color = Color(0, 1, 0.4, 1)
+theme_override_font_sizes/normal_font_size = 6
+theme_override_font_sizes/bold_font_size = 6
+theme_override_font_sizes/bold_italics_font_size = 6
+theme_override_font_sizes/italics_font_size = 6
+theme_override_font_sizes/mono_font_size = 6
+horizontal_alignment = 1
+vertical_alignment = 1

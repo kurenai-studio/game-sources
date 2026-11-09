@@ -1,0 +1,29 @@
+[gd_scene format=3 uid="uid://c4o84gs3ewuyf"]
+
+[ext_resource type="Script" uid="uid://b3unfjwhpk874" path="res://levels/atelier/panel.gd" id="1_bpbs2"]
+[ext_resource type="Texture2D" uid="uid://bnt3wis7lk60b" path="res://assets/sprites/panneau.png" id="1_kcor3"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kcor3"]
+size = Vector2(43, 86)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bpbs2"]
+size = Vector2(56, 86)
+
+[node name="Panel" type="Area2D" unique_id=1420863356]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_bpbs2")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="." unique_id=1130814827]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D" unique_id=152593069]
+position = Vector2(0.5, 5)
+shape = SubResource("RectangleShape2D_kcor3")
+
+[node name="Sprite2D" type="Sprite2D" parent="StaticBody2D" unique_id=1239708083]
+texture = ExtResource("1_kcor3")
+flip_h = true
+
+[node name="Interaction" type="CollisionShape2D" parent="." unique_id=1746240301]
+position = Vector2(-6, 5)
+shape = SubResource("RectangleShape2D_bpbs2")
