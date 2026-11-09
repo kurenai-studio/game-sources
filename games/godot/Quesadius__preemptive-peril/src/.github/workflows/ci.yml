@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  GODOT_VERSION: 4.7.1
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.7.1
+    steps:
+      - uses: actions/checkout@v4
+
+      # The godot-ci image ships without pip. Newer Ubuntu bases refuse a
+      # plain system-wide pip install (PEP 668), older pips don't know the
+      # override flag — try plain first, then with the flag.
+      - name: Install gdtoolkit
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3-pip > /dev/null
+          python3 -m pip install "gdtoolkit==4.*" || python3 -m pip install --break-system-packages "gdtoolkit==4.*"
+
+      - name: Import resources
+        run: godot --headless --path . --import || true
+
+      - name: Core purity
+        run: ./tools/check_core_purity.sh
+
+      - name: Format check
+        shell: bash
+        run: |
+          # Only check directories that exist — later-milestone dirs aren't created yet.
+          # Mirrors the lint_dirs guard in tools/run_tests.sh.
+          fmt_dirs=()
+          for d in core ai data presentation ui tests; do
+            [[ -d "$d" ]] && fmt_dirs+=("$d/")
+          done
+          [[ ${#fmt_dirs[@]} -eq 0 ]] || gdformat --check "${fmt_dirs[@]}"
+
+      - name: Verify
+        run: ./tools/run_tests.sh
+        env:
+          GODOT_BIN: godot
+
+  export:
+    needs: verify
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.7.1
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Import resources
+        run: godot --headless --path . --import || true
+
+      # The image installs export templates under /root, but Actions runs
+      # the container with HOME=/github/home, where Godot looks for them.
+      - name: Move export templates into HOME
+        run: |
+          if [ "$HOME" != /root ]; then
+            mkdir -p ~/.local/share/godot/export_templates
+            mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/
+          fi
+
+      - name: Export Linux
+        run: mkdir -p build/linux && godot --headless --path . --export-release "Linux" build/linux/preemptive_peril.x86_64
+
+      - name: Export Windows
+        run: mkdir -p build/windows && godot --headless --path . --export-release "Windows Desktop" build/windows/preemptive_peril.exe
+
+      - name: Export Web
+        run: mkdir -p build/web && godot --headless --path . --export-release "Web" build/web/index.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: builds
+          path: build/
+
+      # The web build doubles as the public playable page (GitHub Pages),
+      # refreshed from main only — branches and PRs just build it.
+      - name: Package web build for Pages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  pages:
+    needs: export
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Publish to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
