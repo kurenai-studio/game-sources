@@ -1,0 +1,87 @@
+name: "🚀 Auto-Build Coatl Executables"
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request: # Build on every PR to validate it before merging (no publishing)
+  workflow_dispatch: # Allows triggering it manually from the Actions tab on any branch
+
+permissions:
+  contents: write  # Required so the workflow can create or update the Release files
+
+jobs:
+  build:
+    name: "Build on ${{ matrix.os }}"
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: # Spins up clean Linux and Windows runners in parallel
+          - os: ubuntu-latest
+            binary: coatl-linux
+          - os: windows-latest
+            binary: coatl-windows
+
+    steps:
+      - name: "🗂️ Checkout Code"
+        uses: actions/checkout@v4 # Clones the repository into the runner
+
+      - name: "🐍 Setup Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # Matches the minimum version in pyproject.toml
+
+      - name: "📦 Install Tooling and Pygame"
+        run: |
+          python -m pip install --upgrade pip
+          pip install "pygame-ce>=2.5.0" "pyinstaller>=6.17.0" # Same versions as pyproject.toml
+
+      - name: "⚡ Compile with PyInstaller"
+        # --add-data bundles the assets/ folder into the binary (the ':' separator works on every platform since PyInstaller 6)
+        run: |
+          pyinstaller --onefile --windowed --name ${{ matrix.binary }} --add-data "assets:assets" src/main.py
+
+      - name: "📤 Upload Artifacts to Workflow Run"
+        uses: actions/upload-artifact@v4 # Temporarily stores the binaries in the workflow run
+        with:
+          name: coatl-binary-${{ matrix.os }}
+          path: dist/${{ matrix.binary }}*
+          if-no-files-found: error
+
+  publish:
+    name: "🌐 Publish Rolling Release"
+    needs: build
+    # Only publish on push to master/main; PRs and manual runs just build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: "🗂️ Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🏷️ Move 'latest' Tag to Current Commit"
+        # Without this the tag stays on its first commit and the release points to stale code
+        run: |
+          git tag -f latest
+          git push -f origin latest
+
+      - name: "📥 Download All Binaries"
+        uses: actions/download-artifact@v4 # Fetches the binaries built in the previous job
+        with:
+          path: dist-merged
+          merge-multiple: true
+
+      - name: "🚀 Create or Update Rolling Release"
+        uses: softprops/action-gh-release@v2 # Uploads the files to the repository's public Releases page
+        with:
+          tag_name: "latest"
+          name: "Coatl — Rolling Development Build 🐍"
+          body: "This release automatically compiles the latest commits from the master branch. Download the binary corresponding to your OS below!"
+          draft: false
+          prerelease: true # Marked as pre-release since it's a continuous automated build
+          files: |
+            dist-merged/coatl-linux
+            dist-merged/coatl-windows.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Automatic token provided by GitHub
