@@ -1,0 +1,89 @@
+[gd_scene format=3 uid="uid://cdvls8h7b4v2p"]
+
+[ext_resource type="Script" uid="uid://dpwsouj2eyd02" path="res://scripts/user_interface/credits_screen.gd" id="1_lf1g6"]
+[ext_resource type="Theme" uid="uid://d018ofb37nf7u" path="res://assets/resources/themes/default.tres" id="2_836sh"]
+[ext_resource type="StyleBox" uid="uid://d3ep4nluuoc3h" path="res://assets/resources/themes/backdrop_panel.tres" id="2_joxhr"]
+
+[node name="CreditsScreen" type="Control" unique_id=111736078]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_lf1g6")
+
+[node name="Background" type="Panel" parent="." unique_id=1372995502]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+theme_override_styles/panel = ExtResource("2_joxhr")
+
+[node name="MarginContainer" type="MarginContainer" parent="Background" unique_id=1616573001]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Background/MarginContainer" unique_id=2087445924]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 1
+theme = ExtResource("2_836sh")
+bbcode_enabled = true
+text = "[center][color=#62be5d]An Open Source Game[/color]
+
+Sum Zero is a completely free and ad-free mobile game,
+developed as an open-source project using amazing open-source tools
+
+===
+
+[center][color=#62be5d]Design & Development[/color]
+
+Abramo
+Simone
+
+[color=#62be5d]Playtesting & Feedback[/color]
+
+Gianfelice
+Raffaele
+
+[color=#62be5d]Localization[/color]
+
+German & Polish — [b]Jan Lizik[/b]
+
+[color=#62be5d]Music[/color]
+
+gone-fishin — [b]Memoraphile[/b]
+
+[color=#62be5d]Community Playtesters[/color]
+
+Special thanks to everyone who helped improve the game
+
+====
+
+[color=#62be5d]Built With Open Source Tools[/color]
+
+Godot • Inkscape • Audacity and their communities
+
+
+
+[color=#62be5d][b]Thank you for playing![/b][/color]"
+scroll_active = false
+
+[connection signal="gui_input" from="Background" to="." method="_on_background_gui_input"]

@@ -1,0 +1,126 @@
+[gd_scene format=3 uid="uid://vvet7yb7thao"]
+
+[ext_resource type="Script" uid="uid://3vyf8r8ubnb4" path="res://scripts/user_interface/builder_resize.gd" id="1_1u8ky"]
+[ext_resource type="Shader" uid="uid://dtgxclkm54q5h" path="res://scripts/shaders/BasicTile.gdshader" id="2_bcgsc"]
+[ext_resource type="Texture2D" uid="uid://budf337beuyun" path="res://assets/ui/arrow_up.png" id="2_vipjf"]
+[ext_resource type="Texture2D" uid="uid://cxddfjw2cirsx" path="res://assets/ui/arrow_down.png" id="3_70sha"]
+[ext_resource type="Texture2D" uid="uid://h48pyaujdk6b" path="res://assets/ui/arrow_left.png" id="3_jiamv"]
+[ext_resource type="Texture2D" uid="uid://clfwc2p3n18qx" path="res://assets/ui/arrow_right.png" id="4_jiamv"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ikv7t"]
+bg_color = Color(0.525415, 0.683337, 0.522033, 0.454902)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8113u"]
+shader = ExtResource("2_bcgsc")
+shader_parameter/base_color = Color(0.25098, 0.184314, 0.105882, 1)
+shader_parameter/invert_base_color = false
+
+[node name="LevelInfoQuery" type="Control" unique_id=769720335]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1u8ky")
+
+[node name="Background" type="Panel" parent="." unique_id=818954586]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ikv7t")
+
+[node name="MarginContainer" type="MarginContainer" parent="Background" unique_id=961347113]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 60
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 60
+
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="Background/MarginContainer" unique_id=710621894]
+layout_mode = 2
+
+[node name="Control" type="Control" parent="Background/MarginContainer/AspectRatioContainer" unique_id=2073722851]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MinusWidth" type="TextureRect" parent="Background/MarginContainer/AspectRatioContainer/Control" unique_id=95428913]
+material = SubResource("ShaderMaterial_8113u")
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_vertical = 2
+mouse_filter = 0
+texture = ExtResource("3_jiamv")
+expand_mode = 3
+
+[node name="PlusWidth" type="TextureRect" parent="Background/MarginContainer/AspectRatioContainer/Control" unique_id=1844092368]
+material = SubResource("ShaderMaterial_8113u")
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 0
+grow_vertical = 2
+mouse_filter = 0
+texture = ExtResource("4_jiamv")
+expand_mode = 3
+
+[node name="MinusHeight" type="TextureRect" parent="Background/MarginContainer/AspectRatioContainer/Control" unique_id=1019556799]
+material = SubResource("ShaderMaterial_8113u")
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+mouse_filter = 0
+texture = ExtResource("2_vipjf")
+expand_mode = 3
+
+[node name="PlusHeight" type="TextureRect" parent="Background/MarginContainer/AspectRatioContainer/Control" unique_id=59851371]
+material = SubResource("ShaderMaterial_8113u")
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 0
+texture = ExtResource("3_70sha")
+expand_mode = 3
+
+[connection signal="gui_input" from="Background" to="." method="_on_background_gui_input"]
+[connection signal="gui_input" from="Background/MarginContainer/AspectRatioContainer/Control" to="." method="_on_control_gui_input"]
+[connection signal="gui_input" from="Background/MarginContainer/AspectRatioContainer/Control/MinusWidth" to="." method="_on_minus_width_gui_input"]
+[connection signal="gui_input" from="Background/MarginContainer/AspectRatioContainer/Control/PlusWidth" to="." method="_on_plus_width_gui_input"]
+[connection signal="gui_input" from="Background/MarginContainer/AspectRatioContainer/Control/MinusHeight" to="." method="_on_minus_height_gui_input"]
+[connection signal="gui_input" from="Background/MarginContainer/AspectRatioContainer/Control/PlusHeight" to="." method="_on_plus_height_gui_input"]
