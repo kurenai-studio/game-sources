@@ -1,0 +1,277 @@
+"""Human tactical controls backed by the same gateway as automated players."""
+from tactical_abilities import SPECS, deployments, get_instance
+
+
+def label(text):
+    return {'type': 'label', 'text': text, 'height': 23, 'object_id': '#sidebar_info_label'}
+
+
+def button(text, action, data):
+    return {'type': 'button', 'text': text, 'height': 28, 'object_id': '#sidebar_expand_button',
+            'action_id': action, 'target_data': data}
+
+
+def issue(game, command):
+    from game_ai.commands import CommandGateway
+    from game_ai.contracts import Command, CommandBatch
+    from game_ai.command_spec import MAX_UNITS
+    # Human harvester selections can exceed a command's group limit. Keep the
+    # complete selection in one preflight batch so rejection changes no orders.
+    if command['type'] == 'continuous_resupply' and len(command['unit_ids']) > MAX_UNITS:
+        commands = tuple(Command.from_dict(dict(command, unit_ids=command['unit_ids'][i:i + MAX_UNITS]))
+                         for i in range(0, len(command['unit_ids']), MAX_UNITS))
+    else:
+        commands = (Command.from_dict(command),)
+    result = CommandGateway(game).apply_batch(game.players[game.current_player_index], CommandBatch(commands))
+    if not result.accepted and getattr(game, 'gui', None):
+        game.gui.show_warning_dialog('<br>'.join(e.message for e in result.errors), title='Tactical order unavailable')
+    return result.accepted
+
+
+def handle_action(game, action):
+    from tactical_abilities import find_deployable
+    kind, data = action['action'], action.get('target_data')
+    if kind == 'select_deployable':
+        obj = find_deployable(game.galaxy, data)
+        if obj and game.is_unit_visible(obj):
+            game.selected_objects = [obj]
+    elif kind == 'choose_catalyst_nebula':
+        game.pending_catalyst_body_id = data
+    elif kind == 'cancel_tactical_ability':
+        issue(game, {'type': 'cancel_ability', 'unit_ids': [data['unit_id']], 'ability': data['ability']})
+    elif kind == 'toggle_resistance_ability':
+        issue(game, {'type': 'toggle_ability', 'unit_ids': [data['unit_id']], 'ability': data['ability']})
+    elif kind == 'attack_deployable':
+        issue(game, {'type': 'attack',
+                     'unit_ids': [data['unit_id']], 'target_id': data['target_id'], 'queue': action.get('shift_pressed', False)})
+    game.sidebar_needs_update = True
+
+
+def ability_panel(unit, game):
+    from tactical_abilities import availability, sector_for
+    data = []
+    if unit.owner != game.players[game.current_player_index]:
+        return data
+    galaxy = game.galaxy
+    from titan_balance import TITAN_ABILITIES
+    for kind, spec in SPECS.items():
+        inst = get_instance(unit, kind)
+        if not inst:
+            continue
+        reach = 'anywhere in current system' if kind in ('fleet_jump', 'deep_scan') else f'range {spec.range:g}'
+        data.append(label(f'{spec.name}: {reach}; cooldown {spec.cooldown}; ' +
+                          (f'duration {spec.duration} owner turns' if spec.duration else 'one-shot')))
+        if kind in TITAN_ABILITIES:
+            data.append(label(f'{spec.cost} AM; ready in {max(0, unit.titan_cooldowns.get(kind, 0)-game.turn_number)} rounds'))
+            if inst.is_active:
+                data.append(label(f'Active: {inst.duration_remaining} rounds remaining'))
+            if kind == 'siege_lance' and inst.is_active:
+                data.append(label(f'Charging: fires at owner End Turn {inst.charge_round+1}'))
+            if kind == 'deep_scan':
+                data.append(label('Right-click a hex in system view or a location in sector view.'))
+                if inst.is_active:
+                    data.append(label(f'Scan coverage: {inst.system_name} {inst.hex_coord}; until owner round {inst.expires_round}'))
+            if kind == 'fleet_jump':
+                from titan_abilities import jump_participants
+                from tactical_abilities import deployed
+                participants = jump_participants(unit, galaxy) if deployed(unit, galaxy) else []
+                data.append(label(f'Gather radius 750; escort hull {sum(u.hull_capacity for u in participants if u is not unit):g}/800'))
+                for passenger in participants:
+                    if passenger is unit:
+                        continue
+                    orders = [passenger.commander_component.current_order, *passenger.commander_component.orders_queue]
+                    data.append(label(f'{passenger.name}: replaces ' + ', '.join(o.order_type.name for o in orders if o) if any(orders) else f'{passenger.name}: idle'))
+        blocker = availability(unit, kind, galaxy)
+        if blocker:
+            data.append(label('Unavailable: ' + blocker.replace('_', ' ')))
+        if spec.cap:
+            count = len(deployments(galaxy, unit.id, kind))
+            noun = 'emitters' if kind == 'ghost_fleet' else 'patches'
+            data.append(label(f'{count}/{spec.cap} {noun}' + (' - Persistent' if kind != 'nebula_catalyst' else '')))
+            if count >= spec.cap:
+                reason = {'ghost_fleet': 'An existing emitter must be destroyed.',
+                          'nebula_catalyst': 'Wait for the existing patch to expire.'}[kind]
+                data.append(label('At cap: ' + reason))
+        if kind in ('tractor_tether', 'guardian_link', 'aegis_field', 'siege_lance', 'deep_scan', 'carrier_supremacy') and inst.is_active:
+            data.append(button('Cancel ' + spec.name, 'cancel_tactical_ability', {'unit_id': unit.id, 'ability': kind}))
+        if kind == 'attack_run':
+            from strikecraft_abilities import eligible_bombers
+            wings = eligible_bombers(unit, galaxy)
+            data.append(label(f'Attack Run: {len(wings)} eligible bombers; replaces their explicit orders.'))
+            for wing in wings:
+                root = wing.commander_component.current_order
+                work = root.order_type.name.replace('_', ' ').title() if root else 'Idle'
+                data.append(label(f'{wing.name}: {work}; {len(wing.commander_component.orders_queue)} queued'))
+        if kind == 'multiply_antimatter':
+            from antimatter_multiplication import preview
+            gains = preview(unit, galaxy)
+            data.append(label(f'Pulse: {len(gains)} recipients; net {sum(amount for _, amount in gains)-spec.cost:g} AM'))
+            data.append(label(f'Caster cooldown: {max(0, unit.multiply_cast_ready_round-game.turn_number)} rounds; recipient cooldown: 30 rounds'))
+            for recipient, amount in gains:
+                data.append(label(f'{recipient.name}: +{amount:g} AM'))
+        if kind == 'flak_barrage':
+            from tactical_balance import FLAK_RADIUS
+            data.append(label(f'Moving hostile-wing defense radius: {FLAK_RADIUS:g}'))
+        if kind == 'nebula_catalyst' and (getattr(game, 'pending_ability', None) or (None,))[0] == kind:
+            from domain.celestials import Nebula
+            selected = getattr(game, 'pending_catalyst_body_id', None)
+            data.append(label('Choose a nebula, then right-click its patch center.'))
+            data.append(label('Friendly: hydrogen fuel 25%; nitrogen cooldown -2.'))
+            data.append(label('Enemy: oxygen splash 1.35x; dust sensors 50%.'))
+            data.append(label('Ordinary nebula effects remain active.'))
+            for body in sector_for(unit, galaxy).celestial_bodies:
+                if isinstance(body, Nebula):
+                    data.append(button(('Selected: ' if selected == body.id else 'Catalyze: ') + body.name, 'choose_catalyst_nebula', body.id))
+    return data
+
+
+def deployable_panel(game, obj):
+    first = label(obj.name)
+    first['sidebar_identity'] = f'deployable:{getattr(obj, "id", id(obj))}'
+    data = [first, label(f'HP: {obj.current_hit_points}/{obj.max_hit_points}'), label('Persistent')]
+    from game_ai.tactical import deployable_view
+    view = deployable_view(obj, game.players[game.current_player_index])
+    if 'deploying_ship_id' in view:
+        data.append(label(f'Deploying ship: {view["deploying_ship_id"]}'))
+    data.append(label('Select a ship and right-click this object to attack.'))
+    return data
+
+
+def patch_panel(game, body, *, show_rules=False):
+    from game_ai.tactical import patch_views
+    from gui.sidebar.celestial_formatting import catalyst_summary
+    data = []
+    if not game.players:
+        return data
+    for patch in patch_views(game, game.players[game.current_player_index]):
+        if patch['nebula_id'] != body.id:
+            continue
+        owner = next(p for p in game.players if p.id == patch['owner_id'])
+        if show_rules:
+            data.append(label(f'Catalyst: {owner.name}'))
+            data.extend(label(rule) for rule in patch['rules'])
+        else:
+            data.extend(row.panel_row() for row in catalyst_summary(patch, owner.name))
+    return data
+
+
+def draw(renderer, sector):
+    import math
+    import pygame
+    from geometry import Position, distance
+    from sector_utils import sector_radius_to_pixels, pixels_to_sector_coords
+    from display_config import display_config_for
+    from game_ai.tactical import patch_views
+    from tactical_abilities import sweep_fields, SWEEP_MINES, SWEEP_RADIUS
+    from tactical_balance import CATALYST_RADIUS
+    game = renderer.game
+    if not getattr(game, 'players', None):
+        return
+    config = display_config_for(game)
+
+    def pixel(p):
+        v = renderer.grid_renderer.coords_to_pixels(p)
+        return (int(v.x), int(v.y))
+
+    def radius(value):
+        return max(1, int(sector_radius_to_pixels(value, game.sector_zoom, display_config=config)))
+
+    def patch_outline(center, patch_radius, body, color):
+        if body is None:
+            return
+        # Draw the two clipped boundary arcs, using bounded memory at every zoom.
+        for origin, size, other, other_size in ((center, patch_radius, body.position, body.radius), (body.position, body.radius, center, patch_radius)):
+            previous = None
+            for step in range(193):
+                angle = step * math.tau / 192
+                point = Position(origin.x + math.cos(angle)*size, origin.y + math.sin(angle)*size)
+                inside = distance(point, other) <= other_size + 1e-6
+                if inside and previous is not None:
+                    pygame.draw.line(renderer.screen, color, pixel(previous), pixel(point), 2)
+                previous = point if inside else None
+
+    for patch in patch_views(game, game.players[game.current_player_index]):
+        if patch['system_name'] == game.current_system_name and tuple(patch['hex_coord']) == game.current_sector_coord:
+            owner = next(p for p in game.players if p.id == patch['owner_id'])
+            patch_outline(Position(*patch['position']), patch['radius'], game.galaxy.get_celestial_body_by_id(patch['nebula_id']), owner.color)
+    for source in sector.units:
+        if not game.is_unit_visible(source):
+            continue
+        from strikecraft_abilities import effect_valid, wing_order
+        from titan_abilities import effect_valid as titan_effect, protected
+        if titan_effect(source, 'aegis_field', game.galaxy):
+            pygame.draw.circle(renderer.screen, source.owner.color, pixel(source.position), radius(1000), 2)
+        if protected(source, 'carrier_supremacy'):
+            pygame.draw.circle(renderer.screen, source.owner.color, pixel(source.position), 20, 2)
+        if titan_effect(source, 'siege_lance', game.galaxy):
+            inst = get_instance(source, 'siege_lance')
+            target = game.galaxy.get_unit_by_id(inst.target_unit_id)
+            if target and game.is_unit_visible(target):
+                pygame.draw.line(renderer.screen, (255, 170, 50), pixel(source.position), pixel(target.position), 2)
+        from tactical_balance import FLAK_RADIUS
+        if effect_valid(source, 'flak_barrage', game.galaxy):
+            pygame.draw.circle(renderer.screen, source.owner.color, pixel(source.position), radius(FLAK_RADIUS), 2)
+        if source in game.selected_objects and source.owner == game.players[game.current_player_index] and get_instance(source, 'multiply_antimatter'):
+            pygame.draw.circle(renderer.screen, source.owner.color, pixel(source.position), radius(SPECS['multiply_antimatter'].range), 1)
+        root = wing_order(source)
+        if root:
+            font = pygame.font.Font(None, 18)
+            renderer.screen.blit(font.render(root.order_type.name.replace('_', ' ').title() + ': ' + root.phase,
+                                            True, source.owner.color), pixel(source.position))
+        for kind in ('tracking_lock', 'evasive_formation'):
+            inst = get_instance(source, kind)
+            if inst and effect_valid(source, kind, game.galaxy):
+                target = game.galaxy.get_unit_by_id(inst.target_unit_id)
+                if target and game.is_unit_visible(target):
+                    pygame.draw.circle(renderer.screen, source.owner.color, pixel(target.position), 16, 2)
+        for kind in ('tractor_tether', 'guardian_link'):
+            inst = get_instance(source, kind)
+            target = game.galaxy.get_unit_by_id(inst.target_unit_id) if inst and inst.is_active else None
+            if target and game.is_unit_visible(target):
+                pygame.draw.line(renderer.screen, source.owner.color, pixel(source.position), pixel(target.position), 2)
+    pending = getattr(game, 'pending_ability', None)
+    actors = [u for u in game.selected_objects if getattr(u, 'ability_component', None)]
+    if not pending or not actors or pending[0] not in SPECS:
+        return
+    unit, kind = actors[0], pending[0]
+    point = pixels_to_sector_coords(Position(*pygame.mouse.get_pos()), game.sector_zoom, game.sector_pan_offset, display_config=config)
+    if kind not in ('fleet_jump', 'deep_scan'):
+        pygame.draw.circle(renderer.screen, unit.owner.color, pixel(unit.position), radius(SPECS[kind].range), 1)
+    elif kind == 'fleet_jump':
+        if unit.in_system == game.current_system_name and unit.in_hex == game.current_sector_coord:
+            pygame.draw.circle(renderer.screen, unit.owner.color, pixel(unit.position), radius(750), 1)
+        from titan_abilities import jump_plan
+        error, plan = jump_plan(unit, game.galaxy, game.current_system_name, game.current_sector_coord, point)
+        pygame.draw.circle(renderer.screen, (255, 80, 80) if error else unit.owner.color, pixel(point), 14, 2)
+        for passenger, arrival in plan:
+            pygame.draw.circle(renderer.screen, passenger.owner.color, pixel(arrival), 10, 1)
+    if kind == 'mine_clearing_sweep':
+        dx, dy = point.x-unit.position.x, point.y-unit.position.y
+        length = math.hypot(dx, dy)
+        if length > SPECS[kind].range:
+            point = Position(unit.position.x+dx/length*SPECS[kind].range, unit.position.y+dy/length*SPECS[kind].range)
+        if length:
+            nx, ny = -dy/length*SWEEP_RADIUS, dx/length*SWEEP_RADIUS
+            for sign in (-1, 1):
+                pygame.draw.line(renderer.screen, unit.owner.color,
+                    pixel(Position(unit.position.x+nx*sign, unit.position.y+ny*sign)), pixel(Position(point.x+nx*sign, point.y+ny*sign)), 1)
+        for end in (unit.position, point):
+            pygame.draw.circle(renderer.screen, unit.owner.color, pixel(end), radius(SWEEP_RADIUS), 1)
+        budget = SWEEP_MINES
+        for field in sweep_fields(unit, point, game.galaxy):
+            removed = min(budget, field.mines_remaining)
+            budget -= removed
+            font = pygame.font.Font(None, 20)
+            renderer.screen.blit(font.render(f'{field.mines_remaining-removed} mines remain', True, unit.owner.color), pixel(field.position))
+    elif kind == 'nebula_catalyst':
+        patch_outline(point, CATALYST_RADIUS, game.galaxy.get_celestial_body_by_id(getattr(game, 'pending_catalyst_body_id', None)), unit.owner.color)
+
+
+def draw_deployable(renderer, obj, pixel_position):
+    import pygame
+    point = (int(pixel_position.x), int(pixel_position.y))
+    color = obj.owner.color
+    pygame.draw.rect(renderer.screen, color, (point[0]-6, point[1]-6, 12, 12), 2)
+    if obj.kind == 'ghost_fleet':
+        pygame.draw.circle(renderer.screen, color, point, 10, 1)
+    return 13.89

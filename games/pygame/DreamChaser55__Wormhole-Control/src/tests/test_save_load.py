@@ -1,0 +1,417 @@
+import pytest
+from player_controller import PlayerController
+import os
+import unittest
+import json
+from collections import deque
+from geometry import Position
+from constants import HullSize, StarType, PlanetType
+from domain.players import Player
+from domain.coordinates import HexCoord
+from domain.identity import GameObject
+from domain.celestials import Star, Planet, Wormhole
+from domain.units import Unit
+from unit_components.enums import UnitStance, TurretType
+from unit_components.weapons import Weapons, Turret
+from unit_orders.combat import AttackOrder
+from unit_orders.movement import MoveOrder
+from unit_orders.base import OrderStatus, OrderType
+from unit_orders.patrol import PatrolOrder
+from unit_orders.registry import ORDER_CLASS_REGISTRY
+from utils import generate_short_id
+from save_manager import (
+    serialize_player, deserialize_player,
+    serialize_celestial_body, deserialize_celestial_body,
+    serialize_unit, deserialize_unit,
+    serialize_order, deserialize_order,
+    serialize_game_state, deserialize_game_state
+)
+
+
+@pytest.mark.usefixtures("game_factory")
+class TestSaveLoad(unittest.TestCase):
+
+    def test_player_round_trip(self):
+        player = Player("Test Player", (0, 128, 255), controller=PlayerController.HUMAN)
+        player.ai_repair_retries = 5
+        player.credits = 15000.0
+        player.metal = 5000.0
+        player.crystal = 2500.0
+
+        serialized = serialize_player(player)
+        deserialized = deserialize_player(serialized)
+
+        self.assertEqual(deserialized.id, player.id)
+        self.assertEqual(deserialized.name, "Test Player")
+        self.assertEqual(deserialized.color, (0, 128, 255))
+        self.assertEqual(deserialized.controller, PlayerController.HUMAN)
+        self.assertEqual(deserialized.credits, 15000.0)
+        self.assertEqual(deserialized.metal, 5000.0)
+        self.assertEqual(deserialized.crystal, 2500.0)
+        self.assertEqual(deserialized.ai_repair_retries, 5)
+
+    def test_game_object_ids_start_at_one(self):
+        original_counter = GameObject.object_counter
+        try:
+            GameObject.object_counter = 1
+            first = Star(in_system="Sol", star_type=StarType.G_TYPE)
+            second = Star(in_system="Alpha Centauri", star_type=StarType.G_TYPE)
+
+            self.assertEqual(first.id, 1)
+            self.assertEqual(second.id, 2)
+        finally:
+            GameObject.object_counter = original_counter
+
+    def test_codex_controller_round_trip_uses_new_schema(self):
+        player = Player("Codex", (12, 34, 56), controller=PlayerController.CODEX)
+        serialized = serialize_player(player)
+        self.assertEqual(serialized["controller"], "codex")
+        restored = deserialize_player(serialized)
+        self.assertEqual(restored.controller, PlayerController.CODEX)
+
+    def test_celestial_bodies_round_trip(self):
+        player = Player("Owner", (255, 0, 0))
+        players_by_id = {player.id: player}
+
+        # Planet
+        planet = Planet(in_hex=(1, -1), in_system="Sol", planet_type=PlanetType.TERRAN)
+        planet.owner = player
+        planet.population = 42.5
+        serialized = serialize_celestial_body(planet)
+        deserialized = deserialize_celestial_body(serialized, players_by_id)
+
+        self.assertIsInstance(deserialized, Planet)
+        self.assertEqual(deserialized.id, planet.id)
+        self.assertEqual(deserialized.in_hex, (1, -1))
+        self.assertEqual(deserialized.in_system, "Sol")
+        self.assertEqual(deserialized.owner, player)
+        self.assertEqual(deserialized.population, 42.5)
+
+        # Wormhole
+        wh = Wormhole(in_hex=(2, -2), in_system="Sol", exit_system_name="Beta", stability=85, diameter=HullSize.LARGE)
+        wh.exit_wormhole_id = 999
+        serialized_wh = serialize_celestial_body(wh)
+        deserialized_wh = deserialize_celestial_body(serialized_wh, players_by_id)
+
+        self.assertIsInstance(deserialized_wh, Wormhole)
+        self.assertEqual(deserialized_wh.exit_system_name, "Beta")
+        self.assertEqual(deserialized_wh.exit_wormhole_id, 999)
+        self.assertEqual(deserialized_wh.stability, 85)
+        self.assertEqual(deserialized_wh.diameter, HullSize.LARGE)
+
+    def test_unit_round_trip(self):
+        player = Player("Fleet Cmd", (0, 255, 0))
+        players_by_id = {player.id: player}
+
+        unit = Unit(owner=player, position=Position(100.0, 200.0), in_hex=(0, 0), in_system="Sol", name="Flagship", hull_size=HullSize.HUGE, game=None)
+        unit.current_hit_points = 800
+        unit.experience_points = 150
+        unit.is_disabled = True
+        unit.damage_reduction = 0.25
+
+        if unit.antimatter_component:
+            unit.antimatter_component.current_amount = 45.0
+
+        move_order = MoveOrder(unit, {"destination_system_name": "Sol", "destination_hex": (1, 1), "destination_position": Position(50.0, 50.0)})
+        unit.commander_component.add_order(move_order)
+
+        serialized = serialize_unit(unit)
+        deserialized = deserialize_unit(serialized, players_by_id, game=None)
+
+        self.assertEqual(deserialized.id, unit.id)
+        self.assertEqual(deserialized.name, "Flagship")
+        self.assertEqual(deserialized.owner, player)
+        self.assertEqual(deserialized.hull_size, HullSize.HUGE)
+        self.assertEqual(deserialized.current_hit_points, 800)
+        self.assertEqual(deserialized.experience_points, 150)
+        self.assertTrue(deserialized.is_disabled)
+        self.assertEqual(deserialized.damage_reduction, 0.25)
+        self.assertEqual(deserialized.antimatter_component.current_amount, 45.0)
+
+    def test_commander_payload_separates_stance_current_and_queue(self):
+        player = Player("Fleet Cmd", (0, 255, 0))
+        unit = Unit(player, Position(0, 0), (0, 0), "Sol", "Flagship", HullSize.HUGE, None)
+        weapons = Weapons(unit)
+        weapons.add_turret(Turret(TurretType.MASS_DRIVER, 10, 100, 1, unit))
+        unit.add_component(weapons)
+        commander = unit.commander_component
+        commander.set_stance(UnitStance.ATTACK_SAME_SECTOR)
+
+        current = MoveOrder(unit, {
+            "destination_system_name": "Sol",
+            "destination_hex_coord": (0, 0),
+            "destination_position": Position(100, 0),
+        })
+        current.status = OrderStatus.IN_PROGRESS
+        queued = AttackOrder(unit, {"target_unit_id": 12345})
+        commander.current_order = current
+        commander.orders_queue = deque([queued])
+
+        transient = AttackOrder(unit, {"target_unit_id": 99999}, parent_order=commander.standing_order)
+        commander.standing_order.add_sub_order(transient)
+        component = serialize_unit(unit)["components"]["Commander"]
+        payload = component["runtime"]
+
+        self.assertEqual(component["configuration"]["stance"]["name"], "ATTACK_SAME_SECTOR")
+        self.assertEqual(payload["current_order"]["order_type"], "MOVE")
+        self.assertEqual([item["order_type"] for item in payload["orders_queue"]], ["ATTACK"])
+        self.assertNotIn("standing_order", payload)
+        self.assertNotEqual(payload["current_order"]["order_type"], "STANCE")
+
+    def test_nested_order_parameters_and_patrol_runtime_round_trip(self):
+        player = Player("Fleet Cmd", (0, 255, 0))
+        unit = Unit(player, Position(0, 0), (0, 0), "Sol", "Patroller", HullSize.MEDIUM, None)
+        patrol = PatrolOrder(unit, {
+            "waypoints": [
+                {"system_name": "Sol", "hex_coord": (1, -1), "position": Position(10.5, 20.5)},
+                {"system_name": "Sol", "hex_coord": (2, -1), "position": Position(30.5, 40.5)},
+            ],
+            "metadata": {"formation": ("line", 2), "stance_hint": UnitStance.ATTACK_SAME_SECTOR},
+        })
+        patrol.status = OrderStatus.IN_PROGRESS
+        patrol.start_system_name = "Sol"
+        patrol.start_hex_coord = (0, 0)
+        patrol.start_position = Position(1.0, 2.0)
+        patrol.patrol_phase = "TO_START"
+        patrol.current_waypoint_index = 2
+
+        serialized = serialize_order(patrol)
+        json.dumps(serialized)
+        restored = deserialize_order(serialized, unit, None)
+
+        self.assertIsInstance(restored, PatrolOrder)
+        self.assertEqual(restored.parameters["waypoints"][0]["hex_coord"], (1, -1))
+        self.assertEqual(restored.parameters["waypoints"][1]["position"], Position(30.5, 40.5))
+        self.assertEqual(restored.parameters["metadata"]["formation"], ("line", 2))
+        self.assertEqual(restored.parameters["metadata"]["stance_hint"], UnitStance.ATTACK_SAME_SECTOR)
+        self.assertEqual(restored.start_system_name, "Sol")
+        self.assertEqual(restored.start_hex_coord, (0, 0))
+        self.assertEqual(restored.start_position, Position(1.0, 2.0))
+        self.assertEqual(restored.patrol_phase, "TO_START")
+        self.assertEqual(restored.current_waypoint_index, 2)
+
+    def test_order_registry_covers_every_order_type(self):
+        self.assertEqual(set(ORDER_CLASS_REGISTRY), set(OrderType))
+
+
+
+    def test_full_game_save_load(self):
+        game = self.make_game()
+        new_game = None
+        saved_filepath = None
+        try:
+            success = game.start_new_game()
+            self.assertTrue(success)
+
+            game.turn_number = 7
+            game.players[0].credits = 8888.0
+            saved_systems_count = len(game.galaxy.systems)
+            stance_unit = next(
+                unit
+                for system in game.galaxy.systems.values()
+                for unit, _ in system.get_all_units()
+                if unit.commander_component
+            )
+            weapons = Weapons(stance_unit)
+            weapons.add_turret(Turret(TurretType.MASS_DRIVER, 10, 100, 1, stance_unit))
+            stance_unit.add_component(weapons)
+            stance_unit.commander_component.set_stance(UnitStance.ATTACK_WEAPON_RANGE)
+            stance_unit_id = stance_unit.id
+
+            test_filename = "test_autotest_save.json"
+            saved_filepath = game.save_game(test_filename)
+            self.assertTrue(os.path.exists(saved_filepath))
+
+            # Create fresh game and load
+            new_game = self.make_game()
+            load_success = new_game.load_game(saved_filepath)
+            self.assertTrue(load_success)
+            self.assertTrue(new_game.game_started)
+            self.assertEqual(new_game.turn_number, 7)
+            self.assertEqual(new_game.players[0].credits, 8888.0)
+            self.assertEqual(len(new_game.galaxy.systems), saved_systems_count)
+            restored_stance_unit = new_game.galaxy.get_unit_by_id(stance_unit_id)
+            self.assertEqual(restored_stance_unit.commander_component.stance, UnitStance.ATTACK_WEAPON_RANGE)
+            self.assertIs(restored_stance_unit.in_galaxy, new_game.galaxy)
+        finally:
+            game.control_service.shutdown()
+            game.ai_coordinator.shutdown()
+            if new_game is not None:
+                new_game.control_service.shutdown()
+                new_game.ai_coordinator.shutdown()
+            if saved_filepath and os.path.exists(saved_filepath):
+                os.remove(saved_filepath)
+
+    def test_zero_object_id_is_preserved_and_counter_advances(self):
+
+        game = self.make_game()
+        restored_game = None
+        try:
+            self.assertTrue(game.start_new_game())
+            star = next(
+                body
+                for system in game.galaxy.systems.values()
+                for hex_obj in system.hexes.values()
+                for body in hex_obj.celestial_bodies
+                if isinstance(body, Star)
+            )
+            star.id = 0
+
+            payload = serialize_game_state(game)
+            restored_game = self.make_game()
+            self.assertTrue(deserialize_game_state(restored_game, payload))
+
+            restored_star = restored_game.galaxy.get_celestial_body_by_id(0)
+            self.assertIsInstance(restored_star, Star)
+            loaded_object_ids = [
+                body.id
+                for system in restored_game.galaxy.systems.values()
+                for hex_obj in system.hexes.values()
+                for body in hex_obj.celestial_bodies
+            ] + [
+                unit.id
+                for system in restored_game.galaxy.systems.values()
+                for unit, _ in system.get_all_units()
+            ]
+            self.assertEqual(GameObject.object_counter, max(loaded_object_ids) + 1)
+        finally:
+            game.control_service.shutdown()
+            game.ai_coordinator.shutdown()
+            if restored_game is not None:
+                restored_game.control_service.shutdown()
+                restored_game.ai_coordinator.shutdown()
+
+    def test_gui_load_dialog_trigger(self):
+        game = self.make_game()
+        try:
+            game.gui.setup_main_menu()
+            self.assertIsNotNone(game.gui.load_game_button)
+
+            game.gui.show_load_game_dialog()
+            self.assertIsNotNone(game.gui.load_save_window)
+            self.assertIsNotNone(game.gui.load_save_confirm_button)
+            self.assertIsNotNone(game.gui.load_save_cancel_button)
+        finally:
+            game.control_service.shutdown()
+            game.ai_coordinator.shutdown()
+
+    def test_load_game_schedules_ai_turn_if_current_player_is_ai(self):
+        from unittest.mock import patch
+
+        game = self.make_game()
+        new_game = None
+        saved_filepath = None
+        try:
+            game.start_new_game()
+            # Set player 0 to AI and save
+            game.players[0].controller = PlayerController.OPENAI
+            game.current_player_index = 0
+
+            test_filename = "test_ai_load_save.json"
+            saved_filepath = game.save_game(test_filename)
+            self.assertTrue(os.path.exists(saved_filepath))
+
+            new_game = self.make_game()
+            with patch('pygame.time.get_ticks', return_value=3000):
+                load_success = new_game.load_game(saved_filepath)
+                self.assertTrue(load_success)
+                self.assertEqual(new_game.pending_ai_turn_end_time, 3500)
+        finally:
+            game.control_service.shutdown()
+            game.ai_coordinator.shutdown()
+            if new_game is not None:
+                new_game.control_service.shutdown()
+                new_game.ai_coordinator.shutdown()
+            if saved_filepath and os.path.exists(saved_filepath):
+                os.remove(saved_filepath)
+
+    def test_short_id_generation(self):
+        token = generate_short_id()
+        self.assertEqual(len(token), 8)
+        self.assertTrue(all(c in "0123456789abcdef" for c in token))
+
+        token_custom = generate_short_id(prefix="camp-", length=6)
+        self.assertTrue(token_custom.startswith("camp-"))
+        self.assertEqual(len(token_custom), 11)
+
+        # Uniqueness check across samples
+        samples = {generate_short_id() for _ in range(100)}
+        self.assertEqual(len(samples), 100)
+
+    def test_short_ids_in_player_and_game(self):
+        player = Player("AI Pilot", (100, 150, 200), controller=PlayerController.OPENAI)
+        self.assertEqual(len(player.persistent_id), 8)
+        self.assertEqual(len(player.agent_id), 8)
+        self.assertTrue(all(c in "0123456789abcdef" for c in player.persistent_id))
+        self.assertTrue(all(c in "0123456789abcdef" for c in player.agent_id))
+
+        game = self.make_game()
+        try:
+            self.assertEqual(len(game.campaign_id), 8)
+            self.assertTrue(all(c in "0123456789abcdef" for c in game.campaign_id))
+
+            game.start_new_game()
+            self.assertEqual(len(game.campaign_id), 8)
+            self.assertTrue(all(c in "0123456789abcdef" for c in game.campaign_id))
+
+            # Check serialization preserves short IDs
+            serialized = serialize_player(player)
+            self.assertEqual(serialized["persistent_id"], player.persistent_id)
+            self.assertEqual(serialized["agent_id"], player.agent_id)
+        finally:
+            game.control_service.shutdown()
+            game.ai_coordinator.shutdown()
+
+    def test_sector_view_save_load_round_trip(self):
+        game = self.make_game()
+        new_game = None
+        saved_filepath = None
+        try:
+            self.assertTrue(game.start_new_game())
+            system = next(iter(game.galaxy.systems.values()))
+            hex_coord_tuple = next(iter(system.hexes.keys()))
+            target_coord = HexCoord(*hex_coord_tuple)
+
+            game.view_mode = "sector"
+            game.current_system_name = system.name
+            game.current_sector_coord = target_coord
+
+            saved_filepath = game.save_game("test_sector_view_save.json")
+            self.assertTrue(os.path.exists(saved_filepath))
+
+            new_game = self.make_game()
+            load_success = new_game.load_game(saved_filepath)
+            self.assertTrue(load_success)
+            self.assertEqual(new_game.view_mode, "sector")
+            self.assertEqual(new_game.current_system_name, system.name)
+            self.assertIsInstance(new_game.current_sector_coord, HexCoord)
+            self.assertEqual(new_game.current_sector_coord, target_coord)
+            self.assertEqual(new_game.current_sector_coord.q, target_coord.q)
+            self.assertEqual(new_game.current_sector_coord.r, target_coord.r)
+            self.assertEqual(new_game.sector_zoom, 1.0)
+            self.assertEqual(new_game.sector_pan_offset, Position(0, 0))
+
+            # update_view_specific_labels must succeed without error
+            new_game.update_view_specific_labels()
+        finally:
+            game.control_service.shutdown()
+            game.ai_coordinator.shutdown()
+            if new_game is not None:
+                new_game.control_service.shutdown()
+                new_game.ai_coordinator.shutdown()
+            if saved_filepath and os.path.exists(saved_filepath):
+                os.remove(saved_filepath)
+
+    def test_update_view_specific_labels_defensively_coerces_tuple(self):
+        game = self.make_game()
+        try:
+            game.view_mode = "sector"
+            game.current_system_name = "Sol"
+            game.current_sector_coord = (2, -1)
+            game.update_view_specific_labels()
+            self.assertIsInstance(game.current_sector_coord, HexCoord)
+            self.assertEqual(game.current_sector_coord.q, 2)
+            self.assertEqual(game.current_sector_coord.r, -1)
+        finally:
+            game.control_service.shutdown()
+            game.ai_coordinator.shutdown()

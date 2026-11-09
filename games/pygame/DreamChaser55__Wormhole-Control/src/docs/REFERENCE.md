@@ -1,0 +1,1696 @@
+# Wormhole Control — Reference Manual
+
+Current gameplay rules, ship equipment, and operating guidance. Start with the
+[README](../README.md) for installation and a short introduction. Technical details
+live in [Development](DEVELOPMENT.md), [Agentic AI](AGENTIC_AI.md),
+[Codex Control](CODEX_CONTROL.md), and [Campaign persistence](SAVE_FORMAT.md).
+
+## Contents
+
+- [Campaign setup](#campaign-setup)
+- [Controls and views](#controls-and-views)
+- [Economy and logistics](#economy-and-logistics)
+- [Ships and construction](#ships-and-construction)
+- [Orders and combat](#orders-and-combat)
+- [Abilities](#abilities)
+- [Exploration and environments](#exploration-and-environments)
+- [Intelligence and teams](#intelligence-and-teams)
+- [Storage and troubleshooting](#storage-and-troubleshooting)
+
+## Campaign setup
+
+Click **New Game** to open the two-stage wizard:
+
+1. **Galaxy Setup & Preview:** Configure the map, then click **Generate Map** to
+   inspect systems and wormhole routes. Regenerate until satisfied and choose
+   **Next: Players & Economy ➔**.
+2. **Factions & Starting Conditions:** Choose a spawn profile, configure players,
+   teams and resources, and assign home systems. The controller button cycles
+   through Human, Codex, AI: Medium, AI: High, and AI: Low.
+3. Choose **Random** or **Specified** homes. For specified homes, use the ◀/▶
+   buttons or select a system in the preview.
+4. Click **Start Game** to begin turn 1. **◀ Back to Map** preserves player choices.
+
+See [automated player setup](#automated-player-setup) for controller configuration.
+
+### Automated player setup
+
+**Built-in OpenAI players:** Choose an AI controller in the New Game Wizard.
+Set `OPENAI_API_KEY`, or place the raw key in the ignored `API_keys/OpenAI.key`
+file; the environment variable takes precedence. Choose **Low** reasoning for
+faster turns, **Medium** for the default, or **High** for more strategic reasoning.
+The in-game **AI Settings** menu controls repair retries. See the
+[OpenAI adapter](AGENTIC_AI.md#openai-adapter) for model configuration and runtime
+limits, and [failure behavior](AGENTIC_AI.md#failure-behavior) for retries and recovery.
+
+**Codex-controlled players:** Choose the **Codex** controller. Codex can launch
+the visible game, create a campaign, observe its player's state, issue orders,
+and end turns through the local control bridge. No API key is required for this
+controller. Follow the [Codex Control guide](CODEX_CONTROL.md#quick-start) for
+bridge setup and the play loop.
+
+### Spawn profiles
+
+**Normal** gives each player a distinct home system, an owned homeworld, and four
+starter units: a Shipyard, Constructor, Colonizer, and Antimatter Harvester.
+The Shipyard, Constructor and Harvester start about 200 units inside the
+homeworld's inhibition boundary, shortening departure for them and newly built
+ships. The empty Colonizer starts near the homeworld to load population first.
+There must be at least as many generated systems as players. Specified homes must
+be unique, with enough unclaimed systems left for random assignments.
+
+**Testing** supplies ships and stations across Tiny through Huge hulls, including
+a carrier plus one Titan Flagship (12 units per player). Unassigned players share Sol, or the first available system; specified
+homes may also be shared. Testing designs become buildable only after a Testing
+campaign starts. Starting Normal, loading a save, or returning to the main menu
+removes them from the construction catalogue while preserving custom designs.
+Loading a Testing save keeps existing ships but uses the normal catalogue; see
+[Testing campaign saves](SAVE_FORMAT.md#testing-campaign-catalogue) for unfinished builds.
+
+Both profiles choose unowned colonizable planets without changing their types.
+If none is available, setup creates a Terran world in an empty noncentral sector;
+without such a sector, setup fails. Starting population is capped to the world's
+capacity. A failed start leaves the current campaign and map preview intact.
+
+### Setup limits
+
+| Setting | Accepted values |
+|---|---|
+| Players / systems | 2–6 players; 2–30 systems |
+| System radii | Integer minimum and maximum in 3–12; minimum ≤ maximum |
+| Inter-system distances | Finite, positive minimum and maximum; minimum < maximum |
+| Wormhole density | 0–100% in the wizard; 0–1 in the control interface |
+| Starting resources / population | Finite non-negative resources; non-negative integer population |
+| Player names | Trimmed, 1–80 characters, unique ignoring case, no control characters |
+| Colors | Three integer RGB channels in 0–255; repeated colors are allowed |
+| Teams | Positive integer IDs; at least two distinct teams |
+| AI settings | Low, Medium or High reasoning; 1–5 repair retries |
+
+Home assignments must refer to generated systems; blank/Random means unassigned.
+These limits apply to new campaigns. Loading uses the separate
+[save validation rules](SAVE_FORMAT.md#transactional-load).
+
+## Controls and views
+
+| Input | Action |
+|---|---|
+| Left click | Select a unit, solid body, or destination |
+| Shift + left click | Add or remove a unit from the selection |
+| Left drag | Box-select units |
+| Right click | Open contextual actions or issue a direct command |
+| Shift + order | Queue behind existing explicit orders |
+| Middle drag / arrow keys | Pan the Galaxy, System or Sector camera |
+| Mouse wheel | Zoom the Galaxy, System or Sector camera toward the cursor |
+| G / S | Switch to Galaxy / System View |
+| R | Reset Galaxy camera to fitted overview (Galaxy View) |
+| E | End Turn |
+| Esc | Open the in-game menu, cancel targeting, or deselect |
+
+**Galaxy View** shows known systems, wormhole links, disclosed home-system faction markers,
+and a faint tactical grid framed by a subtle coordinate boundary.
+Shared homes have concentric markers. **System View** shows sector hexes, bodies,
+routes and fog of war; hexes outside the current player's long-range sensor range have a grey background, while in-range hexes retain a black background. Newly opened systems fit the available map area.
+**Sector View** shows individual units, weapon ranges, minefields, hyperspace inhibition fields, tactical movement, and a circular-clipped tactical grid.
+All three views have independent zoom and pan controls. In Galaxy View, middle-click
+a system to enter it; dragging the middle button pans without entering a system.
+Galaxy markers, rings, tactical grid lines and links scale with zoom while text labels stay the same size.
+The galaxy camera is retained across view switches and turns, and resets to the
+fitted overview when starting or loading a campaign. Camera positions are not saved.
+In Galaxy View, click **Reset View** in the top bar or press `R` to restore the
+fitted overview at any time.
+These controls apply during play; the New Game map preview remains fitted and static.
+Selected objects have corner brackets using their disclosed owner's faction color.
+Enemy home-system markers appear only while the associated homeworld is currently
+inside shared sensor coverage; the setup preview retains its assignment markers.
+
+Inspect non-solid bodies—fields, nebulae and storms—through their hex sidebar.
+Clicking inside these regions remains available for movement and targeting.
+Their boundary circles show the affected area.
+
+Body sidebars show compact effect summaries: green for benefits, amber for
+restrictions, red for damage or fuel drain, and neutral text for geometry and
+facts. Expand **Full rules** below the body's information and actions for exact
+timing, stacking, and exceptions. Active Catalyst summaries identify the patch
+owner and affected allies or enemies relative to that owner. Expansion is
+remembered per body and campaign during the application session, not in saves.
+
+### Turn-start briefing
+
+Current travel appears in the ship's order sidebar and briefing: leaving an
+inhibition field, drive recharge, approach, or waiting for antimatter. Remaining
+travel estimates use current equipment and known terrain, assuming enough fuel
+and unchanged conditions. Loading, mission actions and later queued orders add
+time. Preserve advancing work unless a replacement is worth the lost progress.
+Arrival estimates exclude recharge after the final jump and overlap recharge
+with sublight travel; fuel-service reserves retain their separate safety margin.
+
+A scrollable briefing opens at the start of each human turn according to
+**Settings → Turn summary mode**, available from the main and in-game menus:
+
+| Mode | Automatic display |
+|---|---|
+| Always show turn summary | Every human turn, including quiet and economy-only turns |
+| Automatic (default) | Only when significant events occurred |
+| Do not show turn summary | Never opens automatically; manual access remains available |
+
+Choose **Apply** to save the preference for all human players and campaigns,
+including after restarting. Changes affect subsequent turn starts and campaign
+loads without immediately opening a report. **Cancel**, **Esc**, or **X** discards
+pending changes. If saving fails, the previous preference remains active and the
+dialog stays open with an error.
+
+The report's window begins immediately before the previous **End Turn** resolves
+and ends after the next turn's opening effects. Your actions while issuing orders
+are excluded. On a player's first turn, it covers events since campaign setup;
+starting ships and colonies are not announcements.
+
+The briefing groups combat and hazards, losses and captures, your completed
+construction/refits/colonies, failed or involuntarily cancelled orders, fuel and
+upkeep problems, new contacts and explored sectors, revealed mines, authorized
+intelligence outcomes, and incoming-message counts by sender. Combat and sensor
+discoveries include shared allied information. Production, orders and economy
+remain personal. Repeated hits are aggregated; ordinary movement, successful
+support orders, voluntary cancellations and normal temporary-unit expiration are
+omitted. The economy footer shows net credits, metal, crystal and total colony
+population changes; economy-only turns do not open the modal in Automatic mode.
+
+Fuel-blocked movement reports entry into the wait, a different fuel/storage
+problem, and recovery. An unchanged wait stays visible in current journey progress
+without repeating a significant briefing event, including after saving/loading.
+
+Use **Continue**, **Esc**, or **X** to acknowledge the report. Game controls are
+blocked while it is open. **Open Comms** closes the briefing and opens conversations;
+acknowledgement alone does not mark messages read. Comms no longer opens automatically
+at turn start. **Esc → Turn Summary** reopens the current report in every mode,
+even on quiet turns.
+
+Reports retain what you could know when an event happened, including historical
+names and sectors. They do not expose hidden attackers, covert equipment or
+undiscovered agents. Anonymous radar presence has no identity or count, and a
+vanished contact is not a confirmed loss. Historical contacts are not necessarily
+currently visible or valid targets.
+
+The report remains fixed throughout the turn, including after loading. Acknowledged
+reports do not reopen automatically on load. Collections and reports retain at most
+128 entries and 32,000 serialized characters, prioritizing losses and failures and
+stating omitted counts if necessary.
+
+## Economy and logistics
+
+Press **E** or **End Turn** when finished issuing orders. The hot-seat sequence
+resolves the active player's movement, mine contacts, income, upkeep, growth and
+combat before advancing to the next player.
+
+| Resource | Source and use |
+|---|---|
+| Credits | Colony taxes, active Civilian Habitats and trade; pay for construction, equipment, upkeep and operations |
+| Metal | Mine Metal Asteroids and unload at a Metal Refinery; passive colony yields and salvage also supply construction, equipment installation and fortifications |
+| Crystal | Mine Comets and unload at a Crystal Refinery; passive colony yields and salvage also supply construction, equipment installation and fortifications |
+| Antimatter (AM) | Per-ship fuel for movement and equipment; harvest near stars or inside hydrogen nebulae, then transfer to other ships |
+
+### Industrial resources
+
+Credits, metal and crystal are empire-wide stockpiles. Raw mined cargo becomes
+spendable only after unloading at the corresponding refinery. Default starts give
+20,000 credits, 1,000 metal and 500 crystal; custom setup values take precedence.
+Starter units are free. Home systems do not guarantee accessible mineral sources.
+
+All three resources are mandatory and paid together. Credit prices and build times
+are independent of material prices. For hull capacity `H` and installed hull usage `U`:
+
+| Industrial activity | Metal | Crystal | Payment |
+|---|---:|---:|---|
+| Construct a ship, station or wing | `ceil(H / 2 + U)` | `ceil(U / 2)` | When work starts |
+| Install equipment occupying `u` hull | `ceil(u)` | `ceil(u / 2)` | When work starts |
+| Upgrade fortifications to level `L` | `25 × L` | `5 × L` | Immediately |
+| Remove equipment | Recover 50% of its installation material valuation | Same | Successful completion |
+| Dismantle a unit | Recover 50% of its build valuation × remaining hull-HP fraction | Same | Successful completion |
+
+Salvage retains fractional amounts and also returns the existing credit salvage.
+Identical hull usage costs the same materials regardless of weapon/defense type.
+Repairs, wing replenishment, upkeep, recruitment and abilities have no mineral charge.
+There is no credit substitution for missing minerals.
+
+Queued and approaching construction reserve the full three-resource price in the
+command validation budget. Reservations do not remove stockpiles or protect them
+from later operating costs; work rechecks actual balances when it starts. Failed
+payment charges nothing. Cancellation releases unpaid reservations; eligible paid
+construction/refit refunds return all recorded resources once to the original payer.
+
+### Antimatter logistics
+
+Every unit with functional Antimatter Storage can donate or receive fuel. **Transfer Antimatter** moves the donor toward the recipient; **Take Antimatter** moves the recipient toward the donor without changing the donor's orders or stance. Both work with owned/allied ships and stations, within 200 units in the same sector, at up to 25 AM per acting unit's owner turn. They conserve fuel and finish when the recipient fills or the donor empties. Shift queues either order. Manual transfers may empty harvesters; Continuous Resupply alone retains its 60 AM reserve. Harvesters remain necessary for stellar and hydrogen-nebula collection.
+
+For unattended deliveries, harvesters and transports both offer **Automatic** and
+**Manual** destinations. Sources always remain explicitly selected:
+
+- Select harvesters, right-click a star or hydrogen nebula, and open **Resupply
+  (continuously)...**. The clicked body is the fixed harvest source; destination
+  defaults to Automatic. By default, harvesters fill their tanks at the source and retain
+  **60 AM** when donating. When a manual depot fills, they return to harvest and
+  wait at their source until that depot needs fuel again.
+- Select one mobile transporter and open **Continuous Antimatter Transport...**
+  on a friendly depot. The clicked unit starts selected as Source; destination
+  defaults to Manual and starts unselected. Transports load to capacity, or depart
+  partially loaded after their source empties when they can cover travel, reserve
+  their return fuel, and deliver positive cargo. A full manual depot causes waiting
+  in the current phase until space becomes available.
+
+**Automatic** chooses the nearest eligible **owned** unit galaxy-wide, excluding
+the actor and the transport source. Proximity uses local distance, sector distance,
+and wormhole distance, with unit ID breaking ties. Unreachable or unaffordable
+recipients are skipped. Recipients must be alive, deployed, outside gas-giant
+atmospheres, and have functional storage with spare capacity. The chosen recipient
+is retained until it fills or becomes unavailable/unreachable, then another is
+selected. Routes can serve several recipients per load, returning to their source
+when no productive delivery remains and retrying each owner turn. Automatic routes
+can be started even when nobody currently needs fuel.
+
+**Priority: Fuel service urgency** optionally serves active equipment/support with
+the fewest remaining owner turns of fuel first, including maintaining or fuel-starved
+wormhole stabilizers. Distance and unit ID break ties. Idle depots follow active
+services. A newly more urgent service can interrupt an automatic delivery; all
+recipients must still pass reachability and return-reserve checks. **Nearest** is
+the default. Manual destinations stay pinned regardless of priority.
+
+**Depart at** selects 25%, 50%, 75% or 100% tank in the route dialog. The control
+interface accepts any fraction above zero through one as `minimum_load_fraction`.
+100% is the default; lower thresholds allow earlier partial deliveries only when
+the load also covers the full travel/return reserve and positive delivery cargo.
+
+**Manual** pins one owned or allied recipient by unit ID and follows its current
+position. Destroyed, hostile, docked, submerged, or storage-inoperable destinations
+fail the order with a reason; they are never silently replaced. Source loss and
+actor capability failures also fail the order. Stop either mode with Cancel Orders;
+work queued behind these continuous orders waits until they end.
+
+Use **Start route**, **Queue route**, or **Cancel** in the dialog. Manual unit
+pickers have independent System and Hex filters and a live case-insensitive search
+by partial name or ID (with or without `#`). Choose a system to enable its Hex
+filter. Changing filters clears a selection that no longer matches. Automatic mode
+disables destination pickers; their filters do not limit the automatic search.
+**Swap source and destination** exchanges units and filters only for manual
+transports with two distinct eligible endpoints. Filters reset when the window opens.
+
+Journey estimates account for operational engines/hyperdrive, wormhole topology,
+collision detours, terrain drag, and active equipment consumption. Transport legs
+reserve `ceil(1.25 × estimated AM) + 10` when travel costs fuel, otherwise zero;
+equipment upkeep is also retained for the delivery turn. Each new automatic delivery
+is checked from the ship's current position. Future harvesting and multiplication
+never finance an estimate. Invalid manual routes or insufficient tank capacity fail;
+temporary shortages wait. The sidebar shows source, destination mode, configured or
+active recipient, phase, waiting reason, and reserve. Harvesters retain their fixed
+60 AM reserve; they do not use the transporter's calculated return reserve.
+Source-bound travel appears as **Returning to source**, with its return reason
+separate from a wait. Loading/harvesting and any remaining wait appear after arrival.
+
+| Logistics design | Hull | AM capacity | Hull used | Credits | Build turns |
+|---|---|---:|---:|---:|---:|
+| Antimatter Transporter | Medium | 600 | 49/50 | 1970 | 20 |
+| Antimatter Storage Station | Large | 1600 | 90/100 | 3700 | 29 |
+| Antimatter Cache Station | **Small** | **460** | 25/25 | 1000 | 12 |
+
+The transporter has speed 100 and Advanced Hyperdrive range 5. Both stations are stationary. These designs have storage, sensors and defenses, with no harvester or special ability, and start with full tanks under the normal construction rules.
+
+**Continuous Mine** fills cargo, unloads at a compatible refinery and repeats.
+Its root progress and sidebar identify approaching the mine, mining, delivering,
+or unloading; show raw cargo and capacity; and name the selected or next compatible
+reachable owned refinery. Missing-refinery guidance names the required metal/crystal
+type. Raw cargo becomes spendable only after delivery.
+**Continuous Resupply** alternates harvesting at a star or hydrogen nebula and
+refueling automatically chosen owned ships or one manually chosen owned/allied depot. **Continuous Trade** travels between active Civilian Habitats in
+different sectors; payout scales with distance. A Trade Module requires Engines.
+
+Colony ships settle habitable planets, moons and colonizable asteroids, or load
+population from friendly/allied colonies. See [planetary traits](#planetary-traits)
+for growth and passive yields. Each populated colony supports `max(1, floor(population / 25))`
+modules of each kind: one at 25 population, two at 50. Civilian Habitats use their
+owner's colony capacity and provide 50 credits/turn each while active. Orbital
+Defense shares capacity across allied colonies and installations, providing its
+[equipment bonuses](#component-catalogue) to allies in range.
+
+## Ships and construction
+
+### Unit Designer
+
+Click **Unit Editor** beside **Comms** in any strategic view. Choose a hull,
+configure equipment and save a design to make it available for construction.
+Custom designs use a separate [user-data library](#custom-design-storage) and are
+available to human players only; automated players use public built-in designs.
+The Designer and retrofit editor enforce the same complete equipment rules.
+Turret damage and range must be finite and nonnegative; cooldown must be a
+nonnegative integer. Editable fixed component hull costs must also be nonnegative.
+Zero values are allowed where the equipment minimum permits them; fractional values
+remain legal for numeric fields that do not require integers. Integer fields accept
+whole-number text (for example, `2`, not `2.0` or `2e0`).
+
+Invalid text stays in its field, marked with a red border and an explanatory tooltip.
+The Design Summary lists affected components, fields and accepted values as you edit.
+Correcting a field clears its error. Save Design and Save as New remain disabled until
+the draft and complete equipment configuration are valid. Invalid settings still block
+saving when their component is turned off; its details remain accessible for correction.
+Switching component panels or dismissing help preserves the current draft. Closing
+the Designer discards unsaved edits without prompting. Each opening starts with a
+blank name, Medium hull, Antimatter Storage enabled, and no turrets or abilities.
+Saved designs remain available to load. Loading a different design replaces the
+draft and resets the unadded turret's numeric fields.
+
+Previews use the last valid numeric values while a field is invalid. Values that
+overflow cost calculations show an unavailable preview. Over-capacity designs show
+**Over by X hull**, including fractional excess. Changing hulls rechecks the antimatter
+minimum without increasing the entered capacity; wing long-range Sensors remain locked
+to zero. Turrets enter the design only through **Add Turret**. Invalid turret drafts
+block that action and saving until corrected.
+
+The retrofit editor uses the same numeric feedback and keeps confirmation disabled
+for invalid input. Saving and refitting recheck the draft before publishing or charging,
+so rejected actions preserve existing designs, equipment and credits.
+
+Click **?** beside a component or ability toggle in the Unit Editor to read its
+description and key rules, including requirements and costs. Help is available
+even when that equipment cannot currently be selected. The dialog also covers
+Counter-Intelligence. Scroll to read longer entries; use **Close**, the window's
+**X**, or **Esc** to return to the unchanged design. While help is open, editor
+controls and game actions are blocked; **Esc** dismisses help before the editor.
+
+### Hull sizes
+
+Hull capacity is the budget for installed equipment. Minimum AM applies when
+Antimatter Storage is equipped; it does not require every design to carry a tank.
+
+| Hull | Capacity | Base HP | Minimum AM storage | Base credits | Base build turns |
+|---|---|---|---|---|---|
+| `STRIKECRAFT_WING` | 7 | 30 | 40 | 50 | 1 |
+| `TINY` | 10 | 20 | 60 | 100 | 3 |
+| `SMALL` | 25 | 50 | 80 | 250 | 6 |
+| `MEDIUM` | 50 | 100 | 100 | 500 | 10 |
+| `LARGE` | 100 | 200 | 150 | 1000 | 15 |
+| `HUGE` | 200 | 400 | 200 | 2000 | 20 |
+| `TITAN` | 800 | 1600 | 1000 | 20000 | 60 |
+
+- Build credits = base credits + `round(used hull × 30)`.
+- Build metal = `ceil(capacity / 2 + used hull)`; crystal = `ceil(used hull / 2)`.
+- Build turns = base turns + `round(used hull / capacity × base turns)`.
+- Upkeep = `0.01 × used hull` credits/turn; strikecraft wings are exempt. Titan upkeep = `50 + 0.1 x used hull`.
+
+### Component catalogue
+
+<!-- BEGIN GENERATED: components -->
+The Unit Designer provides **28 selectable component rows**. Commander is always present.
+
+| # | Component Key | Label | Cost Type | Default Cost |
+| --- | --- | --- | --- | --- |
+| 1 | `has_titan_component` | Titan Core | Dynamic | 100.0 |
+| 2 | `has_engine` | Engines | Dynamic | 5.0 |
+| 3 | `has_antimatter_storage` | Antimatter Storage | Dynamic | 5.0 |
+| 4 | `has_antimatter_harvester` | Antimatter Harvester | Fixed | 15.0 |
+| 5 | `has_hyperdrive` | Hyperdrive | Dynamic | 5.0 |
+| 6 | `has_weapon_bays` | Weapons | Dynamic | 10.0 |
+| 7 | `has_defenses` | Defenses | Dynamic | 10.0 |
+| 8 | `has_constructor_component` | Constructor | Fixed | 15.0 |
+| 9 | `has_repair_component` | Repair | Dynamic | 15.0 |
+| 10 | `has_colony_component` | Colony | Fixed | 10.0 |
+| 11 | `has_civilian_habitat_component` | Civilian Habitat | Fixed | 15.0 |
+| 12 | `has_orbital_defense_component` | Orbital Defense | Fixed | 20.0 |
+| 13 | `has_trade_component` | Trade Module | Fixed | 10.0 |
+| 14 | `has_mining_component` | Mining | Dynamic | 10.0 |
+| 15 | `has_metal_refinery_component` | Metal Refinery | Fixed | 20.0 |
+| 16 | `has_crystal_refinery_component` | Crystal Refinery | Fixed | 20.0 |
+| 17 | `has_hangar` | Hangar | Dynamic | 20.0 |
+| 18 | `has_strikecraft_bay` | Strikecraft Bay | Dynamic | 15.0 |
+| 19 | `has_inhibitor` | Inhibitor Field | Dynamic | 2.0 |
+| 20 | `has_wormhole_stabilizer_component` | Wormhole Stabilizer | Fixed | 15.0 |
+| 21 | `has_ability_component` | Abilities | Dynamic | 10.0 |
+| 22 | `has_sensors` | Sensors | Dynamic | 2.0 |
+| 23 | `has_minelayer_component` | Minelayer | Fixed | 15.0 |
+| 24 | `has_troop_transport_component` | Troop Transport | Dynamic | 20.0 |
+| 25 | `has_siege_battery_component` | Siege Battery | Fixed | 20.0 |
+| 26 | `has_marines_component` | Marines | Dynamic | 10.0 |
+| 27 | `has_cloaking_device` | Cloaking Device | Dynamic | 10.0 |
+| 28 | `has_intelligence_component` | Intelligence | Dynamic | 10.0 |
+<!-- END GENERATED: components -->
+
+Unless an exception is listed below, utility components require **Small or larger**
+hulls. Dynamic costs follow configured performance; fixed costs appear in the table.
+
+- **Engines:** All hulls. Cost is `speed / 20 × hull multiplier`: Wing 0.2,
+  Tiny 0.6, Small 0.8, Medium 1, Large 1.5, Huge 2, Titan 4. Wing engines therefore provide
+  100 base speed per hull point. XP, sabotage and abilities modify that base speed.
+- **Antimatter Storage:** All hulls. Capacity determines cost and must meet the
+  hull-specific minimum above. **Antimatter Harvester** collects fuel from stars
+  and hydrogen nebulae.
+- **Hyperdrive:** Basic requires Tiny or larger and permits intra-system hex
+  jumps. Advanced requires Small or larger and also traverses wormholes.
+  Wings cannot equip either type.
+- **Weapons / Defenses:** All hulls. Weapon cost depends on turret count, damage,
+  range and cooldown; defense cost depends on Armor, Shields and Point Defense.
+- **Constructor:** Builds Tiny through Titan ships and stations and refits
+  friendly/allied units. Wings are produced only by Strikecraft Bays.
+- **Repair:** Cost scales with repair rate; restores friendly/allied ships.
+- **Colony:** Colonizes habitable bodies and loads population from allied colonies.
+- **Civilian Habitat:** Generates income when supported by its owner's populated colony.
+- **Orbital Defense:** A supported module provides +20% weapon damage and +20%
+  defense mitigation within 500 units. Overlapping auras stack additively.
+- **Trade Module:** Requires Engines; earns income between active habitats in
+  different sectors.
+- **Mining:** Tiny or larger; cost scales with mining rate and cargo capacity.
+  **Metal Refinery / Crystal Refinery** process the corresponding mined cargo.
+- **Hangar:** Large or larger only; cost scales with slots. Carries Tiny vessels,
+  not strikecraft wings.
+- **Strikecraft Bay:** Medium or larger; cost scales with wing slots. Builds,
+  carries and replenishes built-in Fighter-role and Bomber-role wing designs.
+- **Inhibitor Field:** Medium or larger. Cost is `radius / 50` hull; active fuel
+  consumption is `radius × 0.01` AM per owner turn. The field must fit inside the
+  sector and cannot overlap any natural or artificial inhibition zone.
+  Insufficient fuel deactivates it.
+- **Abilities:** Cost scales with equipped abilities; prerequisites must also be installed.
+- **Sensors:** All hulls. Cost scales with short-range radius and long-range hex
+  coverage. Designs with Sensors enabled and field refits require a base short-range
+  radius of at least **200.0 logical units**. Sabotage and environmental effects can
+  reduce the effective radius below this minimum. Disabled Sensors settings retain
+  a nonnegative radius requirement. Wings must have zero long-range coverage.
+- **Minelayer:** Deploys anti-ship or anti-strikecraft minefields.
+- **Troop Transport:** Medium or larger mobile hull with Engines and Antimatter Storage. Configurable integer capacity costs 0.5 hull per troop; default 40 troops / 20 hull. Newly built transports are empty.
+- **Siege Battery:** Same hull and equipment prerequisites; fixed 20 hull, 1,000 surface range, 10 defense damage for 10 AM per volley.
+- **Marines:** Tiny or larger; cost scales with marine count and enables boarding.
+- **Cloaking Device:** Basic requires Tiny or larger: 10 hull, 300 build credits,
+  5 AM/turn to hide the ship from long-range sensors. Advanced requires Small or
+  larger and extends that protection to allies within radius `R`: `R / (500/30)`
+  hull, `hull × 30` build credits, and `R × 0.04` AM/turn.
+- **Intelligence:** 10 hull for the first agent and 5 per additional agent.
+  Counter-Intelligence adds 10 hull / 300 build credits and enables sweeps and elimination.
+
+Destroyed Engines, or Engines with no positive effective speed, prevent sublight
+movement until repaired. An operational Hyperdrive can still perform jumps.
+
+### Built-in unit catalog
+
+Constructors can build ordinary ships and stations from the catalogue below.
+Select a Constructor, right-click a location, and choose **Construct...**. Search
+by name, role or ability; filter by category, hull, unit kind or price. Details
+show equipment, effective weapon ranges, fuel, abilities, costs and upkeep.
+
+**Build** replaces current orders and closes the catalogue. **Queue after existing
+orders** appends one build per selected builder and also closes the catalogue. These
+buttons work independently of Shift. Queued builds reserve resources and pay when
+they start; idle builders start immediately. Multiple builders show their combined
+credit, metal and crystal price. Affordability and shortage tooltips account for
+existing reservations and refunds from work replaced by Build.
+
+Wings are produced in Strikecraft Bays aboard mobile carriers and strikecraft
+stations and are not listed in the Constructor catalogue. Each bay slot has its
+own future wing design and optional
+**Turret type** and **Defense type** overrides. In the component panel, choose
+**Slot N: Select Production…** to inspect and configure that slot. Its status shows
+whether it is empty, building, docked or launched, alongside the current wing and
+its separately configured future production.
+
+The picker shows combat role, speed, effective weapons, fractional defenses, hull
+use, price and duration. Turret choices are Mass Driver, Beam or Missile; defense
+choices are Armor, Shields or Point Defense. **Template Default** restores that
+part of the design's presets. Turret overrides affect every turret; defense overrides
+pool total strength into one type. Statistics, variants, role, hull use, costs and
+build duration are preserved. The equipment preview updates immediately.
+
+The picker opens with the selected slot's settings. Switching designs retains
+pending override choices. **Select Production** commits the complete configuration;
+Cancel, Esc or closing discards pending edits. Choose **No production** and apply
+to clear that slot's design and overrides. Any existing wing remains unchanged and
+can still dock, launch and replenish. Occupied-slot edits configure its replacement.
+Only the slot currently building is locked; other slots remain editable.
+
+New slots start with **Future production: None** and build nothing until explicitly
+configured. Selection is free even when full, paused or short of resources. The bay
+retains one shared worker and existing replenishment priority, then builds the first
+affordable in all three resources, empty selected slot in ascending slot order. Unselected and unaffordable
+slots are skipped. The bay pays when construction starts and reserves that slot
+until completion. Launch and return retain the same assignment; loss, dismantling
+or transfer frees it for the configured replacement. Incoming wings occupy the first
+free unreserved slot regardless of its selected design, without changing that design.
+
+**Pause/Resume new wings** controls the entire bay. Selecting or clearing a slot
+never changes this pause state, and resuming does not select any designs. Paid work
+finishes while paused. Docking and replenishment do not require a production selection.
+
+Fighter, Interceptor and Recon Wings target enemy wings. Bomber and Long Range Bomber Wings
+attack ships/stations and qualify for Attack Run. Interceptors trade firepower and
+protection for speed 380. Long Range Bombers have speed 145, 292.5 effective weapon
+range and a nine-turn cooldown. Recon Wings feature speed 330 and extended 1000 short-range
+sensors for sector scouting. All five have 30 HP, two-turn construction, fractional
+defenses and zero upkeep (Fighter, Interceptor, and Bomber Wings have 300 short-range sensors).
+They have no antimatter tank or hyperdrive and travel between sectors aboard their carrier.
+Production selection and replenishment never change existing wings' equipment.
+Each wing uses one shared hull-HP pool to represent its condition. Bay replenishment
+restores up to 10 hull HP per paid step for 35 credits, completing one turn after
+the step starts.
+
+### Strikecraft endurance and servicing
+
+All wings have **80 owner turns outside a carrier**. The first End Turn resolution
+that begins with the wing deployed counts as turn 1; other players' turns and time
+spent docked do not count. At resolution 80, the wing cancels its current and queued
+orders and automatically returns to its mother carrier **before movement and combat**.
+It follows the carrier's current position at normal speed, holds fire, and ignores
+new orders, Stop, stance changes, Attack Run and Emergency Recovery. Its selected
+stance is preserved. Returning wings may still be renamed.
+
+The return can take additional turns beyond 80 while the carrier remains reachable.
+At 80 or more turns outside, a wing disappears if it cannot return: the mother
+carrier is missing, destroyed, hostile, in another sector, or unavailable for docking;
+the route is blocked; or disablement/equipment loss prevents return. Temporary
+disablement also counts. These conditions are checked during the wing owner's turn
+resolution. Orphaning never grants another 80 turns. There is no automatic adoption
+or alternate-carrier selection; dock manually with another friendly carrier before
+the limit to adopt it as the new mother carrier.
+
+Every successful docking resets the counter and locks launch until the **next wing-owner
+turn**. Newly built wings are already serviced and ready to launch. Servicing adds
+no resource charge, ammunition inventory, hull healing or weapon-cooldown reset;
+ordinary paid bay replenishment continues separately. Launch/return retain the same
+slot. Wing and carrier sidebars show endurance, return availability and launch readiness.
+Human, built-in AI and Codex players follow exactly the same engine rules. Briefings
+report mandatory returns and endurance losses.
+
+<!-- BEGIN GENERATED: unit-catalog -->
+| Design | Category | Hull / kind | Hull used | Credits | Metal | Crystal | Turns | Upkeep | Role and operation |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Bomber Wing | Carriers | STRIKECRAFT_WING wing | 6.97/7 | 259 | 11 | 4 | 2 | 0.00 | Close-range bomber wing for sustained attacks on ships and stations; eligible for carrier Attack Run. Built and replenished in a strikecraft bay; requires a carrier for transport between sectors. |
+| Interceptor Wing | Carriers | STRIKECRAFT_WING wing | 6.97/7 | 259 | 11 | 4 | 2 | 0.00 | Fast fighter wing trading firepower and protection for interception speed. Built and replenished in a strikecraft bay; requires a carrier for transport between sectors. |
+| Recon Wing | Carriers | STRIKECRAFT_WING wing | 6.97/7 | 259 | 11 | 4 | 2 | 0.00 | High-speed reconnaissance fighter wing with extended tactical sensors for scouting sectors and screening friendly carriers. Built and replenished in a strikecraft bay; requires a carrier for transport between sectors. |
+| Fighter Wing | Carriers | STRIKECRAFT_WING wing | 7.00/7 | 260 | 11 | 4 | 2 | 0.00 | Balanced fighter wing for intercepting enemy strikecraft. Built and replenished in a strikecraft bay; requires a carrier for transport between sectors. |
+| Long Range Bomber Wing | Carriers | STRIKECRAFT_WING wing | 7.00/7 | 260 | 11 | 4 | 2 | 0.00 | Lightly protected bomber wing with 292.5 effective weapon range and a nine-turn cooldown; eligible for carrier Attack Run. Built and replenished in a strikecraft bay; requires a carrier for transport between sectors. |
+| Medium Strikecraft Station | Carriers | MEDIUM station | 46.80/50 | 1904 | 72 | 24 | 19 | 0.47 | Economical stationary four-wing base for local-sector defense. Builds and replenishes strikecraft wings; select production separately for each slot. |
+| Escort Carrier | Carriers | MEDIUM ship | 49.30/50 | 1979 | 75 | 25 | 20 | 0.49 | Designed for light carrier. Inter-system travel. Select a built-in strikecraft wing design using the production picker. |
+| Large Strikecraft Station | Carriers | LARGE station | 86.30/100 | 3589 | 137 | 44 | 28 | 0.86 | Large stationary eight-wing base for local-sector defense. Builds and replenishes strikecraft wings; select production separately for each slot. |
+| Fleet Carrier | Carriers | HUGE ship | 166.60/200 | 6998 | 267 | 84 | 37 | 1.67 | Designed for carrier command. Inter-system travel. Select a built-in strikecraft wing design using the production picker. |
+| Missile Platform | Combat | TINY station | 10.00/10 | 400 | 15 | 5 | 6 | 0.10 | Designed for local missile defense. Stationary installation. |
+| Patrol Cutter | Combat | TINY ship | 10.00/10 | 400 | 15 | 5 | 6 | 0.10 | Designed for local patrol. Local-sector operations; Tiny craft can travel aboard a hangar transport. |
+| System Patrol Craft | Combat | SMALL ship | 23.20/25 | 946 | 36 | 12 | 12 | 0.23 | Affordable armed patrol craft for single-system policing and convoy protection. Basic Hyperdrive allows intra-system travel only. |
+| Interceptor | Combat | SMALL ship | 24.20/25 | 976 | 37 | 13 | 12 | 0.24 | Designed for strikecraft interception. Inter-system travel. |
+| Patrol Escort | Combat | MEDIUM ship | 33.00/50 | 1490 | 58 | 17 | 17 | 0.33 | Economical armed escort for patrol and convoy protection. Inter-system travel. |
+| Beam Frigate | Combat | MEDIUM ship | 45.50/50 | 1865 | 71 | 23 | 19 | 0.46 | Designed for beam combat. Inter-system travel. |
+| Kinetic Frigate | Combat | MEDIUM ship | 45.50/50 | 1865 | 71 | 23 | 19 | 0.46 | Designed for kinetic combat. Inter-system travel. |
+| Missile Frigate | Combat | MEDIUM ship | 45.50/50 | 1865 | 71 | 23 | 19 | 0.46 | Designed for missile combat. Inter-system travel. |
+| Artillery Battery | Combat | MEDIUM station | 46.02/50 | 1881 | 72 | 24 | 19 | 0.46 | Fortified stationary long-range artillery platform for perimeter and chokepoint defense. Stationary installation. |
+| Hazard Escort | Combat | MEDIUM ship | 48.00/50 | 1940 | 73 | 24 | 20 | 0.48 | Reduces plasma, black hole, debris hazards by 75% for this unit while enabled. Costs 2 AM each owner turn, including safe space. Requires functional Abilities and Antimatter Storage. Protection does not change terrain access, sensors or movement. Inter-system travel. Protection starts disabled. |
+| Siege Frigate | Combat | MEDIUM ship | 48.00/50 | 1940 | 73 | 24 | 20 | 0.48 | Dedicated planetary bombardment ship. Inter-system travel. |
+| Troop Transport | Combat | MEDIUM ship | 48.00/50 | 1940 | 73 | 24 | 20 | 0.48 | Dedicated planetary invasion ship. Inter-system travel. |
+| Artillery Frigate | Combat | MEDIUM ship | 49.02/50 | 1971 | 75 | 25 | 20 | 0.49 | Dedicated missile artillery frigate for mobile fire support. Inter-system travel. |
+| Flak Battery | Combat | MEDIUM station | 49.10/50 | 1973 | 75 | 25 | 20 | 0.49 | Designed for stationary air defense. Stationary installation. |
+| Flak Escort | Combat | MEDIUM ship | 49.80/50 | 1994 | 75 | 25 | 20 | 0.50 | Designed for fleet air defense. Inter-system travel. |
+| Interdiction Station | Combat | MEDIUM station | 50.00/50 | 2000 | 75 | 25 | 20 | 0.50 | Lightly armed hyperspace interdiction specialist with a 900-radius field for 9 AM per owner turn. Stationary installation. Activate clear of natural or artificial inhibition zones and sector boundaries. Use escorts and fuel deliveries for sustained interdiction; the field also blocks friendly ships. |
+| Artillery Cruiser | Combat | LARGE ship | 90.24/100 | 3707 | 141 | 46 | 29 | 0.90 | Designed for ranged fire support. Inter-system travel. |
+| Lance Cruiser | Combat | LARGE ship | 90.24/100 | 3707 | 141 | 46 | 29 | 0.90 | Dedicated beam sniper cruiser with long-range energy lances. Inter-system travel. |
+| Railgun Cruiser | Combat | LARGE ship | 90.24/100 | 3707 | 141 | 46 | 29 | 0.90 | Dedicated kinetic sniper cruiser with long-range railguns. Inter-system travel. |
+| Assault Cruiser | Combat | LARGE ship | 90.67/100 | 3720 | 141 | 46 | 29 | 0.91 | Designed for direct assault. Inter-system travel. |
+| Orbital Bastion | Combat | LARGE station | 92.80/100 | 3784 | 143 | 47 | 29 | 0.93 | Designed for colony defense. Stationary installation. Requires a friendly or allied colony and an available colony support slot. |
+| Battleship | Combat | HUGE ship | 183.93/200 | 7518 | 284 | 92 | 38 | 1.84 | Designed for fleet anchor. Inter-system travel. |
+| Siege Dreadnought | Combat | HUGE ship | 185.49/200 | 7565 | 286 | 93 | 39 | 1.85 | Dedicated planetary bombardment with a Siege Battery and long-range fleet weapons. Inter-system travel. |
+| Interdiction Fortress | Combat | HUGE station | 190.80/200 | 7724 | 291 | 96 | 39 | 1.91 | Fortified stationary jump denial with a 2000-radius field for 20 AM per owner turn. Deploy in clear sectors away from natural inhibition zones and sector boundaries. Support with escorts and fuel deliveries; the field also blocks friendly ships. |
+| Artillery Dreadnought | Combat | HUGE ship | 194.93/200 | 7848 | 295 | 98 | 39 | 1.95 | Dedicated long-range fleet bombardment dreadnought featuring tri-weapon artillery batteries. Inter-system travel. |
+| Titan Citadel | Combat | TITAN station | 685.80/800 | 40574 | 1086 | 343 | 111 | 118.58 | Unique strategic station with a Titan Core, heavy battery, repair base, and 1500-radius inhibition field for 15 AM per owner turn. Deploy clear of natural inhibition zones and sector boundaries. Support with escorts and fuel deliveries for its field and abilities; inhibition also blocks friendly ships. |
+| Titan Flagship | Combat | TITAN ship | 744.80/800 | 42344 | 1145 | 373 | 116 | 124.48 | Unique strategic flagship with a Titan Core, heavy battery, extended sensors, and fleet support. |
+| Mining Drone | Economy | TINY ship | 9.00/10 | 370 | 14 | 5 | 6 | 0.09 | Designed for transportable mining. Local-sector operations; Tiny craft can travel aboard a hangar transport. Mine metal asteroids or comets and unload at the matching refinery. |
+| Small Mining Ship | Economy | SMALL ship | 23.20/25 | 946 | 36 | 12 | 12 | 0.23 | Designed for local mining. Intra-system travel only. Mine metal asteroids or comets and unload at the matching refinery. |
+| Civilian Habitat | Economy | SMALL station | 24.00/25 | 970 | 37 | 12 | 12 | 0.24 | Designed for income and trade destination. Stationary installation. Requires a friendly or allied colony and an available colony support slot. |
+| Crystal Refinery Station | Economy | MEDIUM station | 32.00/50 | 1460 | 57 | 16 | 16 | 0.32 | Designed for crystal refining. Stationary installation. |
+| Metal Refinery Station | Economy | MEDIUM station | 32.00/50 | 1460 | 57 | 16 | 16 | 0.32 | Designed for metal refining. Stationary installation. |
+| Trade Freighter | Economy | MEDIUM ship | 37.00/50 | 1610 | 62 | 19 | 17 | 0.37 | Designed for local trade. Intra-system travel only. Needs active habitats in different sectors. |
+| Colonizer | Economy | MEDIUM ship | 38.00/50 | 1640 | 63 | 19 | 18 | 0.38 | Designed for colonization. Inter-system travel. |
+| Expedition Miner | Economy | MEDIUM ship | 46.50/50 | 1895 | 72 | 24 | 19 | 0.47 | Designed for expedition mining. Inter-system travel. Mine metal asteroids or comets and unload at the matching refinery. |
+| Blockade Runner | Economy | MEDIUM ship | 49.00/50 | 1970 | 74 | 25 | 20 | 0.49 | Designed for covert inter-system trade. Inter-system travel. Needs active habitats in different sectors. |
+| Industrial Hub | Economy | LARGE station | 92.99/100 | 3790 | 143 | 47 | 29 | 0.93 | Designed for industrial support. Stationary installation. |
+| Shipyard | Logistics | SMALL station | 20.00/25 | 850 | 33 | 10 | 11 | 0.20 | Designed for stationary construction. Stationary installation. |
+| Small Repair Ship | Logistics | SMALL ship | 24.19/25 | 976 | 37 | 13 | 12 | 0.24 | Designed for local repair. Intra-system travel only. |
+| Antimatter Cache Station | Logistics | SMALL station | 25.00/25 | 1000 | 38 | 13 | 12 | 0.25 | Small stationary fuel reserve with 460 AM storage. Accept deliveries and supply local friendly ships through Transfer Antimatter or Take Antimatter. |
+| Constructor | Logistics | MEDIUM ship | 36.50/50 | 1595 | 62 | 19 | 17 | 0.36 | Designed for mobile construction and refitting. Inter-system travel. |
+| Small Repair Station | Logistics | MEDIUM station | 41.99/50 | 1760 | 67 | 21 | 18 | 0.42 | Designed for stationary repair. Stationary installation. |
+| Wormhole Stabilizer Station | Logistics | MEDIUM station | 42.50/50 | 1775 | 68 | 22 | 18 | 0.42 | Maintain one wormhole within 500 units for 5 AM per owner turn. Both directions become safe for all ships, including enemies. Fuel shortages wait for resupply; support ends when cancelled. |
+| Fuel Depot | Logistics | MEDIUM station | 43.00/50 | 1790 | 68 | 22 | 19 | 0.43 | Designed for stationary fuel collection. Stationary installation. Harvest near stars or inside hydrogen nebulae. |
+| Wormhole Stabilizer Tender | Logistics | MEDIUM ship | 43.00/50 | 1790 | 68 | 22 | 19 | 0.43 | Maintain one wormhole within 500 units for 5 AM per owner turn. Both directions become safe for all ships, including enemies. Fuel shortages wait for resupply; support ends when cancelled. |
+| Antimatter Harvester | Logistics | MEDIUM ship | 45.00/50 | 1850 | 70 | 23 | 19 | 0.45 | Designed for fuel collection. Inter-system travel. Harvest near stars or inside hydrogen nebulae. |
+| Antimatter Transporter | Logistics | MEDIUM ship | 49.00/50 | 1970 | 74 | 25 | 20 | 0.49 | Dedicated antimatter transport. Inter-system travel. Take Antimatter loads from friendly units; Continuous Antimatter Transport repeats deliveries with an automatic return reserve. |
+| Pulsar Harvester | Logistics | LARGE ship | 66.50/100 | 2995 | 117 | 34 | 25 | 0.67 | Reduces magnetic, pulsar hazards by 75% for this unit while enabled. Costs 1 AM each owner turn, including safe space. Requires functional Abilities and Antimatter Storage. Protection does not change terrain access, sensors or movement. Inter-system travel. Protection starts disabled. |
+| Utility Transport | Logistics | LARGE ship | 76.50/100 | 3295 | 127 | 39 | 26 | 0.77 | Designed for Tiny vessel transport. Inter-system travel. Hangar accepts Tiny vessels, not strikecraft wings. |
+| Nebula Tender | Logistics | LARGE ship | 80.50/100 | 3415 | 131 | 41 | 27 | 0.81 | Designed for nebula and fuel support. Inter-system travel. Harvest near stars or inside hydrogen nebulae. |
+| Fleet Tanker | Logistics | LARGE ship | 87.50/100 | 3625 | 138 | 44 | 28 | 0.88 | Designed for fleet resupply. Inter-system travel. Harvest near stars or inside hydrogen nebulae. |
+| Fleet Repair Ship | Logistics | LARGE ship | 87.99/100 | 3640 | 138 | 44 | 28 | 0.88 | Designed for fleet repair. Inter-system travel. |
+| Heavy Shipyard | Logistics | LARGE station | 88.79/100 | 3664 | 139 | 45 | 28 | 0.89 | Designed for construction and repair base. Stationary installation. Hangar accepts Tiny vessels, not strikecraft wings. Support facilities do not accelerate construction. |
+| Antimatter Storage Station | Logistics | LARGE station | 90.00/100 | 3700 | 140 | 45 | 29 | 0.90 | Stationary bulk antimatter reservoir. Accept deliveries and supply friendly ships through Transfer Antimatter or receiver-issued Take Antimatter. |
+| Scout | Reconnaissance | SMALL ship | 24.40/25 | 982 | 37 | 13 | 12 | 0.24 | Designed for exploration. Inter-system travel. |
+| Radiation Surveyor | Reconnaissance | MEDIUM ship | 42.25/50 | 1768 | 68 | 22 | 18 | 0.42 | Reduces radiation hazards by 75% for this unit while enabled. Costs 1 AM each owner turn, including safe space. Requires functional Abilities and Antimatter Storage. Protection does not change terrain access, sensors or movement. Inter-system travel. Protection starts disabled. |
+| Sensor Station | Reconnaissance | MEDIUM station | 46.00/50 | 1880 | 71 | 23 | 19 | 0.46 | Designed for long-range reconnaissance. Stationary installation. |
+| Covert Intelligence Ship | Special Operations | MEDIUM ship | 48.00/50 | 1940 | 73 | 24 | 20 | 0.48 | Externally identical to the Patrol Escort, with two hidden intelligence agents. Constructed under the cover name â€˜Patrol Escortâ€™. After construction, you may rename it to another generic warship name; avoid names that reveal its intelligence role. Inter-system travel. |
+| Minelayer | Special Operations | MEDIUM ship | 49.50/50 | 1985 | 75 | 25 | 20 | 0.49 | Designed for mine deployment. Inter-system travel. |
+| Interdiction Frigate | Special Operations | MEDIUM ship | 50.00/50 | 2000 | 75 | 25 | 20 | 0.50 | Lightly armed hyperspace interdiction specialist with a 600-radius field for 6 AM per owner turn. Inter-system travel; deactivate before jumping. Activate clear of natural or artificial inhibition zones and sector boundaries. Use escorts and fuel deliveries for sustained interdiction; the field also blocks friendly ships. |
+| Intelligence Ship | Special Operations | LARGE ship | 75.00/100 | 3250 | 125 | 38 | 26 | 0.75 | Designed for espionage and counter-intelligence. Inter-system travel. |
+| Boarding Cruiser | Special Operations | LARGE ship | 82.00/100 | 3460 | 132 | 41 | 27 | 0.82 | Designed for boarding and capture. Inter-system travel. |
+| Minesweeper | Special Operations | LARGE ship | 87.80/100 | 3634 | 138 | 44 | 28 | 0.88 | Designed for mine detection and clearance. Inter-system travel. |
+| Command Cruiser | Special Operations | LARGE ship | 88.00/100 | 3640 | 138 | 44 | 28 | 0.88 | Designed for target designation and protection. Inter-system travel. |
+| Raider | Special Operations | LARGE ship | 93.50/100 | 3805 | 144 | 47 | 29 | 0.94 | Designed for covert raiding. Inter-system travel. |
+| Stealth Tender | Special Operations | LARGE ship | 97.50/100 | 3925 | 148 | 49 | 30 | 0.97 | Designed for fleet concealment and decoys. Inter-system travel. |
+| Interdictor | Special Operations | LARGE ship | 100.00/100 | 4000 | 150 | 50 | 30 | 1.00 | Mobile fleet interdiction with a 1500-radius field for 15 AM per owner turn. Inter-system travel. Deploy in clear space, use escorts against trapped enemies, and maintain fuel deliveries. Deactivate before jumping; the field also blocks friendly ships. |
+<!-- END GENERATED: unit-catalog -->
+
+### Automated construction customization
+
+Built-in AI and Codex players can customize each Construct order or wing production
+selection with independent
+`turret_type_override` (`mass_driver`, `beam`, `missile`) and
+`defense_type_override` (`armor`, `shields`, `point_defense`) choices.
+Omitting a choice or passing null preserves that part of the template.
+
+A turret override changes every installed turret's type, keeping its damage,
+range, cooldown and Standard, Long Range or Anti-Strikecraft variant. A defense
+override pools Armor + Shields + Point Defense into the chosen defense and sets
+the other two to zero: 10 Armor / 20 Shields / 5 Point Defense becomes 35 Shields.
+This changes combat matchups and sacrifices mixed defense coverage, while hull use,
+component HP, build cost, build time, upkeep and other equipment stay the same.
+
+Overrides require existing turrets or a positive total defense strength;
+inapplicable overrides reject the command before orders or credits change.
+Every constructor selected in one command uses the same choices. Construct choices
+persist through queues, approach and saves. Wing selection requires one owned carrier, a slot index
+and `queue=false`; each selection replaces that slot's settings, so omitted/null overrides
+reset to template presets. Settings persist through builds and saves. Catalogue templates
+and default unit names remain unchanged. Ability-created units, existing wings/ships
+and human Constructor controls are unchanged. The human bay picker supports the same
+wing overrides through its Turret type and Defense type controls.
+
+Automated observations now include actual weapon and defense equipment on enemies
+in detailed sensor view, matching human inspection. Hidden enemies, covert
+Intelligence equipment, enemy orders and template/accounting details stay private.
+
+### Fixed construction sites
+
+Construction uses the system, sector `(q, r)`, and logical `(x, y)` position selected
+when opening the catalogue. Build and Queue retain that site even when the view
+or builder changes location. Mobile constructors approach the site; stationary
+builders must already be in its sector and within build range.
+
+After construction starts, leaving that sector or build range terminates the job
+and refunds its recorded charge once to the original payer. The site never follows
+the builder. Destruction and capture retain their existing settlement rules.
+
+### Field refitting
+
+A Constructor can install or remove equipment on friendly/allied units within
+500 units, approaching automatically when necessary. Installation costs
+`added hull × 30` credits, `ceil(added hull)` metal and `ceil(added hull / 2)` crystal,
+and takes `max(1, round(added hull / 5))` turns. Removal takes one turn and pays
+50% credit and material salvage only after successful completion.
+
+The complete resulting design must satisfy hull capacity, component restrictions,
+ability and Trade prerequisites, turret rules and numeric validation, with at
+least one meaningful component. Removing a prerequisite can invalidate a refit.
+Docked craft must remain safe. Validation happens before charging and again at
+completion; queued jobs validate when they start. The engine calculates prices
+and durations. Long-range turret costs use Designer stats before variant scaling.
+
+Failed or cancelled installations refund their charge once to the original payer.
+Failed or cancelled removals pay no salvage. A pending job cannot cancel or refund
+another active job. For loading existing equipment and unfinished work, see
+[retrofit persistence](SAVE_FORMAT.md#retrofit-settlement).
+
+### Unit dismantling
+
+Select one owned Constructor, then use **Dismantle…** on another owned ship or
+station. Mobile constructors approach normally; stationary constructors need the
+target in the same sector within their construction range (normally 500 units).
+For a strikecraft wing, use **Dismantle…** beside the docked wing in its owning
+carrier's bay. Recall deployed wings separately first.
+
+The preview lists included units, estimated credits/metal/crystal, owner turns, discarded cargo
+and any paid bay work that must finish. **Dismantle** replaces the executor's orders;
+**Queue** appends the job. Temporary, destroyed, foreign-owned and self targets are
+ineligible. Ordinary docked ships can only be dismantled with their carrier.
+
+Carrier jobs include all recursively docked craft, owned by the same player.
+Each included wing requires its own functioning bay. Launched wings survive the
+carrier's removal and become orphaned. A claimed bay finishes an already-paid wing
+build or one paid replenishment step, then prioritizes dismantling. New docked
+wings completed during this wait join the job before work starts.
+
+At work start, installed equipment determines each unit's current Designer credit
+and material build costs and time; the original template is not required. Duration is the sum of
+`max(1, ceil(build_time / 2))` owner turns. Successful completion pays the sum of
+`0.5 × resource_build_cost × remaining_hull_HP / maximum_hull_HP` for each resource. Costs are frozen at start;
+HP is measured at completion. Component damage does not reduce this refund again,
+and fractional credits and materials are retained. Fuel, mined cargo, colonists and troops are
+discarded without salvage.
+
+Targets go offline during work: explicit orders are cancelled normally, stances
+are suspended and movement, weapons, sensors, production, income and support
+stop. Passive defenses, upkeep and cooldown expiration continue; enemies can
+still damage or destroy the targets. Sidebars show the phase and progress and
+provide cancellation. Cancellation restores operation and the preserved stance,
+but does not recreate cancelled orders or re-enable toggles.
+
+Destruction, capture, loss of required components, changed containment or leaving
+construction range abort the entire job. Temporary worker disablement pauses it.
+Cancellation or failure pays no partial salvage and causes no dismantling damage.
+Only successful completion removes all members and pays the combined refund.
+
+New wing construction is automatically paused when the bay is claimed and stays
+paused after completion or cancellation. Use **Resume new wings** in
+the bay sidebar to resume it. Selecting a design does not resume construction.
+Replenishment is independent and becomes available again after dismantling ends.
+
+## Orders and combat
+
+### Queues and stances
+
+Explicit orders and standing engagement policy are separate. An explicit order
+suspends stance combat; Shift queues behind other explicit work. Changing stance
+does not interrupt an order and takes effect when the explicit queue is empty.
+**Stop Unit** cancels both layers, clears fire/navigation targets, and selects
+**Do Nothing**. Automated controllers can also cancel individual orders or clear
+only explicit work; see the [shared order contract](AGENTIC_AI.md#shared-order-contract)
+and [socket examples](CODEX_CONTROL.md#command-discovery-and-order-control).
+
+| Stance | Automatic engagement boundary |
+|---|---|
+| `DO_NOTHING` | Hold fire unless directly ordered |
+| `ATTACK_WEAPON_RANGE` | Visible enemies in weapon range |
+| `ATTACK_SAME_SECTOR` | Visible enemies in the same sector |
+| `ATTACK_INTRA_SYSTEM_JUMP_RANGE` | Visible enemies within intra-system jump range |
+| `ATTACK_SAME_SYSTEM` | Visible enemies anywhere in the system |
+
+Stance controls are available only on units with a Weapons component containing
+at least one turret. Unarmed units, including empty weapon bays and carriers whose
+only weapons belong to their wings, retain an internal **Do Nothing** policy and
+show only their ordinary orders. Defenses, siege batteries, mines and abilities
+do not grant stance controls. Stop remains available under its normal rules.
+
+Damaged installed Weapons and turret cooldowns preserve the selected stance;
+engagement resumes when the weapons can operate. Removing the last turret resets
+the policy to Do Nothing and cancels its pursuit without clearing explicit work.
+Installing weapons reveals the controls but does not select an attack stance.
+Replacing armed Weapons with armed Weapons preserves the selected policy.
+Movement-based stance requirements still apply independently.
+
+Stance pursuit stops when the enemy becomes hidden or leaves the selected boundary.
+A direct Attack order is independent of the stance boundary, but requires continued
+detailed visibility of its target through its owner's shared sensors and intelligence.
+Losing that contact permanently cancels Attack and Attack (long-range only), including
+their approach movement and weapon locks. Anonymous radar presence and remembered
+contacts do not preserve an attack. Cancellation is checked before movement and firing
+and after every player's turn; the ship cannot follow a hidden target or automatically
+resume the cancelled order when it reappears. Other queued work and the selected stance
+remain intact. Patrol, Protect and Defend discard only the lost-target engagement and
+continue their mission; autonomous policies may acquire a newly visible target afresh.
+Turrets fire only for an
+active Attack or Attack (long-range only), including normal attacks performed by Stance, Patrol, Protect or Defend;
+queued, suspended or cancelled attacks do not authorize fire.
+
+**Attack** approaches until all turrets eligible to hit the target are in range.
+**Attack (long-range only)** requires functional Weapons with at least one eligible
+Long Range variant turret and approaches only until all eligible Long Range turrets
+are in range. Mobile attackers use the shortest effective range of their relevant turrets;
+cooldowns do not change that distance. Both orders let every eligible turret fire
+within its own range, including standard turrets if the enemy comes closer.
+Stationary platforms use their longest eligible range and can fire without closing
+for a shorter turret. Targets outside usable range or requiring unavailable sector
+travel are rejected before orders are replaced; later changed conditions can still
+cause an execution failure.
+Neither order retreats to regain distance. Pursuit resumes if the target moves out
+of the required range; losing all eligible long-range turrets fails the long-range order.
+
+Selecting a specific component halves each turret's hull-attack range for both
+approach and firing, including Long Range turrets after their variant scaling.
+Each turret holds fire until the target is strictly inside its own component range;
+it does not shoot the hull instead while approaching. For example, a turret with
+1,000 hull range can attack a component only at distances below 500. The normal
+five-unit approach margin applies after halving the range. Equipment range values
+and weapon range rings show hull range; component attack menus indicate **50% range**.
+
+Right-click an enemy and use **Attack (long-range only)** to choose Hull or a public
+subsystem. The option appears for eligible selected units; in a mixed selection,
+ineligible units keep their existing orders. Shift queues the attack. Visible enemy
+deployables also offer the long-range action when eligible.
+
+**Add Patrol Waypoint** extends an active or queued patrol without interrupting
+its current leg. Shift queues a separate patrol. Patrol returns to its captured
+starting position after visiting the waypoints, then repeats. Continuous orders
+can block queued work until cancelled or replaced.
+
+### Order types
+
+<!-- BEGIN GENERATED: order-count -->
+The `OrderType` enum defines **45 order types**, including the persistent `STANCE` root.
+<!-- END GENERATED: order-count -->
+
+| Order type | Action |
+|---|---|
+| `REACH_WAYPOINT` | Internal movement leg created by Move. |
+| `MOVE` | Travel to a position, sector or system through a planned route. |
+| `PATROL` | Repeat a waypoint route and return to the patrol's start. |
+| `ATTACK` | Approach until all eligible turrets are in range and engage an enemy. |
+| `ATTACK_LONG_RANGE` | Approach until all eligible Long Range turrets are in range; any eligible turret may fire within its own range. |
+| `STANCE` | Standing engagement policy, separate from explicit orders. |
+| `DEFEND` | Guard a position or friendly/allied unit. |
+| `PROTECT` | Escort a friendly/allied unit and intercept enemies. |
+| `STABILIZE_WORMHOLE` | Approach one endpoint and maintain 100% stability for the whole connection; fuel shortages wait. |
+| `TOGGLE_INHIBITOR` | Activate or deactivate an inhibition field. |
+| `COLONIZE` | Establish a colony on a habitable body. |
+| `RECRUIT_TROOPS` | Approach an owned colony and recruit a chosen troop count into transport cargo at End Turn. |
+| `BOMBARD_PLANET` | Approach an enemy colony and repeatedly suppress its defenses to 25% readiness. |
+| `INVADE_PLANET` | Approach and commit a chosen troop count to one conquest roll. |
+| `LOAD_COLONISTS` | Load population from a friendly/allied colony. |
+| `CONSTRUCT` | Build an ordinary ship or station. |
+| `DISMANTLE_UNIT` | Dismantle an owned unit and its docked contents for damage-adjusted salvage. |
+| `REFIT_UNIT` | Install or remove equipment through a Constructor. |
+| `REPAIR` | Approach and repair a friendly/allied ship. |
+| `MINE` | Extract metal from an asteroid or crystal from a comet. |
+| `UNLOAD_RESOURCES` | Deliver cargo to a compatible refinery. |
+| `DOCK` | Enter a compatible hangar or strikecraft bay. |
+| `DEPLOY_UNIT` | Launch a selected carried vessel. |
+| `DEPLOY_ALL_WINGS` | Launch the carrier's wings. |
+| `USE_ABILITY` | Activate an equipped ability. |
+| `CONTINUOUS_MINE` | Repeat mining and refinery deliveries. |
+| `TRANSFER_ANTIMATTER` | Approach and donate fuel to a friendly/allied unit. |
+| `TAKE_ANTIMATTER` | Approach and take fuel from a friendly/allied unit. |
+| `CONTINUOUS_ANTIMATTER_TRANSPORT` | Repeatedly load at one depot and deliver to another, reserving return fuel. |
+| `CONTINUOUS_RESUPPLY` | Alternate star harvesting and fleet refueling. |
+| `LAY_MINEFIELD` | Deploy a minefield at the ship's position. |
+| `TRADE` | Visit an active habitat in another sector for income. |
+| `CONTINUOUS_TRADE` | Repeat trade journeys between active habitats. |
+| `INFILTRATE_UNIT` | Place an agent aboard an enemy ship. |
+| `INFILTRATE_PLANET` | Place an agent on an enemy colony. |
+| `RELOCATE_AGENT` | Move an embedded agent to another enemy host. |
+| `SABOTAGE` | Disrupt the agent's host subsystem or colony. |
+| `CI_SWEEP` | Reveal enemy agents on allied assets in range. |
+| `ELIMINATE_AGENT` | Remove a discovered enemy agent. |
+| `EXTRACT_AGENT` | Recover an owned agent into an owned Intelligence ship. |
+| `ENTER_GAS_GIANT` | Approach and submerge in a gas giant. |
+| `LEAVE_GAS_GIANT` | Emerge when a safe departure position is available. |
+| `ATTACK_RUN` | Bomber approach and salvo created by the carrier ability. |
+| `EMERGENCY_RECOVERY` | Wing return created by the carrier ability. |
+| `RETURN_FOR_SERVICE` | Mandatory, non-cancellable wing return after 80 turns outside. |
+
+### Movement and collision avoidance
+
+Tactical distances use logical sector units; each sector has radius **5000**.
+Sublight movement consumes fuel. Hyperdrives jump between sectors, with Advanced
+drives also using wormholes between systems. Natural and artificial inhibition
+fields block intra-system jump entry and exit; plan approach legs outside their
+boundaries. A ship already in its selected entry wormhole's sector approaches
+the entrance locally and traverses it without first leaving its natural inhibition
+field. Reaching an entry in another sector still requires escaping any inhibition
+at the starting position. In Sector View, jump-denial perimeters are drawn as red
+outlined circles.
+
+**Interdiction Frigate** and **Interdiction Station** are lightly armed Medium
+specialists with 600- and 900-radius fields, consuming 6 and 9 AM per owner turn.
+Their full tanks support 33 paid stationary turns; movement and other fuel use
+reduce endurance. The frigate has Advanced Hyperdrive for inter-system deployment;
+the station trades mobility for coverage and protection. Position them near an
+engagement and provide escorts to damage trapped enemies.
+
+The Large **Interdictor**, Huge **Interdiction Fortress** and **Titan Citadel**
+provide larger fields for clear sectors. Greater coverage requires more room
+away from natural fields and sector boundaries. Inhibition affects friendly
+ships too, including the emitter: deactivate before jumping the mobile units.
+Use fuel deliveries for sustained operation; all five public inhibitor designs
+consume less than the 25 AM transfer rate. Fuel exhaustion shuts the field down;
+resupply does not automatically reactivate it.
+
+Positive-cost movement requires functioning Antimatter Storage and successful
+payment before displacement. Ordinary ships without storage cannot move for free;
+tankless strikecraft wings retain their fuel-free sublight flight. Fuel previews
+and journey estimates apply this same wing exception. Sublight fuel is charged
+once per turn with positive displacement, including a shortened final
+step, using the normal speed and terrain modifiers. Fuel shortages leave sublight
+orders waiting. Failed jumps follow the normal order-failure behavior. Rejected
+relocation refunds its fuel payment and starts neither recharge nor wormhole
+instability damage.
+
+Ships automatically route around solid bodies and fields that exclude their hull
+size. Navigation keeps 50 units of clearance and stays inside the sector. A route
+that cannot be completed fails with `path_unavailable`; it does not pass through
+an obstacle. Ordinary Move, positional Defend and Patrol destinations must be
+outside every solid body and its 50-unit clearance band, within radius 5000.
+Known impossible destinations are rejected before replacing existing work.
+Execution rechecks actual geometry; previously unknown obstacles can still fail
+an issued order. An obstructed starting position can escape outward, but ordinary
+Move cannot land inside a solid body.
+
+Approach orders stop at their operational range. Protect maintains 150 units from
+the target; Attack, Dock, Repair, Refit, Construct, trade, transfers, intelligence and targeted
+abilities use their respective ranges. Colonization and loading colonists stop
+150 units beyond the body's surface, approaching automatically if necessary.
+Defend orders targeting a body hold outside its surface at the same distance.
+Microjump and carrier deployment also respect hull-blocking fields and storms.
+
+Carrier launches search up to 100 positions 20–50 units from the carrier. Every
+candidate must remain inside the sector and clear of solid bodies and terrain
+that excludes the craft, using normal navigation clearance. Wings cannot launch
+from carriers inside magnetic storms or be placed inside their exclusion zone.
+If no safe position is found, deployment fails and the craft stays docked with
+its location and bay slot unchanged. Launch All may deploy some wings while
+leaving blocked wings docked; discovery and command preflight do not reserve a
+launch position or guarantee that placement will succeed.
+
+### Wormhole stabilization
+
+A **Wormhole Stabilizer** costs 15 hull and requires a Medium-or-larger ship or
+station with Antimatter Storage. Select one equipped unit and choose **Stabilize
+Wormhole** in the System or Sector context menu. Ships approach automatically;
+stations must already be within 500 units of the endpoint in the same sector.
+The boundary is included. Shift queues the order.
+
+While supported, a connection has **100% effective stability in both directions
+for everyone, including enemies**. Its natural stability remains unchanged.
+Diameter limits, Advanced Hyperdrive requirements, jump costs, recharge and
+inhibition rules still apply. Stabilizers work within the wormhole's natural
+inhibition radius; they do not generate an inhibition field.
+
+Support costs **5 AM per owner turn**. At End Turn, units already in range pay
+before their owner's ships move. Newly arrived or refuelled units can pay after
+movement and unit updates, protecting later crossings. Each unit pays at most
+once per owner turn. Paying exactly 5 AM still protects the connection until the
+next payment check. Issuing an order or loading a save never charges fuel.
+
+Insufficient fuel stops protection and leaves the order **Waiting for antimatter**;
+delivery by another unit lets support resume automatically at a payment phase.
+Cancellation, replacement, capture, destruction, docking, atmospheric hiding or
+loss of required equipment ends support. Temporary disablement pauses it;
+displacement removes protection and prompts another approach. Multiple sources
+provide redundancy without stacking benefits, and each source pays upkeep.
+After the last source stops, normal instability risk immediately returns.
+
+Maintaining support suspends stance combat and blocks queued work until cancelled.
+Naturally stable wormholes are valid targets but gain no extra benefit. The unit
+sidebar shows progress and consumption; wormhole panels show natural and effective
+stability. A green outline identifies an actively stabilized endpoint.
+
+The Logistics catalogue provides a **Wormhole Stabilizer Tender**, with Engines
+and Advanced Hyperdrive, and a stationary **Wormhole Stabilizer Station** with
+400 AM storage. Both are unarmed and start without a maintain order.
+
+### Weapons and damage
+
+| Turret type | Role | Counter |
+|---|---|---|
+| Mass Driver | Kinetic projectiles | Armor |
+| Beam | Instant directed-energy fire | Shields |
+| Missile | Guided explosive ordnance | Point Defense |
+
+**Standard** turrets balance range, damage and cooldown. **Anti-Strikecraft**
+turrets specialize in wings with faster tracking and fire. **Long Range** turrets
+trade slower firing for reach. Combat XP improves weapon damage, defenses,
+sublight speed and jump range.
+
+Non-positive damage has no effect. Cover, defenses and damage reduction can fully
+absorb a positive hit, including rounding it to zero; there is no one-HP minimum.
+Damage reduction is limited to 0–100% and cannot heal a ship. Shields are mitigation,
+not a regenerating health pool. See [environmental effects](#environmental-fields)
+for cover, cooling and splash modifiers.
+
+### Planetary warfare
+
+Conquest applies to colonizable planets, moons and asteroids. Marines still board
+ships; planetary troops use dedicated Troop Transport cargo. Select a transport,
+right-click a colony and choose **Recruit troops** or **Invade colony**. The dialogs
+let you choose troop counts; invasion defaults to all cargo and shows the success
+probability and both casualty outcomes. A Siege Battery enables **Bombard colony**.
+Orders approach automatically; Shift queues them behind existing work. Cancel them
+through the ordinary order controls.
+
+| Rule | Initial balance |
+|---|---|
+| Maximum defense, populated colony | `max(5, population × 0.5) × (1 + 0.5 × fortification level)` |
+| Empty colony | Zero defense, even if owned |
+| Current defense | Maximum defense × readiness (25%–100%) |
+| Fortification upgrades, levels 1 / 2 / 3 | 250 / 500 / 750 credits; 25 / 50 / 75 metal; 5 / 10 / 15 crystal |
+| Recruit one troop | 2 credits and 0.2 population; leave at least 1 population |
+| Recruitment / invasion range | 150 beyond the surface |
+| Siege volley | 10 defense damage and 10 AM; 1,000 beyond the surface |
+| Invasion | 20 AM, one ship, a positive integer troop count |
+| Success chance | Troops committed / (troops committed + current defense); 100% against zero defense |
+| Casualties | 25% of committed troops on success, 75% on defeat, rounded up |
+
+Colony sidebars display defense strength, readiness, fortifications and the next
+upgrade price. Upgrade an owned populated colony immediately, at most once per
+round, without a production queue. Upgrades preserve readiness. New campaigns
+start at level 0 and full readiness.
+
+Bombardment repeats once per attacking owner turn until readiness reaches 25%,
+the order is cancelled, or the target becomes invalid. A volley deals at most the
+defense remaining above that floor and reduces readiness by actual damage divided
+by maximum defense. Collateral population losses are 0.02 per point of actual
+defense damage, never taking population below 1 or increasing a smaller population.
+Bombardment cannot change ownership. Ordinary turrets cannot bombard, and Orbital
+Defense auras affect space combat only.
+
+Each assault makes one roll using actual strength at resolution; preview odds can
+change before arrival. Survivors return aboard. A repelled assault ends its order
+without suppressing defenses; issue a new order to try again. Success preserves
+civilian population, transfers the colony, removes one fortification level and sets
+readiness to 25%. Ships, stations and treasury remain with their existing owners.
+The new owner earns colony income at their next normal income phase. Homeworlds
+follow these rules without an additional elimination condition. Hostile ships do
+not block landing, but can destroy transports through ordinary combat.
+
+Recruitment, volleys and assaults resolve only at End Turn, after unit updates and
+destruction cleanup: recruitment first, then bombardment, then invasions, each in
+stable ship-ID order. Each ship can perform one planetary action per round, even
+if orders, ownership or equipment change. Queued follow-ups wait until a later
+turn. At global round end, after population growth, colonies gain 10 percentage
+points of readiness only if they suffered neither bombardment nor assault that round.
+
+Installed capacity determines hull use, price and upkeep; casualties do not shrink
+equipment. Destroyed cargo equipment kills its passengers and repairs restore no
+troops. Refitting preserves passengers and rejects removing occupied cargo.
+Capture immediately changes income and colony support eligibility for habitats
+and Orbital Defense. Now-allied embedded agents stop sabotage and remain available
+for extraction; hostile agents keep sabotage and discovery state.
+
+Briefings privately report recruitment and upgrades. Participants and their allies
+receive bombardment, casualties, repelled assault and capture/loss reports without
+hidden attacker identities. Exact colony details include defenses; troop cargo is
+visible to owners and allies only. **Troop Transport** and **Siege Frigate** are
+48/50-hull public designs; **Siege Dreadnought** combines a Siege Battery with its
+remaining ship weapons.
+
+### Minefields
+
+**Anti-Ship** fields target ordinary ships; **Anti-Strikecraft** fields target wings.
+After movement on each ship owner's turn, every living deployed ship is checked
+at its final position, including stationary ships. Each overlapping enemy field
+can detonate once against that ship in the phase, subject to remaining mines.
+Allied ships are excluded; hidden and docked ships do not trigger mines.
+
+Crossing a field without ending inside it does not trigger a mine. Additional
+players do not multiply damage or mine consumption per owner turn. Scan for
+Minefields reveals hazards; Mine-Clearing Sweep removes only its limited mine budget.
+
+## Abilities
+
+Equip abilities in the Designer or retrofit editor. The table gives activation
+costs, prerequisites, range and timing; the descriptions below explain effects.
+Human controls and both automated controllers use shared validation and orders.
+See [Codex commands](CODEX_CONTROL.md#tactical-ability-commands) for payloads.
+Positive-cost casts require functional Antimatter Storage and pay before applying
+effects. Failed payment leaves targets, cooldown and active duration unchanged.
+Rejected activations, including blocked microjumps and unsuccessful capture rolls,
+refund their activation payment and do not start cooldown. Zero-cost abilities
+retain their own equipment requirements.
+
+<!-- BEGIN GENERATED: abilities -->
+There are **29 special abilities** registered in the game.
+
+| Ability | Mode | Cooldown (Turns) | Duration (Turns) | Range (logical units) | AM Cost | Ongoing AM / owner turn | Required Component | Target Type |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| **Adaptive Forcefield** | Cast | 8 | 3 | 0.0 | 20 | 0.0 | Defenses | Self |
+| **Cluster Warhead** | Cast | 5 | 0 | 500.0 | 30 | 0.0 | Weapons | Position |
+| **Designate Target** | Cast | 6 | 4 | 450.0 | 15 | 0.0 | Sensors | Unit |
+| **Ion Bolt** | Cast | 7 | 3 | 400.0 | 25 | 0.0 | Weapons | Unit |
+| **Missile Batteries** | Cast | 10 | 4 | 0.0 | 40 | 0.0 | Weapons | Self |
+| **Repair Cloud** | Cast | 8 | 4 | 350.0 | 35 | 0.0 | Repair | Self |
+| **Capture Unit** | Cast | 10 | 0 | 100.0 | 40 | 0.0 | Marines | Unit |
+| **Drain Antimatter** | Cast | 6 | 0 | 300.0 | 0 | 0.0 | Antimatter Storage | Unit |
+| **Microjump** | Cast | 5 | 0 | 0.0 | 25 | 0.0 | Hyperdrive | Position |
+| **Scan for Minefields** | Cast | 6 | 0 | 1500.0 | 35 | 0.0 | Sensors | Self |
+| **Attack Run** | Cast | 8 | 6 | 750 | 40 | 0 | Strikecraft Bay, Sensors | Unit |
+| **Evasive Formation** | Cast | 6 | 3 | 750 | 20 | 0 | Strikecraft Bay, Sensors | Unit |
+| **Emergency Recovery** | Cast | 8 | 6 | 750 | 30 | 0 | Strikecraft Bay | Unit |
+| **Tracking Lock** | Cast | 6 | 3 | 600 | 20 | 0 | Sensors, Weapons | Unit |
+| **Flak Barrage** | Cast | 8 | 3 | 0 | 35 | 0 | Weapons | Self |
+| **Ghost Fleet** | Cast | 8 | 0 | 750 | 25 | 0 | Sensors | Position |
+| **Tractor Tether** | Cast | 6 | 3 | 400 | 20 | 5 | Engines | Unit |
+| **Mine-Clearing Sweep** | Cast | 4 | 0 | 1000 | 25 | 0 | Sensors, Minelayer | Position |
+| **Guardian Link** | Cast | 7 | 3 | 450 | 25 | 0 | Defenses | Unit |
+| **Multiply Antimatter** | Cast | 30 | 0 | 500 | 20 | 0 | Antimatter Storage | Self |
+| **Nebula Catalyst** | Cast | 7 | 3 | 750 | 30 | 0 | Sensors, Antimatter Storage | Nebula + Position |
+| **Fleet Jump** | Cast | 30 | 0 | Current system (unlimited) | 200 | 0 | Titan Core, Antimatter Storage, Engines, Hyperdrive | Position |
+| **Aegis Field** | Cast | 20 | 10 | 1000 | 150 | 0 | Titan Core, Antimatter Storage, Defenses | Self |
+| **Siege Lance** | Cast | 25 | 1 | 3000 | 200 | 0 | Titan Core, Antimatter Storage, Weapons, Sensors | Unit |
+| **Deep Scan** | Cast | 20 | 5 | Current system (unlimited) | 150 | 0 | Titan Core, Antimatter Storage, Sensors | Hex |
+| **Carrier Supremacy** | Cast | 25 | 10 | 0 | 200 | 0 | Titan Core, Antimatter Storage, Strikecraft Bay, Sensors | Self |
+| **Hazard Shielding** | Toggle | 0 | Until disabled | 0 | 0 | 2 | Antimatter Storage | Self |
+| **Radiation Hardening** | Toggle | 0 | Until disabled | 0 | 0 | 1 | Antimatter Storage | Self |
+| **Antimatter Containment** | Toggle | 0 | Until disabled | 0 | 0 | 1 | Antimatter Storage | Self |
+<!-- END GENERATED: abilities -->
+
+### Environmental resistance abilities
+
+Equip these self-only toggles through the Designer or a refit. They require
+functional **Abilities** and **Antimatter Storage**, on Small-or-larger hulls.
+The normal Ability component cost applies: 10 hull plus 5 per equipped ability.
+
+| Ability | Protected hazards | Reduction | Ongoing AM / owner turn |
+|---|---|---:|---:|
+| Hazard Shielding | Plasma, black-hole and debris hull damage | 75% | 2 |
+| Radiation Hardening | Radiation component damage | 75% | 1 |
+| Antimatter Containment | Magnetic-storm and pulsar fuel drain | 75% | 1 |
+
+Use **Enable/Disable** in the Abilities component panel. New units start disabled.
+Toggling is immediate, costs no activation AM, has no cooldown, and preserves
+orders and stance. Enabling requires enough current fuel for the combined upkeep
+of the resulting active resistances; it does not reserve that fuel.
+
+Upkeep is charged once per owner turn after movement and mines, immediately
+before environmental hazards, including turns in safe space. If the combined
+bill cannot be paid, all resistances disable with no partial charge; the turn
+briefing reports the shutdown. Subsequent harvesting cannot fund that phase.
+Paying exactly the bill still protects against that phase's hazards.
+
+Each source's nominal damage or drain is reduced to 25%, before HP truncation or
+fuel clamping. Plasma damage becomes 2 HP, black-hole damage 3 HP, radiation 1
+component HP, and debris abrasion 0 HP at every density. Hull protection applies
+before Adaptive Forcefield; radiation still discards component spillover.
+Magnetic storms drain at most 1.5 AM. Pulsars drain 1.25% of fuel remaining after
+upkeep and earlier hazards. Overlapping hazard sources resolve separately.
+
+Protection disables on capture, destruction, docking, atmospheric hiding,
+disablement, prerequisite loss or refitting the Ability component. Repairs,
+deployment and restored functionality do not reactivate it automatically.
+Equipment is rechecked for each hazard, so radiation can disable protection
+before another overlapping source resolves.
+
+These abilities do not affect weapons, mines, wormhole instability, sabotage,
+oxygen splash amplification, movement penalties, sensors or entry restrictions.
+They protect only the equipped unit. **Hazard Escort**, **Radiation Surveyor**
+and **Pulsar Harvester** are buildable specialist variants with one resistance each.
+
+### Combat and support abilities
+
+- **Adaptive Forcefield:** Reduces incoming damage by 75% while active.
+- **Cluster Warhead:** Detonates an area attack at a position, excluding allies.
+- **Designate Target:** Adds 50% turret damage against the marked enemy;
+  contributions from different sources stack additively.
+- **Ion Bolt:** Disables the target's movement and attacks while active.
+- **Missile Batteries:** Deploys three temporary missile platforms that attack enemies.
+- **Repair Cloud:** Restores 5 hull HP per turn to each friendly/allied unit in range.
+- **Capture Unit:** Uses Marines to board and take ownership of an enemy vessel.
+- **Drain Antimatter:** Removes up to 30 AM from an enemy tank and transfers fuel
+  into the caster's available storage.
+- **Microjump:** Repositions within the same sector, subject to collision and field restrictions.
+- **Scan for Minefields:** Permanently reveals enemy minefields in range.
+
+### Deployment and link abilities
+
+Position casts require a legal location within local range. Tractor/Guardian
+unit targeting and antimatter exchange approach automatically. Cooldowns and finite
+durations advance at the caster owner's turn start. Required equipment must be
+operational, and activation requires enough AM.
+
+- **Ghost Fleet:** Deploys a persistent radar decoy. Short-range inspection identifies
+  it. Each deploying ship can have one surviving emitter across the galaxy.
+- **Tractor Tether:** Pulls a smaller allied or enemy ship with Engines, excluding
+  wings, up to 200 units per owner turn and stops at 150-unit separation. Each
+  pull costs 5 AM; the caster's speed is halved. The link breaks beyond 600 units
+  and can be cancelled explicitly.
+- **Mine-Clearing Sweep:** Removes up to three mines in total from revealed enemy
+  fields along a 200-unit-wide sweep. Remaining mines stay hazardous.
+- **Guardian Link:** Redirects 30% of incoming weapon damage, capped at 20 per hit,
+  to the guardian. The redirected share is reduced by 25% before guardian defenses.
+  It protects an ally, requires continued range, and can be cancelled explicitly.
+  A target can have only one incoming link of each type; Guardian chains cannot form cycles.
+- **Multiply Antimatter:** Pay 20 AM, then double current fuel in friendly/allied tanks within 500 units in the same sector, including the caster, capped by each tank's capacity. The caster's seed is its fuel after paying the cost. Empty tanks gain nothing. Requires functional storage and an Ability component; the caster must be deployed and enabled. Recipients may be disabled but must have functional storage and be deployed, alive, and outside gas giant atmospheres. Rejects pulses whose total gains do not exceed the 20 AM cost. The caster has a 30-round cooldown; each recipient that gains fuel has a shared 30-round recovery period across all casters. These deadlines survive refits, capture, docking, and saving. The pulse is centered on the caster and needs no target or approach.
+- **Nebula Catalyst:** Requires **Sensors and Antimatter Storage**; a Harvester is
+  optional. Select a known nebula in the current sector and a position inside it
+  within cast range. One 600-radius patch per ship enhances hydrogen fuel savings
+  and nitrogen cooling for allies, and oxygen splash damage and dust sensor
+  penalties for enemies. Baseline nebula effects continue outside those enhancements.
+
+Ghost emitters have no expiry. Identifying a decoy does not free a deployment slot. Source destruction, capture
+or refitting does not reset the cap attached to that deploying ship. Active links
+end if their participants cease to meet deployment, equipment, allegiance or range
+requirements. See [tactical persistence](SAVE_FORMAT.md#tactical-state) for saved state.
+
+### Carrier and anti-strikecraft abilities
+
+Carrier support affects only the caster's own deployed wings belonging to that
+carrier. These five casts are local to the current sector and do not automatically
+approach. The caster pays AM; cooldowns and durations advance at its owner's turn
+start. Tracking Lock and Flak Barrage require an anti-strikecraft turret.
+
+- **Attack Run:** Select a visible non-wing enemy. Each eligible deployed bomber
+  belonging to the carrier and within cast range gets its own run, replacing
+  explicit work but preserving stance. Bombers follow the moving target at +50%
+  speed and release one double-damage salvo from ready turrets, no earlier than
+  the caster owner's next turn. Runs require continued visibility and normal
+  weapon range, cooldowns and clear firing paths. Stop, replacement orders and
+  Emergency Recovery abort without refunds. Queued follow-ups resume afterward.
+  Disabled or recovering bombers are ineligible; targeting lists affected wings
+  and the work being replaced.
+- **Evasive Formation:** One owned deployed wing takes 50% less weapon damage and
+  deals 25% less weapon damage. This includes Attack Run salvos and incoming Flak;
+  mines and environmental hazards bypass evasion.
+- **Emergency Recovery:** One owned deployed wing returns at double speed with
+  weapons suppressed. It replaces explicit work and follows the carrier using
+  normal docking, routing and capacity rules. Docking removes the boost and
+  prevents relaunch until the next owner-turn start. Stop or replacement orders
+  abort recovery.
+- **Tracking Lock:** The caster's anti-strikecraft turrets deal double damage to
+  one visible enemy wing. The lock breaks on lost visibility, sector/range
+  separation or changed allegiance. Other units receive no damage bonus.
+- **Flak Barrage:** A moving 500-radius aura deals a 4-damage kinetic hit to each
+  hostile player's deployed wings inside it after that player's movement phase.
+  Stationary wings are affected; allied and docked wings are excluded. Overlapping
+  barrages do not stack. Flak uses normal weapon mitigation, evasion, Guardian Link
+  and damage XP.
+
+Identical carrier effects do not stack. Effects and unfinished carrier orders end
+if the source is destroyed, captured, disabled, hidden, docked or loses required
+operational equipment. Carrier command range is checked at activation; Tracking
+range and Flak coverage update continuously. The Testing carrier demonstrates
+carrier support; the Testing Huge ship demonstrates Tracking Lock and Flak Barrage.
+
+## Exploration and environments
+
+### Visibility and concealment
+
+Ships and stations provide short-range visual coverage and long-range sector
+detection, shared across allies. Unexplored space is hidden; explored sectors keep
+last-seen turn intel until sensors refresh it. Embedded agents also share their
+host's sensor coverage with their owner and allies.
+
+Colony ownership on planets, moons and colonizable asteroids requires current
+shared sensor coverage. Long-range sensors reveal ownership throughout covered
+sectors. Short-range sensors reveal it when their effective radius touches the
+body's solid surface in the same sector, including the boundary. Allied sensors,
+infiltrated hosts and Titan Deep Scan contribute normally. Ship cloaking and
+concealment do not hide colony ownership. Own and allied colonies remain known
+without sensors.
+
+Unobserved worlds show **Owner: Unknown**, regardless of whether they are actually
+uninhabited or occupied. After contact is lost, the last observed owner (or
+uninhabited status) remains with **Last observed: turn N** and a muted dashed
+faction ring. This saved intelligence does not update when an unseen colony
+changes hands. Population, defenses and colony activity require current knowledge;
+physical traits and population capacity remain available.
+
+Colonization, colonist loading, troop recruitment, bombardment, invasion and colony
+infiltration can be ordered using current or last-known ownership. The disclosed
+owner must suit the action. Colonization also accepts unvisited colonizable bodies
+with unknown ownership; known occupied bodies are ineligible. Other colony actions
+require disclosed ownership. Losing contact preserves the order and its approach.
+At normal action range, ships wait for shared
+sensor contact before acting, blocking following queued work until contact returns
+or the order is cancelled. Waiting consumes no action resources; ordinary travel
+fuel and upkeep still apply.
+
+Reacquiring contact refreshes ownership and revalidates the mission. A newly revealed
+incompatible owner fails the order and stops its approach; following orders remain
+queued. Population and defenses are checked with current knowledge before effects
+execute. Historical invasion targets show unknown odds; historical loading and
+recruitment limits reflect cargo/credits only until population is confirmed.
+Immediate fortification upgrades and agent relocation still require current knowledge.
+
+Basic cloaking hides one ship from long-range detection; Advanced cloaking also
+covers allies in its area. Nebulae and asteroid fields conceal ships inside them
+from long-range sensors, so opponents must close to visual range. Allied
+minefields are always visible. Covert equipment and enemy inspection limits are
+covered under [covert ships and unit names](#covert-ships-and-unit-names).
+
+### Celestial bodies and dimensions
+
+Collision radii describe solid surfaces; inhibition radii block jumps; effect
+radii delimit environmental modifiers. All values below use logical sector units.
+Non-solid bodies are permeable except where a field or storm excludes the hull.
+
+| Body | Collision radius | Inhibition radius | Effect radius | Resource or role |
+|---|---|---|---|---|
+| Star | 750.015; Blue/Red Giants 900 | 3375; Blue/Red Giants 3750; black holes 4500 | See star hazards below | Antimatter harvesting |
+| Planet | 562.5; gas giants 675 | 3000; Ferrous 3250; gas giants 3500 | — | Colony or atmospheric hiding |
+| Moon | 125.01 | 2250 | — | Colony |
+| Colonizable Asteroid | 75.015 | 1500 | — | Colony |
+| Metal Asteroid | 75.015 | 1500 | — | Raw metal, base yield 10/turn |
+| Comet | 75.015 | 1000 | — | Raw crystal, base yield 10/turn |
+| Wormhole | 0 | 1875 | — | Advanced Hyperdrive route between systems |
+| Asteroid Field | 0 | 0 | 3600 | Concealment and movement restrictions |
+| Ice Field | 0 | 0 | 3600 | Cover and cooling |
+| Debris Field | 0 | 0 | 2000 | Cover and abrasion hazard |
+| Nebula | 0 | 0 | 3600 | Concealment and subtype effects |
+| Storm | 0 | 0 | 3600 | Subtype hazards |
+
+Moons generate in empty hexes exactly one hex from a planet in the same system,
+including gas giants. If no eligible hex or planet remains, another nonplanet
+body fills the moon's generation slot.
+
+### System generation
+
+Galaxy placement samples positions in the configured distance band around existing
+systems, then checks minimum separation from every system and map boundaries.
+This supports small spacing ranges without relying on whole-map random hits.
+Generation remains seeded and bounded; impossible/crowded settings report the
+spacing and map bounds and leave the current campaign intact.
+
+A system of hex radius `R` generates between `R - floor(0.3R)` and
+`R + floor(0.3R)` planets, inclusive. Gas giants count as planets; moons do not.
+Radius 3 has exactly 3 planets, radius 5 has 4–6, radius 8 has 6–10, and radius 12
+has 9–15. Planets occupy distinct distance rings before adding a second planet
+to a ring, with at most two per ring. Placement favors separation between planets.
+
+Planet types depend on distance as a fraction of the system radius. The inner
+third favors volcanic, greenhouse and ferrous worlds; the middle third favors
+Terran and oceanic worlds; the outer third favors ice worlds and gas giants.
+Every type can occur in every zone, and star type does not change these chances.
+
+Each system also generates `2R`–`3R` secondary bodies: moons, colonizable and metal
+asteroids, comets, asteroid/ice/debris fields, nebulae and storms. The central star
+and wormholes are outside both budgets. Each generated body occupies its own hex.
+Counts do not guarantee a colonizable planet or either mining resource. Campaign
+setup can add Terran homeworlds beyond the planet budget when needed; see
+[spawn profiles](#spawn-profiles).
+
+Comets have an 85% preference for available outskirts hexes at least
+`max(2, ceil(0.65R))` hexes from the center; otherwise they use an available hex
+without that preference. Wormholes occupy the outermost available layers and
+face their destination systems on the galaxy map. Wormhole pairs generate with
+a 70% chance of 100% stability and a 30% chance of 40–95% stability.
+
+### Stars
+
+Every system has a central star. Its type multiplies the base antimatter harvest rate.
+A functioning Harvester must be within its harvesting range of the star's center
+(default 3000 units). Collision, inhibition and harvesting radii are distinct.
+
+| Star type | Harvest multiplier |
+|---|---|
+| Black Hole | 3.0× |
+| Pulsar | 2.5× |
+| Blue Giant | 2.0× |
+| Neutron Star | 1.8× |
+| Yellow Giant | 1.5× |
+| Red Giant | 1.3× |
+| G-Type | 1.0× |
+| White Dwarf | 0.8× |
+| Protostar | 0.7× |
+| Red Dwarf | 0.5× |
+| Brown Dwarf | 0.3× |
+
+Black holes inflict 15 base hull damage per owner turn within their 750-radius
+event horizon. Pulsars drain 5% of a ship's current AM from functioning storage
+per owner turn anywhere in their sector. Both are checked after movement. Blue and Red
+Giants use the enlarged collision and inhibition radii in the dimensions table.
+
+### Planetary traits
+
+<!-- BEGIN GENERATED: planets -->
+| Planet Type | Colonizable | Max Population | Growth Rate | Passive Metal | Passive Crystal | Antimatter Multiplier |
+| --- | --- | --- | --- | --- | --- | --- |
+| **Terran** | Yes | 100.0 | 2% / turn | 0.0 | 0.0 | 0.0x |
+| **Oceanic** | Yes | 120.0 | 2.5% / turn | 0.0 | 0.0 | 0.0x |
+| **Desert** | Yes | 75.0 | 1.5% / turn | 0.0 | 0.0 | 0.0x |
+| **Ice** | Yes | 60.0 | 1% / turn | 0.0 | 2.0 | 0.0x |
+| **Barren** | Yes | 40.0 | 0.8% / turn | 0.0 | 0.0 | 0.0x |
+| **Volcanic** | Yes | 50.0 | 0.8% / turn | 5.0 | 0.0 | 0.0x |
+| **Ferrous** | Yes | 70.0 | 1.2% / turn | 8.0 | 0.0 | 0.0x |
+| **Greenhouse** | Yes | 35.0 | 0.5% / turn | 0.0 | 3.0 | 0.0x |
+| **Gas Giant** | No | 0.0 | 0% / turn | 0.0 | 0.0 | 0.0x |
+<!-- END GENERATED: planets -->
+
+Moons support 50 population with 1% growth per owner turn; colonizable asteroids
+support 20 with 0.5% growth. Population is clamped to capacity before growth or
+growth-sabotage checks. Colonized planets deposit passive metal/crystal directly
+into the owner's treasury each turn. Gas giants cannot be colonized.
+
+### Environmental fields
+
+Field density controls access, speed and cover. An excluded hull routes around
+the field, cannot microjump or deploy into it, and stops at its boundary with
+`hazard_blocked` if movement would enter it. Wings can traverse all field densities
+and are exempt from field speed penalties and debris abrasion, while retaining
+cover and cooling. Drag applies once after other engine modifiers; the strongest
+overlapping penalty applies. Displayed effective speed includes current terrain.
+
+<!-- BEGIN GENERATED: environment -->
+| Field | Density | Largest hull | Effect radius | Speed | Beam cover | Kinetic/missile cover | Turret cooling (turns) | Abrasion (base HP) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Asteroid Field | Low | Large | 3600 | 85% | 0% | 0% | 0 | 0 |
+| Asteroid Field | Medium | Medium | 3600 | 75% | 0% | 0% | 0 | 0 |
+| Asteroid Field | High | Small | 3600 | 65% | 0% | 0% | 0 | 0 |
+| Ice Field | Low | Large | 3600 | 90% | 5% | 0% | 1 | 0 |
+| Ice Field | Medium | Medium | 3600 | 80% | 10% | 0% | 1 | 0 |
+| Ice Field | High | Small | 3600 | 70% | 15% | 0% | 1 | 0 |
+| Debris Field | Low | Large | 2000 | 85% | 0% | 5% | 0 | 1 |
+| Debris Field | Medium | Medium | 2000 | 75% | 0% | 10% | 0 | 2 |
+| Debris Field | High | Small | 2000 | 65% | 0% | 15% | 0 | 3 |
+
+| Nebula | AM harvest | Propulsion AM | Short-range radius | Turret cooling (turns) | Cluster Warhead splash taken |
+| --- | --- | --- | --- | --- | --- |
+| Hydrogen | 0.4x | 50% | 100% | 0 | 1x |
+| Nitrogen | 0x | 100% | 100% | 1 | 1x |
+| Oxygen | 0x | 100% | 100% | 0 | 1.15x |
+| Dust | 0x | 100% | 70% | 0 | 1x |
+
+| Hazard | Base amount per owner turn | Target | Area (inclusive) |
+| --- | --- | --- | --- |
+| Plasma | 8 | hull | Radius 3600 |
+| Magnetic | Up to 6 | antimatter | Radius 3600 |
+| Radiation | 4 | random non destroyed component | Radius 3600 |
+| Black Hole | 15 | hull | Radius 750 |
+| Pulsar | 5% of current AM | antimatter | Whole star sector |
+<!-- END GENERATED: environment -->
+
+Asteroid fields provide long-range concealment. Ice and debris reduce incoming
+damage of the listed type by the cover percentage **before equipment defenses**;
+this does not increase equipment stats. Strongest overlapping cover applies.
+
+Debris abrasion is checked after movement on the ship owner's turn. It requires
+positive sublight displacement at **post-drag speed above 50** and a final position
+inside the debris field. Arrivals count, even if the remaining distance was short.
+Stationary, disabled, fuel-blocked, jump-only and tractor-only ships are exempt.
+Crossing without ending inside is safe. Each overlapping debris source applies
+its density-based base hull damage separately; active damage reduction can reduce it.
+
+Ice/nitrogen cooling reduces a turret's cooldown reset **when it fires**, after
+variant scaling. Positive cooldowns have a minimum reset of one; zero-cooldown
+designs remain zero. Coolant sources do not stack. Entering or leaving a region
+does not recalculate an already running cooldown. All turret types and hulls
+benefit; ability cooldowns are unaffected.
+
+### Nebulae and storms
+
+All nebulae conceal ships from long-range detection.
+
+The generated tables above give baseline subtype values. Hydrogen harvesting
+requires a functioning Harvester within its harvesting range of the cloud **center**
+(default 3000 units); the cloud's effect radius does not extend harvesting range.
+Its propulsion discount applies to sublight movement only, not jumps or equipment.
+Dust reduces the observer's short-range sensor **radius**, not its scanned area.
+
+Oxygen affects Cluster Warhead splash, not ordinary missiles, mines, hazards or
+component spillover. Apply it once after distance falloff and before mitigation,
+truncating the product to an integer. Overlapping oxygen clouds do not stack.
+[Nebula Catalyst](#deployment-and-link-abilities) selectively enhances these effects.
+
+Storms and star hazards apply after movement on each affected owner's turn.
+Plasma and black-hole values are base hull damage: equipment defenses do not
+mitigate them, but active hull damage reduction still applies. They also damage
+deployables. Radiation targets one randomly selected non-destroyed component;
+excess damage beyond that component's remaining HP is discarded.
+
+Magnetic storms drain **up to 6 AM**, limited to the remaining fuel in functioning
+storage, and suppress the affected ship's long-range sensor projection. They do
+not conceal the ship from enemy radar or disable short-range vision. Wings cannot
+enter magnetic storms or launch from carriers inside them. Each overlapping hazard
+source applies separately.
+
+Environmental boundaries include points exactly on the radius. Hidden and docked
+units receive no external environmental modifiers.
+
+### Gas-giant atmospheric hiding
+
+Ships with operational Engines, Tiny through Titan, can enter gas giants. Wings
+and stationary stations cannot. Hidden ships disappear from enemy sensors and
+maps, cannot interact with outside space or project fields, and cannot be attacked
+from outside. Opposing hidden ships cannot detect or attack each other. Upkeep
+and existing ability timers continue.
+
+Entry and departure preserve stance and queued work. Hidden ships pause outside
+orders and execute only a Leave at the front of the queue.
+
+**Built-in AI and Codex/socket commands:** Use **Enter → queued Leave → queued Move**.
+The shared gateway projects atmospheric state and rejects **Enter → Move → Leave**
+atomically with `invalid_state`; none of that batch is applied. See the
+[automated sequence](CODEX_CONTROL.md#gas-giant-queues).
+
+**Human controls and restored engine queues:** Outside work queued with Shift while
+an entry is still approaching can remain behind Enter. Once submerged, placing Leave
+behind that work cannot unblock it. Cancel the blocking work or issue a replacement
+Leave. Direct engine queues and saves can likewise contain this paused FIFO state.
+
+Queue editing remains available while hidden, and saving preserves the pause.
+Departure finds a position 50 units beyond the planet surface, clear of obstacles,
+excluded fields and deployed ships, inside the sector boundary. If no safe position
+exists, Leave fails with `path_unavailable`; the ship stays hidden and keeps its
+remaining queue. An accepted Leave order does not guarantee safe exit placement.
+
+## Intelligence and teams
+
+### Teams and cooperation
+
+Teams are set during campaign setup and remain fixed throughout the match. Players
+on the same team are allies; all other players are enemies.
+
+| System | Allied behavior |
+|---|---|
+| Sensors and cloaking | Share sensor coverage, infiltrated-host vision and Advanced cloak protection |
+| Combat and mines | Do not acquire allies as hostile targets; mines and Cluster Warhead exclude allies |
+| Support | Repair, refit, refuel, protect and load colonists from allied assets |
+| Orbital Defense / Repair Cloud | Share aura benefits and healing; colony support slots are shared |
+| Espionage | Infiltration, relocation and sabotage target enemies; sweeps and elimination protect allies |
+
+Right-click menus offer the operations appropriate to the target's relationship.
+Hostile abilities such as Capture Unit, Drain Antimatter and Designate Target
+reject allies.
+
+### Agents and sabotage
+
+Intelligence ships deploy agents onto enemy units or colonies within 500 units.
+For colony hosts, intelligence ranges are measured from the body's surface;
+infiltration, extraction and elimination approach outside it. Relocation measures
+the gap between hosts' surfaces, and Counter-Intelligence uses the same colony rule.
+Orders in operational range execute immediately; otherwise the ship approaches.
+Agents can relocate between enemy hosts or be extracted into an owned Intelligence
+ship with free capacity. They share the host's sensor coverage with their owner
+and allies; infiltrated colonies provide a 500-radius visual area.
+
+| Sabotage | Effect on the host |
+|---|---|
+| Engines | Maximum sublight speed halved |
+| Weapons | Turret damage halved |
+| Defenses | Defense mitigation halved |
+| Hyperdrive | Hex and wormhole jumps disabled |
+| Sensors | Short-range sensor radius halved; long-range coverage disabled |
+| Antimatter | Immediately drains half the current fuel from functioning storage; no recurring leak |
+| Economy | Colony tax income halved; the infiltrating player receives 25% of base tax |
+| Growth | Population growth halted |
+
+Activate **CI Sweep** in a Counter-Intelligence ship's component panel to reveal
+enemy agents on friendly/allied assets within 500 units. It costs 100 credits and
+25 AM, with a three-turn cooldown. There is no passive discovery. A CI ship can
+eliminate discovered agents within the same operational range.
+
+Infiltrated targets show infiltration/sabotage badges and a sidebar status banner.
+Friendly/allied targets with discovered spies show a warning badge. Enemy players
+cannot inspect or precision-target Intelligence components.
+
+### Covert ships and unit names
+
+The **Covert Intelligence Ship** has the same visible equipment as the **Patrol
+Escort**, plus two hidden agents. It is constructed under the name **Patrol Escort**;
+its catalogue title remains distinct. Neither design has cloaking or CI. The
+catalogue lists their prices, hull use and upkeep.
+
+Select an owned unit and edit its sidebar name. Names are trimmed, contain 1–30
+characters and no control characters; duplicates are allowed. Renaming costs
+nothing, preserves orders and equipment, works while submerged or damaged, and
+persists through saving. Choose a generic name if you want to conceal an intelligence
+role. Automated controllers use [rename_unit](CODEX_CONTROL.md#unit-names-and-covert-ships).
+
+Enemy inspections hide template identity, actual hull use, upkeep, all order layers,
+and construction/refit activity. Hull class, capacity, HP and public equipment
+remain inspectable; owners and allies retain their access. Equivalent public
+equipment does not reveal which twin an opponent sees, though behavior or discovered
+espionage can expose its role.
+
+### Communications
+
+Use **Comms** for conversations between players. Transmissions are logged immediately
+to `saves/comms.md`; saving also exports the campaign's conversations to
+`saves/comms/<campaign_id>/comms.md`. Logs include turn, UTC timestamp, participants,
+teams and text.
+
+## Storage and troubleshooting
+
+### Saving and loading
+
+Use **Esc → Save Game** to write a JSON campaign under `saves/`. **Load Game** is
+available from the main menu and during a match. Loading validates a separate
+candidate before replacing the live campaign; a rejected save leaves play intact.
+See [Campaign persistence](SAVE_FORMAT.md) for the current format, restoration and
+load warnings. AI memory storage is described in
+[AI memory and persistence](AGENTIC_AI.md#memory-and-persistence).
+
+### Application preferences
+
+Application preferences are stored separately from campaigns in `preferences.json`
+in the same user-data directory listed below, honoring `WORMHOLE_USER_DATA_DIR`.
+Missing preferences use Automatic without creating a file. Invalid or unreadable
+preferences log a warning and use Automatic. Loading a campaign does not change
+the application preference.
+
+### Custom-design storage
+
+Custom designs are stored in `custom_unit_templates.json` under:
+
+| Platform | Directory |
+|---|---|
+| Windows | `%LOCALAPPDATA%/WormholeControl`, falling back to `~/AppData/Local/WormholeControl` |
+| macOS | `~/Library/Application Support/WormholeControl` |
+| Linux | `$XDG_DATA_HOME/WormholeControl`, falling back to `~/.local/share/WormholeControl` |
+
+Set `WORMHOLE_USER_DATA_DIR` to an **absolute directory** to override the location.
+A missing library starts an empty collection without creating a file. Only this
+configured library is loaded. To relocate an existing library, close the game and
+copy it to the configured directory, preserving any designs already there.
+
+Malformed libraries and storage failures are reported in the log. Repair the file
+and restart to reload it. Failed saves, renames and deletions preserve the previous
+disk library and registered designs; a failed load blocks writes until a successful
+reload. Built-in and Testing template keys and names are reserved even when Testing
+is inactive. Libraries that fail current validation are rejected as a whole; diagnostics
+identify the fields to repair. See [design validation](SAVE_FORMAT.md#design-validation).
+
+### External design validation
+
+Validate a library without launching the GUI or changing files:
+
+```bash
+python scripts/validate_unit_templates.py
+python scripts/validate_unit_templates.py "path/to/custom_unit_templates.json"
+python scripts/validate_unit_templates.py -c builtin
+```
+
+The default is the configured custom library (`-c custom`). `-c builtin` or
+`--catalogue builtin` selects `data/unit_templates.json`; an explicit path overrides
+the selected catalogue's default file. Output includes the resolved path, errors
+grouped by template and field, and counts.
+
+| Exit code | Meaning |
+|---|---|
+| 0 | Valid library; an empty object `{}` is allowed |
+| 1 | Invalid definitions or library structure |
+| 2 | File, JSON parsing or command-line error; a missing file is an error |
+
+Validation uses the Designer's complete equipment rules, reports duplicate JSON
+keys and never repairs or publishes designs. See [template validation details](DEVELOPMENT.md#template-validation)
+for fields, types, derived values and the Python API.
+
+### Logs and recovery
+
+Each run writes `game.log` in the root folder. Check it for storage and runtime
+failures.
+Normal logging omits detailed movement/order traces. Set `DEBUG_LOG=true` before
+launching to enable application-wide debug diagnostics, including these traces.
+`game.log` rotates at 5 MiB with three backups. The control launcher's raw stderr
+rotates between launches; see
+[control diagnostics](CODEX_CONTROL.md#transport-and-process-behavior).
+Generated unit mentions in file and console logs include the unit's
+current name and ID, for example `Scout (id:42)`, so identically named ships can
+be distinguished. Design names and quoted communications retain their original text.
+AI telemetry and developer-feedback files are documented under
+[AI failure behavior](AGENTIC_AI.md#failure-behavior). For rejected commands,
+uncertain transport outcomes or partial execution, follow
+[Codex recovery distinctions](CODEX_CONTROL.md#recovery-distinctions).
+
+## Titan hull and strategic abilities
+
+[Titan rules](TITANS.md) define the complete acquisition, equipment, economics,
+movement, combat, recon, strikecraft and persistence contracts. The public
+Flagship and Citadel occupy one surviving/reserved slot per player. Their Core
+costs 100 hull; each Titan power costs 25 hull inside Abilities. Core removal
+requires removing its dependent powers first.
+
+Use the sidebar to choose a power. For Deep Scan, right-click a hex in system
+view or a location in sector view; for Fleet Jump, navigate to an explored hex
+and right-click an explicit arrival position. The sidebar previews gathered
+ships, replaced orders, scan coverage, charge progress and enduring cooldowns.
+Titan effects execute before movement at owner End Turn. Active Aegis is drawn
+as a radius; boosted strikecraft receive a ring and bonus details.

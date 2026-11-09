@@ -1,0 +1,199 @@
+from unit_orders.base import OrderTargetField
+import logging
+from game_logging import format_unit_for_log
+from typing import Dict, Optional, Any, TYPE_CHECKING
+
+from geometry import distance
+from constants import DEFAULT_STANDOFF_DISTANCE
+from .base import Order, OrderStatus, OrderType
+from .movement import MoveOrder
+
+if TYPE_CHECKING:
+    from galaxy import Galaxy
+    from domain.units import Unit
+
+logger = logging.getLogger(__name__)
+
+
+def within_colony_range(unit, target):
+    """Shared, side-effect-free proximity used by execution and batch projection."""
+    radius = getattr(target, "collision_radius", getattr(target, "radius", 0.0))
+    return (unit.in_system == target.in_system and unit.in_hex == target.in_hex
+            and distance(unit.position, target.position) <= radius + DEFAULT_STANDOFF_DISTANCE + 0.01)
+
+
+class ColonyContactOrder(Order):
+    """Retry an arrived action while contact is missing; preserve saved child chains."""
+
+    def update(self, galaxy_ref):
+        if self.status != OrderStatus.IN_PROGRESS:
+            return
+        if self.sub_orders:
+            action_children = [child for child in self.sub_orders if child.order_type == self.order_type]
+            super().update(galaxy_ref)
+            if self.status == OrderStatus.IN_PROGRESS and not self.sub_orders:
+                if any(child.status == OrderStatus.COMPLETED for child in action_children):
+                    self.status = OrderStatus.COMPLETED
+                else:
+                    self.execute(galaxy_ref)
+        else:
+            self.execute(galaxy_ref)
+
+    def check_completion_conditions(self):
+        # An arrived action without children may still be waiting for contact.
+        pass
+
+
+class ColonizeOrder(ColonyContactOrder):
+    target_fields = (OrderTargetField('target_id', 'celestial', public=True),)
+
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.COLONIZE, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        if self.status not in {OrderStatus.PENDING, OrderStatus.IN_PROGRESS}:
+            return
+        super().execute(galaxy_ref)
+        from planetary_intel import validate_order_target
+        if not validate_order_target(self, galaxy_ref):
+            return
+
+        target_id = self.parameters.get("target_id")
+        if target_id is None:
+            self.fail("invalid_parameters")
+            logger.debug("COLONIZE order failed: no target_id.")
+            return
+
+        target = galaxy_ref.get_celestial_body_by_id(target_id)
+
+        if not target:
+            self.fail("target_unavailable")
+            logger.debug(f"COLONIZE order failed: Celestial body with ID {target_id} not found.")
+            return
+
+        if getattr(target, 'is_colonizable', True) is False:
+            self.fail("target_not_colonizable")
+            logger.debug(f"COLONIZE order failed: Target {target.name} is not colonizable.")
+            return
+
+        if not self.unit.colony_component:
+            self.fail("capability_unavailable")
+            logger.debug(f"COLONIZE order failed: Unit {format_unit_for_log(self.unit)} has no ColonyComponent.")
+            return
+
+        in_range = within_colony_range(self.unit, target)
+
+        if not in_range:
+            if not self.has_active_sub_orders():
+                move_order = MoveOrder.for_celestial_approach(
+                    self.unit,
+                    target,
+                    DEFAULT_STANDOFF_DISTANCE,
+                    parent_order=self,
+                )
+                self.add_sub_order(move_order)
+
+                colonize_sub_order = ColonizeOrder(self.unit, self.parameters, parent_order=self)
+                self.add_sub_order(colonize_sub_order)
+            return
+
+        from planetary_intel import current_ownership
+        if not current_ownership(galaxy_ref, self.unit.owner, target):
+            return
+        cargo = self.unit.colony_component.population_cargo
+        if cargo <= 0:
+            self.fail("insufficient_population")
+            logger.debug("COLONIZE order failed: No population in cargo to unload.")
+            return
+
+        success = self.unit.colony_component.unload_population(target, cargo)
+
+        if success:
+            self.status = OrderStatus.COMPLETED
+            logger.debug(f"COLONIZE order completed: Unit {format_unit_for_log(self.unit)} successfully colonized {target.name}.")
+        else:
+            self.fail("target_unavailable")
+            logger.debug(f"COLONIZE order failed: Unload population failed for unit {format_unit_for_log(self.unit)} on {target.name}.")
+
+
+class LoadColonistsOrder(ColonyContactOrder):
+    target_fields = (OrderTargetField('target_id', 'celestial', public=True),)
+
+    def __init__(self, unit: 'Unit', parameters: Dict[str, Any] = None, parent_order: Optional[Order] = None):
+        super().__init__(unit, OrderType.LOAD_COLONISTS, parameters, parent_order)
+
+    def execute(self, galaxy_ref: 'Galaxy') -> None:
+        if self.status not in {OrderStatus.PENDING, OrderStatus.IN_PROGRESS}:
+            return
+        super().execute(galaxy_ref)
+        from planetary_intel import validate_order_target
+        if not validate_order_target(self, galaxy_ref):
+            return
+
+        target_id = self.parameters.get("target_id")
+        amount = self.parameters.get("amount", 50)
+
+        if target_id is None:
+            self.fail("invalid_parameters")
+            logger.debug("LOAD_COLONISTS order failed: no target_id.")
+            return
+
+        target = galaxy_ref.get_celestial_body_by_id(target_id)
+
+        if not target:
+            self.fail("target_unavailable")
+            logger.debug(f"LOAD_COLONISTS order failed: Celestial body with ID {target_id} not found.")
+            return
+
+        if getattr(target, 'is_colonizable', True) is False:
+            self.fail("target_not_colonizable")
+            logger.debug(f"LOAD_COLONISTS order failed: Target {target.name} does not support colonies.")
+            return
+
+        if not self.unit.colony_component:
+            self.fail("capability_unavailable")
+            logger.debug(f"LOAD_COLONISTS order failed: Unit {format_unit_for_log(self.unit)} has no ColonyComponent.")
+            return
+
+        in_range = within_colony_range(self.unit, target)
+
+        if not in_range:
+            if not self.has_active_sub_orders():
+                move_order = MoveOrder.for_celestial_approach(
+                    self.unit,
+                    target,
+                    DEFAULT_STANDOFF_DISTANCE,
+                    parent_order=self,
+                )
+                self.add_sub_order(move_order)
+                
+                load_params = {
+                    "target_id": target.id,
+                    "target_name": getattr(target, 'name', None),
+                    "amount": amount
+                }
+                load_order = LoadColonistsOrder(self.unit, load_params, parent_order=self)
+                self.add_sub_order(load_order)
+            return
+
+        from planetary_intel import current_ownership
+        if not current_ownership(galaxy_ref, self.unit.owner, target):
+            return
+        cargo_before = self.unit.colony_component.population_cargo
+        success = self.unit.colony_component.load_population(target, amount)
+
+        if success:
+            # Carry execution facts to the explicit root before terminal recording.
+            # No target reference is retained in the owner's outcome history.
+            root = self
+            while root.parent_order is not None:
+                root = root.parent_order
+            root.loading_outcome = {
+                'requested_amount': amount,
+                'loaded_amount': self.unit.colony_component.population_cargo - cargo_before,
+                'retained_population': target.population,
+            }
+            self.status = OrderStatus.COMPLETED
+        else:
+            self.fail("execution_failed")
+            logger.debug(f"LOAD_COLONISTS order failed for unit {format_unit_for_log(self.unit)}.")

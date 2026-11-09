@@ -1,0 +1,795 @@
+"""Player-scoped, JSON-safe observations for planning agents."""
+
+from __future__ import annotations
+
+from collections import Counter
+from typing import Any
+from resource_costs import ResourceCost
+from constants import HullSize
+from titan_acquisition import capacity as titan_capacity
+
+from .rules import (
+    ability_states,
+    detailed_system_names,
+    body_is_notable,
+    command_guidance,
+    is_colonizable_body,
+    is_mining_target,
+    is_self_owned,
+    is_star,
+    is_antimatter_source,
+    supported_commands,
+)
+
+
+from .command_spec import COMMAND_SPECS, command_catalog
+from .commands import resource_budget_view
+from .tactical import visible_deployables
+from .order_view import order_layers, enum_name
+from component_visibility import public_components
+from order_history import history_view
+from turn_briefing import summary_view
+
+OBSERVATION_SCHEMA_VERSION = 39
+COMMAND_HELP = {name: spec.description for name, spec in COMMAND_SPECS.items()}
+
+
+def build_observation(game: Any, player: Any) -> dict[str, Any]:
+    """Create a fair observation without references to live game objects."""
+    galaxy = getattr(game, "galaxy", None)
+    turn = int(getattr(game, "turn_number", 1))
+    if galaxy is None:
+        raise ValueError("Cannot observe a game without a galaxy.")
+
+    from visibility import VisibilityService, is_minefield_visible
+
+    visibility = VisibilityService.compute(galaxy, player, turn_number=turn)
+    systems = []
+    visible_unit_objects = []
+    bodies_by_system: dict[str, list[Any]] = {}
+    minefields = []
+
+    for system_name in sorted(galaxy.systems):
+        system = galaxy.systems[system_name]
+        system_bodies = []
+        for hex_coord, hex_obj in sorted(system.hexes.items()):
+            for body in getattr(hex_obj, "celestial_bodies", []):
+                system_bodies.append(body)
+                for unit in getattr(body, "hidden_units", []):
+                    relation = _relation(player, getattr(unit, "owner", None))
+                    if relation != "enemy":
+                        visible_unit_objects.append(unit)
+            for unit in getattr(hex_obj, "units", []):
+                relation = _relation(player, getattr(unit, "owner", None))
+                if relation != "enemy" or unit.id in visibility.visible_enemy_unit_ids:
+                    visible_unit_objects.append(unit)
+            for minefield in getattr(hex_obj, "minefields", []):
+                if is_minefield_visible(visibility, minefield):
+                    minefields.append(_minefield_view(minefield, player))
+        bodies_by_system[system_name] = system_bodies
+
+    from .tactical import visible_deployables, deployable_view, patch_views, public_links
+    from tactical_abilities import ability_catalog
+    tactical_objects = visible_deployables(game, player)
+    presences = [
+        {"system_name": system_name, "hex_coord": list(hex_coord)}
+        for system_name, hex_coord in sorted(visibility.presence_hexes)
+    ]
+    detailed_systems = detailed_system_names(galaxy, player, visible_unit_objects, visibility.presence_hexes)
+
+    exact_bodies = []
+    for system_name in sorted(galaxy.systems):
+        system = galaxy.systems[system_name]
+        system_bodies = bodies_by_system[system_name]
+        detailed = system_name in detailed_systems
+        exact_for_system = (
+            list(system_bodies)
+            if detailed
+            else [
+                body
+                for body in system_bodies
+                if body_is_notable(player, body, visibility)
+            ]
+        )
+        exact_bodies.extend(exact_for_system)
+        system_data = {
+            "name": system_name,
+            "position": _position(getattr(system, "position", None)),
+            "radius": int(getattr(system, "radius", 0)),
+            "connections": [
+                {
+                    "system_name": destination,
+                    "maximum_hull": _enum_value(maximum_hull),
+                }
+                for destination, maximum_hull in sorted(
+                    getattr(galaxy, "system_graph", {}).get(system_name, {}).items()
+                )
+            ],
+            "navigation_anchor": _navigation_anchor(system, system_bodies),
+            "detail_level": "full" if detailed else "summary",
+        }
+        if detailed:
+            system_data["celestial_bodies"] = [
+                _body_view(body, player, include_system=False, galaxy=galaxy, game=game, snapshot=visibility)
+                for body in exact_for_system
+            ]
+        else:
+            system_data["notable_bodies"] = [
+                _body_view(body, player, include_system=False, galaxy=galaxy, game=game, snapshot=visibility)
+                for body in exact_for_system
+            ]
+            system_data["body_summary"] = _body_summary(system_bodies, player)
+        systems.append(system_data)
+
+    units = [
+        _unit_view(
+            unit,
+            _relation(player, getattr(unit, "owner", None)),
+            include_capabilities=_relation(player, getattr(unit, "owner", None)) == "self",
+            game=game,
+            player=player,
+            exact_bodies=exact_bodies,
+            visible_units=visible_unit_objects,
+        )
+        for unit in visible_unit_objects
+    ]
+    resource_budget = resource_budget_view(game, player)
+    construction_templates = _construction_catalog(visible_unit_objects, player, resource_budget['available'])
+    from .intelligence import intelligence_observation
+    from planetary_intel import current_ownership
+    current_bodies = [body for body in exact_bodies
+                      if current_ownership(galaxy, player, body, visibility)]
+    intelligence, player_intelligence_options = intelligence_observation(
+        galaxy,
+        player,
+        visible_units=visible_unit_objects,
+        exact_bodies=current_bodies,
+    )
+    recipient_ids = [
+        int(other.id)
+        for other in getattr(game, "players", [])
+        if getattr(other, "id", None) != getattr(player, "id", None)
+    ]
+    from planetary_warfare import blocker, defense_view, colonizable
+    upgrades = []
+    for body in exact_bodies:
+        if colonizable(body) and body.owner == player:
+            quote = defense_view(body)
+            cost = quote['next_upgrade_resources']
+            upgrades.append(dict(target_id=body.id, **quote,
+                resource_shortfall=ResourceCost.from_dict(cost).shortfall(resource_budget['available']).to_dict() if cost else None,
+                blocker=blocker(game, player, "upgrade_planetary_defenses", body, budget=resource_budget['available'])))
+    player_intelligence_options["upgrade_planetary_defenses"] = {"targets": upgrades[:32], "omitted_count": max(0, len(upgrades) - 32)}
+    player_legal = ["message_developer"]
+    if any(item["blocker"] is None for item in upgrades):
+        player_legal.append("upgrade_planetary_defenses")
+    if recipient_ids:
+        player_legal.append("send_message")
+    if player_intelligence_options["sabotage"]["agents"]:
+        player_legal.append("sabotage")
+    if any(entry["target_ids"] for entry in player_intelligence_options["relocate_agent"]["agents"]):
+        player_legal.append("relocate_agent")
+    memory_note = (
+        "Presence signatures intentionally contain no unit count, identity, owner, or strength."
+    )
+    return {
+        "schema_version": OBSERVATION_SCHEMA_VERSION,
+        "turn_number": turn,
+        "titan_capacity": titan_capacity(game.galaxy, player),
+        "active_player": {
+            "id": int(player.id),
+            "name": str(player.name),
+            "team_id": int(player.team_id),
+            "resources": {
+                "credits": _rounded(player.credits),
+                "resource_budget": resource_budget,
+                "metal": _rounded(player.metal),
+                "crystal": _rounded(player.crystal),
+                "income": _safe_game_metric(game, "get_player_income", player),
+                "upkeep": _safe_game_metric(game, "get_player_upkeep", player),
+            },
+        },
+        "players": [
+            {
+                "id": int(other.id),
+                "name": str(other.name),
+                "team_id": int(other.team_id),
+                "relation": _relation(player, other),
+            }
+            for other in getattr(game, "players", [])
+        ],
+        "conversations": [
+            {
+                "partner_id": int(conv.get_partner_id(getattr(player, "id", None))),
+                "partner_name": str(
+                    getattr(
+                        game.get_player_by_id(conv.get_partner_id(getattr(player, "id", None))),
+                        "name",
+                        f"Player {conv.get_partner_id(getattr(player, 'id', None))}",
+                    )
+                ),
+                "messages": [
+                    {
+                        "sender_id": int(m.sender_id),
+                        "sender_name": str(m.sender_name),
+                        "turn_sent": int(m.turn_sent),
+                        "text": str(m.text),
+                    }
+                    for m in conv.messages
+                ],
+            }
+            for conv in (
+                game.get_conversations_for_player(getattr(player, "id", None))
+                if hasattr(game, "get_conversations_for_player")
+                else []
+            )
+            if conv.messages
+        ],
+        "systems": systems,
+        "units": units,
+        "visible_minefields": minefields,
+        "ability_catalog": ability_catalog(),
+        "visible_deployables": [deployable_view(d, player) for d in tactical_objects],
+        "catalyst_patches": patch_views(game, player),
+        "ability_links": public_links(game, player),
+        "undetailed_enemy_presence": presences,
+        "visibility_note": memory_note,
+        "command_catalog": command_catalog(),
+        "intelligence": intelligence,
+        "player_commands": {
+            "supported": sorted(name for name, spec in COMMAND_SPECS.items() if spec.player_level),
+            "legal": sorted(player_legal),
+            "options": {
+                "send_message": {"target_ids": recipient_ids},
+                **player_intelligence_options,
+            },
+        },
+        "order_history": history_view(player),
+        "command_legality_note": "Legal means issuable now; future execution can still fail. Hardware support does not imply present legality.",
+        "action_catalogs": {
+            "colonization_target_ids": [
+                int(body.id)
+                for body in current_bodies
+                if is_colonizable_body(body) and getattr(body, "owner", None) is None
+            ],
+            "colonist_sources": [
+                {
+                    "target_id": int(body.id),
+                    "available_population": _rounded(getattr(body, "population", 0)),
+                }
+                for body in exact_bodies
+                if is_colonizable_body(body)
+                and is_self_owned(player, getattr(body, "owner", None))
+                and float(getattr(body, "population", 0)) > 0
+            ],
+            "mining_target_ids": [
+                int(body.id) for body in exact_bodies if is_mining_target(body)
+            ],
+            "antimatter_source_ids": [
+                int(body.id) for body in exact_bodies if is_antimatter_source(body)
+            ],
+            "construction_templates": construction_templates,
+            "wing_templates": _wing_catalog(visible_unit_objects, player),
+        },
+        "turn_summary": summary_view(player),
+    }
+
+
+def _unit_view(
+    unit: Any,
+    relation: str,
+    *,
+    include_capabilities: bool,
+    game: Any,
+    player: Any,
+    exact_bodies: list[Any],
+    visible_units: list[Any],
+) -> dict[str, Any]:
+    components = sorted(
+        component.__class__.__name__ for component in public_components(unit, enemy=relation == "enemy")
+    )
+    data = {
+        "id": int(unit.id),
+        "name": str(unit.name),
+        "owner_id": int(unit.owner.id),
+        "relation": relation,
+        "system_name": str(unit.in_system),
+        "hex_coord": list(unit.in_hex),
+        "position": _position(unit.position),
+        "hull_size": _enum_value(unit.hull_size),
+        "hit_points": {
+            "current": int(unit.current_hit_points),
+            "maximum": int(unit.max_hit_points),
+        },
+        "disabled": bool(getattr(unit, "is_disabled", False)),
+        "components": components,
+        **order_layers(unit, relation, {u.id for u in visible_units} | {d.id for d in visible_deployables(game, player)}, {b.id for b in exact_bodies}),
+    }
+    if getattr(unit, "is_hidden_in_gas_giant", False):
+        data["is_hidden_in_gas_giant"] = True
+        data["hidden_in_gas_giant_id"] = getattr(unit, "hidden_in_gas_giant_id", None)
+    if relation in {"self", "ally"}:
+        data["antimatter"] = _component_amount(getattr(unit, "antimatter_component", None))
+        transport = getattr(unit, "troop_transport_component", None)
+        if transport:
+            data["troop_cargo"] = {"current": transport.troops, "capacity": transport.capacity}
+        from titan_abilities import state_view as titan_state, protected
+        if unit.hull_size == HullSize.TITAN:
+            data["titan"] = titan_state(unit)
+        data["titan_bonuses"] = {"aegis": protected(unit, "aegis_field"), "carrier_supremacy": protected(unit, "carrier_supremacy")}
+        data["last_planetary_action_round"] = getattr(unit, "last_planetary_action_round", 0)
+        data["multiplication_receive_cooldown"] = max(0, getattr(unit, 'multiply_receive_ready_round', 0)-game.turn_number)
+        data["capability_details"] = _capability_details(unit, game)
+        from .tactical import environmental_view
+        data["environmental_modifiers"] = environmental_view(unit)
+        from environmental_resistance import instances, details, operational, upkeep
+        data['environmental_resistances'] = {
+            'ongoing_antimatter': upkeep(unit),
+            'abilities': {kind: dict(details(kind), active=inst.is_active,
+                                     operational=inst.is_active and operational(unit))
+                          for kind, inst in instances(unit).items()},
+        }
+        wing = getattr(unit, 'strikecraft_wing_component', None)
+        if wing:
+            from strikecraft_service import state_view, required
+            data['wing_service'] = state_view(unit, game.galaxy)
+            if data['wing_service']['mother_carrier_id'] not in {u.id for u in visible_units}:
+                data['wing_service']['mother_carrier_id'] = None
+            from strikecraft_abilities import incoming_multiplier, evasion, round_now, wing_order
+            from tactical_balance import EVASIVE_OUTGOING
+            root = wing_order(unit)
+            data['wing_tactical_state'] = {
+                'supremacy_outgoing_multiplier': 2 if protected(unit, 'carrier_supremacy') else 1,
+                'supremacy_speed_multiplier': 1.5 if protected(unit, 'carrier_supremacy') else 1,
+                'incoming_weapon_multiplier': incoming_multiplier(unit),
+                'evasive_outgoing_multiplier': EVASIVE_OUTGOING if evasion(unit) else 1.0,
+                'weapons_suppressed': required(unit) or bool(root and root.order_type.name == 'EMERGENCY_RECOVERY'),
+                'recovery_launch_locked': wing.recovery_ready_round > round_now(game.galaxy),
+            }
+    if relation == "enemy":
+        data["capability_details"] = _combat_equipment_details(unit)
+    if relation in {"self", "ally"} and getattr(unit, "wormhole_stabilizer_component", None):
+        from wormhole_stabilization import state_view
+        data["wormhole_stabilizer"] = state_view(unit)
+    if include_capabilities:
+        legal, options, conditional = command_guidance(
+            game,
+            player,
+            unit,
+            exact_bodies=exact_bodies,
+            visible_units=visible_units,
+        )
+        data["supported_commands"] = supported_commands(unit)
+        data["legal_commands"] = legal
+        data["command_options"] = options
+        data["conditional_commands"] = conditional
+        data["ability_states"] = ability_states(unit)
+    return data
+
+
+def _body_view(
+    body: Any, viewer: Any, *, include_system: bool = True, galaxy: Any = None,
+    game: Any = None, snapshot: Any = None
+) -> dict[str, Any]:
+    owner = getattr(body, "owner", None)
+    data = {
+        "id": int(body.id),
+        "type": body.__class__.__name__,
+        "name": str(getattr(body, "name", body.__class__.__name__)),
+        "hex_coord": list(body.in_hex),
+        "position": _position(body.position),
+        "owner_id": int(owner.id) if owner is not None else None,
+        "owner_relation": _relation(viewer, owner) if owner is not None else "neutral",
+    }
+    from planetary_warfare import colonizable, defense_view
+    from planetary_intel import ownership_view
+    current = False
+    if colonizable(body):
+        from types import SimpleNamespace
+        context = game if game is not None else SimpleNamespace(
+            galaxy=galaxy, players=[viewer], turn_number=1)
+        ownership = ownership_view(context, viewer, body, snapshot)
+        current = ownership.status == 'current'
+        data.update(owner_id=ownership.owner_id, owner_relation=ownership.relation,
+                    ownership_status=ownership.status, ownership_observed_turn=ownership.observed_turn)
+        if current:
+            data["planetary_defenses"] = defense_view(body)
+    if include_system:
+        data["system_name"] = str(body.in_system)
+    for name in (
+        "population",
+        "max_population",
+        "metal_yield",
+        "crystal_yield",
+        "stability",
+        "is_colonizable",
+        "harvest_multiplier",
+    ):
+        if name == 'population' and colonizable(body) and not current:
+            continue
+        if hasattr(body, name):
+            val = getattr(body, name)
+            if isinstance(val, bool):
+                data[name] = val
+            elif isinstance(val, (int, float)):
+                data[name] = _rounded(val)
+    for enum_attr in ("planet_type", "storm_type", "star_type", "nebula_type"):
+        if hasattr(body, enum_attr):
+            enum_val = getattr(body, enum_attr)
+            if enum_val is not None:
+                data["subtype"] = enum_val.name
+    if hasattr(body, "density") and body.density is not None:
+        data["density"] = _enum_value(body.density)
+        data["max_hull_size"] = getattr(body.max_hull_size, "name", str(body.max_hull_size))
+    if hasattr(body, "stability"):
+        from wormhole_stabilization import effective_stability, is_stabilized
+        data["effective_stability"] = effective_stability(galaxy, body)
+        data["stabilized"] = is_stabilized(galaxy, body)
+    if hasattr(body, "exit_system_name"):
+        data["exit_system_name"] = str(body.exit_system_name)
+    is_solid = getattr(body, "is_solid", True)
+    data["is_solid"] = is_solid
+    from environmental_effects import describe_body
+    description = describe_body(body)
+    data['collision_radius'] = description.collision_radius
+    data['inhibition_field_radius'] = description.inhibition_radius
+    if description.effect_radius is not None:
+        data['effect_radius'] = description.effect_radius
+    data['environmental_effects'] = description.environmental_effects()
+    data['environmental_rules'] = list(description.rules)
+    friendly_hidden = [
+        int(u.id) for u in getattr(body, "hidden_units", [])
+        if _relation(viewer, getattr(u, "owner", None)) != "enemy"
+    ]
+    if friendly_hidden:
+        data["hidden_unit_ids"] = friendly_hidden
+    return data
+
+
+def _minefield_view(minefield: Any, viewer: Any) -> dict[str, Any]:
+    return {
+        "id": int(minefield.id),
+        "owner_id": int(minefield.owner.id),
+        "owner_relation": _relation(viewer, minefield.owner),
+        "system_name": str(minefield.in_system),
+        "hex_coord": list(minefield.in_hex),
+        "position": _position(minefield.position),
+        "type": _enum_value(minefield.minefield_type),
+        "mines_remaining": int(minefield.mines_remaining),
+        "detonation_radius": float(minefield.detonation_radius),
+    }
+
+
+def _combat_equipment_details(unit: Any) -> dict[str, Any]:
+    """Only human-inspectable combat equipment; no provenance, targets or orders."""
+    from constants import HullSize
+    details = {}
+    weapons = getattr(unit, "weapons_component", None)
+    if weapons is not None:
+        details["weapons"] = {"operational": not bool(weapons.is_destroyed), "turrets": [
+            {"type": enum_name(t.turret_type), "variant": enum_name(t.variant), "damage": t.damage, "range": t.range,
+             "cooldown": t.cooldown, "cooldown_remaining": t.current_cooldown,
+             "effective_cooldown": t.effective_cooldown,
+             "eligible_target_classes": [enum_name(h) for h in HullSize if weapons.turret_accepts_hull(t, h)]}
+            for t in weapons.turrets]}
+    from unit_components.defenses import Defenses
+    defenses = next((c for c in public_components(unit, enemy=True) if isinstance(c, Defenses)), None)
+    if defenses is not None:
+        details["defenses"] = {"operational": not bool(defenses.is_destroyed),
+                               "armor": defenses.armor, "shields": defenses.shields,
+                               "point_defense": defenses.point_defense}
+    return details
+
+
+def _capability_details(unit: Any, game: Any) -> dict[str, Any]:
+    commander = getattr(unit, "commander_component", None)
+    details: dict[str, Any] = {
+        "allowed_stances": [
+            _enum_value(stance)
+            for stance in (
+                commander.get_allowed_stances()
+                if commander and getattr(commander, "supports_stances", False)
+                else []
+            )
+        ]
+    }
+    from environmental_effects import sublight_speed, long_range_sensor_hexes
+    engines = getattr(unit, "engines_component", None)
+    if engines is not None:
+        details["engines"] = {
+            "speed": _rounded(getattr(engines, "speed", 0)),
+            "effective_speed": _rounded(sublight_speed(unit)),
+            "destroyed": bool(getattr(engines, "is_destroyed", False)),
+        }
+    hyperdrive = getattr(unit, "hyperdrive_component", None)
+    if hyperdrive is not None:
+        details["hyperdrive"] = {
+            "type": _enum_value(getattr(hyperdrive, "drive_type", None)),
+            "base_jump_range": _rounded(getattr(hyperdrive, "jump_range", 0)),
+            "effective_jump_range": _rounded(getattr(hyperdrive, "effective_jump_range", 0)),
+            "functional": bool(getattr(hyperdrive, "is_functional", False)),
+            "destroyed": bool(getattr(hyperdrive, "is_destroyed", False)),
+            "status": _enum_value(getattr(hyperdrive, "jump_status", None)),
+        }
+    from unit_orders.defend import DEFAULT_DEFEND_GUARD_RADIUS
+    from constants import TRADE_ARRIVAL_RANGE, ANTIMATTER_TRANSFER_RANGE, DEFAULT_STANDOFF_DISTANCE
+    from unit_orders.hangar import DOCKING_RANGE
+    details["defend_radius"] = DEFAULT_DEFEND_GUARD_RADIUS
+    sensors = getattr(unit, "sensors_component", None)
+    if sensors is not None:
+        details["sensors"] = {name: getattr(sensors, name) for name in (
+            "short_range_radius", "effective_short_range_radius", "long_range_hexes", "effective_long_range_hexes", "is_destroyed")}
+    if sensors is not None:
+        from environmental_effects import sensor_radius
+        details["sensors"]["effective_short_range_radius"] = sensor_radius(unit)
+        details["sensors"]["effective_long_range_hexes"] = long_range_sensor_hexes(unit)
+    details.update(_combat_equipment_details(unit))
+    cloak = getattr(unit, "cloaking_component", None)
+    if cloak is not None:
+        details["cloaking"] = {"type": enum_name(cloak.device_type), "active": cloak.is_active,
+            "destroyed": cloak.is_destroyed, "can_activate": not cloak.is_destroyed and not cloak.is_active,
+            "radius": cloak.area_radius, "antimatter_upkeep": cloak.get_antimatter_cost_per_turn()}
+    ranges = {}
+    for component_name, field in (("repair_component", "repair_range"), ("mining_component", "mining_range"),
+                                 ("harvester_component", "harvest_range"), ("constructor_component", "build_range"),
+                                 ("metal_refinery_component", "unload_range"), ("crystal_refinery_component", "unload_range")):
+        component = getattr(unit, component_name, None)
+        if component is not None:
+            ranges[component_name] = {"range": getattr(component, field, None), "operational": not bool(component.is_destroyed)}
+    if getattr(unit, "trade_component", None) is not None:
+        ranges["trade_component"] = {"range": TRADE_ARRIVAL_RANGE}
+    ranges["docking"] = {"range": DOCKING_RANGE}
+    ranges["protect"] = {"standoff_distance": DEFAULT_STANDOFF_DISTANCE}
+    if getattr(unit, "colony_component", None) is not None:
+        ranges["colony"] = {"distance_from_body_surface": DEFAULT_STANDOFF_DISTANCE}
+    if getattr(unit, "antimatter_component", None) is not None:
+        ranges["transfer_antimatter"] = {"range": ANTIMATTER_TRANSFER_RANGE}
+    details["support_ranges"] = ranges
+    colony = getattr(unit, "colony_component", None)
+    if colony is not None:
+        details["colony"] = {
+            "population_cargo": _rounded(getattr(colony, "population_cargo", 0)),
+            "maximum_cargo": _rounded(getattr(colony, "max_cargo", 0)),
+        }
+    mining = getattr(unit, "mining_component", None)
+    if mining is not None:
+        details["mining"] = {
+            "raw_metal_cargo": _rounded(getattr(mining, "raw_metal_cargo", 0)),
+            "raw_crystal_cargo": _rounded(getattr(mining, "raw_crystal_cargo", 0)),
+            "cargo_capacity": _rounded(getattr(mining, "max_cargo", 0)),
+        }
+    constructor = getattr(unit, "constructor_component", None)
+    if constructor is not None:
+        details["construction"] = {
+            "buildable_template_names": [
+                buildable.unit_template_name
+                for buildable in getattr(constructor, "buildable_units", [])
+            ]
+        }
+    inhibitor = getattr(unit, "inhibitor_component", None)
+    if inhibitor is not None:
+        is_active = bool(getattr(inhibitor, "is_active", False))
+        activation_check = (
+            None
+            if is_active
+            else inhibitor.check_state_change(True, game.galaxy)
+        )
+        details["inhibitor"] = {
+            "is_active": is_active,
+            "radius": _rounded(getattr(inhibitor, "radius", 0)),
+            "antimatter_cost_per_turn": _rounded(
+                inhibitor.get_antimatter_cost_per_turn()
+            ),
+            "can_activate": not is_active and bool(activation_check.allowed),
+            "activation_blocker": (
+                None if is_active or activation_check.allowed else activation_check.code
+            ),
+        }
+    for name, component_name in (
+        ("repair", "repair_component"),
+        ("antimatter_harvester", "harvester_component"),
+        ("trade", "trade_component"),
+    ):
+        component = getattr(unit, component_name, None)
+        if component is not None:
+            details[name] = _public_scalar_attributes(component)
+    intelligence = getattr(unit, "intelligence_component", None)
+    if intelligence is not None:
+        from constants import CI_SWEEP_ANTIMATTER_COST, CI_SWEEP_CREDIT_COST
+        details["intelligence"] = {
+            "operational": not bool(getattr(intelligence, "is_destroyed", False)),
+            "available_agents": int(getattr(intelligence, "available_agents", 0)),
+            "agent_capacity": int(getattr(intelligence, "agents_capacity", 0)),
+            "infiltration_range": _rounded(getattr(intelligence, "infiltration_range", 0)),
+            "counter_intelligence": {
+                "installed": bool(getattr(intelligence, "has_counter_intelligence", False)),
+                "ready": bool(getattr(intelligence, "is_ci_ready", False)),
+                "range": _rounded(getattr(intelligence, "counter_intelligence_range", 0)),
+                "cooldown_remaining": int(getattr(intelligence, "ci_cooldown_remaining", 0)),
+                "credit_cost": _rounded(CI_SWEEP_CREDIT_COST),
+                "antimatter_cost": _rounded(CI_SWEEP_ANTIMATTER_COST),
+            },
+        }
+    for name, component_name in (
+        ("hangar", "hangar_component"),
+        ("strikecraft_bay", "strikecraft_bay_component"),
+    ):
+        component = getattr(unit, component_name, None)
+        if component is not None:
+            details[name] = {
+                "docked_units": [
+                    {"id": int(docked.id), "name": str(docked.name)}
+                    for docked in getattr(component, "docked_units", [])
+                ],
+                "maximum_slots": int(getattr(component, "max_slots", 0)),
+            }
+    bay = getattr(unit, "strikecraft_bay_component", None)
+    if bay is not None:
+        from strikecraft_service import state_view as service_view
+        for view, wing in zip(details['strikecraft_bay']['docked_units'], bay.docked_units):
+            if wing.strikecraft_wing_component:
+                view['wing_service'] = service_view(wing, game.galaxy)
+        details["strikecraft_bay"].update(
+            production_enabled=bay.production_enabled, slots=bay.slot_views(),
+            constructing=bay.constructing, construction_slot_index=bay.construction_slot_index,
+            construction_progress=bay.construction_progress,
+            replenishing_unit_id=bay.replenishing_unit.id if bay.replenishing_unit is not None else None,
+            replenish_progress=bay.replenish_progress)
+    from dismantling import state_view
+    details['dismantling'] = state_view(unit)
+    return details
+
+
+def _public_scalar_attributes(component: Any) -> dict[str, Any]:
+    allowed = (
+        "repair_amount",
+        "harvest_rate",
+        "trade_revenue_multiplier",
+        "available_agents",
+        "max_agents",
+        "has_counter_intelligence",
+        "ci_cooldown_remaining",
+    )
+    result = {}
+    for name in allowed:
+        value = getattr(component, name, None)
+        if isinstance(value, bool):
+            result[name] = value
+        elif isinstance(value, (int, float)):
+            result[name] = _rounded(value)
+    return result
+
+
+def _navigation_anchor(system: Any, bodies: list[Any]) -> dict[str, Any]:
+    anchor = next((body for body in bodies if is_star(body)), None)
+    if anchor is not None:
+        return {
+            "body_id": int(anchor.id),
+            "hex_coord": list(anchor.in_hex),
+            "position": _position(anchor.position),
+            "position_is_move_endpoint": False,
+            "collision_radius": float(anchor.collision_radius),
+            "move_endpoint_warning": "Star center is inside a solid body. Choose a point outside its collision radius plus 50 units and any hull-excluding terrain.",
+        }
+    hexes = sorted(getattr(system, "hexes", {}))
+    return {
+        "body_id": None,
+        "hex_coord": list(hexes[0]) if hexes else [0, 0],
+        "position": [0.0, 0.0],
+    }
+
+
+def _body_summary(bodies: list[Any], viewer: Any) -> dict[str, Any]:
+    type_counts = Counter(body.__class__.__name__ for body in bodies)
+    colonizable_bodies = [
+        body
+        for body in bodies
+        if is_colonizable_body(body)
+    ]
+    mining_counts = Counter()
+    for body in bodies:
+        if not is_mining_target(body):
+            continue
+        body_type = body.__class__.__name__
+        mining_counts["crystal" if body_type == "Comet" else "metal"] += 1
+    hazard_names = {"Nebula", "Storm", "DebrisField", "IceField"}
+    return {
+        "counts_by_type": dict(sorted(type_counts.items())),
+        "colonizable_count": len(colonizable_bodies),
+        "colonizable_capacity": _rounded(
+            sum(float(getattr(body, "max_population", 0)) for body in colonizable_bodies)
+        ),
+        "mining_targets": dict(sorted(mining_counts.items())),
+        "hazards": {
+            name: type_counts[name]
+            for name in sorted(hazard_names)
+            if type_counts[name]
+        },
+    }
+
+
+def _construction_catalog(units: list[Any], player: Any, budget) -> list[dict[str, Any]]:
+    catalog: dict[str, dict[str, Any]] = {}
+    from unit_templates import UNIT_TEMPLATES
+    for unit in units:
+        if not is_self_owned(player, getattr(unit, "owner", None)):
+            continue
+        constructor = getattr(unit, "constructor_component", None)
+        for buildable in getattr(constructor, "buildable_units", []) if constructor else []:
+            tpl = UNIT_TEMPLATES.get(buildable.unit_template_name, {})
+            hull_size = tpl.get("hull_size")
+            if hull_size == "STRIKECRAFT_WING" or getattr(hull_size, "name", None) == "STRIKECRAFT_WING":
+                continue
+            from unit_catalog import describe_template
+            if buildable.unit_template_name not in catalog:
+                entry = describe_template(buildable.unit_template_name, tpl)
+                entry['resource_shortfall'] = buildable.resource_cost.shortfall(budget).to_dict()
+                if getattr(hull_size, 'name', hull_size) == 'TITAN':
+                    from titan_acquisition import construction_blocker
+                    entry['replacement_blocker'] = construction_blocker(unit.game, player, [unit], queue=False)
+                    entry['queued_blocker'] = construction_blocker(unit.game, player, [unit], queue=True)
+                catalog[buildable.unit_template_name] = entry
+
+    return [catalog[name] for name in sorted(catalog)]
+
+
+def _wing_catalog(units, player):
+    from unit_templates import UNIT_TEMPLATES
+    from unit_catalog import describe_template, wing_template_names
+    if not any(is_self_owned(player, getattr(unit, "owner", None)) and getattr(unit, "strikecraft_bay_component", None) for unit in units):
+        return []
+    entries = [describe_template(key, UNIT_TEMPLATES[key]) for key in wing_template_names()]
+    for entry in entries:
+        entry['resource_shortfall'] = ResourceCost.from_dict(entry['resource_cost']).shortfall(player).to_dict()
+    return entries
+
+
+def _component_amount(component: Any) -> dict[str, float] | None:
+    if component is None:
+        return None
+    return {
+        "current": _rounded(getattr(component, "current_amount", 0.0)),
+        "maximum": _rounded(
+            getattr(component, "max_capacity", getattr(component, "capacity", 0.0))
+        ),
+    }
+
+
+def _relation(viewer: Any, owner: Any) -> str:
+    if owner is None:
+        return "neutral"
+    if owner is viewer or getattr(owner, "id", None) == getattr(viewer, "id", None):
+        return "self"
+    if hasattr(viewer, "is_allied_with") and viewer.is_allied_with(owner):
+        return "ally"
+    return "enemy"
+
+
+def _safe_game_metric(game: Any, name: str, player: Any) -> float | None:
+    method = getattr(game, name, None)
+    if not callable(method):
+        return None
+    try:
+        return _rounded(method(player))
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _position(position: Any) -> list[float]:
+    return [_rounded(getattr(position, "x", 0.0)), _rounded(getattr(position, "y", 0.0))]
+
+
+def _enum_value(value: Any) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, HullSize):
+        return value.name
+    raw = getattr(value, "value", value)
+    return str(raw)
+
+
+def _rounded(value: Any) -> float:
+    try:
+        return round(float(value), 2)
+    except (TypeError, ValueError):
+        return 0.0

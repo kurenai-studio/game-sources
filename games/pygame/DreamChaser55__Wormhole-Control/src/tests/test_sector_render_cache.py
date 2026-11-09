@@ -1,0 +1,174 @@
+from display_config import DisplayConfig
+from unittest.mock import MagicMock, patch
+import pygame
+from rendering.sector_renderer import _BoundedSurfaceCache, SectorViewRenderer
+from geometry import Position
+from domain.celestials import Storm, Nebula
+from constants import StormType, NebulaType
+
+
+def test_bounded_surface_cache_evicts_least_recently_used_surface():
+    cache = _BoundedSurfaceCache(max_bytes=400, max_item_bytes=400)
+    first = pygame.Surface((8, 8), pygame.SRCALPHA)
+    second = pygame.Surface((8, 8), pygame.SRCALPHA)
+
+    cache.put("first", first)
+    cache.put("second", second)
+
+    assert cache.get("first") is None
+    assert cache.get("second") is second
+    assert cache.total_bytes == 256
+
+
+def test_bounded_surface_cache_does_not_retain_oversized_surface():
+    cache = _BoundedSurfaceCache(max_bytes=1024, max_item_bytes=128)
+    oversized = pygame.Surface((8, 8), pygame.SRCALPHA)
+
+    assert cache.put("oversized", oversized) is oversized
+    assert cache.get("oversized") is None
+    assert cache.total_bytes == 0
+
+
+def test_visible_scaling_never_requests_a_full_high_zoom_texture():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    renderer = SectorViewRenderer(game)
+    renderer.screen = pygame.Surface((320, 200))
+    renderer.overlay_surface = pygame.Surface((320, 200), pygame.SRCALPHA)
+    source = pygame.Surface((1000, 800), pygame.SRCALPHA)
+
+    with patch("pygame.transform.smoothscale", wraps=pygame.transform.smoothscale) as smoothscale:
+        assert renderer.grid_renderer.blit_visible_scaled_surface(
+            source, (500, 400), (160, 100), 15.0, ("test",)
+        )
+
+    requested_size = smoothscale.call_args.args[1]
+    # The shared clipping helper (_compute_visible_scaled_region) snaps the
+    # visible region to whole source-pixel boundaries, so the scaled surface
+    # can be up to ~2x`scale` px larger than the raw screen size (here, up to
+    # 320 + 2*15 = 350 and 200 + 2*15 = 230). This still guarantees we're
+    # nowhere near transforming the full 1000x800 source texture, matching
+    # the bound used by the equivalent test for `_blit_scaled_surface_once`.
+    assert requested_size[0] <= 350
+    assert requested_size[1] <= 350
+
+
+def test_blit_uncached_circle_blends_instead_of_replacing():
+    """Regression test: large (uncached) storm circles must alpha-blend with
+    the overlay (like the cached/scaled path) instead of replacing pixels,
+    otherwise overlapping storm particles lose their intended transparency
+    once zoomed in far enough to hit this fallback."""
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    renderer = SectorViewRenderer(game)
+    renderer.screen = pygame.Surface((320, 200))
+    renderer.overlay_surface = pygame.Surface((320, 200), pygame.SRCALPHA)
+
+    color = (255, 69, 0, 40)
+
+    # Draw the same semi-transparent circle twice at the same spot.
+    renderer.grid_renderer.blit_uncached_circle((160, 100), 20, color)
+    alpha_after_one = renderer.overlay_surface.get_at((160, 100)).a
+
+    renderer.grid_renderer.blit_uncached_circle((160, 100), 20, color)
+    alpha_after_two = renderer.overlay_surface.get_at((160, 100)).a
+
+    # A single draw should reproduce the source alpha...
+    assert alpha_after_one == 40
+    # ...but overlapping draws must accumulate alpha (source-over blending),
+    # not stay flat as pygame.draw.circle's replace semantics would produce.
+    assert alpha_after_two > alpha_after_one
+
+
+def test_blit_uncached_circle_only_allocates_onscreen_region():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    renderer = SectorViewRenderer(game)
+    renderer.screen = pygame.Surface((320, 200))
+    renderer.overlay_surface = pygame.Surface((320, 200), pygame.SRCALPHA)
+
+    # Circle centered off the right edge of the screen; only a sliver is visible.
+    renderer.grid_renderer.blit_uncached_circle((310, 100), 400, (255, 69, 0, 40))
+
+    # Should not have thrown, and should have painted something on-screen.
+    assert renderer.overlay_surface.get_at((315, 100)).a > 0
+
+
+def _make_test_renderer():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    renderer = SectorViewRenderer(game)
+    renderer.screen = pygame.Surface((320, 200))
+    renderer.overlay_surface = pygame.Surface((320, 200), pygame.SRCALPHA)
+    return game, renderer
+
+
+def test_blit_scaled_surface_once_never_requests_a_full_high_zoom_texture():
+    """The no-cache scaler used for per-frame-changing content (storms) must
+    clip to the visible viewport just like the cached scaler, instead of
+    transforming a many-hundred-MiB intermediate texture at high zoom."""
+    game, renderer = _make_test_renderer()
+    source = pygame.Surface((1000, 800), pygame.SRCALPHA)
+
+    with patch("pygame.transform.scale", wraps=pygame.transform.scale) as scale:
+        assert renderer.grid_renderer.blit_scaled_surface_once(
+            source, (500, 400), (160, 100), 15.0, smooth=False
+        )
+
+    requested_size = scale.call_args.args[1]
+    # Bounded close to the screen size, nowhere near the full 15000x12000
+    # texture a naive full-surface scale would have requested.
+    assert requested_size[0] <= 350
+    assert requested_size[1] <= 350
+
+
+def test_draw_storm_offscreen_is_culled_with_no_transform_calls():
+    """A storm whose bounding circle doesn't touch the screen at all should
+    skip compositing and scaling entirely."""
+    game, renderer = _make_test_renderer()
+    game.sector_zoom = 1.0
+    game.sector_target_zoom = 1.0
+
+    storm = Storm(in_hex=(0, 0), in_system="Sol", storm_type=StormType.RADIATION)
+    far_away_pos = Position(1_000_000, 1_000_000)
+
+    with patch("pygame.transform.scale", wraps=pygame.transform.scale) as fast_scale, \
+         patch("pygame.transform.smoothscale", wraps=pygame.transform.smoothscale) as smooth_scale:
+        renderer.celestial_renderer.draw_storm(storm, far_away_pos)
+
+    assert fast_scale.call_count == 0
+    assert smooth_scale.call_count == 0
+
+
+def test_nebula_rendered_effect_confined_to_radius():
+    import math
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    from constants import SECTOR_CIRCLE_RADIUS_LOGICAL
+    SECTOR_CIRCLE_RADIUS_IN_PX = DEFAULT_DISPLAY_CONFIG.sector_radius
+    game, renderer = _make_test_renderer()
+
+    scale = (SECTOR_CIRCLE_RADIUS_IN_PX * 1.0) / SECTOR_CIRCLE_RADIUS_LOGICAL
+    for n_type in [NebulaType.HYDROGEN, NebulaType.NITROGEN, NebulaType.OXYGEN, NebulaType.DUST]:
+        for seed in range(5):
+            nebula = Nebula(in_hex=(0, 0), in_system="Sol", nebula_type=n_type)
+            nebula.id = seed * 37 + 1
+            data = renderer.celestial_renderer.get_pre_rendered_nebula(nebula)
+            assert data is not None
+            master = data['master']
+            cx = data['center_x']
+            cy = data['center_y']
+
+            w, h = master.get_size()
+            max_px_dist = 0.0
+            for x in range(0, w, 2):
+                for y in range(0, h, 2):
+                    if master.get_at((x, y))[3] > 0:
+                        d = math.hypot(x - cx, y - cy)
+                        if d > max_px_dist:
+                            max_px_dist = d
+            max_logical = max_px_dist / scale
+            # Strictly confined to nebula radius (3600.0) and sector radius (5000.0)
+            assert max_logical <= nebula.radius + 1e-3
+            assert max_logical <= SECTOR_CIRCLE_RADIUS_LOGICAL
+            # Also ensure it fills a substantial portion of its effect radius (at least 80%)
+            assert max_logical >= nebula.radius * 0.80

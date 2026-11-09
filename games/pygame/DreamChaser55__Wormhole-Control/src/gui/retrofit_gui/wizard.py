@@ -1,0 +1,495 @@
+"""
+wizard.py
+
+RetrofitWizardWindow implementation: Interactive modal window for configuring component
+retrofits on friendly starships.
+"""
+
+from __future__ import annotations
+import logging
+import math
+from resource_costs import ResourceCost, resource_balances
+from gui.equipment_input import INPUT_FIELDS, install_feedback_theme, mark_entry, capacity_excess
+import typing
+from typing import Optional, List, Dict, Any, Set
+
+import pygame
+import pygame_gui
+
+from constants import (
+    HullSize,
+    UPKEEP_COST_PER_HULL_POINT,
+)
+
+from .catalog import RETROFIT_COMPONENTS
+from refit_validation import evaluate_refit, eligible_component, allowed_turret_variants, installed_configuration
+from . import layout
+from . import param_readers
+
+if typing.TYPE_CHECKING:
+    from domain.units import Unit
+
+logger = logging.getLogger(__name__)
+
+_WIN_W = 720
+_WIN_H = 580
+
+
+class RetrofitWizardWindow:
+    """Modal UI window providing fine-grained customization for starship retrofits."""
+
+    def __init__(
+        self,
+        manager: pygame_gui.UIManager,
+        screen_res: pygame.Vector2,
+        target_unit: Unit,
+        constructor_units: List[Unit],
+        initial_comp_key: Optional[str] = None,
+        shift_pressed: bool = False,
+    ):
+        self.manager = manager
+        install_feedback_theme(manager)
+        self._field_errors: dict[str, str] = {}
+        from gui.theme_loader import preload_rich_text_fonts
+        preload_rich_text_fonts(manager)
+        self.screen_res = screen_res
+        self.target_unit = target_unit
+        self.constructor_units = constructor_units
+        self.shift_pressed = shift_pressed
+        self.scale_x = screen_res.x / 1280.0
+        self.scale_y = screen_res.y / 720.0
+        self.is_visible = True
+
+        # Calculate eligible mountable components for this target unit
+        self._available_components = self._get_eligible_components()
+        if not self._available_components:
+            self._available_components = RETROFIT_COMPONENTS[:1]
+
+        # Determine starting component
+        self._current_comp_key = initial_comp_key if initial_comp_key else self._available_components[0]["comp_key"]
+        # Ensure initial_comp_key exists in available, otherwise fallback
+        meta_match = next((c for c in self._available_components if c["comp_key"] == self._current_comp_key), None)
+        if not meta_match:
+            meta_match = self._available_components[0]
+            self._current_comp_key = meta_match["comp_key"]
+        self._current_comp_meta = meta_match
+
+        # Component state
+        self._comp_config: Dict[str, Any] = {}
+        self._turrets: List[Dict[str, Any]] = [
+            {"type": "MASS_DRIVER", "variant": "STANDARD", "damage": 10.0, "range": 300.0, "cooldown": 2}
+        ]
+        self._selected_abilities: Set[str] = set()
+
+        variants = allowed_turret_variants(target_unit.hull_size, installed_configuration(target_unit).wing_type)
+        self._turrets[0]['variant'] = variants[0]
+
+        # Calculated costs
+        self.calculated_hull_cost: float = 0.0
+        self.cost_credits: int = 0
+        self.time_to_build: int = 1
+        self.is_valid: bool = True
+
+        # Widgets
+        win_w = int(_WIN_W * self.scale_x)
+        win_h = int(_WIN_H * self.scale_y)
+        win_x = int((screen_res.x - win_w) / 2)
+        win_y = int((screen_res.y - win_h) / 2)
+
+        self.window = pygame_gui.elements.UIWindow(
+            rect=pygame.Rect(win_x, win_y, win_w, win_h),
+            manager=manager,
+            window_display_title="Unit Retrofit Configuration",
+            object_id="#retrofit_wizard_window",
+            resizable=False,
+        )
+
+        # Widget references populated by layout builder
+        self._title_label: Optional[pygame_gui.elements.UILabel] = None
+        self._comp_select_label: Optional[pygame_gui.elements.UILabel] = None
+        self._comp_dropdown: Optional[pygame_gui.elements.UIDropDownMenu] = None
+        self._controls_container: Optional[pygame_gui.elements.UIScrollingContainer] = None
+        self._summary_panel: Optional[pygame_gui.elements.UIPanel] = None
+
+        self._details_groups: Dict[str, List[pygame_gui.core.UIElement]] = {}
+
+        # Component control widget refs
+        self._engine_speed_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._am_capacity_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._hd_type_dropdown: Optional[pygame_gui.elements.UIDropDownMenu] = None
+        self._hd_jump_range_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._turret_labels: List[pygame_gui.elements.UILabel] = []
+        self._turret_remove_buttons: List[pygame_gui.elements.UIButton] = []
+        self._add_turret_button: Optional[pygame_gui.elements.UIButton] = None
+        self._turret_type_dd: Optional[pygame_gui.elements.UIDropDownMenu] = None
+        self._turret_variant_dd: Optional[pygame_gui.elements.UIDropDownMenu] = None
+        self._turret_dmg_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._turret_range_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._turret_cd_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._turret_list_lx: int = 0
+        self._turret_list_lw: int = 0
+        self._turret_list_y_start: int = 0
+
+        self._armor_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._shields_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._pd_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._sensor_short_range_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._sensor_long_range_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._strikecraft_bay_slots_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._hangar_slots_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._repair_rate_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._repair_range_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._mining_rate_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._mining_range_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._mining_max_cargo_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._inhibitor_radius_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._marines_count_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._cloaking_type_dropdown: Optional[pygame_gui.elements.UIDropDownMenu] = None
+        self._lbl_clk_r: Optional[pygame_gui.elements.UILabel] = None
+        self._cloaking_radius_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+
+        self._intel_agents_entry: Optional[pygame_gui.elements.UITextEntryLine] = None
+        self._intel_ci_button: Optional[pygame_gui.elements.UIButton] = None
+        self._intel_ci_enabled: bool = False
+
+        self._ability_buttons: Dict[str, pygame_gui.elements.UIButton] = {}
+
+        # Summary widget refs
+        self._hull_impact_label: Optional[pygame_gui.elements.UILabel] = None
+        self._added_cost_label: Optional[pygame_gui.elements.UILabel] = None
+        self._credit_cost_label: Optional[pygame_gui.elements.UILabel] = None
+        self._metal_cost_label: Optional[pygame_gui.elements.UILabel] = None
+        self._crystal_cost_label: Optional[pygame_gui.elements.UILabel] = None
+        self._build_time_label: Optional[pygame_gui.elements.UILabel] = None
+        self._upkeep_label: Optional[pygame_gui.elements.UILabel] = None
+        self._status_box: Optional[pygame_gui.elements.UITextBox] = None
+
+        # Bottom buttons
+        self._confirm_button: Optional[pygame_gui.elements.UIButton] = None
+        self._cancel_button: Optional[pygame_gui.elements.UIButton] = None
+
+        self._build_ui()
+        self.select_component(self._current_comp_key)
+
+    def _get_eligible_components(self) -> List[Dict[str, Any]]:
+        """Filters catalogue components against target unit hull size and existing components."""
+        if not self.target_unit:
+            return RETROFIT_COMPONENTS
+
+        return [comp for comp in RETROFIT_COMPONENTS if eligible_component(self.target_unit, comp['comp_key'])]
+
+    def _build_ui(self) -> None:
+        """Constructs layout inside the window."""
+        layout.build_wizard_layout(self)
+
+    def select_component(self, comp_key: str) -> None:
+        """Switches the active component customization group."""
+        meta = next((c for c in RETROFIT_COMPONENTS if c["comp_key"] == comp_key), None)
+        if not meta:
+            return
+
+        self._current_comp_key = comp_key
+        self._current_comp_meta = meta
+
+        # Hide all groups first
+        for k, group in self._details_groups.items():
+            for elem in group:
+                if elem.alive():
+                    elem.hide()
+
+        # Hide turrets if not weapons
+        if comp_key != "Weapons":
+            for lbl in self._turret_labels:
+                if lbl.alive():
+                    lbl.hide()
+            for btn in self._turret_remove_buttons:
+                if btn.alive():
+                    btn.hide()
+
+        # Show target group
+        if comp_key in self._details_groups:
+            for elem in self._details_groups[comp_key]:
+                if elem.alive():
+                    elem.show()
+
+        if comp_key == "Weapons":
+            layout.rebuild_wizard_turret_list(self)
+
+        # Update comp dropdown if needed
+        if self._comp_dropdown and self._comp_dropdown.selected_option != meta["display_name"]:
+            # avoid recursive events
+            pass
+
+        self._sync_cost_and_summary()
+
+    def _add_turret(self) -> None:
+        """Adds a configured turret to the weapons configuration list."""
+        if self._turret_type_dd:
+            raw = self._turret_type_dd.selected_option
+            ttype = raw[0] if isinstance(raw, tuple) else str(raw)
+        else:
+            ttype = "MASS_DRIVER"
+
+        if self._turret_variant_dd:
+            raw_v = self._turret_variant_dd.selected_option
+            tvar = raw_v[0] if isinstance(raw_v, tuple) else str(raw_v)
+        else:
+            tvar = "STANDARD"
+
+        self._field_errors = {}
+        dmg = param_readers.read_number(self, '_turret_dmg_entry', 'turret.damage', 10)
+        rng = param_readers.read_number(self, '_turret_range_entry', 'turret.range', 300)
+        cd = param_readers.read_number(self, '_turret_cd_entry', 'turret.cooldown', 2)
+        if self._field_errors:
+            self._sync_cost_and_summary()
+            return
+
+        self._turrets.append({"type": ttype, "variant": tvar, "damage": dmg, "range": rng, "cooldown": cd})
+        self._comp_config["turrets"] = self._turrets
+        layout.rebuild_wizard_turret_list(self)
+        self._sync_cost_and_summary()
+
+    def _remove_turret(self, index: int) -> None:
+        """Removes a turret at the given index."""
+        if 0 <= index < len(self._turrets):
+            self._turrets.pop(index)
+            self._comp_config["turrets"] = self._turrets
+            layout.rebuild_wizard_turret_list(self)
+            self._sync_cost_and_summary()
+
+    def _toggle_ability(self, ability_name: str) -> None:
+        """Toggles an active special ability."""
+        if ability_name in self._selected_abilities:
+            self._selected_abilities.remove(ability_name)
+        else:
+            self._selected_abilities.add(ability_name)
+
+        if ability_name in self._ability_buttons:
+            btn = self._ability_buttons[ability_name]
+            is_active = ability_name in self._selected_abilities
+            from tactical_balance import SPECS
+            display_name = SPECS[ability_name].name if ability_name in SPECS else ability_name
+            btn.set_text(f"[{'X' if is_active else ' '}] {display_name}")
+
+        self._comp_config["ability_types"] = list(self._selected_abilities)
+        self._sync_cost_and_summary()
+
+    def _read_current_params(self) -> None:
+        """Reads input parameters for the currently active component."""
+        self._field_errors = {}
+        self._comp_config = {}
+        k = self._current_comp_key
+        if k == "Engines":
+            param_readers.read_engine_params(self)
+        elif k == "AntimatterStorage":
+            param_readers.read_antimatter_params(self)
+        elif k == "Hyperdrive":
+            param_readers.read_hyperdrive_params(self)
+            if self._hd_type_dropdown:
+                raw_hd = self._hd_type_dropdown.selected_option
+                self._comp_config["drive_type"] = raw_hd[0] if isinstance(raw_hd, tuple) else str(raw_hd)
+        elif k == "Weapons":
+            for widget, label, default in (
+                ('_turret_dmg_entry', 'turret.damage', 10),
+                ('_turret_range_entry', 'turret.range', 300),
+                ('_turret_cd_entry', 'turret.cooldown', 2),
+            ):
+                param_readers.read_number(self, widget, label, default)
+            self._comp_config["turrets"] = self._turrets
+        elif k == "Defenses":
+            param_readers.read_defense_params(self)
+        elif k == "Sensors":
+            param_readers.read_sensor_params(self)
+        elif k == "StrikecraftBayComponent":
+            param_readers.read_strikecraft_bay_params(self)
+        elif k == "HangarComponent":
+            param_readers.read_hangar_params(self)
+        elif k == "RepairComponent":
+            param_readers.read_repair_params(self)
+        elif k == "MiningComponent":
+            param_readers.read_mining_params(self)
+        elif k == "HyperspaceInhibitionFieldEmitter":
+            param_readers.read_inhibitor_params(self)
+        elif k == "TroopTransportComponent":
+            param_readers.read_fields(self, [("capacity", "_troop_capacity_entry", "troop_capacity", 40)])
+        elif k == "MarinesComponent":
+            param_readers.read_marines_params(self)
+        elif k == "CloakingDevice":
+            param_readers.read_cloaking_params(self)
+            if self._cloaking_type_dropdown:
+                raw_c = self._cloaking_type_dropdown.selected_option
+                self._comp_config["device_type"] = raw_c[0] if isinstance(raw_c, tuple) else str(raw_c)
+        elif k == "AbilityComponent":
+            self._comp_config["ability_types"] = list(self._selected_abilities)
+        elif k == "IntelligenceComponent":
+            param_readers.read_intelligence_params(self)
+
+    def _sync_cost_and_summary(self) -> None:
+        """Preview exactly the configuration and charges execution will validate."""
+        from html import escape
+        from custom_unit_templates import get_ability_required_components
+        from custom_unit_templates import CustomUnitTemplate, COMPONENT_COST_PER_HULL_POINT
+        from refit_validation import RefitEvaluation
+        try:
+            self._read_current_params()
+            result = (RefitEvaluation(errors=list(self._field_errors.values())) if self._field_errors else
+                      evaluate_refit(self.target_unit, 'ADD', self._current_comp_key, self._comp_config))
+        except (ValueError, OverflowError) as exc:
+            result = RefitEvaluation(errors=[f'Cost preview unavailable: {exc}. Reduce equipment values.'])
+        for field, spec in INPUT_FIELDS.items():
+            mark_entry(getattr(self, spec.widget, None), self._field_errors.get(field))
+        self.calculated_hull_cost = result.hull_cost
+        self.cost_credits = result.cost_credits
+        self.time_to_build = result.duration
+        # The constructor's owner pays even when the target belongs to an ally.
+        player = self.constructor_units[0].owner if self.constructor_units else self.target_unit.owner
+        errors = list(result.errors)
+        try:
+            cost = result.resource_cost
+        except (ValueError, OverflowError):
+            cost = ResourceCost()
+            errors.append('Cost preview unavailable: reduce equipment values.')
+        if not errors and not cost.affordable(player):
+            errors.append(f'Insufficient resources. Missing: {cost.shortfall(player).describe()}.')
+        # Validation checks both complete Designer cost and projected installed
+        # usage. Report the binding limit when legacy/live cost hints differ.
+        try:
+            proposed = (max(CustomUnitTemplate('Preview', self.target_unit.hull_size, result.proposed).total_hull_cost,
+                            self.target_unit.current_hull_usage + result.hull_cost)
+                        if result.proposed is not None else math.nan)
+        except (ValueError, OverflowError, TypeError):
+            proposed = math.nan
+        unavailable = (bool(self._field_errors) or not math.isfinite(proposed)
+                       or not math.isfinite(result.hull_cost * COMPONENT_COST_PER_HULL_POINT)
+                       or any('total_hull_cost' in e or 'Cost preview unavailable' in e for e in errors))
+        if unavailable and not self._field_errors:
+            errors.append('Cost preview unavailable: correct equipment values before installing.')
+        labels = (
+            (self._hull_impact_label, f'Hull Usage: {proposed:g} / {self.target_unit.hull_capacity:g}'),
+            (self._added_cost_label, f'Component Hull: +{result.hull_cost:.1f} HP'),
+            (self._credit_cost_label, f'Credits: {cost.credits:g} / {player.credits:g}'),
+            (self._metal_cost_label, f'Metal: {cost.metal:g} / {player.metal:g}'),
+            (self._crystal_cost_label, f'Crystal: {cost.crystal:g} / {player.crystal:g}'),
+            (self._build_time_label, f'Est. Time to Build: {result.duration} Turns'),
+            (self._upkeep_label, f'Upkeep Impact: +{0 if self.target_unit.hull_size == HullSize.STRIKECRAFT_WING else result.hull_cost * UPKEEP_COST_PER_HULL_POINT:.2f} cr/turn'),
+        )
+        for label, text in labels:
+            if label:
+                if unavailable:
+                    text = text.split(':', 1)[0] + ': unavailable'
+                label.set_text(text)
+        excess = capacity_excess(proposed, self.target_unit.hull_capacity) if not unavailable else ''
+        if excess and not any(excess in error for error in errors):
+            errors.append(excess)
+        self.is_valid = not errors
+        if self._status_box:
+            self._status_box.set_text('<br>'.join(escape(e) for e in errors) if errors else 'Ready to Install')
+        if self._add_turret_button:
+            bad_turret = any(field.startswith('turret.') for field in self._field_errors)
+            self._add_turret_button.disable() if bad_turret else self._add_turret_button.enable()
+        if self._confirm_button:
+            self._confirm_button.enable() if self.is_valid else self._confirm_button.disable()
+        if not errors:
+            self._comp_config = result.configuration
+        self._resource_stamp = resource_balances(player)
+        installed = installed_configuration(self.target_unit)
+        for ability, button in self._ability_buttons.items():
+            missing = [key for key in get_ability_required_components(ability) if not getattr(installed, key)]
+            # Permit deselecting an ability whose prerequisite has since disappeared.
+            if missing and ability not in self._selected_abilities:
+                button.disable()
+            else:
+                button.enable()
+
+    def update(self):
+        if not self.is_visible or not self.window.alive():
+            return
+        player = self.constructor_units[0].owner if self.constructor_units else self.target_unit.owner
+        if resource_balances(player) != getattr(self, '_resource_stamp', None):
+            self._sync_cost_and_summary()
+
+    def process_event(self, event: pygame.event.Event) -> Optional[Dict[str, Any]]:
+        """Processes pygame events and returns an action payload if an action occurred."""
+        if not self.is_visible or not self.window.alive():
+            return None
+
+        if event.type == pygame_gui.UI_WINDOW_CLOSE and event.ui_element == self.window:
+            return {"action": "cancel_retrofit"}
+
+        elif event.type == pygame_gui.UI_BUTTON_PRESSED:
+            elem = event.ui_element
+
+            if elem is self._cancel_button:
+                return {"action": "cancel_retrofit"}
+
+            elif elem is self._confirm_button:
+                self._sync_cost_and_summary()
+                if self.is_valid:
+                    return {
+                        "action": "confirm_retrofit",
+                        "target_unit": self.target_unit,
+                        "constructor_units": self.constructor_units,
+                        "component_type": self._current_comp_key,
+                        "component_config": self._comp_config,
+                        "cost_credits": self.cost_credits,
+                        "time_to_build": self.time_to_build,
+                        "shift_pressed": self.shift_pressed,
+                    }
+                return {"action": "ui_handled"}
+
+            elif elem is self._add_turret_button:
+                self._add_turret()
+                return {"action": "ui_handled"}
+
+            # Turret remove buttons
+            for i, rbtn in enumerate(self._turret_remove_buttons):
+                if elem is rbtn:
+                    self._remove_turret(i)
+                    return {"action": "ui_handled"}
+
+            # Intelligence CI toggle
+            if elem is self._intel_ci_button:
+                self._intel_ci_enabled = not self._intel_ci_enabled
+                ci_text = "[X] Counter-Intelligence" if self._intel_ci_enabled else "[ ] Counter-Intelligence"
+                self._intel_ci_button.set_text(ci_text)
+                self._sync_cost_and_summary()
+                return {"action": "ui_handled"}
+
+            # Ability toggles
+            for aname, abtn in self._ability_buttons.items():
+                if elem is abtn:
+                    self._toggle_ability(aname)
+                    return {"action": "ui_handled"}
+
+        elif event.type == pygame_gui.UI_DROP_DOWN_MENU_CHANGED:
+            elem = event.ui_element
+
+            if elem is self._comp_dropdown:
+                selected_label = event.text
+                meta = next((c for c in RETROFIT_COMPONENTS if c["display_name"] == selected_label), None)
+                if meta:
+                    self.select_component(meta["comp_key"])
+                return {"action": "ui_handled"}
+
+            elif elem in (self._hd_type_dropdown, self._cloaking_type_dropdown):
+                self._sync_cost_and_summary()
+                return {"action": "ui_handled"}
+
+        elif event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
+            self._sync_cost_and_summary()
+            return {"action": "ui_handled"}
+
+        return None
+
+    def kill(self) -> None:
+        """Closes and destroys the window and its child elements."""
+        self.is_visible = False
+        if self.window and self.window.alive():
+            self.window.kill()

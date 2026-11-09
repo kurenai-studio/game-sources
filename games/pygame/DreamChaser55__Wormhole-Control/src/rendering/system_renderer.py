@@ -1,0 +1,960 @@
+from display_config import display_config_for
+import pygame
+import random
+import math
+from constants import DARK_GRAY, NEBULA_COLORS, STORM_COLORS, YELLOW, CYAN, PURPLE, RED, WHITE, SELECTION_HIGHLIGHT_COLOR, HOVER_HIGHLIGHT_COLOR, GRAY, HEX_JUMP_ORDER_LINE_COLOR, HYPERDRIVE_RANGE_HEX_FILL_COLOR, SENSOR_RANGE_HEX_FILL_COLOR, XP_JUMP_RANGE_BONUS, PlanetType, STORM_LIGHTNING_COLOR, SQRT3, WORMHOLE_LINE_COLOR, STAR_COLORS, DARK_RED, SYSTEM_FOG_OF_WAR_COLOR, HEX_GRID_COLOR
+
+from hexgrid_utils import get_hex_vertices, hex_to_pixel, hex_distance
+from domain.celestials import Star, Planet, Wormhole, CelestialBody, Moon, ColonizableAsteroid, MetalAsteroid, AsteroidField, IceField, Nebula, Storm, Comet, DebrisField
+from domain.units import Unit
+from unit_orders.base import OrderType
+from galaxy import Hex
+from geometry import Position
+from rendering.planetary_intel import draw_ownership_ring
+from planetary_intel import displayed_owner
+from rendering.drawing_utils import darken_color, draw_selection_brackets, selection_color_for, station_icon_rect
+
+
+class SystemViewRenderer:
+    def __init__(self, game_instance):
+        self.game = game_instance
+        self.screen = game_instance.screen
+        self.overlay_surface = game_instance.overlay_surface
+        self._circle_surface_cache = {}
+
+    def _system_zoom(self):
+        return self.game.system_zoom
+
+    def _system_pan_offset(self):
+        return self.game.system_pan_offset
+
+    def _hex_to_pixel(self, q, r):
+        return hex_to_pixel(q, r, self._system_zoom(), self._system_pan_offset(), display_config=display_config_for(self.game))
+
+    def _hex_vertices(self, q, r):
+        return get_hex_vertices(q, r, self._system_zoom(), self._system_pan_offset(), display_config=display_config_for(self.game))
+
+    def _map_scale(self):
+        return (self.screen.get_height() / 720.0) * self._system_zoom()
+
+    def _is_circle_off_screen(self, center_px, radius_px):
+        w, h = self.screen.get_size()
+        return (center_px[0] + radius_px < 0 or
+                center_px[0] - radius_px > w or
+                center_px[1] + radius_px < 0 or
+                center_px[1] - radius_px > h)
+
+    def _get_cached_circle_surface(self, radius, color):
+        radius = int(radius)
+        if radius <= 0:
+            return None
+        # Convert color to tuple to make it hashable if it is a pygame.Color
+        color_key = (color[0], color[1], color[2], color[3] if len(color) > 3 else 255)
+        key = (radius, color_key)
+        if key in self._circle_surface_cache:
+            return self._circle_surface_cache[key]
+        
+        if len(self._circle_surface_cache) > 2000:
+            self._circle_surface_cache.clear()
+            
+        surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        pygame.draw.circle(surface, color, (radius, radius), radius)
+        self._circle_surface_cache[key] = surface
+        return surface
+
+    def draw_system_view(self):
+        """Draws the hex grid for the current system."""
+        if not self.game.current_system_name: return
+        system = self.game.galaxy.systems[self.game.current_system_name]
+
+        from titan_abilities import coverage
+        players = getattr(self.game, 'players', ())
+        viewer = players[self.game.current_player_index] if players else None
+        scanned_hexes = {coord for name, coord in coverage(self.game.galaxy, viewer)
+                        if name == system.name} if viewer else set()
+
+        selection_bounds = []
+
+        # Determine long-range sensor coverage for the viewer in this system
+        in_range_hexes = None
+        if hasattr(self.game, 'get_long_range_sensor_hexes'):
+            res = self.game.get_long_range_sensor_hexes(system.name)
+            if isinstance(res, (set, list, tuple, frozenset)):
+                in_range_hexes = set(res)
+        if in_range_hexes is None and getattr(self.game, 'visibility', None) is not None:
+            lr_hexes = getattr(self.game.visibility, 'long_range_hexes', None)
+            if isinstance(lr_hexes, (set, list, tuple, frozenset)):
+                in_range_hexes = {coord for s_name, coord in lr_hexes if s_name == system.name}
+
+        # 1. Draw Hex Backgrounds (Fog of War and Enemy Presence) and Grid Lines
+        for hex_coord, hex_obj in system.hexes.items():
+             q, r = hex_coord
+             hex_points_objects = self._hex_vertices(q, r)
+             hex_points_tuples = [p.to_tuple() for p in hex_points_objects]
+
+             in_sensor_range = (hex_coord in in_range_hexes) if in_range_hexes is not None else (
+                 self.game.is_hex_in_long_range_sensor(self.game.current_system_name, hex_coord)
+                 if hasattr(self.game, 'is_hex_in_long_range_sensor') else True
+             )
+             if not in_sensor_range:
+                 pygame.draw.polygon(self.screen, SYSTEM_FOG_OF_WAR_COLOR, hex_points_tuples)
+
+             has_hidden_enemy = any(not self.game.is_unit_visible(u) for u in hex_obj.units)
+             has_presence = self.game.hex_has_presence(self.game.current_system_name, hex_coord)
+             if has_hidden_enemy and has_presence:
+                 pygame.draw.polygon(self.screen, DARK_RED, hex_points_tuples)
+
+             pygame.draw.polygon(self.screen, HEX_GRID_COLOR, hex_points_tuples, 1)
+             if hex_coord in scanned_hexes:
+                 pygame.draw.polygon(self.screen, CYAN, hex_points_tuples, 2)
+
+        # 1b. Draw Wormhole Lines
+        for hex_coord, hex_obj in system.hexes.items():
+            for body in hex_obj.celestial_bodies:
+                if isinstance(body, Wormhole):
+                    q_w, r_w = hex_coord
+                    if q_w == 0 and r_w == 0:
+                        continue
+                    center_px = self._hex_to_pixel(0, 0)
+                    wh_px = self._hex_to_pixel(q_w, r_w)
+                    dx = wh_px.x - center_px.x
+                    dy = wh_px.y - center_px.y
+                    dist = math.hypot(dx, dy)
+                    if dist > 0:
+                        ux = dx / dist
+                        uy = dy / dist
+                        edge_radius = (system.radius + 0.5) * SQRT3 * display_config_for(self.game).hex_size * self._system_zoom()
+                        end_x = int(center_px.x + edge_radius * ux)
+                        end_y = int(center_px.y + edge_radius * uy)
+                        pygame.draw.line(self.screen, WORMHOLE_LINE_COLOR, (wh_px.x, wh_px.y), (end_x, end_y), 2)
+
+                        # Draw destination system name at the end of the line
+                        scale_val = self.screen.get_height() / 720.0
+                        font_size = max(1, int(10 * display_config_for(self.game).text_scale))
+                        font = pygame.font.Font(None, font_size)
+                        text_surface = font.render(body.exit_system_name, True, WORMHOLE_LINE_COLOR)
+                        text_rect = text_surface.get_rect()
+
+                        padding = int(5 * scale_val)
+                        if ux > 0.3:
+                            text_rect.midleft = (end_x + padding, end_y)
+                        elif ux < -0.3:
+                            text_rect.midright = (end_x - padding, end_y)
+                        else:
+                            if uy > 0:
+                                text_rect.midtop = (end_x, end_y + padding)
+                            else:
+                                text_rect.midbottom = (end_x, end_y - padding)
+
+                        self.screen.blit(text_surface, text_rect)
+
+        # 2. Draw Contents of Hexes (Stars, Planets, Units)
+        for hex_coord, hex_obj in system.hexes.items():
+            q, r = hex_coord
+            hex_center_pixel = self._hex_to_pixel(q, r)
+
+            # Draw celestial bodies
+            scale_val = self._map_scale()
+            for body in hex_obj.celestial_bodies:
+                body_color = DARK_GRAY
+                body_radius = int(3 * scale_val)
+                should_draw_circle = True
+
+                if isinstance(body, Star):
+                    body_color = STAR_COLORS.get(body.star_type, YELLOW)
+                    body_radius = int(8 * scale_val)
+                elif isinstance(body, Planet):
+                    planet_color_map = {
+                        PlanetType.TERRAN: (0, 128, 0),
+                        PlanetType.DESERT: (210, 180, 140),
+                        PlanetType.VOLCANIC: (255, 69, 0),
+                        PlanetType.ICE: (173, 216, 230),
+                        PlanetType.BARREN: (128, 128, 128),
+                        PlanetType.FERROUS: (165, 42, 42),
+                        PlanetType.GREENHOUSE: (0, 255, 0),
+                        PlanetType.OCEANIC: (0, 0, 205),
+                        PlanetType.GAS_GIANT: (255, 228, 181),
+                    }
+                    body_color = planet_color_map.get(body.planet_type, CYAN)
+                    body_radius = int(4 * scale_val)
+                    draw_ownership_ring(self.screen, self.game, body,
+                                        (hex_center_pixel.x, hex_center_pixel.y), body_radius + int(3 * scale_val))
+                elif isinstance(body, Moon):
+                    body_color = (200, 200, 200)
+                    body_radius = int(2 * scale_val)
+                    draw_ownership_ring(self.screen, self.game, body,
+                                        (hex_center_pixel.x, hex_center_pixel.y), body_radius + int(3 * scale_val))
+                elif isinstance(body, ColonizableAsteroid):
+                    body_color = (90, 60, 50)
+                    body_radius = int(2 * scale_val)
+                    draw_ownership_ring(self.screen, self.game, body,
+                                        (hex_center_pixel.x, hex_center_pixel.y), body_radius + int(3 * scale_val))
+                elif isinstance(body, MetalAsteroid):
+                    body_color = (140, 140, 160)
+                    body_radius = int(2 * scale_val)
+                elif isinstance(body, AsteroidField):
+                    self._draw_celestial_field(body, hex_center_pixel, (100, 100, 100))
+                    should_draw_circle = False
+                elif isinstance(body, IceField):
+                    self._draw_celestial_field(body, hex_center_pixel, (173, 216, 230), num_particles=7)
+                    should_draw_circle = False
+                elif isinstance(body, DebrisField):
+                    self._draw_celestial_field(body, hex_center_pixel, (112, 128, 144), num_particles=5)
+                    should_draw_circle = False
+                elif isinstance(body, Nebula):
+                    self._draw_nebula(body, hex_center_pixel)
+                    should_draw_circle = False
+                elif isinstance(body, Storm):
+                    self._draw_storm(body, hex_center_pixel)
+                    should_draw_circle = False
+                elif isinstance(body, Comet):
+                    body_color = CYAN
+                    body_radius = int(2 * scale_val)
+                elif isinstance(body, Wormhole):
+                    body_color = PURPLE
+                    body_radius = int(4 * scale_val)
+                    from wormhole_stabilization import is_stabilized
+                    stabilized = is_stabilized(self.game.galaxy, body)
+                    if stabilized or body.stability < 100:
+                        pygame.draw.circle(self.screen, (80, 230, 180) if stabilized else RED, (hex_center_pixel.x, hex_center_pixel.y), body_radius + int(2 * scale_val), 1)
+
+                if should_draw_circle:
+                    pygame.draw.circle(self.screen, body_color, (hex_center_pixel.x, hex_center_pixel.y), body_radius)
+
+                if body in self.game.selected_objects:
+                    # Stable visual envelopes include ownership rings and animated effects.
+                    selection_radius = body_radius
+                    if isinstance(body, (Planet, Moon, ColonizableAsteroid)) and displayed_owner(self.game, body):
+                        selection_radius += int(3 * scale_val)
+                    elif isinstance(body, Wormhole) and (body.stability < 100 or is_stabilized(self.game.galaxy, body)):
+                        selection_radius += int(2 * scale_val)
+                    elif isinstance(body, (AsteroidField, IceField, DebrisField)):
+                        selection_radius = 10 * scale_val + max(1, int(scale_val))
+                    elif isinstance(body, Nebula):
+                        selection_radius = 18 * scale_val
+                    elif isinstance(body, Storm):
+                        selection_radius = 15 * scale_val
+                    selection_bounds.append((body, (
+                        hex_center_pixel.x - selection_radius,
+                        hex_center_pixel.y - selection_radius,
+                        2 * selection_radius, 2 * selection_radius,
+                    )))
+
+            # Draw Minefields
+            visible_mfs = [mf for mf in getattr(hex_obj, 'minefields', []) if self.game.is_minefield_visible(mf)]
+            for mf in visible_mfs:
+                mf_color = mf.owner.color if mf.owner else RED
+                r = int(14 * scale_val)
+                pygame.draw.circle(self.screen, mf_color, (int(hex_center_pixel.x), int(hex_center_pixel.y)), r, 1)
+
+            # Draw units
+            visible_units = [u for u in hex_obj.units if self.game.is_unit_visible(u)]
+            has_hidden_enemy = any(not self.game.is_unit_visible(u) for u in hex_obj.units)
+            has_presence = self.game.hex_has_presence(self.game.current_system_name, hex_coord)
+
+
+            num_units_in_hex = len(visible_units)
+
+            if num_units_in_hex > 0:
+                new_system_view_icon_base_size = 3.0 * scale_val
+                icon_draw_width = new_system_view_icon_base_size * 2 
+                icon_draw_height = new_system_view_icon_base_size * 2 
+                icon_padding_x = 3.0 * scale_val
+                icon_padding_y = 3.0 * scale_val 
+                icon_slot_width = icon_draw_width + icon_padding_x
+                icon_slot_height = icon_draw_height + icon_padding_y
+                icons_per_row = 3
+
+                num_total_rows = (num_units_in_hex + icons_per_row - 1) // icons_per_row
+                total_block_visual_height = (num_total_rows * icon_draw_height) + ((num_total_rows - 1) * icon_padding_y if num_total_rows > 0 else 0)
+                
+                block_start_y = hex_center_pixel.y - (total_block_visual_height / 2.0)
+
+                for i, unit in enumerate(visible_units):
+                    row_index = i // icons_per_row
+                    col_index = i % icons_per_row
+
+                    num_icons_in_this_row = min(icons_per_row, num_units_in_hex - (row_index * icons_per_row))
+                    current_row_visual_width = (num_icons_in_this_row * icon_draw_width) + ((num_icons_in_this_row - 1) * icon_padding_x if num_icons_in_this_row > 0 else 0)
+                    
+                    row_start_x = hex_center_pixel.x - (current_row_visual_width / 2.0)
+
+
+                    icon_center_x = row_start_x + (col_index * icon_slot_width) + (icon_draw_width / 2.0)
+                    icon_center_y = block_start_y + (row_index * icon_slot_height) + (icon_draw_height / 2.0)
+
+                    unit_screen_x = icon_center_x
+                    
+                    if unit.hull_size.name == "STRIKECRAFT_WING":
+                        shape_type = 'strikecraft_wing'
+                    else:
+                        shape_type = 'triangle' if unit.engines_component else 'square'
+                    current_icon_base_size = new_system_view_icon_base_size 
+                    if shape_type == 'strikecraft_wing':
+                        current_icon_base_size *= 1.2
+
+                    if shape_type in ('triangle', 'strikecraft_wing'):
+                        unit_screen_y = icon_center_y + current_icon_base_size * 0.2 
+                    else: # square
+                        unit_screen_y = icon_center_y
+                    
+                    unit_color = unit.owner.color if unit.owner else WHITE
+                    interior_color = darken_color(unit_color)
+                
+                    if shape_type == 'strikecraft_wing':
+                        cx, cy = unit_screen_x, unit_screen_y
+                        r = current_icon_base_size
+                        
+                        # Define the vertices of the three smaller triangles
+                        t1_p1 = (cx, cy - r)
+                        t1_p2 = (cx - int(r * 0.4), cy - int(r * 0.2))
+                        t1_p3 = (cx + int(r * 0.4), cy - int(r * 0.2))
+                        
+                        t2_p1 = (cx - int(r * 0.4), cy - int(r * 0.2))
+                        t2_p2 = (cx - int(r * 0.8), cy + int(r * 0.6))
+                        t2_p3 = (cx, cy + int(r * 0.6))
+                        
+                        t3_p1 = (cx + int(r * 0.4), cy - int(r * 0.2))
+                        t3_p2 = (cx, cy + int(r * 0.6))
+                        t3_p3 = (cx + int(r * 0.8), cy + int(r * 0.6))
+                        
+                        t1 = [t1_p1, t1_p2, t1_p3]
+                        t2 = [t2_p1, t2_p2, t2_p3]
+                        t3 = [t3_p1, t3_p2, t3_p3]
+                        pygame.draw.polygon(self.screen, interior_color, t1)
+                        pygame.draw.polygon(self.screen, interior_color, t2)
+                        pygame.draw.polygon(self.screen, interior_color, t3)
+                        pygame.draw.polygon(self.screen, unit_color, t1, 1)
+                        pygame.draw.polygon(self.screen, unit_color, t2, 1)
+                        pygame.draw.polygon(self.screen, unit_color, t3, 1)
+                        
+                        main_shape_points = [t1_p1, t1_p2, t1_p3, t2_p1, t2_p2,
+                                             t2_p3, t3_p1, t3_p2, t3_p3]
+
+                    elif shape_type == 'triangle':
+                        p1 = (unit_screen_x, unit_screen_y - current_icon_base_size)
+                        p2 = (unit_screen_x - int(current_icon_base_size * 0.8), unit_screen_y + int(current_icon_base_size * 0.6))
+                        p3 = (unit_screen_x + int(current_icon_base_size * 0.8), unit_screen_y + int(current_icon_base_size * 0.6))
+                        main_shape_points = [p1, p2, p3]
+                        pygame.draw.polygon(self.screen, interior_color, main_shape_points)
+                        pygame.draw.polygon(self.screen, unit_color, main_shape_points, 1)
+                        
+                    else: # 'square'
+                        rect = station_icon_rect(Position(unit_screen_x, unit_screen_y), current_icon_base_size)
+                        main_shape_points = [rect.topleft, rect.topright, rect.bottomright, rect.bottomleft]
+                        pygame.draw.rect(self.screen, interior_color, rect)
+                        pygame.draw.rect(self.screen, unit_color, rect, 1)
+
+                    if unit in self.game.selected_objects:
+                        left = min(p[0] for p in main_shape_points)
+                        top = min(p[1] for p in main_shape_points)
+                        right = max(p[0] for p in main_shape_points)
+                        bottom = max(p[1] for p in main_shape_points)
+                        selection_bounds.append((unit, (left, top, right - left, bottom - top)))
+
+                    # Draw spy indicator if unit is infiltrated by current player
+                    current_viewer = getattr(self.game, 'current_player', None)
+                    if current_viewer and hasattr(unit, 'has_infiltrating_agent_from') and unit.has_infiltrating_agent_from(current_viewer):
+                        pygame.draw.circle(self.screen, (50, 220, 255), (int(unit_screen_x), int(unit_screen_y)), int(current_icon_base_size + 2), 1)
+
+            # Draw construction marker badge if hex contains active construction
+            from domain.construction_job import get_sector_construction_jobs
+            current_viewer = getattr(self.game, 'current_player', None)
+            sector_jobs = get_sector_construction_jobs(hex_obj, viewer=current_viewer)
+            if sector_jobs:
+                from constants import CONSTRUCTOR_RANGE_RING_COLOR
+                badge_radius = max(2, int(3.5 * scale_val))
+                badge_x = int(hex_center_pixel.x + 14 * scale_val)
+                badge_y = int(hex_center_pixel.y - 14 * scale_val)
+                pygame.draw.circle(self.screen, CONSTRUCTOR_RANGE_RING_COLOR, (badge_x, badge_y), badge_radius, 1)
+                pygame.draw.line(self.screen, CONSTRUCTOR_RANGE_RING_COLOR, (badge_x - badge_radius + 1, badge_y), (badge_x + badge_radius - 1, badge_y), 1)
+                pygame.draw.line(self.screen, CONSTRUCTOR_RANGE_RING_COLOR, (badge_x, badge_y - badge_radius + 1), (badge_x, badge_y + badge_radius - 1), 1)
+
+
+        # 3. Highlight Hovered Hex
+
+        if self.game.system_view_mouse_hover_hex:
+            q, r = self.game.system_view_mouse_hover_hex
+            hex_points_objects = self._hex_vertices(q, r)
+            hex_points_tuples = [p.to_tuple() for p in hex_points_objects]
+            pygame.draw.polygon(self.overlay_surface, HOVER_HIGHLIGHT_COLOR, hex_points_tuples, 2)
+
+        # 4. Highlight Selected Hex
+        for obj in self.game.selected_objects:
+            if isinstance(obj, Hex):
+                if obj.in_system == self.game.current_system_name:
+                     hex_points_objects = self._hex_vertices(obj.q, obj.r)
+                     hex_points_tuples = [p.to_tuple() for p in hex_points_objects]
+                     pygame.draw.polygon(self.overlay_surface, SELECTION_HIGHLIGHT_COLOR, hex_points_tuples, 2)
+
+        # 5. Highlight Hex Containing the Selected Unit/Body/Job
+        for obj in self.game.selected_objects:
+            selected_object_hex = None
+            if isinstance(obj, Unit):
+                unit: Unit = obj
+                if unit.in_system == self.game.current_system_name:
+                    selected_object_hex = unit.in_hex
+            elif isinstance(obj, CelestialBody):
+                body: CelestialBody = obj
+                if body.in_system == self.game.current_system_name:
+                    selected_object_hex = body.in_hex
+            elif hasattr(obj, 'in_system') and hasattr(obj, 'in_hex'):
+                if obj.in_system == self.game.current_system_name:
+                    selected_object_hex = obj.in_hex
+
+            if selected_object_hex:
+                q, r = selected_object_hex
+                hex_points_objects = self._hex_vertices(q, r)
+                hex_points_tuples = [p.to_tuple() for p in hex_points_objects]
+                pygame.draw.polygon(self.overlay_surface, GRAY, hex_points_tuples, 2)
+
+        # 5b. Highlight Hyperdrive Inter-Sector Jump Distance
+        self._draw_hyperdrive_jump_range_highlight(system)
+
+        # 5c. Highlight Sensors Inter-Sector Range
+        self._draw_sensors_range_highlight(system)
+
+        # 6. Draw Order Lines (Hex Jumps)
+        self._draw_system_view_order_lines(system)
+
+        # Keep selection visible above environmental effects, range fills and orders.
+        for obj, (left, top, width, height) in selection_bounds:
+            draw_selection_brackets(
+                self.overlay_surface, selection_color_for(obj, self.game),
+                (left - 2, top - 2, width + 4, height + 4),
+            )
+
+    def _draw_hyperdrive_jump_range_highlight(self, system):
+        """Draws a hexgrid highlight showing inter-sector jump distance when a unit with Hyperdrive is selected
+        and Hyperdrive is selected in the sidebar component dropdown menu during System View."""
+        if getattr(self.game, 'view_mode', None) != 'system':
+            return
+
+        active_tab = getattr(self.game, 'selected_unit_tab', 'basic_info')
+        if active_tab != 'components':
+            return
+
+        selected_comp_name = getattr(self.game, 'selected_component_name', None)
+        if selected_comp_name != "Hyperdrive":
+            return
+
+        for obj in self.game.selected_objects:
+            if isinstance(obj, Unit) and obj.hyperdrive_component:
+                if obj.in_system == self.game.current_system_name and obj.in_hex is not None:
+                    unit: Unit = obj
+                    hd_comp = unit.hyperdrive_component
+                    effective_jump_range = int(hd_comp.jump_range * unit.xp_multiplier(XP_JUMP_RANGE_BONUS))
+
+                    if effective_jump_range <= 0:
+                        continue
+
+                    q_start, r_start = unit.in_hex
+
+                    # Highlight reachable hexes within effective jump range in the current system
+                    if hasattr(system, 'hexes'):
+                        for hex_coord, hex_obj in system.hexes.items():
+                            hq, hr = hex_coord
+                            dist = hex_distance(q_start, r_start, hq, hr)
+                            if dist <= effective_jump_range:
+                                hex_pts = [p.to_tuple() for p in self._hex_vertices(hq, hr)]
+                                pygame.draw.polygon(self.overlay_surface, HYPERDRIVE_RANGE_HEX_FILL_COLOR, hex_pts, 0)
+
+    def _draw_sensors_range_highlight(self, system):
+        """Draws a hexgrid highlight showing inter-sector sensor radius when a unit with Sensors is selected
+        and Sensors component is selected in the sidebar component dropdown menu during System View."""
+        if getattr(self.game, 'view_mode', None) != 'system':
+            return
+
+        active_tab = getattr(self.game, 'selected_unit_tab', 'basic_info')
+        if active_tab != 'components':
+            return
+
+        selected_comp_name = getattr(self.game, 'selected_component_name', None)
+        if selected_comp_name != "Sensors":
+            return
+
+        for obj in self.game.selected_objects:
+            if isinstance(obj, Unit) and obj.sensors_component:
+                if obj.in_system == self.game.current_system_name and obj.in_hex is not None:
+                    unit: Unit = obj
+                    sensors_comp = unit.sensors_component
+                    if getattr(sensors_comp, 'is_destroyed', False):
+                        continue
+                    from environmental_effects import long_range_sensor_hexes
+                    sensor_range = long_range_sensor_hexes(unit)
+
+                    if sensor_range <= 0:
+                        continue
+
+                    q_start, r_start = unit.in_hex
+
+                    # Highlight hexes within inter-sector sensor range in the current system
+                    if hasattr(system, 'hexes'):
+                        for hex_coord, hex_obj in system.hexes.items():
+                            hq, hr = hex_coord
+                            dist = hex_distance(q_start, r_start, hq, hr)
+                            if dist <= sensor_range:
+                                hex_pts = [p.to_tuple() for p in self._hex_vertices(hq, hr)]
+                                pygame.draw.polygon(self.overlay_surface, SENSOR_RANGE_HEX_FILL_COLOR, hex_pts, 0)
+
+    def _draw_system_view_order_lines(self, system):
+        units_to_process = []
+        current_turn_player = self.game.players[self.game.current_player_index] if self.game.players else None
+        if not current_turn_player:
+            return
+        
+        for obj in self.game.selected_objects:
+            if isinstance(obj, Unit):
+                if obj.owner == current_turn_player and obj.commander_component:
+                    units_to_process.append((obj, obj.in_hex))
+        
+        if self.game.system_view_mouse_hover_hex:
+            units_in_hovered_hex = system.get_units_in_hex(self.game.system_view_mouse_hover_hex)
+            for unit in units_in_hovered_hex:
+                if unit.owner == current_turn_player and unit.commander_component and unit not in [u for u, _ in units_to_process]:
+                    units_to_process.append((unit, self.game.system_view_mouse_hover_hex))
+        
+        if not units_to_process:
+            return
+            
+        for unit, current_hex in units_to_process:
+            all_hex_waypoints = []
+            
+            def collect_all_hex_waypoints(order, start_hex, start_system, sequence_index, is_current=False):
+                end_of_sub_orders_pos = start_hex
+                end_of_sub_orders_sys = start_system
+                
+                for sub_order in list(order.sub_orders):
+                    end_of_sub_orders_pos, end_of_sub_orders_sys, sequence_index = collect_all_hex_waypoints(
+                        sub_order,
+                        end_of_sub_orders_pos,
+                        end_of_sub_orders_sys,
+                        sequence_index,
+                        is_current
+                    )
+
+                if order.order_type == OrderType.REACH_WAYPOINT:
+                    dsys = order.parameters.get("destination_system_name")
+                    dhex = order.parameters.get("destination_hex_coord")
+
+                    if dsys and dhex and (dhex != start_hex or dsys != start_system):
+                        is_wormhole_jump = start_system != dsys
+                        all_hex_waypoints.append({
+                            'start_hex': start_hex,
+                            'start_system': start_system,
+                            'end_hex': dhex,
+                            'end_system': dsys,
+                            'is_current': is_current,
+                            'is_sub_order': order.parent_order is not None,
+                            'sequence_index': sequence_index,
+                            'is_wormhole_jump': is_wormhole_jump,
+                            'order_type': order.order_type
+                        })
+                        final_pos = dhex
+                        final_sys = dsys
+                        sequence_index += 1
+                    else:
+                        final_pos = start_hex
+                        final_sys = start_system
+                
+                elif order.order_type in [OrderType.MOVE, OrderType.DEFEND]:
+                    dsys = order.parameters.get("destination_system_name")
+                    dhex = order.parameters.get("destination_hex_coord")
+
+                    start_of_final_leg_pos = end_of_sub_orders_pos
+                    start_of_final_leg_sys = end_of_sub_orders_sys
+
+                    if dsys and dhex and (dhex != start_of_final_leg_pos or dsys != start_of_final_leg_sys):
+                        is_wormhole_jump = start_of_final_leg_sys != dsys
+                        all_hex_waypoints.append({
+                            'start_hex': start_of_final_leg_pos,
+                            'start_system': start_of_final_leg_sys,
+                            'end_hex': dhex,
+                            'end_system': dsys,
+                            'is_current': is_current,
+                            'is_sub_order': False,
+                            'sequence_index': sequence_index,
+                            'is_wormhole_jump': is_wormhole_jump,
+                            'order_type': order.order_type
+                        })
+                        final_pos = dhex
+                        final_sys = dsys
+                        sequence_index += 1
+                    else:
+                        final_pos = end_of_sub_orders_pos
+                        final_sys = end_of_sub_orders_sys
+                elif order.order_type in {OrderType.ATTACK, OrderType.ATTACK_LONG_RANGE}:
+                    from tactical_abilities import combat_target
+                    target_unit_id = order.parameters["target_unit_id"]
+                    target_unit = combat_target(self.game.galaxy, target_unit_id)
+                    if target_unit:
+                        all_hex_waypoints.append({
+                            'start_hex': start_hex,
+                            'start_system': start_system,
+                            'end_hex': target_unit.in_hex,
+                            'end_system': target_unit.in_system,
+                            'is_current': is_current,
+                            'is_sub_order': False,
+                            'sequence_index': sequence_index,
+                            'is_wormhole_jump': False,
+                            'order_type': order.order_type
+                        })
+                        final_pos = target_unit.in_hex
+                        final_sys = target_unit.in_system
+                        sequence_index += 1
+                    else:
+                        final_pos = end_of_sub_orders_pos
+                        final_sys = end_of_sub_orders_sys
+                elif order.order_type in [OrderType.USE_ABILITY, OrderType.CONSTRUCT]:
+                    target_unit_id = order.parameters.get("target_unit_id")
+                    target_position = order.parameters.get("target_position")
+                    target_sys = order.parameters.get("target_system_name")
+                    target_hex = order.parameters.get("target_hex_coord")
+                    
+                    if target_unit_id is not None:
+                        target_unit = self.game.galaxy.get_unit_by_id(target_unit_id)
+                        if target_unit:
+                            all_hex_waypoints.append({
+                                'start_hex': end_of_sub_orders_pos,
+                                'start_system': end_of_sub_orders_sys,
+                                'end_hex': target_unit.in_hex,
+                                'end_system': target_unit.in_system,
+                                'is_current': is_current,
+                                'is_sub_order': False,
+                                'sequence_index': sequence_index,
+                                'is_wormhole_jump': end_of_sub_orders_sys != target_unit.in_system,
+                                'order_type': order.order_type
+                            })
+                            final_pos = target_unit.in_hex
+                            final_sys = target_unit.in_system
+                            sequence_index += 1
+                        else:
+                            final_pos = end_of_sub_orders_pos
+                            final_sys = end_of_sub_orders_sys
+                    elif target_position and target_sys and target_hex:
+                        all_hex_waypoints.append({
+                            'start_hex': end_of_sub_orders_pos,
+                            'start_system': end_of_sub_orders_sys,
+                            'end_hex': target_hex,
+                            'end_system': target_sys,
+                            'is_current': is_current,
+                            'is_sub_order': order.parent_order is not None,
+                            'sequence_index': sequence_index,
+                            'is_wormhole_jump': end_of_sub_orders_sys != target_sys,
+                            'order_type': order.order_type
+                        })
+                        final_pos = target_hex
+                        final_sys = target_sys
+                        sequence_index += 1
+                    else:
+                        final_pos = end_of_sub_orders_pos
+                        final_sys = end_of_sub_orders_sys
+                else:
+                    final_pos = end_of_sub_orders_pos
+                    final_sys = end_of_sub_orders_sys
+
+                return final_pos, final_sys, sequence_index
+                
+            current_position = current_hex
+            current_system_name = unit.in_system
+            sequence_counter = 0
+            
+            active_root = (
+                unit.commander_component.current_order
+                or unit.commander_component.get_active_order_root()
+            )
+            if active_root:
+                current_position, current_system_name, sequence_counter = collect_all_hex_waypoints(
+                    active_root,
+                    current_position,
+                    current_system_name,
+                    sequence_counter, 
+                    True
+                )
+            
+            for queued_order in list(unit.commander_component.orders_queue):
+                current_position, current_system_name, sequence_counter = collect_all_hex_waypoints(
+                    queued_order, 
+                    current_position,
+                    current_system_name,
+                    sequence_counter, 
+                    False
+                )
+            
+            if unit.hyperdrive_component and unit.hyperdrive_component.hex_jump_target:
+                target_hex = unit.hyperdrive_component.hex_jump_target[0] if isinstance(unit.hyperdrive_component.hex_jump_target, tuple) else unit.hyperdrive_component.hex_jump_target
+                if target_hex != current_hex:
+                    if not any(wp['end_hex'] == target_hex and wp['start_hex'] == current_hex for wp in all_hex_waypoints):
+                        all_hex_waypoints.insert(0, {
+                            'start_hex': current_hex,
+                            'start_system': system.name,
+                            'end_hex': target_hex,
+                            'end_system': system.name,
+                            'is_current': True,
+                            'is_sub_order': False,
+                            'is_wormhole_jump': False,
+                            'sequence_index': -1
+                        })
+            
+            filtered_waypoints = []
+            
+            for wp in all_hex_waypoints:
+                if wp['start_hex'] == unit.in_hex:
+                    wp['start_system'] = unit.in_system
+            
+            wormhole_jumps = []
+            internal_waypoints = []
+            
+            for waypoint in all_hex_waypoints:
+                if waypoint['start_system'] == system.name and waypoint['end_system'] == system.name:
+                    internal_waypoints.append(waypoint)
+                elif waypoint['is_wormhole_jump'] and (waypoint['start_system'] == system.name or waypoint['end_system'] == system.name):
+                    wormhole_jumps.append(waypoint)
+            
+            filtered_waypoints.extend(internal_waypoints)
+            
+            corrected_waypoints = []
+            for wp in all_hex_waypoints:
+                if wp['start_hex'] == unit.in_hex and wp['start_system'] != unit.in_system:
+                    continue
+                if not wp['is_wormhole_jump'] and wp['start_system'] != unit.in_system and wp['start_hex'] == unit.in_hex:
+                    continue
+                corrected_waypoints.append(wp)
+                
+            all_hex_waypoints = corrected_waypoints
+            
+            for jump in wormhole_jumps:
+                if jump['start_system'] == system.name:
+                    wormhole_hex = None
+                    for hex_coord, hex_obj in system.hexes.items():
+                        for body in hex_obj.celestial_bodies:
+                            if isinstance(body, Wormhole) and body.exit_system_name == jump['end_system']:
+                                wormhole_hex = hex_coord
+                                break
+                        if wormhole_hex:
+                            break
+                    
+                    if wormhole_hex:
+                        filtered_waypoints.append({
+                            'start_hex': jump['start_hex'],
+                            'start_system': system.name,
+                            'end_hex': wormhole_hex,
+                            'end_system': system.name,
+                            'is_current': jump['is_current'],
+                            'is_sub_order': jump['is_sub_order'],
+                            'sequence_index': jump['sequence_index'],
+                            'is_wormhole_jump': False
+                        })
+                elif jump['end_system'] == system.name:
+                    wormhole_hex = None
+                    for hex_coord, hex_obj in system.hexes.items():
+                        for body in hex_obj.celestial_bodies:
+                            if isinstance(body, Wormhole) and body.exit_system_name == jump['start_system']:
+                                wormhole_hex = hex_coord
+                                break
+                        if wormhole_hex:
+                            break
+                    
+                    if wormhole_hex:
+                        filtered_waypoints.append({
+                            'start_hex': wormhole_hex,
+                            'start_system': system.name,
+                            'end_hex': jump['end_hex'],
+                            'end_system': system.name,
+                            'is_current': jump['is_current'],
+                            'is_sub_order': jump['is_sub_order'],
+                            'sequence_index': jump['sequence_index'],
+                            'is_wormhole_jump': False
+                        })
+                
+            assert all(wp['start_system'] == system.name and wp['end_system'] == system.name for wp in filtered_waypoints), "Filtering error: some waypoints are outside current system!"
+
+            filtered_waypoints.sort(key=lambda wp: wp['sequence_index'])
+            
+            path_segments = []
+            current_segment = []
+            
+            for i, waypoint in enumerate(filtered_waypoints):
+                if i == 0:
+                    current_segment.append(waypoint)
+                else:
+                    prev_wp = filtered_waypoints[i-1]
+                    if waypoint['sequence_index'] == prev_wp['sequence_index'] + 1:
+                        current_segment.append(waypoint)
+                    else:
+                        if current_segment:
+                            path_segments.append(current_segment)
+                        current_segment = [waypoint]
+            
+            if current_segment:
+                path_segments.append(current_segment)
+                
+            for segment_index, segment in enumerate(path_segments):
+                for i, jump in enumerate(segment):
+                    start_q, start_r = jump['start_hex']
+                    end_q, end_r = jump['end_hex']
+                        
+                    if jump['is_wormhole_jump']:
+                        if jump['start_system'] == system.name:
+                            wormhole_hex = None
+                            for hex_coord, hex_obj in system.hexes.items():
+                                for body in hex_obj.celestial_bodies:
+                                    if isinstance(body, Wormhole) and body.exit_system_name == jump['end_system']:
+                                        wormhole_hex = hex_coord
+                                        break
+                                if wormhole_hex:
+                                    break
+                            
+                            if wormhole_hex:
+                                start_pixel_point = self._hex_to_pixel(start_q, start_r)
+                                end_pixel_point = self._hex_to_pixel(wormhole_hex[0], wormhole_hex[1])
+                                start_x, start_y = start_pixel_point.x, start_pixel_point.y
+                                end_x, end_y = end_pixel_point.x, end_pixel_point.y
+                            else:
+                                continue
+                        elif jump['end_system'] == system.name:
+                            wormhole_hex = None
+                            for hex_coord, hex_obj in system.hexes.items():
+                                for body in hex_obj.celestial_bodies:
+                                    if isinstance(body, Wormhole) and body.exit_system_name == jump['start_system']:
+                                        wormhole_hex = hex_coord
+                                        break
+                                if wormhole_hex:
+                                    break
+                            
+                            if wormhole_hex:
+                                start_pixel_point = self._hex_to_pixel(wormhole_hex[0], wormhole_hex[1])
+                                end_pixel_point = self._hex_to_pixel(end_q, end_r)
+                                start_x, start_y = start_pixel_point.x, start_pixel_point.y
+                                end_x, end_y = end_pixel_point.x, end_pixel_point.y
+                            else:
+                                continue
+                    else:
+                        start_pixel_point = self._hex_to_pixel(start_q, start_r)
+                        end_pixel_point = self._hex_to_pixel(end_q, end_r)
+                        start_x, start_y = start_pixel_point.x, start_pixel_point.y
+                        end_x, end_y = end_pixel_point.x, end_pixel_point.y
+                    
+                    if jump.get('order_type') in {OrderType.ATTACK, OrderType.ATTACK_LONG_RANGE}:
+                        line_color = RED
+                        line_width = 2
+                    elif jump.get('order_type') == OrderType.USE_ABILITY:
+                        line_color = (255, 105, 180)  # Hot Pink
+                        line_width = 2
+                    elif jump['is_current']:
+                        line_width = 2
+                        line_color = HEX_JUMP_ORDER_LINE_COLOR
+                    else:
+                        line_width = 1
+                        line_color = (max(HEX_JUMP_ORDER_LINE_COLOR[0] - 40, 0),
+                                    max(HEX_JUMP_ORDER_LINE_COLOR[1] - 40, 0),
+                                    max(HEX_JUMP_ORDER_LINE_COLOR[2] - 40, 0))
+                    
+                    pygame.draw.line(self.overlay_surface, line_color, (start_x, start_y), (end_x, end_y), line_width)
+                    
+                    circle_size = 5 if jump['is_current'] else 3
+                    pygame.draw.circle(self.overlay_surface, line_color, (end_x, end_y), circle_size, 1)
+
+    def _draw_nebula(self, nebula, pos_px):
+        num_circles = 15
+        scale_val = self._map_scale()
+        base_radius = 10.0 * scale_val
+        max_offset = base_radius * 0.6
+
+        # Seed the random number generator for consistent nebula appearance
+        random.seed(nebula.id)
+
+        for _ in range(num_circles):
+            offset_x = random.uniform(-max_offset, max_offset)
+            offset_y = random.uniform(-max_offset, max_offset)
+            circle_pos = (pos_px.x + offset_x, pos_px.y + offset_y)
+
+            radius_variation = random.uniform(0.5, 1.2)
+            circle_radius = int(base_radius * radius_variation)
+
+            if circle_radius <= 0:
+                continue
+
+            if self._is_circle_off_screen(circle_pos, circle_radius):
+                continue
+
+            alpha = random.randint(20, 50)
+            color = NEBULA_COLORS[nebula.nebula_type]
+            color = (color[0], color[1], color[2], alpha)
+
+            circle_surface = self._get_cached_circle_surface(circle_radius, color)
+            if circle_surface:
+                self.overlay_surface.blit(circle_surface, (circle_pos[0] - circle_radius, circle_pos[1] - circle_radius))
+        
+        # Reset seed
+        random.seed()
+
+    def _draw_celestial_field(self, field, pos_px, base_color, num_particles=15):
+        num_asteroids = num_particles
+        scale_val = self._map_scale()
+        field_radius = 10 * scale_val
+        time_ms = pygame.time.get_ticks()
+
+        random.seed(field.id)
+
+        for i in range(num_asteroids):
+            initial_angle = random.uniform(0, 360)
+            initial_radius = random.uniform(field_radius * 0.2, field_radius)
+            rotation_speed = random.uniform(-3.0, 3.0)
+            asteroid_size = max(1, int(1 * scale_val))
+            color_variation = random.randint(-20, 20)
+            asteroid_color = (max(0, min(255, base_color[0] + color_variation)),
+                              max(0, min(255, base_color[1] + color_variation)),
+                              max(0, min(255, base_color[2] + color_variation)))
+
+            current_angle_rad = math.radians(initial_angle + (time_ms / 500.0) * rotation_speed)
+            offset_x = initial_radius * math.cos(current_angle_rad)
+            offset_y = initial_radius * math.sin(current_angle_rad)
+            asteroid_pos = (pos_px.x + offset_x, pos_px.y + offset_y)
+
+            pygame.draw.circle(self.screen, asteroid_color, asteroid_pos, asteroid_size)
+
+        random.seed()
+
+    def _draw_storm(self, storm, pos_px):
+        num_circles = 25
+        scale_val = self._map_scale()
+        base_radius = 10.0 * scale_val
+        time_ms = pygame.time.get_ticks()
+
+        random.seed(storm.id)
+
+        for i in range(num_circles):
+            initial_angle = random.uniform(0, 360)
+            initial_radius = random.uniform(base_radius * 0.1, base_radius * 0.9)
+            rotation_speed = random.uniform(-3.0, 3.0)
+            circle_base_radius = int(base_radius * random.uniform(0.2, 0.5))
+            if circle_base_radius < 1:
+                continue
+
+            alpha = random.randint(30, 60)
+            color = STORM_COLORS[storm.storm_type]
+            color = (color[0], color[1], color[2], alpha)
+
+            current_angle_rad = math.radians(initial_angle + (time_ms / 100.0) * rotation_speed)
+            offset_x = initial_radius * math.cos(current_angle_rad)
+            offset_y = initial_radius * math.sin(current_angle_rad)
+            circle_pos = (pos_px.x + offset_x, pos_px.y + offset_y)
+
+            if self._is_circle_off_screen(circle_pos, circle_base_radius):
+                continue
+
+            circle_surface = self._get_cached_circle_surface(circle_base_radius, color)
+            if circle_surface:
+                self.overlay_surface.blit(circle_surface, (circle_pos[0] - circle_base_radius, circle_pos[1] - circle_base_radius))
+
+        random.seed()
+
+        if random.random() < 0.05:
+            num_bolts = random.randint(1, 3)
+            for _ in range(num_bolts):
+                angle = random.uniform(0, 2 * math.pi)
+                length = random.uniform(base_radius * 1.0, base_radius * 1.5)
+                end_pos_x = pos_px.x + length * math.cos(angle)
+                end_pos_y = pos_px.y + length * math.sin(angle)
+                pygame.draw.line(self.overlay_surface, STORM_LIGHTNING_COLOR, (pos_px.x, pos_px.y), (end_pos_x, end_pos_y), 1)

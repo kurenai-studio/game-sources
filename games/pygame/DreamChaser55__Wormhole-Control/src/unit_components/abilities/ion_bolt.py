@@ -1,0 +1,69 @@
+import logging
+from game_logging import format_unit_for_log
+from typing import Optional, TYPE_CHECKING
+from geometry import Position
+from domain.coordinates import HexCoord
+from ..enums import AbilityType
+from .base import AbilityDefinition, AbilityInstance
+
+if TYPE_CHECKING:
+    from galaxy import Galaxy
+    from .component import AbilityComponent
+
+logger = logging.getLogger(__name__)
+
+
+class IonBoltAbility(AbilityInstance):
+    DEFINITION = AbilityDefinition(
+        ability_type=AbilityType.ION_BOLT,
+        name="Ion Bolt",
+        description="Disables a target unit, preventing movement and attacks for 3 turns.",
+        cooldown=7,
+        duration=3,
+        range=400.0,
+        requires_target_unit=True,
+        requires_target_position=False,
+        antimatter_cost=25,
+        required_components=["has_weapon_bays"],
+    )
+
+    def on_activate(
+        self,
+        component: 'AbilityComponent',
+        galaxy: 'Galaxy',
+        target_unit_id: Optional[int] = None,
+        target_position: Optional[Position] = None,
+        target_system_name: Optional[str] = None,
+        target_hex_coord: Optional[HexCoord] = None,
+    ) -> bool:
+        if target_unit_id is None:
+            logger.debug(f"[{format_unit_for_log(component.unit)}] Ion Bolt requires a target unit.")
+            return False
+        target_unit = galaxy.get_unit_by_id(target_unit_id)
+        if not target_unit:
+            logger.debug(f"[{format_unit_for_log(component.unit)}] Ion Bolt: target unit {target_unit_id} not found.")
+            return False
+
+        self.target_unit_id = target_unit_id
+        self.restore_effect(component, galaxy)
+        from turn_briefing import unit_event
+        unit_event(target_unit, "combat", "Disabled by Ion Bolt", actor=component.unit)
+        logger.debug(f"[{format_unit_for_log(component.unit)}] Ion Bolt disabled {format_unit_for_log(target_unit)}.")
+        return True
+
+    def on_expire(self, component: 'AbilityComponent', galaxy: 'Galaxy') -> None:
+        if self.target_unit_id is not None:
+            from campaign_graph import find_unit
+            target_unit = find_unit(galaxy, self.target_unit_id)
+            if target_unit:
+                from timed_effects import remove
+                remove(target_unit, component.unit.id, self.definition.ability_type)
+                logger.debug(f"[{format_unit_for_log(component.unit)}] Ion Bolt expired on {format_unit_for_log(target_unit)}. Disabled: {target_unit.is_disabled}.")
+        self.target_unit_id = None
+
+    def restore_effect(self, component, galaxy):
+        from campaign_graph import find_unit
+        from timed_effects import add
+        target = find_unit(galaxy, self.target_unit_id)
+        if target:
+            add(target, component.unit.id, self.definition.ability_type, "disable")

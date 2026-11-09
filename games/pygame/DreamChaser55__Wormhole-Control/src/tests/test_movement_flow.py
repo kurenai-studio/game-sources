@@ -1,0 +1,669 @@
+from display_config import DisplayConfig
+from unittest.mock import MagicMock
+from geometry import Position
+from turn_processor import TurnProcessor
+from unit_orders.movement import MoveOrder
+from unit_orders.base import Order, OrderStatus, OrderType
+from unit_components.movement import Engines, Hyperdrive
+from unit_components.enums import HyperdriveType, JumpStatus
+from unit_components.commander import Commander
+from tests.support.units import ComponentPlayer, ComponentUnit
+
+
+class SimpleHex:
+    def __init__(self, q, r, in_system):
+        self.q = q
+        self.r = r
+        self.in_system = in_system
+        self.units = []
+        self.celestial_bodies = []
+        from geometry import Circle
+        self.boundary_circle = Circle(Position(0, 0), 1000.0)
+        self.dynamic_inhibition_zones = {}
+        self.static_inhibition_zones = []
+        
+    def get_all_inhibition_zones(self):
+        return []
+        
+    def add_unit(self, unit):
+        self.units.append(unit)
+        
+    def remove_unit(self, unit):
+        if unit in self.units:
+            self.units.remove(unit)
+            
+    def coordinates(self):
+        return (self.q, self.r)
+
+class SimpleSystem:
+    def __init__(self, name):
+        self.name = name
+        self.hexes = {}
+        # Generate grid with radius 3
+        for q in range(-3, 4):
+            r1 = max(-3, -q - 3)
+            r2 = min(3, -q + 3)
+            for r in range(r1, r2 + 1):
+                self.hexes[(q, r)] = SimpleHex(q, r, name)
+                    
+    def get_all_units(self):
+        units = []
+        for hex_obj in self.hexes.values():
+            for unit in hex_obj.units:
+                units.append((unit, (hex_obj.q, hex_obj.r)))
+        return units
+        
+    def get_all_celestial_bodies(self):
+        bodies = []
+        for hex_obj in self.hexes.values():
+            for body in hex_obj.celestial_bodies:
+                bodies.append(((hex_obj.q, hex_obj.r), body))
+        return bodies
+        
+    def add_unit(self, unit):
+        hex_obj = self.hexes.get(unit.in_hex)
+        if hex_obj:
+            hex_obj.add_unit(unit)
+            
+    def remove_unit(self, unit):
+        hex_obj = self.hexes.get(unit.in_hex)
+        if hex_obj:
+            if unit in hex_obj.units:
+                hex_obj.remove_unit(unit)
+                return True
+        return False
+        
+    def move_unit_between_hexes(self, unit, destination_hex):
+        self.remove_unit(unit)
+        unit.in_hex = destination_hex
+        self.add_unit(unit)
+        return True
+
+class SimpleWormhole:
+    def __init__(self, wh_id, in_system, in_hex, exit_system_name, exit_wormhole_id, position, diameter=None):
+        from constants import HullSize
+        self.id = wh_id
+        self.in_system = in_system
+        self.in_hex = in_hex
+        self.exit_system_name = exit_system_name
+        self.exit_wormhole_id = exit_wormhole_id
+        self.position = position
+        self.name = f"Wormhole-{wh_id}"
+        self.stability = 100
+        self.diameter = diameter if diameter is not None else HullSize.HUGE
+
+class SimpleGalaxy:
+    def __init__(self):
+        self.systems = {
+            "Sol": SimpleSystem("Sol"),
+            "Vega": SimpleSystem("Vega")
+        }
+        self.wormholes = {}
+        from constants import HullSize
+        self.system_graph = {"Sol": {"Vega": HullSize.HUGE}, "Vega": {"Sol": HullSize.HUGE}}
+        
+    def get_unit_by_id(self, unit_id):
+        for sys in self.systems.values():
+            for unit, _ in sys.get_all_units():
+                if unit.id == unit_id:
+                    return unit
+        return None
+        
+    def remove_unit(self, unit):
+        if unit.in_system in self.systems:
+            self.systems[unit.in_system].remove_unit(unit)
+
+    def move_unit_between_systems(self, unit, origin_system_name, destination_system_name, destination_hex):
+        orig = self.systems[origin_system_name]
+        dest = self.systems[destination_system_name]
+        orig.remove_unit(unit)
+        unit.in_system = destination_system_name
+        unit.in_hex = destination_hex
+        dest.add_unit(unit)
+        return True
+
+def test_integration_sublight_movement_flow():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    galaxy = SimpleGalaxy()
+    game.galaxy = galaxy
+    
+    player = ComponentPlayer()
+    game.players = [player]
+    game.current_player_index = 0
+    
+    # Setup Unit
+    unit = ComponentUnit()
+    unit.owner = player
+    unit.game = game
+    unit.in_galaxy = galaxy
+    unit.in_system = "Sol"
+    unit.in_hex = (0, 0)
+    unit.position = Position(0, 0)
+    
+    engines = Engines(unit, speed=50.0)
+    commander = Commander(unit)
+    unit.add_component(engines)
+    unit.add_component(commander)
+    
+    galaxy.systems["Sol"].add_unit(unit)
+    
+    # Assign order: sublight move within hex (0,0) to Position(120, 0)
+    move_order = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(120, 0)
+    })
+    commander.add_order(move_order)
+    
+    # Verify order execution sets engines target
+    assert commander.current_order == move_order
+    assert len(move_order.sub_orders) == 1
+    assert engines.move_target == Position(120, 0)
+    
+    tp = TurnProcessor(game)
+    
+    # Turn 1
+    tp.process_turn()
+    assert unit.position.x == 50.0
+    assert move_order.status == OrderStatus.IN_PROGRESS
+    
+    # Turn 2
+    tp.process_turn()
+    assert unit.position.x == 100.0
+    assert move_order.status == OrderStatus.IN_PROGRESS
+    
+    # Turn 3
+    tp.process_turn()
+    assert unit.position.x == 120.0 # Arrives
+    # The TurnProcessor executes movements first, then unit updates.
+    # By the end of Turn 3, the movement arrived and unit.update() was called which triggered commander update,
+    # moving the ReachWaypointOrder to COMPLETED and thus the MoveOrder to COMPLETED.
+    assert move_order.status == OrderStatus.COMPLETED
+    assert engines.move_target is None
+
+
+def test_destroying_engines_fails_active_sublight_move_without_spending_antimatter():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    galaxy = SimpleGalaxy()
+    game.galaxy = galaxy
+
+    player = ComponentPlayer()
+    game.players = [player]
+    game.current_player_index = 0
+
+    unit = ComponentUnit()
+    unit.owner = player
+    unit.game = game
+    unit.in_galaxy = galaxy
+    unit.in_system = "Sol"
+    unit.in_hex = (0, 0)
+    unit.position = Position(0, 0)
+
+    engines = Engines(unit, speed=50.0)
+    commander = Commander(unit)
+    unit.add_component(engines)
+    unit.add_component(commander)
+    galaxy.systems["Sol"].add_unit(unit)
+
+    move_order = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(100, 0),
+    })
+    commander.add_order(move_order)
+    assert engines.move_target == Position(100, 0)
+
+    starting_antimatter = unit.antimatter_component.current_amount
+    unit.take_component_damage(Engines, engines.max_hit_points)
+    assert engines.move_target is None
+
+    TurnProcessor(game).process_turn()
+
+    assert unit.position == Position(0, 0)
+    assert unit.antimatter_component.current_amount == starting_antimatter
+    assert move_order.status == OrderStatus.FAILED
+    assert commander.current_order is None
+
+    engines.current_hit_points = 1
+    repaired_move = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (0, 0),
+        "destination_position": Position(50, 0),
+    })
+    commander.add_order(repaired_move)
+    TurnProcessor(game).process_turn()
+
+    assert unit.position == Position(50, 0)
+    assert repaired_move.status == OrderStatus.COMPLETED
+
+
+def test_destroyed_engines_do_not_block_hyperdrive_only_jump():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    galaxy = SimpleGalaxy()
+    game.galaxy = galaxy
+
+    player = ComponentPlayer()
+    game.players = [player]
+    game.current_player_index = 0
+
+    unit = ComponentUnit()
+    unit.owner = player
+    unit.game = game
+    unit.in_galaxy = galaxy
+    unit.in_system = "Sol"
+    unit.in_hex = (0, 0)
+    unit.position = Position(0, 0)
+
+    engines = Engines(unit, speed=50.0)
+    engines.current_hit_points = 0
+    unit.add_component(engines)
+    unit.add_component(Hyperdrive(unit, drive_type=HyperdriveType.BASIC, jump_range=5))
+    commander = Commander(unit)
+    unit.add_component(commander)
+    galaxy.systems["Sol"].add_unit(unit)
+
+    move_order = MoveOrder(unit, {
+        "destination_system_name": "Sol",
+        "destination_hex_coord": (1, 0),
+        "destination_position": Position(25, 25),
+    })
+    commander.add_order(move_order)
+
+    TurnProcessor(game).process_turn()
+
+    assert unit.in_hex == (1, 0)
+    assert unit.position == Position(25, 25)
+    assert move_order.status == OrderStatus.COMPLETED
+
+def test_integration_wormhole_jump_flow():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    galaxy = SimpleGalaxy()
+    game.galaxy = galaxy
+    
+    player = ComponentPlayer()
+    game.players = [player]
+    game.current_player_index = 0
+    
+    # Setup linked wormholes
+    # Sol wormhole in hex (1, 1) leading to Vega. exit_wh is Vega wormhole in hex (-1, -1)
+    wh_sol = SimpleWormhole(1, "Sol", (1, 1), "Vega", 2, Position(5, 5))
+    wh_vega = SimpleWormhole(2, "Vega", (-1, -1), "Sol", 1, Position(10, 10))
+    galaxy.wormholes[1] = wh_sol
+    galaxy.wormholes[2] = wh_vega
+    
+    galaxy.systems["Sol"].hexes[(1, 1)].celestial_bodies.append(wh_sol)
+    galaxy.systems["Vega"].hexes[(-1, -1)].celestial_bodies.append(wh_vega)
+    
+    # Setup Unit in Sol at (0, 0)
+    unit = ComponentUnit()
+    unit.owner = player
+    unit.game = game
+    unit.in_galaxy = galaxy
+    unit.in_system = "Sol"
+    unit.in_hex = (0, 0)
+    unit.position = Position(0, 0)
+    
+    engines = Engines(unit, speed=100.0)
+    hd = Hyperdrive(unit, drive_type=HyperdriveType.ADVANCED, jump_range=5, recharge_duration=3)
+    commander = Commander(unit)
+    unit.add_component(engines)
+    unit.add_component(hd)
+    unit.add_component(commander)
+    
+    galaxy.systems["Sol"].add_unit(unit)
+    
+    # Move order to Vega hex (-1, -1) position (10, 10)
+    move_order = MoveOrder(unit, {
+        "destination_system_name": "Vega",
+        "destination_hex_coord": (-1, -1),
+        "destination_position": Position(10, 10)
+    })
+    commander.add_order(move_order)
+    
+    # Pathplanning creates:
+    # 1. ReachWaypointOrder (hex jump) from (0,0) to wormhole hex (1,1) position (5,5)
+    # 2. ReachWaypointOrder (wormhole jump) from (1,1) in Sol to (-1,-1) in Vega position (10,10)
+    assert len(move_order.sub_orders) == 2
+    assert move_order.sub_orders[0].parameters["destination_hex_coord"] == (1, 1)
+    assert move_order.sub_orders[1].parameters["destination_hex_coord"] == (-1, -1)
+    
+    # First sub-order (hex jump) becomes active
+    assert hd.hex_jump_target == ((1, 1), Position(5, 5))
+    
+    tp = TurnProcessor(game)
+    
+    # Turn 1: process movement (executes hex jump) -> unit moves to (1,1) in Sol. hd goes to CHARGING status.
+    tp.process_turn()
+    assert unit.in_system == "Sol"
+    assert unit.in_hex == (1, 1)
+    assert hd.jump_status == JumpStatus.CHARGING
+    assert hd.recharge_time_remaining == 2
+    
+    # Turn 2: charging (1 turn left)
+    tp.process_turn()
+    assert hd.jump_status == JumpStatus.CHARGING
+    assert hd.recharge_time_remaining == 1
+    
+    # Turn 3: recharge completes (hd ready). Next sub-order (system jump) starts.
+    tp.process_turn()
+    assert hd.jump_status == JumpStatus.READY
+    # By the end of this turn, since hd became ready during _process_unit_updates (update_recharge),
+    # the commander will update, see sub-order 1 (hex jump) completed, and start sub-order 2 (system jump).
+    # Commander start_next_order will set hd.wormhole_jump_target to wh_sol
+    assert hd.wormhole_jump_target == wh_sol
+    
+    # Turn 4: Turn processor executes the system jump!
+    tp.process_turn()
+    # Unit should now be in Vega, hex (-1, -1)
+    assert unit.in_system == "Vega"
+    assert unit.in_hex == (-1, -1)
+    assert unit.position == Position(10, 10)
+    assert move_order.status == OrderStatus.COMPLETED
+
+
+def test_integration_multi_system_movement():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    galaxy = SimpleGalaxy()
+    # Add third system
+    galaxy.systems["Sirius"] = SimpleSystem("Sirius")
+    from constants import HullSize
+    galaxy.system_graph = {
+        "Sol": {"Vega": HullSize.HUGE},
+        "Vega": {"Sol": HullSize.HUGE, "Sirius": HullSize.HUGE},
+        "Sirius": {"Vega": HullSize.HUGE}
+    }
+    game.galaxy = galaxy
+    
+    player = ComponentPlayer()
+    game.players = [player]
+    game.current_player_index = 0
+    
+    # Setup wormholes
+    wh_sol_to_vega = SimpleWormhole(1, "Sol", (1, 1), "Vega", 2, Position(5, 5))
+    wh_vega_from_sol = SimpleWormhole(2, "Vega", (-1, -1), "Sol", 1, Position(5, 5))
+    wh_vega_to_sirius = SimpleWormhole(3, "Vega", (1, 1), "Sirius", 4, Position(10, 10))
+    wh_sirius_from_vega = SimpleWormhole(4, "Sirius", (-2, 2), "Vega", 3, Position(20, 20))
+    
+    galaxy.wormholes[1] = wh_sol_to_vega
+    galaxy.wormholes[2] = wh_vega_from_sol
+    galaxy.wormholes[3] = wh_vega_to_sirius
+    galaxy.wormholes[4] = wh_sirius_from_vega
+    
+    galaxy.systems["Sol"].hexes[(1, 1)].celestial_bodies.append(wh_sol_to_vega)
+    galaxy.systems["Vega"].hexes[(-1, -1)].celestial_bodies.append(wh_vega_from_sol)
+    galaxy.systems["Vega"].hexes[(1, 1)].celestial_bodies.append(wh_vega_to_sirius)
+    galaxy.systems["Sirius"].hexes[(-2, 2)].celestial_bodies.append(wh_sirius_from_vega)
+    
+    # Setup Unit in Sol at (0, 0)
+    unit = ComponentUnit()
+    unit.owner = player
+    unit.game = game
+    unit.in_galaxy = galaxy
+    unit.in_system = "Sol"
+    unit.in_hex = (0, 0)
+    unit.position = Position(0, 0)
+    unit.antimatter_component.max_capacity = 200.0
+    unit.antimatter_component.current_amount = 200.0
+    
+    engines = Engines(unit, speed=100.0)
+    hd = Hyperdrive(unit, drive_type=HyperdriveType.ADVANCED, jump_range=5, recharge_duration=1)
+    commander = Commander(unit)
+    unit.add_component(engines)
+    unit.add_component(hd)
+    unit.add_component(commander)
+    
+    galaxy.systems["Sol"].add_unit(unit)
+    
+    # Move order to Sirius, hex (-2, 2), Position(20, 20)
+    move_order = MoveOrder(unit, {
+        "destination_system_name": "Sirius",
+        "destination_hex_coord": (-2, 2),
+        "destination_position": Position(20, 20)
+    })
+    
+    from unittest.mock import patch
+    with patch("unit_orders.movement.find_intersystem_path", return_value=["Sol", "Vega", "Sirius"]):
+        commander.add_order(move_order)
+    
+    # We expect 5 sub-orders (including the final arrival waypoint check in Sirius)
+    assert len(move_order.sub_orders) == 5
+    assert move_order.sub_orders[0].parameters["destination_system_name"] == "Sol"
+    assert move_order.sub_orders[0].parameters["destination_hex_coord"] == (1, 1)
+    assert move_order.sub_orders[1].parameters["destination_system_name"] == "Vega"
+    assert move_order.sub_orders[1].parameters["destination_hex_coord"] == (-1, -1)
+    assert move_order.sub_orders[2].parameters["destination_system_name"] == "Vega"
+    assert move_order.sub_orders[2].parameters["destination_hex_coord"] == (1, 1)
+    assert move_order.sub_orders[3].parameters["destination_system_name"] == "Sirius"
+    assert move_order.sub_orders[3].parameters["destination_hex_coord"] == (-2, 2)
+    assert move_order.sub_orders[4].parameters["destination_system_name"] == "Sirius"
+    assert move_order.sub_orders[4].parameters["destination_hex_coord"] == (-2, 2)
+    
+    tp = TurnProcessor(game)
+    
+    # Turn 1: executes hex jump Sol (0,0) -> Sol (1,1)
+    tp.process_turn()
+    assert unit.in_system == "Sol"
+    assert unit.in_hex == (1, 1)
+    assert hd.jump_status == JumpStatus.READY # recharge completes in same turn updates
+    assert hd.wormhole_jump_target == wh_sol_to_vega
+    
+    # Turn 2: executes system jump Sol -> Vega (-1, -1)
+    tp.process_turn()
+    assert unit.in_system == "Vega"
+    assert unit.in_hex == (-1, -1)
+    assert hd.jump_status == JumpStatus.READY
+    assert hd.hex_jump_target == ((1, 1), Position(10, 10))
+    
+    # Turn 3: executes hex jump Vega (-1, -1) -> Vega (1, 1)
+    tp.process_turn()
+    assert unit.in_system == "Vega"
+    assert unit.in_hex == (1, 1)
+    assert hd.jump_status == JumpStatus.READY
+    assert hd.wormhole_jump_target == wh_vega_to_sirius
+    
+    # Turn 4: executes system jump Vega -> Sirius (-2, 2)
+    tp.process_turn()
+    assert unit.in_system == "Sirius"
+    assert unit.in_hex == (-2, 2)
+    assert unit.position == Position(20, 20)
+    assert move_order.status == OrderStatus.COMPLETED
+
+def test_unstable_wormhole_damage():
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    galaxy = SimpleGalaxy()
+    game.galaxy = galaxy
+    
+    player = ComponentPlayer()
+    game.players = [player]
+    game.current_player_index = 0
+    
+    # Setup linked wormholes
+    wh_sol = SimpleWormhole(1, "Sol", (1, 1), "Vega", 2, Position(5, 5))
+    # Make entry wormhole unstable: stability = 0 (100% chance of damage)
+    wh_sol.stability = 0
+    
+    wh_vega = SimpleWormhole(2, "Vega", (-1, -1), "Sol", 1, Position(10, 10))
+    galaxy.wormholes[1] = wh_sol
+    galaxy.wormholes[2] = wh_vega
+    
+    galaxy.systems["Sol"].hexes[(1, 1)].celestial_bodies.append(wh_sol)
+    galaxy.systems["Vega"].hexes[(-1, -1)].celestial_bodies.append(wh_vega)
+    
+    # Setup Unit in Sol at (1, 1)
+    unit = ComponentUnit()
+    unit.owner = player
+    unit.game = game
+    unit.in_galaxy = galaxy
+    unit.in_system = "Sol"
+    unit.in_hex = (1, 1)
+    unit.position = Position(5, 5)
+    unit.max_hit_points = 100
+    unit.current_hit_points = 100
+    
+    engines = Engines(unit, speed=100.0)
+    # Give engines component some hit points so it can be damaged (max hit points by default is max(10, hull_cost * 10) = 50 since Engines default hull_cost = 5)
+    assert engines.max_hit_points == 50
+    engines.current_hit_points = 50
+    
+    hd = Hyperdrive(unit, drive_type=HyperdriveType.ADVANCED, jump_range=5, recharge_duration=3)
+    hd.jump_status = JumpStatus.READY
+    
+    commander = Commander(unit)
+    unit.add_component(engines)
+    unit.add_component(hd)
+    unit.add_component(commander)
+    navigation_owner = Order(unit, OrderType.REACH_WAYPOINT)
+    navigation_owner.status = OrderStatus.IN_PROGRESS
+    commander.current_order = navigation_owner
+    hd.set_wormhole_jump_target(wh_sol, navigation_owner.local_order_id)
+    
+    galaxy.systems["Sol"].add_unit(unit)
+    
+    tp = TurnProcessor(game)
+    
+    # Patch random to control damage percentage and component choice
+    from unittest.mock import patch
+    
+    # Check 1: random.random() < 1.0 (since stability = 0) -> return 0.5 (True)
+    # Check 2: random.random() < 0.5 (component damage) -> return 0.2 (True)
+    # choice returns Engines class to target Engines component
+    with patch("random.random", side_effect=[0.5, 0.2]), \
+         patch("random.uniform", return_value=0.20), \
+         patch("random.choice", return_value=Engines):
+        tp.process_turn()
+        
+    # Unit should be in Vega
+    assert unit.in_system == "Vega"
+    assert unit.in_hex == (-1, -1)
+    
+    # Damage should be 20% of 100 max hp = 20 damage.
+    # Since component damage was triggered, engines should take 20 damage.
+    assert engines.current_hit_points == 30
+    # No damage should spill over to hull, so hull remains 100.
+    assert unit.current_hit_points == 100
+    
+    # Now test spillover
+    # Set engines current hit points to 5, so 20 damage will destroy engines (takes 5 damage) and spillover 15 to hull
+    engines.current_hit_points = 5
+    unit.current_hit_points = 100
+    hd.set_wormhole_jump_target(wh_sol, navigation_owner.local_order_id)
+    hd.jump_status = JumpStatus.READY
+    # Move unit back to Sol for another jump
+    galaxy.move_unit_between_systems(unit, "Vega", "Sol", (1, 1))
+    
+    with patch("random.random", side_effect=[0.5, 0.2]), \
+         patch("random.uniform", return_value=0.20), \
+         patch("random.choice", return_value=Engines):
+        tp.process_turn()
+        
+    # Engines should be destroyed (0 HP)
+    assert engines.current_hit_points == 0
+    # 15 damage spilled over to hull, so hull should be 100 - 15 = 85
+    assert unit.current_hit_points == 85
+
+def test_wormhole_diameter_restrictions_pathfinding():
+    from pathfinding import find_intersystem_path
+    from constants import HullSize
+
+    # Graph representation: Sol -(MEDIUM)-> Vega, Vega -(HUGE)-> Sirius
+    graph = {
+        "Sol": {"Vega": HullSize.MEDIUM},
+        "Vega": {"Sol": HullSize.MEDIUM, "Sirius": HullSize.HUGE},
+        "Sirius": {"Vega": HullSize.HUGE}
+    }
+
+    # Medium ship: should go Sol -> Vega -> Sirius
+    path_medium = find_intersystem_path(graph, "Sol", "Sirius", HullSize.MEDIUM)
+    assert path_medium == ["Sol", "Vega", "Sirius"]
+
+    # Huge ship: should fail because Sol -> Vega is MEDIUM
+    path_huge = find_intersystem_path(graph, "Sol", "Sirius", HullSize.HUGE)
+    assert path_huge is None
+
+def test_wormhole_diameter_restrictions_movement_planning():
+    # Setup game, galaxy, player
+    game = MagicMock()
+    game.display_config = DisplayConfig()
+    galaxy = SimpleGalaxy()
+    game.galaxy = galaxy
+    
+    player = ComponentPlayer()
+    game.players = [player]
+    game.current_player_index = 0
+
+    from constants import HullSize
+    # Sol wormhole in hex (1, 1) leading to Vega with MEDIUM diameter
+    wh_sol = SimpleWormhole(1, "Sol", (1, 1), "Vega", 2, Position(5, 5), diameter=HullSize.MEDIUM)
+    wh_vega = SimpleWormhole(2, "Vega", (-1, -1), "Sol", 1, Position(10, 10), diameter=HullSize.MEDIUM)
+    galaxy.wormholes[1] = wh_sol
+    galaxy.wormholes[2] = wh_vega
+    
+    galaxy.systems["Sol"].hexes[(1, 1)].celestial_bodies.append(wh_sol)
+    galaxy.systems["Vega"].hexes[(-1, -1)].celestial_bodies.append(wh_vega)
+
+    # Set up system graph with MEDIUM limit
+    galaxy.system_graph = {
+        "Sol": {"Vega": HullSize.MEDIUM},
+        "Vega": {"Sol": HullSize.MEDIUM}
+    }
+
+    # Case 1: MEDIUM ship can make the move
+    unit_medium = ComponentUnit()
+    unit_medium.hull_size = HullSize.MEDIUM
+    unit_medium.owner = player
+    unit_medium.game = game
+    unit_medium.in_galaxy = galaxy
+    unit_medium.in_system = "Sol"
+    unit_medium.in_hex = (0, 0)
+    unit_medium.position = Position(0, 0)
+    
+    engines_m = Engines(unit_medium, speed=100.0)
+    hd_m = Hyperdrive(unit_medium, drive_type=HyperdriveType.ADVANCED, jump_range=5)
+    commander_m = Commander(unit_medium)
+    unit_medium.add_component(engines_m)
+    unit_medium.add_component(hd_m)
+    unit_medium.add_component(commander_m)
+    galaxy.systems["Sol"].add_unit(unit_medium)
+
+    move_order_m = MoveOrder(unit_medium, {
+        "destination_system_name": "Vega",
+        "destination_hex_coord": (-1, -1),
+        "destination_position": Position(10, 10)
+    })
+    commander_m.add_order(move_order_m)
+    # Since it's a medium ship and wormhole is medium, routing should succeed (creating sub-orders)
+    assert move_order_m.status != OrderStatus.FAILED
+    assert len(move_order_m.sub_orders) == 2
+
+    # Case 2: HUGE ship should fail to plan path
+    unit_huge = ComponentUnit()
+    unit_huge.hull_size = HullSize.HUGE
+    unit_huge.owner = player
+    unit_huge.game = game
+    unit_huge.in_galaxy = galaxy
+    unit_huge.in_system = "Sol"
+    unit_huge.in_hex = (0, 0)
+    unit_huge.position = Position(0, 0)
+    
+    engines_h = Engines(unit_huge, speed=100.0)
+    hd_h = Hyperdrive(unit_huge, drive_type=HyperdriveType.ADVANCED, jump_range=5)
+    commander_h = Commander(unit_huge)
+    unit_huge.add_component(engines_h)
+    unit_huge.add_component(hd_h)
+    unit_huge.add_component(commander_h)
+    galaxy.systems["Sol"].add_unit(unit_huge)
+
+    move_order_h = MoveOrder(unit_huge, {
+        "destination_system_name": "Vega",
+        "destination_hex_coord": (-1, -1),
+        "destination_position": Position(10, 10)
+    })
+    commander_h.add_order(move_order_h)
+    # Routing should fail because HUGE ship is larger than MEDIUM wormhole
+    assert move_order_h.status == OrderStatus.FAILED

@@ -1,0 +1,1105 @@
+# Agentic AI Architecture
+
+Wormhole Control treats an LLM as an untrusted planning process, not as part of
+the authoritative game engine. The model receives a JSON-safe observation,
+returns one strict turn plan, and cannot access Python objects, hidden state,
+files, or arbitrary tools. See the [current formats and protocols](DEVELOPMENT.md#current-formats-and-protocols)
+for the independent save, observation, command and transport identifiers.
+
+## Turn flow
+
+1. `TurnProcessor.check_and_schedule_ai_turn` retains the normal 500 ms turn
+   transition delay, including slot-zero AI players and loaded AI turns.
+2. `AgentTurnCoordinator` builds the observation on the Pygame thread and sends
+   only plain data to one background asyncio loop. One provider request may run,
+   with at most one pending replacement while obsolete work is being cancelled.
+3. `OpenAIResponsesProvider` makes one non-streaming Responses API request with
+   strict JSON Schema output and `store=False`.
+4. The coordinator polls completion from `Game.update`; all commands, memory,
+   telemetry and UI effects remain on the Pygame thread.
+5. `CommandGateway` preflights the entire batch. Hidden and nonexistent targets
+   deliberately return the same `target_unavailable` error.
+6. Accepted orders are committed on the Pygame thread. A retryable rejection
+   gets another semantic request containing the immediately preceding plan and
+   its exact errors while the active AI player's snapshotted budget remains.
+   Commit and transport failures are not semantically retried.
+7. Only after successful commit are the bounded memory patch and execution
+   receipts persisted and the turn ended. Preflight acceptance alone is not
+   commit success; unexpected commit exceptions enter manual recovery without
+   applying the rejected memory patch.
+
+No API call is made for a human player. Tests and evaluation use injected fake
+providers by default, so they do not consume API credits.
+
+## Information boundary
+
+`game_ai.observation.build_observation` recomputes visibility for the active
+player, recording covered-sector and planetary ownership intel and shared ghost identification.
+`VisibilityService.compute(record_intel=False)` calculates coverage without those
+persistent writes; load reconciliation and selected tactical/deployable checks use
+that mode. Other target checks retain the recording default, as described in the
+[preflight guarantees](#commit-guarantees-and-lifecycle-feedback). The observation includes:
+
+- the active player's economy;
+- public system topology, navigation anchors, detailed nearby bodies (including planetary traits, colonizability, passive mineral yields, and antimatter harvesting sources/multipliers), and physical summaries of remote bodies;
+- owned and allied units;
+- enemy units only when detailed visibility permits them (concealed from long-range radar presence when cloaked or inside nebulae or asteroid fields);
+- celestial fields (asteroid, debris, ice) with density parameters (`density`, `max_hull_size`), solidity status (`is_solid: false`), and exact `effect_radius` values that restrict hulls exceeding the field's maximum allowable hull, rejecting forbidden commands with `hazard_blocked`;
+- space storms (plasma, magnetic, radiation) and nebulae exposing `is_solid: false` and exact `effect_radius`, along with separately scoped black-hole and pulsar hazards (strikecraft wings are banned from entering or launching in magnetic storms, but ignore field drag and debris abrasion and can enter fields of all densities);
+- visible minefields;
+- undetailed enemy-presence hexes without count, identity, owner, or strength;
+- per-owned-unit supported commands, currently legal commands, conditional
+  command sequences, bounded option values, ability state, cargo, inhibitor
+  state and activation eligibility, and other public capability details;
+- owned embedded agents, discovered hostile agents on friendly/allied hosts,
+  bounded player-level sabotage/relocation options, and Intelligence/CI ship options;
+- one deduplicated construction-template catalog;
+- diplomatic message history grouped by partner faction in chronological order (`conversations`).
+
+Hull enums use readable uppercase names consistently: `hull_size`, connection
+`maximum_hull`, wormhole `diameter`, and field limits use values such as `MEDIUM`,
+`LARGE` and `STRIKECRAFT_WING`, rather than numeric strings.
+
+Antimatter amount and storage capacity are private to owned/allied units. Visible
+enemy component details expose weapons and defenses, without fuel or tank size.
+
+Observations give full body detail in systems containing friendly
+units, adjacent systems, and systems with visible enemy activity. Remote systems
+retain exact stars, friendly colonies, currently sensed worlds and previously
+observed worlds; other objects are summarized without ownership-dependent counts.
+System navigation anchors are physical references, usually at a solid star center.
+They mark `position_is_move_endpoint: false`, disclose the star's collision radius,
+and warn planners to choose a point outside its clearance band and excluded terrain.
+An approaching scout receives exact target IDs on a later turn.
+Inhibitor blocker values are intentionally bounded and expose
+no identity or geometry for the conflicting inhibition zone.
+
+Colonizable bodies expose `ownership_status` (`current`, `last_known`, `unknown`)
+and nullable `ownership_observed_turn`. `owner_id` and `owner_relation` describe
+only that disclosed intelligence: unknown uses null and `unknown`, while confirmed
+uninhabited uses null and `neutral`. Last-known ownership is dated history, not
+current control, even if last observed earlier in the same round. Population and
+`planetary_defenses` are omitted without current knowledge. Physical traits and
+capacity remain available. Remote `body_summary.colonizable_count` and
+`colonizable_capacity` describe geography, not unclaimed worlds.
+
+The shared ownership policy uses effective short-range contact with the body's
+surface or long-range coverage of its sector, including allied and intelligence
+sources and Deep Scan. Own/allied colonies stay current. Enemy home markers
+require current sensor coverage. Colony command options include current and historical
+targets whose disclosed ownership suits the requested action. Colonization also
+accepts physically colonizable targets with unknown ownership, without treating them
+as confirmed uninhabited. Known occupied bodies are ineligible. For other colony
+actions, unknown and nonexistent targets return the same `target_unavailable` error.
+Preflight and commit use disclosed ownership, never an unseen live owner. Human
+controls use the same policy.
+
+Colonize, Load Colonists, Recruit Troops, Bombard Planet, Invade Planet and Infiltrate
+Planet retain their approaches on contact loss. At action range they expose
+`progress.phase: waiting_for_contact`, block following orders and consume no action
+resources or invasion randomness until contact returns. Reacquisition refreshes intel
+and revalidates ownership before effects; incompatible targets fail once and preserve
+following queued work. Immediate upgrades and agent relocation retain current-contact
+requirements. Unit attacks retain their separate visibility rules.
+
+Historical invasion previews expose `success_probability: null`, retaining known costs
+and casualty formulas. Historical load/recruitment amount limits use cargo space and
+credits only, with `preview_note` explaining that population must be confirmed.
+Population-dependent validation is deferred until current knowledge returns. Pending
+loads/recruitment can support queued prerequisites, but an in-range stale action is
+never projected as an immediate effect that finances replacement work.
+
+Per-player ownership observations are saved independently of AI memory. Recording
+visibility refreshes only authorized observations; `record_intel=False` and load
+reconciliation never rewrite them. Historical briefings and memory remain history.
+
+The observation intentionally excludes enemy resources and hidden entity IDs.
+The command gateway independently recomputes visibility for enemy targets, so a
+fabricated or remembered hidden ID cannot bypass fog of war.
+
+## Turn-start briefing
+
+Every built-in planning request and Codex observation includes `turn_summary`
+in its observation JSON. It contains `from_turn`,
+`to_turn`, priority-ordered `entries`, net `economy` changes, and `omitted_count`.
+Turn zero as `from_turn` means campaign setup. Each entry has an event ID, round,
+category, historical subject ID/name/sector where authorized, detail, occurrence
+count and total amount. Anonymous radar entries have no subject ID, name or unit
+count. An empty entries list means no important events.
+
+The engine collects committed events from just before the player's previous End
+Turn resolution through the next owner-turn opening effects. It freezes the report
+before presentation and AI scheduling. Observations, semantic repairs and manual
+retries reuse that report without consuming it. Current observation visibility and
+command legality take precedence over historical references. No additional model
+request creates the summary, and model settings and command contracts are unchanged.
+
+Human, built-in and Codex controllers share the same disclosure rules and report
+content. Allied combat and discoveries are shared; production, economic and order
+recaps are personal. The briefing journal is separate from the terminal outcomes
+in `order_history`. Event hooks run during actual execution,
+never during preflight or save hydration. Pending and current reports are bounded to
+128 entries / 32,000 serialized characters, with explicit omission counts.
+
+`conversations` includes all already-sent transmissions, including messages from
+earlier players in the current round, matching human Comms timing. Briefings contain
+counts by sender; message text stays in conversation history.
+
+## OpenAI adapter
+
+The adapter uses the current Responses API and strict `text.format` JSON Schema.
+It does not enable model tools and does not chain response IDs. The initial
+request is self-contained from the observation plus canonical memory. Repair
+requests additionally include the latest rejected plan and errors; rejected
+memory patches are never applied.
+
+The Luna-only runtime is defined in `game_ai/runtime.py`:
+
+| Player choice | Model | Reasoning |
+|---|---|---|
+| Low | `gpt-6-luna` | low |
+| Medium (default) | `gpt-6-luna` | medium |
+| High | `gpt-6-luna` | high |
+
+Every choice uses the same 7,000-output-token limit, 120-second timeout, and
+40-command turn limit. The player setting changes only the reasoning effort.
+The timeout applies to each SDK request attempt; up to two transport retries can
+extend total elapsed time. Reset cancellation also interrupts retry backoff.
+
+The adapter uses `AsyncOpenAI` with foreground, non-streaming requests and
+`store=False`. Providers implement `async plan_turn(request, runtime_config)` and
+idempotent `async aclose()`. They must yield during I/O and propagate cancellation
+after bounded cleanup. The coordinator owns its provider, including an injected
+provider, and closes it on the same loop that performs requests. The OpenAI adapter
+closes SDK clients it creates; an explicitly injected client remains caller-owned.
+Foreground cancellation terminates the awaited HTTP connection, as described in
+the [Responses cancellation documentation](https://developers.openai.com/api/docs/guides/background#limits);
+no stored background response or polling job is created.
+
+The API key loader checks `OPENAI_API_KEY` first, then
+`API_keys/OpenAI.key`. The key is loaded lazily when the first AI turn begins.
+
+## Memory and persistence
+
+New campaigns, players, and AI agents receive stable 8-character hexadecimal short
+IDs. Persistence also accepts readable IDs containing only ASCII letters, digits,
+underscores and hyphens, excluding Windows reserved device names. The current save embeds:
+
+- `campaign_id`;
+- `persistent_id` and `agent_id`;
+- selected `ai_reasoning_effort`;
+- selected `ai_repair_retries`;
+- bounded structured `ai_memory`;
+- pending and frozen turn briefings, discovery/economy baselines and human acknowledgement.
+
+Saved identities are required and the save is authoritative. The `memory.md`
+sidecar is generated for inspection and is not read back into the campaign.
+Only the current save version is supported; unsupported saves are rejected.
+Malformed identities and noncanonical player configuration are rejected before
+hydration, without generating replacement IDs or normalizing saved settings.
+Persistent-player IDs and AI-agent IDs are each unique ignoring case within their respective
+string-identity namespaces. See [player validation](SAVE_FORMAT.md#player-identities-and-configuration).
+
+Memory and communication exports independently validate IDs and check resolved
+destination and temporary-file containment before writing. Existing filesystem
+links cannot redirect exports outside the save root or appropriate sidecar tree.
+Sidecar export failures are reported without invalidating an already committed
+save or AI turn; sidecars remain derived inspection files.
+
+Memory contains separately bounded strategy, objectives, commitments, beliefs,
+lessons and misc sections, plus recent execution receipts. The 8,000-character
+combined cap applies only to those receipts, not to the entire memory. Individual turn
+receipts are retained whole, dropping the oldest turns in their entirety when the
+total limit is exceeded. Text and list counts are bounded before serialization.
+Save JSON and memory sidecars use atomic replacement.
+
+Lesson patches merge up to 16 durable lessons. Equivalent generic advice about
+preserving work or using disclosed targets shares one entry; concrete command,
+field, carrier and blocker constraints take retention priority. Public semantic
+repair errors produce lessons keyed by command/error/actor (and ability where
+applicable), including the carrier's disclosed slot indices. They persist only
+after a repaired plan commits successfully; rejected model memory patches never
+apply. An empty lesson list does not erase learned constraints. Other patched
+sections replace their previous contents. Planning instructions require objectives
+and commitments to match accepted orders, compare mission value with remaining
+travel before replacement, and consult terminal history before repeating failures.
+Zero-command plans are valid when useful work should continue.
+Colonist-loading options separate `current_population` from advisory retained
+population, recommended load, growth and `hypothetical_next_maximum_load`. That
+scenario names its hypothetical load amount, resulting population and recovery
+rounds; it describes a possible next action, never the previous load's outcome.
+Completed loading history supplies numeric `loading_outcome` facts: requested and
+loaded amounts plus actual retained population at execution, without target references.
+Later growth may increase current population. Factual memory must use those execution
+facts and observations, correcting conflicting claims. Planning favors a meaningful
+seed on new colonies and retaining half a mature donor, comparing lost growth/income
+with expedition value. Evacuation and deliberate rapid expansion remain legal
+exceptions. Historical colonies omit these forecasts until contact returns; this
+guidance changes neither population validation nor engine growth rules.
+
+### Planning context and measurement
+
+The provider moves public command/ability/template definitions into a stable
+developer-message prefix before changing tactical state, memory and repair details.
+Template affordability and Titan blockers stay in the changing suffix. Constructor
+quotes use shared template base prices plus explicit price/shortfall exceptions.
+Omitted shortfalls in this planning-only representation mean zero; per-unit buildable
+names and currently issuable names still restrict construction. The ordinary socket
+observation and provider-neutral request remain complete.
+
+The planning representation factors repeated large JSON values into a message-local
+`shared_values` dictionary. `{"$shared":"d1"}` substitutes the exact value named
+`d1`, recursively; the preceding developer instructions describe this encoding.
+Static references remain in the stable prefix and tactical references in the changing
+message. No hidden data is introduced. `expand_shared_values` restores a message for
+offline inspection, and `planning_context(request, compact=False)` provides the
+unfactored planning representation. Dismantling options omit target previews whose
+executor lacks the required capability; hardware/schema discovery remains available.
+
+Telemetry records `prompt_metrics`: original/compact section character counts,
+stable catalog size, dynamic size and serialized/content input sizes. These are
+JSON character counts, not token estimates.
+`shared_value_savings_chars` reports the reduction from repeated values, and
+`dynamic_shared_values_chars` accounts for the changing message's reference table.
+Provider usage includes
+`cached_input_tokens` and `uncached_input_tokens` when cache details are returned.
+Neither metric set logs prompt contents. Run `python scripts/benchmark_observations.py`
+for fixed-seed, two-system radius-3 Normal/Testing character measurements without API
+calls; model cost, strength and larger-map performance require separate evidence.
+
+## Shared order contract
+
+`game_ai.command_spec.COMMAND_SPECS` defines fields, constraints, queue behavior,
+capabilities and descriptions. It generates the strict OpenAI command schema and the
+socket observation's deduplicated `command_catalog`. Socket commands may omit optional
+fields; OpenAI output must include every schema field (unused fields are null).
+Validation rejects unknown fields, coercible strings, boolean/fractional IDs, duplicate
+units, non-finite coordinates, inappropriate parameters, and batches/groups above
+40 commands / 12 units. Immediate commands require `queue=false`. The coordinator
+validates the complete turn plan, including `end_turn=true`, before mutation, even for
+injected providers.
+
+These shared rules apply to built-in AI and socket commands, and to human controls
+that submit through the gateway. Human order controls follow the same engine
+lifecycle; their selection behavior is described in the [reference](REFERENCE.md#queues-and-stances).
+For an order-producing command, `queue=true` appends an explicit root; `queue=false`
+replaces explicit work after preflight succeeds. Immediate commands apply their
+own documented effect rather than implicitly replacing orders. Preserve a queued
+prerequisite by appending its dependent order instead of replacing it.
+
+Move, positional Defend and Patrol endpoints must stay within radius 5000 and
+clear solid bodies by 50 units. Shared navigation validation rejects disclosed
+obstructions before cancellation or payment changes; execution checks all actual
+geometry. Ordinary Move cannot land inside a solid body. Specialized celestial
+approaches resolve safe surface destinations before this check.
+
+Each catalog command includes `required_presence` (including `type` and selected
+unit IDs where needed) and separate `nullable_fields`. `required` remains the list
+of required non-null action fields for existing clients. For `set_wing_production`,
+`template_name` must be present but may be null to clear a slot:
+
+```json
+{"type":"set_wing_production","unit_ids":[12],"slot_index":0,"template_name":null}
+```
+
+Legacy Designate Target, Capture Unit and Drain Antimatter share hostile relationship
+validation across discovery, preflight and execution; Ion Bolt retains its existing
+self/allied/enemy policy. Capture also requires disabled/absent engines, destroyed/absent
+weapons and defenses, and functioning marines. Enemy fuel availability is checked only
+at execution, since it is private. Unit-target abilities may approach when route and
+movement capability allow it; direct activation requires current local range.
+
+Attack and utility-target discovery/preflight use shared route feasibility,
+including mining, colony travel, docking, repair, trade and fuel exchange.
+Known impossible approaches are omitted from actor-specific options and rejected
+before replacing orders. Mining uses a surface approach within mining range.
+Wings cannot cross
+sectors, local craft require a functional drive for sector changes, and stationary
+platforms cannot approach out-of-range targets. A stationary platform can fire an
+eligible longer turret without closing for its shorter battery. Estimates and known
+origin previews ignore undisclosed dynamic inhibition fields; execution remains
+authoritative when previously unknown or changed conditions obstruct travel.
+
+Active public approaches include `progress.journey`: phase, remaining local approach
+distance, current route leg, remaining planned legs, drive status/recharge, and a
+conditional estimate capped at 10,000 owner turns. Estimated remaining antimatter,
+the next movement step's cost and a specific fuel/storage wait explain stalled
+travel. The human sidebar and briefing show the same authorized journey summary,
+separately from the frozen historical event report. Local `wormhole_approach`
+means moving toward an entry before system transit; `egress` requires a known field
+escape before a sector jump. Destination approach, arrival, recharge and fuel waits
+remain separate phases. Arrival estimates charge recharge only before a needed
+jump, overlapping it with sublight travel; terminal recharge is excluded.
+Fuel-service reserves separately include upkeep until drive readiness and their
+normal safety buffer. Estimates cover remaining travel; action time and
+subsequent queued missions add time. Hidden target references and
+private agent approach geometry suppress this view. Estimates use current equipment
+and known terrain, assume sufficient fuel and unchanged conditions, and never advance
+orders, record discoveries or draw randomness. Slow advancing work should be preserved.
+Tankless strikecraft wings report zero sublight propulsion cost and no storage
+blocker, matching actual flight. Other equipment consumption still applies.
+
+Target-based utility command options include advisory `approach_quotes`, keyed by
+target ID for up to 16 disclosed targets, with `omitted_approach_quotes` for the rest.
+Each quote gives estimated owner turns and AM, current fuel and fuel shortfall.
+Quotes use current position/equipment and known terrain, assume adequate fuel,
+and exclude action time and earlier queued work. They neither reserve fuel nor
+replace orders or prohibit low-fuel missions. Read them before replacing useful
+work, and arrange resupply or deliberately accept a later wait.
+
+Preflight uses shared legality queries against live state plus preceding projected
+effects. Commit callbacks and executing orders recheck applicable live conditions,
+including capability, targets, resources and location. Acceptance means issuable
+work, not guaranteed arrival, safe placement or eventual completion. An order can
+start and finish synchronously during issuance, or fail during later resolution.
+See [commit guarantees](#commit-guarantees-and-lifecycle-feedback) for reservations,
+settlement, receipts and failure stages.
+
+Owned/allied units expose separate `standing_order`, `current_order` and
+`queued_orders` sections. Types and statuses are readable strings.
+Standing policy records suspension and its transient engagement. Explicit roots have
+opaque UUID `order_id` values, separate from internal integer actuator ownership IDs.
+All explicit root identities remain visible. Expanded suborders are limited to 32
+nodes per unit and depth 6, prioritizing the active chain; waypoint previews contain
+at most 16 entries, with omitted counts. Continuous orders identify blocked queue
+entries as guidance. Progress contains actual engine phase/counters, never invented ETAs.
+Construction/refit roots expose `active_phase` and `progress.phase` (`queued`,
+`approaching`, `building`/`refitting`, `stalled`, or a terminal status). Paid work's
+completed/required turns are summarized on the root even when an approach wrapper
+owns the active child. A harvester's `building_delivery_reserve` wait means a
+reachable recipient needs fuel but the current load cannot yet fund safe delivery;
+`no_destination` means none can be served even with a full load.
+
+Explicit work suspends stance attacks; explicit Move also suppresses stance combat.
+Changing stance preserves explicit work. Clearing explicit work resumes the selected
+policy when idle. Stop cancels both layers and selects Do Nothing.
+
+`set_stance` requires installed Weapons with at least one turret, independent of
+weapon damage or turret cooldowns. Unarmed units omit it from `supported_commands`,
+`legal_commands` and `command_options`, and expose `capability_details.allowed_stances: []`.
+Every stance request on an unarmed unit, including `do_nothing`, rejects with
+`capability_unavailable`. Their owned/allied `standing_order` remains a passive
+Do Nothing policy with no engagement; use `cancel_orders` for Stop. Human stance
+selection and cycling use the same gateway. Preflight rejects mixed armed/unarmed
+groups atomically, and commit rechecks equipment and stance eligibility.
+
+| Command | Required fields besides type/unit_ids | Meaning |
+|---|---|---|
+| `cancel_orders` | none | Stop both order layers and select Do Nothing. |
+| `cancel_order` | `order_id` (exactly one owned unit) | Cancel one current/queued explicit root. |
+| `clear_explicit_orders` | none | Cancel explicit work, preserve stance. |
+| `append_patrol_waypoints` | `order_id`, `waypoints` (one owned unit) | Extend a current/queued patrol while preserving its leg. |
+| `patrol` | `waypoints` OR complete system/hex/position | Traverse 1–16 waypoints, return to captured start, repeat. |
+| `enter_gas_giant` | `target_id` (Gas Giant ID) | Approach and submerge inside a gas giant atmosphere, hiding ship from all sensors. |
+| `leave_gas_giant` | none; supports `queue=true` | Depart when Leave reaches the front of the FIFO queue; requires hidden state or prior queued entry. |
+
+`queue=true` creates a separate patrol, never an extension. Routes may contain at most
+16 waypoints through AI commands. For human players, the "Add Patrol Waypoint" context menu option extends
+patrol routes, while `Shift` consistently queues new orders. Internal
+suborders and stance roots cannot be edited individually. Mandatory system roots
+such as [wing servicing](#strikecraft-endurance-contract) have their own command
+locks. Unavailable or foreign order IDs produce `order_unavailable`; UUID
+possession grants no authority.
+
+Friendly capabilities expose actual turret types, variants, ranges, cooldowns and target
+classes, sensor and hyperdrive base/effective ranges, drive functionality/status, support
+ranges, defend radius, and cloak state/activation/upkeep. Engine helpers supply effective
+values (including XP and sabotage). Hardware support is distinct from current legality;
+"legal" means issuable now, not guaranteed eventual success.
+
+`game_ai.intelligence` is the shared, side-effect-free disclosure and legality policy.
+The `intelligence` observation section identifies an owned agent's source ship, public
+host and active sabotage, but not whether the host has discovered it. It identifies only
+discovered enemy agents on friendly or allied hosts, without source ship or sabotage.
+Allied agents contribute sensor sharing but are neither identified nor controllable.
+Top-level `player_commands` carries legal `sabotage` and `relocate_agent` choices;
+infiltration, extraction, CI sweep and elimination are unit commands. Missing, hidden,
+foreign and stale agents uniformly return `agent_unavailable`; guessed hidden and
+nonexistent world targets uniformly return `target_unavailable`.
+
+`component_visibility.py` supplies the shared disclosure/subsystem policy for AI and UI.
+Enemy Intelligence components are neither listed nor precision-targetable. Hidden and
+nonexistent subsystem guesses return the same error. Public order serializers never dump
+raw parameters, persistence or sidebar state. Hidden target references and their derived
+movement geometry are redacted recursively; player-issued fixed coordinates remain intent.
+Outcome history contains no target references, names, coordinates or raw exceptions.
+Completed colonist loads additionally retain only numeric requested/loaded amounts
+and retained population as historical execution facts, never live source lookups.
+
+## Commit guarantees and lifecycle feedback
+
+The complete batch is preflighted before any prepared operation runs. Rejection
+applies none of the batch: live orders, balances, targets and lifecycle events are
+unchanged. The disposable projection may update its own ledger, reserve resources
+and allocate public order UUIDs; it creates no authoritative orders or charges and
+does not execute gameplay effects or draw their random outcomes.
+
+This guarantees no command effects on rejection, not complete read-only access:
+enemy-unit lookup and the remote-body disclosure fallback currently recompute
+visibility with intel recording enabled. They can refresh sector and planetary ownership intel
+and shared ghost identification even if the batch rejects. Pure visibility callers
+must explicitly pass `record_intel=False`.
+
+Preflight projects order-associated population, construction and docking reservations,
+replacement, cancellation, route edits, toggles, agent relocation/sabotage, CI cooldowns,
+credits, metal, crystal and ship antimatter in array order. Construction resources are reserved only from
+the initiating player's treasury; allied/enemy build queues cannot reduce that
+budget. Allied docking and colony-population reservations still share capacity.
+Only guaranteed effects can support later commands; feature sections specify which
+effects are immediate and which merely reserve resources until execution.
+
+`active_player.resources.resource_budget` exposes the initial preflight budget in
+both built-in AI and Codex observations. `treasury`, `reserved` and `available` each
+contain exact `credits`, `metal` and `crystal` amounts. Up to 64 `reservations`
+identify owned `unit_id`, public `order_id`, command `type` and a `resources`
+bundle; construction also identifies `template_name`. Totals include omitted
+entries and preserve fractional precision and negative available balances.
+
+The budget includes pending and approaching unpaid construction, plus credit-only
+recruitment reservations. Paid construction is already reflected in the treasury.
+Only the initiating player's orders reserve their resources; allied/enemy queues
+never reduce that budget. This is a validation budget, not escrow or a forecast.
+
+Use each `available` amount directly without subtracting reservations again.
+Each Construct commits the full catalogue `resource_cost` for every selected
+builder, including queued builds. Earlier commands can spend resources or release
+reservations and eligible paid-job refunds. Fortification upgrades project their
+three-resource cost in the same batch. Per-unit `construct.template_names` uses
+the replacement budget; `construct.prices` supplies `resource_cost`,
+`replacement_shortfall` and `queued_shortfall` for each design. These single-builder
+quotes are not a combined-affordability guarantee.
+Future income, mining deliveries, trade and salvage cannot finance the batch.
+Insufficient resources reject the complete batch before any commands apply;
+execution separately rechecks actual stockpiles when work starts.
+
+Construction and wing catalogue entries expose `resource_cost` and
+`resource_shortfall` alongside their credit price. Construction shortfalls use
+the available budget after reservations; wing shortfalls use the current treasury
+because configuring production is free. Planetary upgrade options include
+`resource_shortfall` against the available budget. Mineral prices derive uniformly
+from hull capacity and equipment usage, including custom human designs; turret/defense overrides preserve them.
+Use mining, matching refinery deliveries and passive-yield colonies to replenish
+materials. Raw cargo cannot be spent and credits cannot substitute for minerals.
+
+Replacement or cancellation releases the affected pending reservations, not effects
+already completed synchronously (such as a colonist load). Construction/refit jobs
+bind their charge and cancellation ownership to the initiating order; cancelling a
+pending sibling cannot cancel/refund the active job. Eligible refunds go to the
+recorded original payer at most once. Pending unpaid jobs have no charge to refund;
+salvage and destruction/capture settlement follow their feature-specific rules.
+
+Commit executes prepared per-unit/player operations sequentially. Results include
+`accepted`, `failure_stage`, `retryable`, `applied_count`, `operation_results`, receipts,
+indexed errors, `may_have_partial_effects` and `requires_observation`. **applied_count counts
+successfully completed operations**, not all mutations. Operations identify command index,
+unit, command type, order ID, and applied/failed/unattempted status.
+
+| Result | `accepted` | `failure_stage` | `retryable` | Partial effects / observation required |
+|---|---|---|---|---|
+| Preflight rejection | false | `preflight` | true | Both false; zero applied operations and indexed errors. |
+| Completed commit | true | null | false | Both false; receipts and results for completed operations. |
+| Commit exception | false | `commit` | false | Both true; retained receipts and applied/failed/unattempted results. |
+
+On an exception, later operations are unattempted and the failing operation's
+effects are uncertain. Earlier
+completed operations remain applied. Dirty flags are set even on failure. Commit
+failures require a fresh observation before deciding what to do next. There is no
+rollback or automatic retry. Luna records partial results for manual recovery and
+does not apply the rejected memory patch. Only preflight
+and output rejections receive semantic repair requests. Telemetry adds failure stage and
+operation outcome counts without prompts, raw observations, analysis or secrets.
+
+`order_history.py` records explicit-root completed/failed/cancelled outcomes exactly once,
+including synchronous outcomes, later-turn failures, replacement, destruction and capture.
+Child failure codes reach the root. Destruction/capture recording does not invoke refunds.
+Issuance receipts are separate from terminal outcomes. Each player (regardless of controller)
+retains at most 128 events and 32,000 serialized characters, dropping oldest whole events.
+Monotonic event IDs and retention metadata identify duplicates and missing history. An
+observation exposes only its active player's journal, not an ally's entire history.
+
+Observe after positional issuance and inspect current orders plus `order_history`:
+a successful receipt can already have a synchronous terminal outcome. Launch a
+docked craft in its own batch, observe it as a deployed actor, then command it in
+a later batch. Deployment options expose `requires_observation_after` and a
+sequencing note; newly launched actors are not projected into the issuing batch.
+Launch placement can fail, so acceptance alone does not establish actor availability.
+
+Order identities, history and charge ownership persist under the
+[save restoration contract](SAVE_FORMAT.md#component-and-ability-schemas).
+Socket token invalidation and request-ID recovery belong to the
+[control guide](CODEX_CONTROL.md#recovery-distinctions). Format identifiers are in
+the [generated version table](DEVELOPMENT.md#current-formats-and-protocols).
+
+### Gameplay invariant guidance
+
+For [gas-giant queue blocking](REFERENCE.md#gas-giant-atmospheric-hiding), inspect
+`blocked_by_order_id` and use `cancel_order`, `clear_explicit_orders`, or a
+replacement Leave to unblock departure. Preflight projects entry/departure
+requirements and rejects ordinary work projected before Leave with `invalid_state`,
+before applying any operation. Automated sequences use Enter → queued Leave → queued
+Move. Human controls or restored engine queues can contain blocking outside work;
+acceptance of Leave does not guarantee safe exit placement.
+
+Use the canonical [damage](REFERENCE.md#weapons-and-damage),
+[minefield](REFERENCE.md#minefields) and [spawn-profile](REFERENCE.md#spawn-profiles)
+rules. Numeric object ID `0` is valid; only `None`/JSON `null` means a missing ID.
+
+Friendly/allied turrets expose `effective_cooldown` for a shot at their current
+position alongside base `cooldown` and `cooldown_remaining`. Already-exposed
+celestial bodies carry numeric `environmental_effects`; no extra bodies or enemy
+equipment are revealed. These fields follow the [environmental rules](REFERENCE.md#environmental-fields).
+
+## Commands
+
+### Construct customization and combat inspection
+
+The command contract supports optional nullable `turret_type_override` (`mass_driver`,
+`beam`, `missile`) and `defense_type_override` (`armor`, `shields`, `point_defense`)
+on `construct` and `set_wing_production`. Each applies independently; null preserves
+its preset. Non-null overrides on other commands are invalid. Grouped constructors
+share choices; wing selection requires one carrier. See the
+[customization rules](REFERENCE.md#automated-construction-customization) for equipment
+requirements, combat effects and preserved design statistics.
+
+Customization follows the [shared validation contract](#shared-order-contract)
+and [job settlement guarantees](#commit-guarantees-and-lifecycle-feedback), using
+original prices for reservations. Construct choices travel through approach
+suborders and paid jobs; owner/allied order views include the selected overrides.
+
+For visible enemies, observations expose only the public `weapons` and `defenses`
+sections of `capability_details`, using actual installed equipment. Weapons include
+type, variant, damage, range, cooldown/reset/remaining values, target classes and
+operating state. Defenses include operating state and Armor/Shields/Point Defense
+strengths. Owners and allies receive the same combat details alongside their other
+capabilities. Detailed visibility is still required; enemy provenance, orders,
+fire targets, hidden components and accounting are not exposed. The model receives
+matchup guidance to select counters from observed equipment, not inferred templates.
+
+Full design editing and refits are human workflows. Human bays select wing designs
+and overrides through a production picker that submits `set_wing_production` via
+the shared gateway. Persistence follows the [save contract](SAVE_FORMAT.md#fixed-destination-validation).
+
+### Other commands
+
+`rename_unit` is immediate and requires exactly one owned unit in `unit_ids`, a `new_name`
+string and `queue=false`. Names are trimmed to remove surrounding whitespace, must contain
+1–30 characters, and cannot contain control characters; duplicate names are allowed.
+Renaming changes only the displayed name, preserving orders, stance, resources and agents.
+It is legal while submerged or equipment is damaged. Human controls share validation;
+the [commit guarantees](#commit-guarantees-and-lifecycle-feedback) apply. Names persist in saves.
+
+The Covert Intelligence Ship and ordinary Patrol Escort have identical public equipment.
+The covert template's `default_unit_name` is Patrol Escort; construction applies it before
+publishing the ship. The catalog exposes each template's effective initial name, falling
+back to its display name when no override exists. Keep safe generic names; an existing
+Patrol Escort name needs no further renaming.
+
+Every enemy unit omits `standing_order`, `current_order` and `queued_orders`. Template
+identity, actual hull usage, upkeep and construction/refit details are private in both
+interfaces. Owners and allies retain their existing detail. This prevents inspection from
+identifying covert equipment; observed actions or discovered espionage can still be clues.
+
+The strict contract currently supports movement, patrol, combat (with optional
+subsystem targeting via `target_component`), positional defense (`defend`), protection,
+colonization, colonist loading, construction, repair, mining, continuous
+mining, unloading, docking (hangar and strikecraft bay) and carrier deployment, antimatter transfer/resupply, minefields, trade,
+continuous trade, stances, inhibitor/cloaking toggles, diplomatic communications (`send_message`),
+developer feedback (`message_developer`), abilities, and all intelligence operations:
+`infiltrate_unit`, `infiltrate_planet`, `sabotage`, `relocate_agent`, `extract_agent`,
+`ci_sweep`, and `eliminate_agent`.
+
+The [batch projection](#commit-guarantees-and-lifecycle-feedback) allows a valid
+`load_colonists` command to satisfy a later `colonize` command for the same unit
+when colonization is queued. Entity-targeted commands (`colonize`, `load_colonists`,
+`mine`, `repair`, `attack`, `attack_long_range`, `trade`) require only `target_id` (plus amount/component
+if applicable); approach movement is automated, so coordinates (`position`, `hex_coord`,
+`system_name`) must be null or omitted. Inhibitor toggles likewise project active dynamic
+zones, so overlapping activations are rejected before commit and a preceding
+deactivation can make a later activation legal. Commanding strikecraft wings into
+magnetic storms, or launching wings from a carrier inside one, is rejected with
+`hazard_blocked`. See [queue semantics](#shared-order-contract) for preserving prerequisites.
+
+Retrofit remains a human editor transaction because it requires a versioned
+component-configuration schema and dynamic cost preview. It is not advertised to
+the model. Its human editor and Constructor execution share the Unit Designer's
+complete equipment validation, including removals. See [field refitting](REFERENCE.md#field-refitting)
+for costs and settlement, and [retrofit persistence](SAVE_FORMAT.md#retrofit-settlement)
+for saved payer and salvage ownership.
+
+`attack` and `attack_long_range` share `unit_ids`, `target_id`, optional
+`target_component`, and `queue`; coordinates are unused. Discovery exposes eligible
+unit and deployable targets. The long-range command requires functional Weapons and
+an eligible Long Range turret; losing that capability fails the order rather than
+changing it to normal Attack. See [attack rules](REFERENCE.md#queues-and-stances)
+for approach/firing behavior and the 50% subsystem range modifier. Observation
+turret `range` values remain hull ranges; command guidance explains the modifier.
+
+Both attack commands require continuing detailed visibility to the attacking owner's
+shared sensors/intelligence. Lost contact permanently cancels the active attack and
+its approach with `target_not_visible`, reported once in the owner's order history and
+briefing. Radar presence is insufficient. Checks run before movement/firing and at the
+end of every player's turn, including opponents' turns. Reappearance does not revive
+the cancelled order. Queued attacks revalidate when activated; other queued work,
+stances and parent Patrol/Protect/Defend missions remain intact. These checks do not
+run as mutations during observations or preflight. Loading restores no bindings to a
+hidden target and defers cancellation/history to the first gameplay validation.
+
+## Failure behavior
+
+- SDK retries transient transport failures up to two times.
+- Invalid command batches and malformed model outputs receive 1–5 semantic
+  repair retries, configured per AI player from the in-game **AI Settings**
+  dialog and defaulting to 2. The initial submission is not counted as a retry.
+- Each semantic repair is a complete replacement response made with the
+  player's selected reasoning effort. The retry budget is not sent to the
+  model. The HUD turn status label updates to show the active retry attempt
+  (e.g., `revising... retry 1/2`).
+- Transport, authentication, quota, timeout, and commit failures do not consume
+  semantic repairs.
+- The retry limit is snapshotted when an AI turn begins, so in-match edits take
+  effect on that AI player's next turn.
+- Reset immediately invalidates the request generation and schedules cancellation
+  without blocking the game loop. Stale successes and errors are discarded when
+  generation, campaign, agent, turn or controller changes.
+- Replacement planning starts after the previous request's cleanup actually
+  finishes. The HUD shows `cancelling previous request…` during retirement.
+  Cancelling a completion future alone does not release the provider. If the
+  request does not retire within two seconds, the replacement fails into manual
+  recovery; no additional worker or overlapping provider call is created. Retry
+  can succeed after the obsolete request finally retires.
+- Shutdown is idempotent and permanently stops submissions. It cancels requests,
+  closes owned provider resources, and stops/joins the loop within a five-second
+  total budget. Incomplete cleanup produces a payload-free warning; the daemon
+  runtime thread cannot hold process exit open.
+- On final failure, the error is shown and End Turn is re-enabled.
+- TLS verification combines the bundled CA roots with operating-system trust.
+  Explicit `SSL_CERT_FILE` or `SSL_CERT_DIR` overrides remain supported; verification
+  and hostname checks stay enabled. Safe error categories distinguish certificate
+  trust/configuration, connection, timeout, authentication, quota and rate limits
+  by exception types/chains, without inspecting raw messages or payloads.
+- Transport error latency measures monotonic time from attempt submission through
+  failure, including scheduling and SDK retry/backoff time.
+- The socket bridge exposes current AI lifecycle/attention and explicit token-scoped
+  retry/skip recovery. Commit failures cannot be automatically retried. See the
+  [control guide](CODEX_CONTROL.md#retry_ai_turn-and-skip_failed_ai_turn).
+- Third-party SDK request-body logging is suppressed; API keys, observations,
+  memory, prompts, analysis, and raw model output are never logged.
+- Unexpected command preparation/commit diagnostics include stage, command index
+  and type, exception class, and traceback frame locations only. They omit
+  exception messages, payloads, source lines and locals. Public results follow
+  the [commit guarantees](#commit-guarantees-and-lifecycle-feedback).
+- Every attempt appends bounded telemetry to ignored
+  `saves/ai_telemetry.jsonl`, including attempt index, model, reasoning, token
+  use, latency, command summaries, errors, and whether another retry followed.
+  Command summaries allowlist construction/wing template and overrides, wing slot,
+  ability, and requested colonist/troop amount where applicable. They exclude
+  messages, renamed unit text, prompts, memory and raw model output.
+- Developer feedback transmissions (`message_developer`) are appended as
+  human-readable Markdown entries to ignored `saves/ai_feedback.md` and logged to
+  `game.log`.
+
+## Evaluation
+
+`game_ai.evaluation` defines provider-independent fixture cases and scores:
+
+- schema/turn completion;
+- required and forbidden command coverage;
+- command budgets;
+- latency;
+- input/output token use.
+
+Inject `FakePlanningProvider` for deterministic CI. Live reasoning-effort
+comparisons are explicitly opt-in by constructing `OpenAIResponsesProvider`.
+Evaluation runners are asynchronous: await `run_evaluation`,
+`compare_reasoning_efforts` or `compare_gateway_reasoning_efforts`. A standalone
+caller owns the provider and must await `provider.aclose()` in `finally` on the
+same loop. Use one outer `asyncio.run()` for that complete evaluation lifecycle.
+`colony_opening_case` reproduces the zero-cargo opening decision, and
+`compare_reasoning_efforts` runs the same fixed cases at Low, Medium, and High
+without changing production settings.
+`colony_load_forecast_case` contrasts a completed 25-colonist load, actual current
+population 25.25 and a hypothetical next-load residue of 0.25. Its score checks
+memory content as well as commands; omitted factual memory or a false residue
+claim fails. It accepts fake or explicitly opted-in live providers. Offline fixture
+checks do not establish live-model reliability.
+For an end-to-end semantic comparison, `colony_opening_gateway_case` builds a
+fresh executable game fixture for each run and `compare_gateway_reasoning_efforts`
+reports real gateway acceptance, attempts, repairs used, aggregate latency, and
+input/output tokens at each reasoning effort. Transport and commit failures are
+not retried by this harness, matching production behavior.
+`playtest_gateway_cases` supplies executable four-slot/eight-slot carrier,
+missing-slot-index and out-of-range ability cases from the September playtest.
+The ability case retains an ongoing wing attack through repair. Deterministic
+providers exercise observed mistakes in CI; these checks do not measure live
+model reliability or API cost.
+`october_playtest_gateway_cases` adds the ineligible standard-turret wing attack
+and an obstructed Move, with real gateway rejection and repair. The obstacle
+fixture uses a star center as a reproducible obstruction; the original playtest
+did not identify which obstacle caused its Move rejection. Target selection uses
+each actor's own eligible `target_ids` and turret `eligible_target_classes`.
+
+Run `python scripts/benchmark_mission_pacing.py` for reproducible Normal-opening
+travel estimates (five fixed seeds, two radius-3 systems). The nearby colony
+sample spans 37–46 owner turns, with median 44 across 14 routes. These estimates
+exclude loading/action/queued time and assume enough fuel and unchanged terrain;
+the empty starting Colonizer remains near its population source. The script also
+compares the former and current Constructor/Harvester positions: across 20 samples,
+median home-field egress falls from 23 to 2 owner turns. This measures departure,
+not complete missions or live AI strength. Stable planning instructions now cover
+idle builders, parallel production, distinct colony assignments, population loading,
+and balancing fortifications with reconnaissance, mobile defense and logistics.
+Keep fixed observations, seeds, model snapshots, and game balance constants
+with any published result so regressions can be reproduced.
+
+## Tactical ability integration
+
+### Environmental resistance toggles
+
+`toggle_ability` is an immediate, single-owned-unit command with `ability` and
+`queue=false`; target fields are unused. It accepts `hazard_shielding`,
+`radiation_hardening` and `antimatter_containment` when equipped. These use
+`activation_mode: toggle` and cannot be cast with `use_ability`.
+Wrong-mode errors for equipped abilities name `toggle_ability` or `use_ability`
+as appropriate; absent equipment retains its ordinary unavailable error.
+Orders and stance are preserved. Shared read-only validation supplies human UI, command guidance
+and preflight, which projects repeated toggles and current AM in batch order.
+Enabling checks combined upkeep but reserves and deducts no fuel. Applying the
+prepared state follows the [shared execution checks](#shared-order-contract).
+
+The ability catalogue exposes reduction, protected hazards, ongoing AM and payment
+timing. Owned/allied `environmental_resistances` exposes active/operational state
+and combined upkeep; owned ability states and command options expose blockers.
+Enemy observations gain no equipment or resistance details. Celestial descriptions
+retain baseline values. Protection, upkeep timing, shutdown rules and rounding
+are documented in the [reference](REFERENCE.md#environmental-resistance-abilities).
+The public catalogue includes Hazard Escort, Radiation Surveyor and Pulsar
+Harvester so automated players can construct protected units.
+
+### Cast abilities
+
+Carrier and anti-strikecraft abilities also use the shared `use_ability` contract.
+`attack_run` targets a visible enemy ship and replaces explicit work on every
+eligible owned bomber belonging to the caster; `evasive_formation` and
+`emergency_recovery` target one of its deployed wings. `tracking_lock` targets an
+enemy wing; `flak_barrage` has no target or position. None automatically approaches.
+
+Ability state includes eligible/participating owned wing IDs and balance modifiers;
+Attack Run guidance lists the explicit orders it will replace. Wing observations
+include evasion multipliers, weapon suppression and recovery launch locks. Explicit
+wing orders expose approach/release/completion progress and remain cancellable.
+Public links require visible endpoints; hidden targets and their approach geometry
+remain redacted. Pending casts reserve caster AM/cooldown, choosing wings only at
+execution. Immediate casts project wing-order replacements in batch order.
+These follow the [shared execution checks](#shared-order-contract). Saves preserve
+phases and deadlines under the [tactical state contract](SAVE_FORMAT.md#tactical-state);
+recovered wings cannot launch before the next owner-turn start.
+Ordinary cast readiness also requires functional storage for positive AM costs.
+Projected fuel may satisfy affordability but cannot substitute for working storage.
+Activation payment and rejection behavior follow the [ability rules](REFERENCE.md#abilities).
+
+The six [tactical abilities](REFERENCE.md#deployment-and-link-abilities) share side-effect-free validation
+in `tactical_abilities.py` across human controls, observations, preflight and orders.
+`tactical_balance.py` centralizes defaults.
+The [built-in catalogue](REFERENCE.md#built-in-unit-catalog) includes designs for
+every ability. Automated players construct public designs or use equipped ships;
+custom design editing is a human workflow.
+
+Observations include `ability_catalog`, `visible_deployables`, `catalyst_patches` and
+`ability_links`. Authorized ability state includes actual blockers/readiness,
+cooldown/duration, active targets, ongoing AM, reserved casts, persistent deployment
+counts/caps and Guardian tuning. Speed includes Tractor; environmental values
+include relation-filtered Catalyst enhancements. Minefield records disclose only
+revealed geometry/counts. Persistent objects report `persistent: true` without a
+remaining lifetime. Enemy object views omit historical source IDs and public links
+require both endpoints visible. Ghost signals use ordinary
+`undetailed_enemy_presence`, without decoy flags, hidden IDs, counts or strength.
+
+`use_ability` distinguishes unit targets, position targets and Catalyst's nebula
+ID plus position. `multiply_antimatter` is a self-centered pulse with no target;
+`cancel_ability` is immediate and accepts active Tractor/Guardian links. Typed
+celestial/deployable references participate in recursive order redaction.
+
+Within the [batch projection](#commit-guarantees-and-lifecycle-feedback), tactical
+casts reserve AM, cooldown use, incoming-link occupancy/cycles and per-source
+galaxy-wide caps. Immediate multiplication projects recipient gains and shared
+recipient deadlines before the next command. A queued pulse reserves only its
+caster cost: recipients are determined at execution. Pending pickup, delivery or
+travel never finances an immediate cast.
+
+`transfer_antimatter` and `take_antimatter` require functional storage, friendly
+endpoints, and normal approach capability. Queued pickup/delivery may depend on
+preceding resource changes.
+
+Both continuous fuel commands require `source_id` and accept optional `target_id`
+and `queue`. For `continuous_resupply`, the source is a star or hydrogen nebula;
+for `continuous_antimatter_transport`, it is a loading unit and exactly one actor
+is allowed. A unit `target_id` selects a fixed owned/allied recipient. Null or
+omitted `target_id` selects Automatic delivery to eligible owned recipients.
+Both commands accept optional `recipient_priority` (`nearest`, the default, or
+`service_urgency`) and `minimum_load_fraction` (finite, greater than zero, at most
+one; default one). The latter sets departure tank level without relaxing reserve
+checks. Urgency ranks currently active fuel-consuming services by remaining fuel
+turns, with distance and ID breaking ties, and may preempt a less urgent automatic
+delivery. Manual destinations remain fixed. Options advertise values/defaults;
+owned/allied order parameters and the human sidebar expose the selected settings.
+See [antimatter logistics](REFERENCE.md#antimatter-logistics) for recipient selection,
+waiting/failure conditions and reserves. Source and route checks follow the
+[shared order contract](#shared-order-contract).
+
+Command options expose `source_ids`, manual `target_ids`, destination modes and
+ownership scope. Public order parameters expose source, configured target and
+derived `destination_mode`; progress exposes `active_destination_id`, phase,
+waiting reason and reserve. The active automatic recipient is separate from the
+configured target, including across saves. All source, manual target, active
+recipient and child approach geometry use recursive disclosure rules. A null
+automatic recipient is valid state and does not trigger redaction.
+
+Source-bound fuel travel exposes `phase: returning_to_source` with no current
+`waiting_reason`; `return_reason` separately explains why delivery ended. After
+arrival, loading/harvesting resumes and a continuing lack of demand becomes a
+waiting reason. The sidebar uses the same distinction. These views derive from
+the saved phase/reason and child approach without advancing logistics.
+
+Continuous Mine roots derive `progress.phase` (`approaching_mine`, `mining`,
+`delivering`, `unloading`, or terminal status), `raw_metal`, `raw_crystal`,
+`cargo_capacity`, `required_refinery_types`, `refinery_id`, `refinery_available`
+and `refinery_selected` from the active cycle. Refinery IDs require normal unit
+disclosure; a missing compatible reachable refinery is explicit guidance. Cargo
+remains unspendable until unloading. The sidebar uses the same derived state;
+observing or loading never advances mining or delivery.
+
+Multiplication observations include radius, projected recipient gains, net AM,
+caster cooldown and friendly units' shared recipient recovery. Enemy observations
+do not expose these deadlines. Their component-independent lifetime is described
+in [antimatter persistence](SAVE_FORMAT.md#antimatter-state); deployments and links
+follow [tactical persistence](SAVE_FORMAT.md#tactical-state).
+
+### Strikecraft production
+
+`action_catalogs.wing_templates` lists built-in Fighter, Bomber, Interceptor,
+Long Range Bomber and Recon Wings, with roles, equipment, prices and effective
+weapon statistics. Private designs are excluded. Fighter-role wings target wings;
+bomber-role wings target ships/stations and qualify for Attack Run.
+
+Use `set_wing_production` with exactly one owned carrier, required zero-based
+`slot_index`, explicitly supplied `template_name`, and `queue=false`. Each command
+replaces only that slot's template and independent `turret_type_override` and
+`defense_type_override`. Null/omitted overrides restore the template presets.
+Explicit `template_name: null` clears the slot and requires null/omitted overrides;
+omitting `template_name` is invalid. Overrides retain existing customization rules,
+statistics, variants, prices and construction duration.
+
+Selection is free, preserves orders and stance, and works while occupied,
+replenishing, paused or short of any resource. Only the slot under construction is
+locked. Existing wings retain their equipment; changes configure future replacements.
+Selection follows the [shared order contract](#shared-order-contract) and
+[ordered commit guarantees](#commit-guarantees-and-lifecycle-feedback).
+
+New slots build nothing until selected. `set_wing_production_enabled` is bay-wide
+and independent of slot selection. The [production rules](REFERENCE.md#built-in-unit-catalog)
+own worker priority, payment timing, slot assignment, replenishment and pause behavior.
+
+Owner/allied `capability_details.strikecraft_bay.slots` exposes each `slot_index`,
+`production_template`, nullable overrides, `wing_id`, `wing_name`, `status`
+(`empty`, `docked`, `launched`, `building`), `production_turns`,
+`production_credit_cost`, `production_resource_cost`, `production_shortfall` and `edit_blocker`. Unselected costs/durations are null.
+The bay exposes `production_enabled`, `constructing`, `construction_slot_index`,
+`construction_progress`, `replenishing_unit_id` and `replenish_progress`.
+Owned command options expose editable `slot_indices`, `can_clear`, template names,
+and override choices. Enemy views receive no production details.
+
+Human slot labels start at 1; command indices start at 0. See the
+[production picker](REFERENCE.md#built-in-unit-catalog) for controls and
+[component persistence](SAVE_FORMAT.md#component-and-ability-schemas) for selections,
+assignments and paid work.
+
+```json
+{"type":"set_wing_production","unit_ids":[101],"slot_index":0,"template_name":"FIGHTER_WING","queue":false}
+{"type":"set_wing_production","unit_ids":[101],"slot_index":1,"template_name":"LONG_RANGE_BOMBER_WING","turret_type_override":"beam","defense_type_override":"armor","queue":false}
+{"type":"set_wing_production","unit_ids":[101],"slot_index":2,"template_name":null,"queue":false}
+```
+
+### Celestial observation contract
+
+Already-exposed bodies use readable uppercase `subtype` names (`MAGNETIC`,
+`BLACK_HOLE`, etc.). `collision_radius` and `inhibition_field_radius` describe
+independent boundaries; non-solid bodies additionally expose `effect_radius`.
+Mechanical radii retain full precision. `environmental_effects` retains existing
+modifier keys and adds speed, concealment, sensor suppression, wing exceptions,
+and `hazards`. Each hazard specifies kind, amount/basis, target, timing, scope,
+radius, affected unit classes, and any sublight-movement/speed requirement.
+Black-hole hazards have their own radius; pulsar hazards cover the whole sector.
+
+`environmental_rules` contains complete explanations of stacking, cooldown floors,
+damage classification, harvesting range, timing and exceptions. Humans can expand
+**Full rules** in body panels to read these explanations; the default view uses
+concise colored summaries. The built-in AI continues to receive the complete
+explanations in its observation; repository documentation is not implicitly
+included in its request.
+
+Friendly/allied `capability_details.engines.effective_speed` includes current
+terrain drag; `sensors.effective_long_range_hexes` includes magnetic suppression.
+Base speed and sensor ranges remain available separately. Unit
+`environmental_modifiers` includes current cover, drag, sensor suppression and
+relation-filtered Catalyst enhancements; body values describe baseline terrain.
+Catalyst patch records describe only the enhancement relevant to their nebula.
+
+Enrichment preserves existing body visibility and remote summaries and exposes
+no additional enemy equipment.
+
+
+## Planetary warfare contract
+
+`planetary_warfare.py` supplies shared eligibility, previews and resolution, with
+initial tuning in `planetary_balance.py`. Human controls commit the same commands.
+
+`recruit_troops`, `bombard_planet` and `invade_planet` each take one owned ship,
+`target_id` and `queue`; recruitment and invasion also require positive integer
+`amount`. `upgrade_planetary_defenses` takes empty `unit_ids`, an owned colony
+`target_id` and `queue=false`. Typed celestial references use surface-aware approach
+routing. Effects wait for End Turn except immediate fortification upgrades.
+
+Preflight projects recruitment population, credits and cargo in batch order.
+Queued recruitment can enable a queued invasion. Invasions reserve committed fuel
+and worst-case casualties; projected victories and future income never finance a
+later command. Reservation release and failure handling follow the
+[commit guarantees](#commit-guarantees-and-lifecycle-feedback); preflight never
+consumes invasion randomness.
+
+Currently known colony observations include `planetary_defenses` with `next_upgrade_resources`; own/allied ships include
+`troop_cargo`. Enemy cargo remains private. Command options expose costs, ranges,
+amount limits, blockers, probabilities and casualty outcomes. Recheck these before
+issuing an order; arrival can change odds. Recruitment is private to the owner;
+combat and capture briefings disclose only authorized participants' information.
+
+After ordinary unit updates and cleanup, a snapshot resolves recruitment,
+bombardment, then invasion in unit-ID order. An enduring unit round marker prevents
+extra actions through replacement, refits or capture. Execution revalidates live
+orders, targets, allegiance, deployment, visibility, equipment, cargo and resources.
+Invalid actions neither charge nor consume invasion randomness. Quiet-round recovery
+runs once globally after growth. Colony support and income are derived from current
+ownership; capture invalidates visibility/sidebar state and stops newly allied sabotage.
+
+A dedicated campaign RNG supplies invasion rolls. Its state, colony defenses,
+unit action markers, cargo and active approach orders are saved in the current format.
+Loading and previews never roll or replay planetary effects. See
+[planetary warfare](REFERENCE.md#planetary-warfare) for complete balance and controls.
+
+## Wormhole stabilization contract
+
+The shared command contract exposes `stabilize_wormhole`, taking one
+owned `unit_ids` entry, a disclosed wormhole `target_id`, and `queue`. Coordinates
+are unused. Human controls commit through the same gateway.
+
+Equipment, disclosure and approach feasibility follow the
+[shared validation contract](#shared-order-contract). Low fuel is legal and waits
+for resupply; issuing the order does not activate paid support.
+The continuous root exposes actual approach/maintaining/waiting/disabled progress
+and blocks following orders. Target references and derived geometry use normal
+recursive redaction. Owned/allied units expose `wormhole_stabilizer` capability
+and operating state; enemies expose only ordinary public equipment details.
+
+Already-disclosed wormholes retain natural `stability` and add
+`effective_stability` and `stabilized`. These public connection properties reveal
+no supporting unit IDs, counts or locations and disclose no additional bodies.
+The public Logistics catalogue includes the Tender and Station designs.
+See [stabilization rules](REFERENCE.md#wormhole-stabilization) for payment timing,
+all-player benefits, interruptions and automatic fuel recovery.
+
+
+## Fixed positional destinations
+
+The shared command contract requires `system_name`, `hex_coord`, and `position` for Construct
+and position-targeted abilities, as for Move and positional Defend/Patrol. Ability
+requirements are conditional on target kind; entity and self targets keep their
+existing forms. Partial locations fail the [shared validation contract](#shared-order-contract);
+UI adapters apply the same location validation before replacing orders.
+Travel coordinates also follow the [navigation limits](#shared-order-contract);
+Construct and abilities retain their own placement and action rules.
+Factories preserve the supplied site rather than binding it to the acting unit.
+Observations expose complete authorized order destinations and ability location
+requirements. Local-only abilities revalidate sector identity when they execute.
+Active construction retains its fixed site; displacement outside build range or
+sector fails the job under the [settlement guarantees](#commit-guarantees-and-lifecycle-feedback).
+See [fixed construction sites](REFERENCE.md#fixed-construction-sites) and
+[saved destination validation](SAVE_FORMAT.md#fixed-destination-validation).
+
+## Unit dismantling
+
+See also the [strikecraft endurance contract](#strikecraft-endurance-contract).
+
+The shared command contract exposes the `dismantle_unit` order:
+
+```json
+{"type":"dismantle_unit","unit_ids":[101],"target_id":202,"queue":false}
+{"type":"set_wing_production_enabled","unit_ids":[303],"enabled":true,"queue":false}
+```
+
+Use exactly one owned executor: a separate Constructor for ships/stations, or the
+owning carrier for an already-docked wing. The production toggle is immediate and
+requires a strict boolean. Design selection leaves the production toggle unchanged.
+`command_options.dismantle_unit.targets` provides blockers, recursive members,
+current credit and three-resource refund estimates (`estimated_resource_refund`),
+total duration, discarded cargo and paid-work waits.
+Owned/allied details expose dismantling phase/progress and bay production state;
+enemy-private component and order information remains hidden.
+
+Membership and Designer valuations freeze when work begins. Refunds depend on HP
+at completion and cannot finance subsequent commands in the issuing batch.
+The [projection ledger](#commit-guarantees-and-lifecycle-feedback) tracks claims and
+offline targets; overlapping jobs, worker/target cycles and conflicting operations
+are invalid. Issue dismantling after observing prior docking/deployment results.
+Cancel via the executor's ordinary `cancel_order`. Work progresses once per owner
+End Turn; observation, command issuance and loading never advance it or pay salvage.
+See [gameplay rules](REFERENCE.md#unit-dismantling) for eligibility and interruptions.
+
+## Strikecraft endurance contract
+
+Observations include owned/allied `wing_service`: `turns_outside` (capped at 80),
+`endurance_limit`, `turns_remaining`, disclosed `mother_carrier_id`, `return_required`,
+`return_blocker`, `carrier_available`, `launch_locked`, `ready_round`, and `status`
+(`deployed`, `returning`, `servicing`, `ready`). Docked wings expose this inside their
+carrier's `capability_details.strikecraft_bay.docked_units`. Enemies receive none of
+these private fields. Unavailable carrier references are redacted.
+
+The engine advances endurance once at the beginning of each deployed wing's owner
+End Turn, independent of controller. At 80 it replaces all explicit work with
+`return_for_service`, exposed with `origin: system` and `cancellable: false`, and
+suppresses weapons and stance activity. Only `rename_unit` remains legal. Conflicting
+commands reject with `wing_service_required`; carrier Attack Run and Emergency
+Recovery cannot replace the return. The [shared order contract](#shared-order-contract)
+applies to this lock, including docking followed by relaunch in one batch.
+Both live servicing state and projected same-batch docking reject relaunch with
+`wing_service_required`, including bulk wing deployment.
+
+See [endurance and servicing](REFERENCE.md#strikecraft-endurance-and-servicing) for
+return, expiration and docking rules. Briefings report forced returns and expiration;
+`wing_endurance_expired` identifies interrupted orders. Planning, observations and
+loading do not advance the timer. Clock terminology is defined in
+[turn timing](DEVELOPMENT.md#turn-timing).
+
+The current save and Wing component schema persist the counter, last processed
+round, return order and launch deadline. See the [current formats and protocols](DEVELOPMENT.md#current-formats-and-protocols).
+
+## Titan controller contract
+
+All controllers use the [Titan rules](TITANS.md) and shared gateway. Observations
+include `titan_capacity` with owned IDs and pending reservation roots. Construction
+catalogue entries expose replacement/queue blockers. Owned/allied Titan state
+includes Core status, enduring cooldowns, active coverage and charge timing;
+ability state previews Fleet Jump passengers and replaced explicit orders.
+`origin_blocked_participant_ids` lists only owned passengers inside disclosed
+origin inhibition fields. A nonempty list makes the ability unavailable with
+`jump_inhibited`, before a destination is chosen. Hidden emitters do not affect
+this preview; execution still checks actual origin and destination safety.
+Owned/allied wings expose current Titan bonuses without changing base equipment.
+
+`deep_scan` introduces the `sector` target kind: provide `system_name` and
+`hex_coord`, leaving `position` and `target_id` null. Unknown/unexplored existing
+hexes are legal in the current system. `fleet_jump` uses all three position fields
+and an explored same-system hex; distance is unlimited, gathering radius is 750,
+and a ready Basic or Advanced Hyperdrive qualifies. Other systems remain invalid.
+All five casts reserve AM at issuance and execute before movement at owner End
+Turn without automatic approach. `cancel_ability` also ends Aegis, Lance charge,
+Deep Scan or Supremacy, retaining cooldown and spent AM. Capturing a Titan reserves
+acquisition capacity without assuming a successful boarding roll.

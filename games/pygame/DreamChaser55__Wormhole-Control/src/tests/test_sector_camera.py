@@ -1,0 +1,455 @@
+from display_config import DisplayConfig
+import pytest
+from unittest.mock import MagicMock, patch
+from sector_utils import sector_coords_to_pixels, pixels_to_sector_coords
+from geometry import Position
+from game import Game
+from input_processor import InputProcessor
+import pygame
+
+@pytest.fixture(autouse=True)
+def mock_pygame_keys():
+    # Provide a list/dict that returns False for all keys to prevent
+    # pygame.error: video system not initialized.
+    mock_keys = [False] * 512
+    with patch('pygame.key.get_pressed', return_value=mock_keys):
+        yield
+
+@pytest.mark.parametrize("zoom", [0.8, 1.0, 2.0, 15.0])
+def test_camera_coordinate_conversion(zoom):
+    logical_pos = Position(100.0, -100.0)
+    
+    # Conversion with zoom and pan.
+    pan_offset = Position(50, -50)
+    pixel_pos_zoomed = sector_coords_to_pixels(logical_pos, zoom, pan_offset)
+    
+    # Scale the offset from center by zoom, then add the pan offset.
+    # pixel = center + pan + (logical * radius_px / radius_logical) * zoom
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    from constants import SECTOR_CIRCLE_RADIUS_LOGICAL
+    SECTOR_CIRCLE_CENTER_IN_PX = DEFAULT_DISPLAY_CONFIG.center
+    SECTOR_CIRCLE_RADIUS_IN_PX = DEFAULT_DISPLAY_CONFIG.sector_radius
+    
+    expected_x = int(SECTOR_CIRCLE_CENTER_IN_PX.x + pan_offset.x + (logical_pos.x * SECTOR_CIRCLE_RADIUS_IN_PX * zoom) / SECTOR_CIRCLE_RADIUS_LOGICAL)
+    expected_y = int(SECTOR_CIRCLE_CENTER_IN_PX.y + pan_offset.y + (logical_pos.y * SECTOR_CIRCLE_RADIUS_IN_PX * zoom) / SECTOR_CIRCLE_RADIUS_LOGICAL)
+    
+    assert pixel_pos_zoomed.x == expected_x
+    assert pixel_pos_zoomed.y == expected_y
+    
+    # Roundtrip error is bounded by one screen pixel at the current zoom.
+    logical_back = pixels_to_sector_coords(pixel_pos_zoomed, zoom, pan_offset)
+    logical_units_per_pixel = SECTOR_CIRCLE_RADIUS_LOGICAL / (SECTOR_CIRCLE_RADIUS_IN_PX * zoom)
+    assert abs(logical_pos.x - logical_back.x) < logical_units_per_pixel
+    assert abs(logical_pos.y - logical_back.y) < logical_units_per_pixel
+
+def test_game_camera_reset():
+    game = DummyGame()
+    # Mock behavior of reset_sector_camera directly since DummyGame doesn't inherit from Game
+    game.sector_zoom = 1.5
+    game.sector_pan_offset = Position(100, 200)
+    game.sector_target_zoom = 1.5
+    game.zoom_anchor_pixel = Position(100, 200)
+    game.zoom_anchor_logical = Position(50, 50)
+    
+    Game.reset_sector_camera(game)
+    # Both follower and leader should snap to defaults
+    assert game.sector_zoom == 1.0
+    assert game.sector_pan_offset.x == 0
+    assert game.sector_pan_offset.y == 0
+    assert game.sector_target_zoom == 1.0
+    assert game.zoom_anchor_pixel is None
+    assert game.zoom_anchor_logical is None
+
+def test_zoom_to_mouse_pointer():
+    game = DummyGame()
+    game.view_mode = 'sector'
+    game.game_started = True
+    game.sector_zoom = 1.0
+    game.sector_pan_offset = Position(0, 0)
+    game.sector_target_zoom = 1.0
+    game.zoom_anchor_pixel = None
+    game.zoom_anchor_logical = None
+    
+    # Mock pygame.mouse.get_pos to return a point 100 pixels away from sector center
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    SECTOR_CIRCLE_CENTER_IN_PX = DEFAULT_DISPLAY_CONFIG.center
+    mouse_x = SECTOR_CIRCLE_CENTER_IN_PX.x + 100
+    mouse_y = SECTOR_CIRCLE_CENTER_IN_PX.y - 100
+    
+    with patch('pygame.mouse.get_pos', return_value=(mouse_x, mouse_y)):
+        # Zoom in (scroll_y > 0)
+        Game.handle_mouse_wheel(game, 1)
+        
+        # handle_mouse_wheel now writes to the LEADER (target) state.
+        assert game.sector_target_zoom == 1.1
+        
+        # Check that zoom anchor is established correctly
+        assert game.zoom_anchor_pixel.x == 100.0
+        assert game.zoom_anchor_pixel.y == -100.0
+        assert game.zoom_anchor_logical.x == 100.0
+        assert game.zoom_anchor_logical.y == -100.0
+        
+        # Follower zoom and pan haven't moved yet
+        assert game.sector_zoom == 1.0
+        assert game.sector_pan_offset.x == 0
+        assert game.sector_pan_offset.y == 0
+
+class DummyGame:
+    display_config = DisplayConfig()
+    def __init__(self):
+        self.view_mode = 'sector'
+        self.game_started = True
+        self.sector_zoom = 1.0
+        self.sector_pan_offset = Position(0, 0)
+        self.sector_target_zoom = 1.0
+        self.zoom_anchor_pixel = None
+        self.zoom_anchor_logical = None
+        self.is_dragging_camera = False
+        self.camera_drag_last_pos = Position(0, 0)
+        self.current_system_name = None
+        self.current_sector_coord = None
+        self.gui = MagicMock()
+        self.gui.display_config = DisplayConfig()
+        self.gui.is_mouse_over_gui_panels.return_value = False
+        self.gui.is_mouse_over_context_menu.return_value = False
+
+    def handle_gui_action(self, gui_action):
+        pass
+
+    def handle_mouse_wheel(self, scroll_y: int):
+        pass
+
+def test_input_processor_drag_pan():
+    game = DummyGame()
+    ip = InputProcessor(game)
+    
+    # Test middle click mouse down
+    event_down = pygame.event.Event(pygame.MOUSEBUTTONDOWN, button=2)
+    with patch('pygame.mouse.get_pos', return_value=(300, 400)), \
+         patch.object(ip.gui, 'process_event', return_value=None), \
+         patch.object(ip.gui, 'is_ingame_menu_open', return_value=False), \
+         patch.object(ip.gui, 'is_unit_editor_open', return_value=False), \
+         patch.object(ip, 'handle_mouse_click'), \
+         patch('pygame.event.get', return_value=[event_down]):
+        
+        ip.handle_input()
+        assert game.is_dragging_camera is True
+        assert game.camera_drag_last_pos.x == 300
+        assert game.camera_drag_last_pos.y == 400
+        
+    # Test mouse motion
+    event_motion = pygame.event.Event(pygame.MOUSEMOTION, pos=(320, 390))
+    with patch('pygame.event.get', return_value=[event_motion]), \
+         patch('pygame.mouse.get_pos', return_value=(320, 390)), \
+         patch.object(ip.gui, 'process_event', return_value=None), \
+         patch.object(ip.gui, 'is_ingame_menu_open', return_value=False), \
+         patch.object(ip.gui, 'is_unit_editor_open', return_value=False):
+        
+        ip.handle_input()
+        # Delta: dx = 20, dy = -10
+        # Offset should update accordingly
+        assert game.sector_pan_offset.x == 20
+        assert game.sector_pan_offset.y == -10
+        assert game.camera_drag_last_pos.x == 320
+        assert game.camera_drag_last_pos.y == 390
+        
+    # Test middle click mouse up
+    event_up = pygame.event.Event(pygame.MOUSEBUTTONUP, button=2)
+    with patch('pygame.event.get', return_value=[event_up]), \
+         patch('pygame.mouse.get_pos', return_value=(320, 390)), \
+         patch.object(ip.gui, 'process_event', return_value=None), \
+         patch.object(ip.gui, 'is_ingame_menu_open', return_value=False), \
+         patch.object(ip.gui, 'is_unit_editor_open', return_value=False):
+         
+        ip.handle_input()
+        assert game.is_dragging_camera is False
+
+def test_camera_smooth_interpolation():
+    """Verifies that update_sector_camera() correctly lerps follower zoom and pan lock."""
+    import math
+    from game import Game
+    from game_camera import CAMERA_SMOOTH_SPEED
+
+    game = DummyGame()
+    game.sector_zoom = 1.0         # follower starts at 1.0
+    game.sector_pan_offset = Position(0, 0)
+    game.sector_target_zoom = 2.0  # target zoom is 2.0
+    game.zoom_anchor_pixel = Position(100.0, -100.0)
+    game.zoom_anchor_logical = Position(100.0, -100.0)
+
+    # Call update_sector_camera with a fixed dt of 1/60s (one frame at 60fps)
+    dt = 1.0 / 60.0
+    Game.update_sector_camera(game, dt)
+
+    expected_t = 1.0 - math.exp(-CAMERA_SMOOTH_SPEED * dt)
+    expected_zoom = 1.0 + (2.0 - 1.0) * expected_t
+    # pan offset should match zoom: pixel - logical * zoom
+    expected_pan_x = 100.0 - 100.0 * expected_zoom
+    expected_pan_y = -100.0 - (-100.0) * expected_zoom
+
+    assert abs(game.sector_zoom - expected_zoom) < 1e-9
+    assert abs(game.sector_pan_offset.x - expected_pan_x) < 1e-9
+    assert abs(game.sector_pan_offset.y - expected_pan_y) < 1e-9
+
+    # After a large dt, follower should be snapped to target and anchor cleared
+    game.sector_zoom = 1.0
+    game.sector_pan_offset = Position(0, 0)
+    game.zoom_anchor_pixel = Position(100.0, -100.0)
+    game.zoom_anchor_logical = Position(100.0, -100.0)
+    Game.update_sector_camera(game, 10.0)  # 10 seconds worth of smoothing
+    assert abs(game.sector_zoom - 2.0) < 1e-4
+    assert game.zoom_anchor_pixel is None
+    assert game.zoom_anchor_logical is None
+
+def test_zoom_to_mouse_pointer_successive():
+    """Verifies that successive zoom ticks update the anchor logically relative to the actual follower view."""
+    game = DummyGame()
+    game.view_mode = 'sector'
+    game.game_started = True
+    game.sector_zoom = 1.0
+    game.sector_pan_offset = Position(0, 0)
+    game.sector_target_zoom = 1.0
+    game.zoom_anchor_pixel = None
+    game.zoom_anchor_logical = None
+
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    SECTOR_CIRCLE_CENTER_IN_PX = DEFAULT_DISPLAY_CONFIG.center
+    mouse_x = SECTOR_CIRCLE_CENTER_IN_PX.x + 100
+    mouse_y = SECTOR_CIRCLE_CENTER_IN_PX.y - 100
+
+    with patch('pygame.mouse.get_pos', return_value=(mouse_x, mouse_y)):
+        # First scroll tick
+        Game.handle_mouse_wheel(game, 1)
+        assert game.sector_target_zoom == 1.1
+        assert abs(game.zoom_anchor_pixel.x - 100.0) < 1e-5
+        assert abs(game.zoom_anchor_logical.x - 100.0) < 1e-5
+
+        # Partially update the camera (halfway zoom)
+        # sector_zoom moves to 1.05, sector_pan_offset moves to -5.0
+        game.sector_zoom = 1.05
+        game.sector_pan_offset = Position(-5.0, 5.0)
+
+        # Second scroll tick before camera catches up
+        Game.handle_mouse_wheel(game, 1)
+        # Target zoom should now be 1.1 * 1.1 = 1.21
+        assert abs(game.sector_target_zoom - 1.21) < 1e-5
+
+        # The new anchor logical coordinate is calculated based on current follower:
+        # lx = (rx - O_follower) / Z_follower = (100 - (-5)) / 1.05 = 100
+        assert abs(game.zoom_anchor_logical.x - 100.0) < 1e-5
+        assert abs(game.zoom_anchor_pixel.x - 100.0) < 1e-5
+
+def test_zoom_to_mouse_pointer_moving_mouse():
+    """Verifies that moving the mouse between successive scrolls updates the logical anchor to track the moving mouse."""
+    game = DummyGame()
+    game.view_mode = 'sector'
+    game.game_started = True
+    game.sector_zoom = 1.0
+    game.sector_pan_offset = Position(0, 0)
+    game.sector_target_zoom = 1.0
+    game.zoom_anchor_pixel = None
+    game.zoom_anchor_logical = None
+
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    SECTOR_CIRCLE_CENTER_IN_PX = DEFAULT_DISPLAY_CONFIG.center
+    rx1, ry1 = 100.0, -100.0
+    rx2, ry2 = 105.0, -105.0  # Mouse moved slightly (5px)
+
+    with patch('pygame.mouse.get_pos', return_value=(SECTOR_CIRCLE_CENTER_IN_PX.x + rx1, SECTOR_CIRCLE_CENTER_IN_PX.y + ry1)):
+        # First scroll tick
+        Game.handle_mouse_wheel(game, 1)
+        assert game.sector_target_zoom == 1.1
+        assert abs(game.zoom_anchor_logical.x - 100.0) < 1e-5
+
+    # Partially update the camera (halfway zoom)
+    game.sector_zoom = 1.05
+    game.sector_pan_offset = Position(-5.0, 5.0)
+
+    with patch('pygame.mouse.get_pos', return_value=(SECTOR_CIRCLE_CENTER_IN_PX.x + rx2, SECTOR_CIRCLE_CENTER_IN_PX.y + ry2)):
+        # Second scroll tick with slightly shifted mouse
+        Game.handle_mouse_wheel(game, 1)
+        assert abs(game.sector_target_zoom - 1.21) < 1e-5
+
+        # The new anchor logical coordinate is calculated based on current follower and new mouse pos:
+        # lx = (rx2 - O_follower) / Z_follower = (105 - (-5.0)) / 1.05 = 104.7619
+        assert abs(game.zoom_anchor_logical.x - (110.0 / 1.05)) < 1e-5
+        assert abs(game.zoom_anchor_pixel.x - 105.0) < 1e-5
+
+
+def test_zoom_out_clamped_to_min():
+    """Verifies that zoom-out is clamped to SECTOR_ZOOM_MIN."""
+    from constants import SECTOR_ZOOM_MIN
+    game = DummyGame()
+    game.view_mode = 'sector'
+    game.game_started = True
+    game.sector_zoom = SECTOR_ZOOM_MIN
+    game.sector_target_zoom = SECTOR_ZOOM_MIN
+    game.zoom_anchor_pixel = None
+    game.zoom_anchor_logical = None
+
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    SECTOR_CIRCLE_CENTER_IN_PX = DEFAULT_DISPLAY_CONFIG.center
+    mouse_x = SECTOR_CIRCLE_CENTER_IN_PX.x
+    mouse_y = SECTOR_CIRCLE_CENTER_IN_PX.y
+
+    with patch('pygame.mouse.get_pos', return_value=(mouse_x, mouse_y)):
+        # Attempt to zoom out (scroll_y < 0)
+        Game.handle_mouse_wheel(game, -1)
+        
+        # Should stay at SECTOR_ZOOM_MIN
+        assert game.sector_target_zoom == SECTOR_ZOOM_MIN
+
+
+def test_zoom_in_clamped_to_max():
+    """Verifies that zoom-in is clamped to SECTOR_ZOOM_MAX."""
+    from constants import SECTOR_ZOOM_MAX
+    game = DummyGame()
+    game.view_mode = 'sector'
+    game.game_started = True
+    # Start at near-maximum zoom so next zoom-in exceeds it
+    game.sector_zoom = SECTOR_ZOOM_MAX
+    game.sector_target_zoom = SECTOR_ZOOM_MAX
+    game.zoom_anchor_pixel = None
+    game.zoom_anchor_logical = None
+
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    SECTOR_CIRCLE_CENTER_IN_PX = DEFAULT_DISPLAY_CONFIG.center
+    mouse_x = SECTOR_CIRCLE_CENTER_IN_PX.x
+    mouse_y = SECTOR_CIRCLE_CENTER_IN_PX.y
+
+    with patch('pygame.mouse.get_pos', return_value=(mouse_x, mouse_y)):
+        # Attempt to zoom in (scroll_y > 0)
+        Game.handle_mouse_wheel(game, 1)
+        
+        # Should clamp to SECTOR_ZOOM_MAX
+        assert game.sector_target_zoom == SECTOR_ZOOM_MAX
+
+
+def test_mouse_wheel_suppressed_when_hovering_gui_panels():
+    """Verifies that handle_mouse_wheel aborts immediately when mouse is over GUI panels or windows."""
+    game = DummyGame()
+    game.view_mode = 'sector'
+    game.game_started = True
+    game.sector_zoom = 1.0
+    game.sector_target_zoom = 1.0
+    game.gui.is_mouse_over_gui_panels.return_value = True
+
+    from display_config import DEFAULT_DISPLAY_CONFIG
+    SECTOR_CIRCLE_CENTER_IN_PX = DEFAULT_DISPLAY_CONFIG.center
+    mouse_x = SECTOR_CIRCLE_CENTER_IN_PX.x + 50
+    mouse_y = SECTOR_CIRCLE_CENTER_IN_PX.y + 50
+
+    with patch('pygame.mouse.get_pos', return_value=(mouse_x, mouse_y)):
+        Game.handle_mouse_wheel(game, 1)
+
+    assert game.sector_target_zoom == 1.0
+    assert game.zoom_anchor_pixel is None
+    assert game.zoom_anchor_logical is None
+
+
+def test_is_mouse_over_gui_panels_retrofit_wizard():
+    """Verifies that GUI_Handler.is_mouse_over_gui_panels detects RetrofitWizardWindow bounds."""
+    from gui.handler import GUI_Handler
+    gui = GUI_Handler.__new__(GUI_Handler)
+    gui.top_bar_panel = None
+    gui.bottom_bar_panel = None
+    gui.side_bar_info_panel = None
+    gui.context_menu_panel = None
+    gui.ingame_menu_panel = None
+    gui.main_menu_panel = None
+    gui.about_panel = None
+    gui.new_game_wizard = None
+    gui.unit_editor_window = None
+    gui.load_save_window = None
+    gui.active_dialogs = []
+    gui.manager = MagicMock()
+    gui.manager.get_window_stack.return_value.get_full_stack.return_value = []
+
+    # Mock RetrofitWizardWindow
+    mock_wiz = MagicMock()
+    mock_wiz.is_visible = True
+    mock_wiz.window.alive.return_value = True
+    mock_wiz.window.get_abs_rect.return_value = pygame.Rect(100, 100, 400, 300)
+    gui.retrofit_wizard = mock_wiz
+
+    # Inside wizard
+    assert gui.is_mouse_over_gui_panels(Position(200, 200)) is True
+    # Outside wizard
+    assert gui.is_mouse_over_gui_panels(Position(50, 50)) is False
+
+    # When killed / not visible
+    mock_wiz.is_visible = False
+    assert gui.is_mouse_over_gui_panels(Position(200, 200)) is False
+
+
+def test_is_mouse_over_gui_panels_unit_editor_and_dialogs():
+    """Verifies that GUI_Handler.is_mouse_over_gui_panels detects UnitEditor, load/save, and modal dialogs."""
+    from gui.handler import GUI_Handler
+    gui = GUI_Handler.__new__(GUI_Handler)
+    gui.top_bar_panel = None
+    gui.bottom_bar_panel = None
+    gui.side_bar_info_panel = None
+    gui.context_menu_panel = None
+    gui.ingame_menu_panel = None
+    gui.main_menu_panel = None
+    gui.about_panel = None
+    gui.new_game_wizard = None
+    gui.retrofit_wizard = None
+    gui.active_dialogs = []
+    gui.manager = MagicMock()
+    gui.manager.get_window_stack.return_value.get_full_stack.return_value = []
+
+    # 1. Unit Editor
+    mock_editor = MagicMock()
+    mock_editor.is_visible = True
+    mock_editor._panel.alive.return_value = True
+    mock_editor._panel.get_abs_rect.return_value = pygame.Rect(20, 40, 600, 500)
+    mock_editor._save_dialog = None
+    gui.unit_editor_window = mock_editor
+
+    assert gui.is_mouse_over_gui_panels(Position(100, 100)) is True
+    assert gui.is_mouse_over_gui_panels(Position(700, 600)) is False
+
+    # Unit Editor save dialog popup
+    mock_save_dlg = MagicMock()
+    mock_save_dlg.window.alive.return_value = True
+    mock_save_dlg.window.get_abs_rect.return_value = pygame.Rect(700, 600, 200, 100)
+    mock_editor._save_dialog = mock_save_dlg
+    assert gui.is_mouse_over_gui_panels(Position(750, 650)) is True
+
+    gui.unit_editor_window = None
+
+    # 2. Load / Save Window
+    mock_ls_win = MagicMock()
+    mock_ls_win.alive.return_value = True
+    mock_ls_win.get_abs_rect.return_value = pygame.Rect(300, 200, 400, 300)
+    gui.load_save_window = mock_ls_win
+    assert gui.is_mouse_over_gui_panels(Position(350, 250)) is True
+    assert gui.is_mouse_over_gui_panels(Position(10, 10)) is False
+    gui.load_save_window = None
+
+    # 3. Active Dialogs
+    mock_dialog = MagicMock()
+    mock_dialog.alive.return_value = True
+    mock_dialog.get_abs_rect.return_value = pygame.Rect(400, 300, 300, 200)
+    gui.active_dialogs = [mock_dialog]
+    assert gui.is_mouse_over_gui_panels(Position(450, 350)) is True
+    assert gui.is_mouse_over_gui_panels(Position(10, 10)) is False
+
+
+def test_input_processor_mousewheel_suppressed_on_gui_action():
+    """Verifies that InputProcessor suppresses handle_mouse_wheel when gui.process_event consumes MOUSEWHEEL."""
+    game = DummyGame()
+    ip = InputProcessor(game)
+
+    event_wheel = pygame.event.Event(pygame.MOUSEWHEEL, y=1)
+    with patch('pygame.mouse.get_pos', return_value=(300, 400)), \
+         patch.object(ip, 'update_hover_states'), \
+         patch.object(ip.gui, 'process_event', return_value={'action': 'ui_handled'}), \
+         patch.object(game, 'handle_gui_action') as mock_gui_action, \
+         patch.object(game, 'handle_mouse_wheel') as mock_mouse_wheel, \
+         patch('pygame.event.get', return_value=[event_wheel]):
+
+        ip.handle_input()
+        mock_gui_action.assert_called_once_with({'action': 'ui_handled'})
+        mock_mouse_wheel.assert_not_called()

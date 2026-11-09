@@ -1,0 +1,337 @@
+from types import SimpleNamespace
+from display_config import DisplayConfig
+import pytest
+import pygame
+import pygame_gui
+from unittest.mock import MagicMock
+from geometry import Position, Vector
+from gui.context_menu import (
+    calculate_context_menu_min_col_width,
+    compute_context_menu_layout,
+    calculate_menu_position,
+    open_context_menu,
+    close_context_menu,
+    handle_button_index,
+    is_mouse_over_context_menu,
+)
+
+
+def test_compute_context_menu_layout_single_column():
+    screen_res = Vector(1920, 1080)
+    # 3 options (e.g. default system/sector context menu)
+    num_cols, num_rows, panel_width, panel_height, col_width, col_gap, row_height = compute_context_menu_layout(
+        DisplayConfig(int(screen_res.x), int(screen_res.y)), 3, max_items_cap=14
+    )
+    assert num_cols == 1
+    assert num_rows == 3
+    assert panel_width == DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_width
+    assert panel_height == 3 * (DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_item_height + 2) + 10
+
+
+
+def test_compute_context_menu_layout_multi_column():
+    screen_res = Vector(1920, 1080)
+    # 16 options (e.g. Back + 15 unit templates)
+    num_cols, num_rows, panel_width, panel_height, col_width, col_gap, row_height = compute_context_menu_layout(
+        DisplayConfig(int(screen_res.x), int(screen_res.y)), 16, max_items_cap=14
+    )
+    assert num_cols >= 2
+    assert num_rows <= 14
+    expected_col_width = DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_width - 10
+    expected_width = 10 + num_cols * expected_col_width + (num_cols - 1) * 4
+    assert panel_width == expected_width
+    assert panel_height == num_rows * (DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_item_height + 2) + 10
+
+
+
+def test_compute_context_menu_layout_three_columns():
+    screen_res = Vector(1920, 1080)
+    # 30 options
+    num_cols, num_rows, panel_width, panel_height, col_width, col_gap, row_height = compute_context_menu_layout(
+        DisplayConfig(int(screen_res.x), int(screen_res.y)), 30, max_items_cap=14
+    )
+    assert num_cols >= 3
+    assert panel_height == num_rows * (DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_item_height + 2) + 10
+
+
+
+def test_calculate_menu_position_open_downward():
+    screen_res = Vector(1920, 1080)
+    anchor = Position(500, 300)
+    panel_width = 250
+    panel_height = 200
+    pos = calculate_menu_position(DisplayConfig(int(screen_res.x), int(screen_res.y)), anchor, panel_width, panel_height)
+    # Plenty of space below (1080 - 300 = 780 >= 200), so opens downwards at y=300
+    assert pos.x == 500
+    assert pos.y == 300
+
+
+
+def test_calculate_menu_position_open_upward_near_bottom():
+    screen_res = Vector(1920, 1080)
+    anchor = Position(500, 950)
+    panel_width = 250
+    panel_height = 300
+    pos = calculate_menu_position(DisplayConfig(int(screen_res.x), int(screen_res.y)), anchor, panel_width, panel_height)
+    # Space below is only 1080 - 950 - 8 = 122 < 300; space above is 950 - 52 - 8 = 890 >= 300
+    # Opens upwards at y = 950 - 300 = 650
+    assert pos.x == 500
+    assert pos.y == 650
+    assert pos.y >= DisplayConfig(int(screen_res.x), int(screen_res.y)).top_bar_height
+
+
+
+def test_calculate_menu_position_clamping_at_edges():
+    screen_res = Vector(1920, 1080)
+    # 1. Extreme bottom edge
+    anchor = Position(500, 1075)
+    panel_width = 200
+    panel_height = 400
+    pos = calculate_menu_position(DisplayConfig(int(screen_res.x), int(screen_res.y)), anchor, panel_width, panel_height)
+    assert pos.y + panel_height <= 1080 - 8
+    assert pos.y >= DisplayConfig(int(screen_res.x), int(screen_res.y)).top_bar_height + 8
+
+    # 2. Extreme right edge
+    anchor_right = Position(1900, 400)
+    pos_right = calculate_menu_position(DisplayConfig(int(screen_res.x), int(screen_res.y)), anchor_right, panel_width, panel_height)
+    assert pos_right.x + panel_width <= 1920 - 8
+    assert pos_right.x >= 8
+
+    # 3. Extreme top edge
+    anchor_top = Position(100, 10)
+    pos_top = calculate_menu_position(DisplayConfig(int(screen_res.x), int(screen_res.y)), anchor_top, panel_width, panel_height)
+    assert pos_top.y >= DisplayConfig(int(screen_res.x), int(screen_res.y)).top_bar_height + 8
+
+
+
+def test_open_context_menu_multi_column_button_layout():
+    screen_res = Vector(1280, 720)
+    manager = pygame_gui.UIManager((1280, 720))
+
+    gui = MagicMock()
+    gui.display_config = DisplayConfig()
+    gui.screen_res = screen_res
+    gui.display_config = DisplayConfig(int(screen_res.x), int(screen_res.y))
+    gui.manager = manager
+    gui.context_menu_panel = None
+    gui.context_menu_buttons = []
+    gui.context_menu_options = []
+    gui.context_menu_target = None
+    gui.context_menu_submenus = {}
+    gui.context_menu_parent_options = None
+    gui.context_menu_parent_position = None
+    gui.context_menu_anchor = None
+    gui.context_menu_history = []
+
+    # 16 options
+    options = [(f"Template {i}", f"construct_tpl_{i}") for i in range(16)]
+    click_pos = Position(400, 300)
+
+    open_context_menu(gui, click_pos, options, target=None)
+
+    assert gui.context_menu_panel is not None
+    assert len(gui.context_menu_buttons) == 16
+
+    num_cols, num_rows, panel_width, panel_height, col_width, col_gap, row_height = compute_context_menu_layout(
+        DisplayConfig(int(screen_res.x), int(screen_res.y)), len(options)
+    )
+
+    for i, btn in enumerate(gui.context_menu_buttons):
+        expected_col = i // num_rows
+        expected_row = i % num_rows
+        expected_x = 5 + expected_col * (col_width + col_gap)
+        expected_y = 5 + expected_row * row_height
+        assert btn.relative_rect.x == expected_x
+        assert btn.relative_rect.y == expected_y
+
+    close_context_menu(gui)
+    assert gui.context_menu_panel is None
+    assert gui.context_menu_buttons == []
+
+
+
+def test_submenu_navigation_and_back():
+    screen_res = Vector(1280, 720)
+    manager = pygame_gui.UIManager((1280, 720))
+
+    gui = MagicMock()
+    gui.display_config = DisplayConfig()
+    gui.screen_res = screen_res
+    gui.display_config = DisplayConfig(int(screen_res.x), int(screen_res.y))
+    gui.manager = manager
+    gui.context_menu_panel = None
+    gui.context_menu_buttons = []
+    gui.context_menu_options = []
+    gui.context_menu_target = None
+    gui.context_menu_submenus = {}
+    gui.context_menu_parent_options = None
+    gui.context_menu_parent_position = None
+    gui.context_menu_anchor = None
+    gui.context_menu_history = []
+
+    sub_options = [("Fighter", "construct_fighter"), ("Cruiser", "construct_cruiser")]
+    parent_options = [
+        ("Move Here", "move_here"),
+        ("Construct", sub_options),
+    ]
+
+    click_pos = Position(300, 400)
+    open_context_menu(gui, click_pos, parent_options, target="TargetHex")
+
+    assert len(gui.context_menu_buttons) == 2
+    assert 1 in gui.context_menu_submenus
+
+    # 1. Click Construct (index 1) to navigate into submenu
+    action = handle_button_index(gui, 1)
+    assert action == {'action': 'ui_handled'}
+    # Submenu should have 3 options: Back + 2 sub options
+    assert len(gui.context_menu_options) == 3
+    assert gui.context_menu_options[0] == ("Back", "__submenu_back__")
+    assert len(gui.context_menu_buttons) == 3
+    assert len(gui.context_menu_history) == 1
+
+    # 2. Click Back (index 0)
+    action_back = handle_button_index(gui, 0)
+    assert action_back == {'action': 'ui_handled'}
+    # Restored to 2 parent options
+    assert len(gui.context_menu_options) == 2
+    assert len(gui.context_menu_buttons) == 2
+    assert gui.context_menu_options[0] == ("Move Here", "move_here")
+
+    # 3. Select action from parent menu
+    action_select = handle_button_index(gui, 0)
+    assert action_select == {'action': 'context_menu_select', 'action_id': 'move_here', 'target': 'TargetHex'}
+    assert gui.context_menu_panel is None
+
+
+
+def test_is_mouse_over_context_menu_accepts_tuple_and_position():
+    gui = MagicMock()
+    gui.display_config = DisplayConfig()
+    gui.context_menu_panel.visible = True
+    gui.context_menu_panel.get_abs_rect.return_value = pygame.Rect(100, 100, 200, 200)
+
+    assert is_mouse_over_context_menu(gui, Position(150, 150)) is True
+    assert is_mouse_over_context_menu(gui, (150, 150)) is True
+    assert is_mouse_over_context_menu(gui, Position(50, 50)) is False
+    assert is_mouse_over_context_menu(gui, (-1, -1)) is False
+
+
+
+def test_calculate_context_menu_min_col_width_short_options():
+    screen_res = Vector(1280, 720)
+    options = [("Move Here", "move"), ("Patrol Here", "patrol"), ("Construct", "construct")]
+    min_w = calculate_context_menu_min_col_width(SimpleNamespace(display_config=DisplayConfig(int(screen_res.x), int(screen_res.y))), options)
+    # Short options should not exceed standard DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_width - 10
+    assert min_w == DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_width - 10
+
+
+
+def test_calculate_context_menu_min_col_width_long_construct_options():
+    screen_res = Vector(1280, 720)
+    options = [
+        ("Back", "__submenu_back__"),
+        ("Constructor (800c)", "construct_CONSTRUCTOR_MK1"),
+        ("Medium Orbital Defense Station (2500c)", "construct_MEDIUM_DEFENSE_STATION"),
+        ("Crystal Refinery Station (1200c)", "construct_CRYSTAL_REFINERY"),
+    ]
+    min_w = calculate_context_menu_min_col_width(SimpleNamespace(display_config=DisplayConfig(int(screen_res.x), int(screen_res.y))), options)
+    # "Medium Orbital Defense Station (2500c)" has 38 chars, text w ~ 268px + padding ~ 24px >= 290px
+    assert min_w >= 280
+
+
+
+def test_compute_context_menu_layout_with_min_col_width():
+    screen_res = Vector(1280, 720)
+    desired_width = DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_width + 100
+    num_cols, num_rows, panel_width, panel_height, col_width, col_gap, row_height = compute_context_menu_layout(
+        DisplayConfig(int(screen_res.x), int(screen_res.y)), 4, max_items_cap=14, min_col_width=desired_width
+    )
+    assert num_cols == 1
+    assert num_rows == 4
+    assert col_width == desired_width
+    assert panel_width == 10 + desired_width
+
+
+
+def test_open_context_menu_construct_submenu_expands_and_fits_text():
+    screen_res = Vector(1280, 720)
+    manager = pygame_gui.UIManager((1280, 720))
+
+    gui = MagicMock()
+    gui.display_config = DisplayConfig()
+    gui.screen_res = screen_res
+    gui.display_config = DisplayConfig(int(screen_res.x), int(screen_res.y))
+    gui.manager = manager
+    gui.context_menu_panel = None
+    gui.context_menu_buttons = []
+    gui.context_menu_options = []
+    gui.context_menu_target = None
+    gui.context_menu_submenus = {}
+    gui.context_menu_parent_options = None
+    gui.context_menu_parent_position = None
+    gui.context_menu_anchor = None
+    gui.context_menu_history = []
+
+    # Construct submenu with real unit templates
+    construct_options = [
+        ("Constructor (800c)", "construct_CONSTRUCTOR_MK1"),
+        ("Medium Orbital Defense Station (2500c)", "construct_MEDIUM_DEFENSE_STATION"),
+        ("Crystal Refinery Station (1200c)", "construct_CRYSTAL_REFINERY"),
+        ("Metal Refinery Station (1000c)", "construct_METAL_REFINERY"),
+    ]
+    parent_options = [
+        ("Move Here", "move_here"),
+        ("Construct", construct_options),
+    ]
+
+    click_pos = Position(300, 300)
+    # 1. Open parent menu: should have standard compact width
+    open_context_menu(gui, click_pos, parent_options, target=Position(100, 100))
+    assert len(gui.context_menu_buttons) == 2
+    for btn in gui.context_menu_buttons:
+        assert btn.relative_rect.width == DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_width - 10
+
+    # 2. Click "Construct" -> navigates into submenu
+    action = handle_button_index(gui, 1)
+    assert action == {'action': 'ui_handled'}
+    # Submenu should have 5 options (Back + 4 templates)
+    assert len(gui.context_menu_buttons) == 5
+    # All buttons in the submenu must be expanded (>= 280px) to fit template names & prices
+    for btn in gui.context_menu_buttons:
+        assert btn.relative_rect.width >= 280
+
+    # 3. Click "Back" (index 0) -> restores parent menu with compact width
+    action_back = handle_button_index(gui, 0)
+    assert action_back == {'action': 'ui_handled'}
+    assert len(gui.context_menu_buttons) == 2
+    for btn in gui.context_menu_buttons:
+        assert btn.relative_rect.width == DisplayConfig(int(screen_res.x), int(screen_res.y)).context_menu_width - 10
+
+
+pytestmark = pytest.mark.usefixtures("pygame_context")
+
+
+def test_location_selection_survives_submenu_and_view_change():
+    gui = MagicMock()
+    gui.display_config = DisplayConfig(1280, 720)
+    gui.manager = pygame_gui.UIManager((1280, 720))
+    gui.context_menu_panel = None
+    gui.context_menu_history = []
+    gui.game_instance = SimpleNamespace(current_system_name="Sol", current_sector_coord=[1, 0])
+    site = Position(200, 100)
+    options = [("Construct", [("Refinery", "construct_tpl_CRYSTAL_REFINERY_STATION")])]
+    open_context_menu(gui, Position(400, 300), options, site)
+    gui.game_instance.current_system_name = "Beta"
+    gui.game_instance.current_sector_coord[0] = 0
+    site.x = 999
+    handle_button_index(gui, 0)
+    result = handle_button_index(gui, 1)  # Back occupies the first submenu row.
+    assert result["location"] == ("Sol", (1, 0), Position(200, 100))
+
+    open_context_menu(gui, Position(400, 300), options, Position(300, 100))
+    assert gui.context_menu_location == ("Beta", (0, 0), Position(300, 100))
+    gui.game_instance.current_sector_coord = (1, 0)
+    open_context_menu(gui, Position(400, 300), options, Position(400, 100))
+    assert gui.context_menu_location == ("Beta", (1, 0), Position(400, 100))
+    close_context_menu(gui)

@@ -1,0 +1,208 @@
+from constants import HullSize
+from custom_unit_templates import (
+    calc_antimatter_hull_cost,
+    ComponentConfig,
+    CustomUnitTemplate,
+    CustomTemplateManager,
+)
+from unit_components.constructor import Constructor
+from geometry import Position
+from unit_templates import UNIT_TEMPLATES, PRIVATE_TEMPLATES
+
+
+def test_calc_antimatter_hull_cost():
+    assert calc_antimatter_hull_cost(0) == 0
+    assert calc_antimatter_hull_cost(-10) == 0
+    assert calc_antimatter_hull_cost(100) == 5
+    assert calc_antimatter_hull_cost(200) == 10
+    assert calc_antimatter_hull_cost(50) == 2.5
+    assert calc_antimatter_hull_cost(1) == 0.05
+
+
+def test_component_config_antimatter_hull_cost():
+    comp = ComponentConfig(has_antimatter_storage=True, antimatter_capacity=100.0)
+    assert comp.antimatter_hull_cost == 5
+
+    comp.antimatter_capacity = 200.0
+    assert comp.antimatter_hull_cost == 10
+
+    comp.has_antimatter_storage = False
+    assert comp.antimatter_hull_cost == 0
+
+
+def test_custom_unit_template_total_hull_cost_and_validation():
+    comp = ComponentConfig(
+        has_engine=True,
+        engine_speed=100.0,  # 5 hull cost
+        has_antimatter_storage=True,
+        antimatter_capacity=150.0,  # ceil(150/20) = 8 hull cost
+    )
+    template = CustomUnitTemplate(
+        display_name="AM Test Ship",
+        hull_size=HullSize.MEDIUM,  # capacity 50
+        components=comp,
+    )
+    assert template.total_hull_cost == 5.0 + 7.5
+    assert template.validate() == []
+
+    # Test invalid capacity below 100.0 for MEDIUM hull
+    comp.antimatter_capacity = 50.0
+    errors = template.validate()
+    assert any("Antimatter storage capacity must be at least 100.0 for MEDIUM hull." in e for e in errors)
+
+
+def test_hull_dependent_min_antimatter_capacity():
+    from constants import get_min_antimatter_capacity
+
+    assert get_min_antimatter_capacity(HullSize.STRIKECRAFT_WING) == 40.0
+    assert get_min_antimatter_capacity(HullSize.TINY) == 60.0
+    assert get_min_antimatter_capacity(HullSize.SMALL) == 80.0
+    assert get_min_antimatter_capacity(HullSize.MEDIUM) == 100.0
+    assert get_min_antimatter_capacity(HullSize.LARGE) == 150.0
+    assert get_min_antimatter_capacity(HullSize.HUGE) == 200.0
+    assert get_min_antimatter_capacity(None) == 100.0
+
+    # Validation test on HUGE hull size (min cap 200.0)
+    huge_comp = ComponentConfig(has_engine=True, engine_speed=100.0, has_antimatter_storage=True, antimatter_capacity=150.0)
+    huge_template = CustomUnitTemplate(display_name="Huge Test", hull_size=HullSize.HUGE, components=huge_comp)
+    errors = huge_template.validate()
+    assert any("Antimatter storage capacity must be at least 200.0 for HUGE hull." in e for e in errors)
+
+    huge_comp.antimatter_capacity = 200.0
+    assert huge_template.validate() == []
+
+    # Validation test on TINY hull size (min cap 60.0)
+    tiny_comp = ComponentConfig(has_engine=True, engine_speed=100.0, has_antimatter_storage=True, antimatter_capacity=50.0)
+    tiny_template = CustomUnitTemplate(display_name="Tiny Test", hull_size=HullSize.TINY, components=tiny_comp)
+    errors = tiny_template.validate()
+    assert any("Antimatter storage capacity must be at least 60.0 for TINY hull." in e for e in errors)
+
+    tiny_comp.antimatter_capacity = 60.0
+    assert tiny_template.validate() == []
+
+
+def test_custom_template_manager_serialization(tmp_path):
+    mgr = CustomTemplateManager(data_file=tmp_path / "designs.json")
+    comp = ComponentConfig(
+        has_engine=True,
+        engine_speed=100.0,
+        has_antimatter_storage=True,
+        antimatter_capacity=300.0,
+    )
+    template = CustomUnitTemplate(
+        display_name="AM Ser Test",
+        hull_size=HullSize.LARGE,
+        components=comp,
+    )
+    errors = mgr.save_design(template)
+    assert errors == []
+
+    loaded = mgr.get_design("AM Ser Test")
+    assert loaded is not None
+    assert loaded.components.has_antimatter_storage is True
+    assert loaded.components.antimatter_capacity == 300.0
+    assert loaded.components.antimatter_hull_cost == 15
+
+    # Check registered dict format
+    assert "AM Ser Test" not in UNIT_TEMPLATES
+    tdict = PRIVATE_TEMPLATES["AM Ser Test"]
+    assert tdict["has_antimatter_storage"] is True
+    assert tdict["antimatter_capacity"] == 300.0
+    assert tdict["antimatter_hull_cost"] == 15
+
+
+def test_create_unit_from_template_custom_antimatter(tmp_path):
+
+    class DummyOwner:
+        id = 1
+
+    class DummySystem:
+        name = "Sol"
+        def add_unit(self, unit): pass
+
+    class DummyGalaxy:
+        systems = {"Sol": DummySystem()}
+
+    class DummyUnit:
+        game = None
+        name = "Builder"
+
+    builder_unit = DummyUnit()
+    constructor = Constructor(builder_unit, hull_cost=15)
+    galaxy = DummyGalaxy()
+    owner = DummyOwner()
+
+    mgr = CustomTemplateManager(data_file=tmp_path / "designs.json")
+    comp = ComponentConfig(
+        has_engine=True,
+        engine_speed=100.0,
+        has_antimatter_storage=True,
+        antimatter_capacity=250.0,
+    )
+    template = CustomUnitTemplate(
+        display_name="AM Build Test",
+        hull_size=HullSize.MEDIUM,
+        components=comp,
+    )
+    mgr.save_design(template)
+
+    # Catch added unit
+    created_units = []
+    galaxy.systems["Sol"].add_unit = lambda u: created_units.append(u)
+
+    constructor.create_unit_from_template(
+        galaxy, "AM Build Test", owner, "Sol", (0, 0), Position(0, 0)
+    )
+
+    assert len(created_units) == 1
+    u = created_units[0]
+    am_comp = u.antimatter_component
+    assert am_comp is not None
+    assert am_comp.max_capacity == 250.0
+    assert am_comp.hull_cost == 12.5
+
+
+def test_create_unit_from_template_disabled_antimatter(tmp_path):
+
+    class DummyOwner:
+        id = 1
+
+    class DummySystem:
+        name = "Sol"
+        def add_unit(self, unit): pass
+
+    class DummyGalaxy:
+        systems = {"Sol": DummySystem()}
+
+    class DummyUnit:
+        game = None
+        name = "Builder"
+
+    builder_unit = DummyUnit()
+    constructor = Constructor(builder_unit, hull_cost=15)
+    galaxy = DummyGalaxy()
+    owner = DummyOwner()
+
+    mgr = CustomTemplateManager(data_file=tmp_path / "designs.json")
+    comp = ComponentConfig(
+        has_engine=True,
+        engine_speed=100.0,
+        has_antimatter_storage=False,
+    )
+    template = CustomUnitTemplate(
+        display_name="No AM Test",
+        hull_size=HullSize.MEDIUM,
+        components=comp,
+    )
+    mgr.save_design(template)
+
+    created_units = []
+    galaxy.systems["Sol"].add_unit = lambda u: created_units.append(u)
+
+    constructor.create_unit_from_template(
+        galaxy, "No AM Test", owner, "Sol", (0, 0), Position(0, 0)
+    )
+
+    assert len(created_units) == 1
+    u = created_units[0]
+    assert u.antimatter_component is None

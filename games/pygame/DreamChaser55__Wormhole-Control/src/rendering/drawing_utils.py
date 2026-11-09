@@ -1,0 +1,182 @@
+import pygame
+import math
+from pygame import Color
+from geometry import Position
+from constants import SELECTION_HIGHLIGHT_COLOR
+
+UNIT_ICON_INTERIOR_DARKEN_FACTOR = 0.35
+
+
+def darken_color(color, factor: float = UNIT_ICON_INTERIOR_DARKEN_FACTOR):
+    """Scale RGB channels of a color by factor while preserving any alpha channel."""
+    r = max(0, min(255, round(color[0] * factor)))
+    g = max(0, min(255, round(color[1] * factor)))
+    b = max(0, min(255, round(color[2] * factor)))
+    if len(color) >= 4:
+        return (r, g, b, color[3])
+    return (r, g, b)
+
+
+def selection_color_for(obj, game=None):
+    """Blend the current owner's color 20% toward white; keep unowned objects white."""
+    owner = getattr(obj, 'owner', None)
+    from planetary_intel import is_colony_body, displayed_owner, presentation_view
+    if is_colony_body(obj):
+        owner = displayed_owner(game, obj) if game is not None else None
+        if owner is not None and presentation_view(game, obj).status == 'last_known':
+            return tuple(round(c * 0.55) for c in owner.color)
+    if owner is None:
+        return SELECTION_HIGHLIGHT_COLOR
+    return tuple(round(c + (255 - c) * 0.20) for c in owner.color)
+
+
+def draw_selection_brackets(surface, color, rect):
+    """Draw four open corners around a screen-space rectangle, without rounding bounds."""
+    left, top, width, height = rect
+    right, bottom = left + width, top + height
+    dx, dy = width * 0.25, height * 0.25
+    for x, y, arm_x, arm_y in (
+        (left, top, dx, dy),
+        (right, top, -dx, dy),
+        (left, bottom, dx, -dy),
+        (right, bottom, -dx, -dy),
+    ):
+        pygame.draw.lines(surface, color, False,
+                          [(x + arm_x, y), (x, y), (x, y + arm_y)], 2)
+
+
+def draw_dotted_line(surface: pygame.Surface, color: Color, start, end, width: int = 1,
+                     dot_len: int = 6, gap_len: int = 12):
+    """Draw a dotted (dashed) line from start to end.
+
+    Args:
+        surface: Pygame surface to draw on.
+        color:   Line colour.
+        start:   (x, y) or Position-like start point.
+        end:     (x, y) or Position-like end point.
+        width:   Line width in pixels.
+        dot_len: Length of each drawn dash in pixels.
+        gap_len: Length of each gap between dashes in pixels.
+    """
+    sx = start[0] if not isinstance(start, Position) else start.x
+    sy = start[1] if not isinstance(start, Position) else start.y
+    ex = end[0] if not isinstance(end, Position) else end.x
+    ey = end[1] if not isinstance(end, Position) else end.y
+
+    dx = ex - sx
+    dy = ey - sy
+    total_len = math.sqrt(dx * dx + dy * dy)
+    if total_len == 0:
+        return
+
+    ux = dx / total_len
+    uy = dy / total_len
+
+    pos = 0.0
+    drawing = True  # start with a drawn segment
+    while pos < total_len:
+        segment = dot_len if drawing else gap_len
+        segment = min(segment, total_len - pos)
+        if drawing:
+            x1 = sx + ux * pos
+            y1 = sy + uy * pos
+            x2 = sx + ux * (pos + segment)
+            y2 = sy + uy * (pos + segment)
+            pygame.draw.line(surface, color, (x1, y1), (x2, y2), width)
+        pos += segment
+        drawing = not drawing
+
+def station_icon_rect(center_pos: 'Position', radius: float) -> pygame.Rect:
+    """Rasterize a station square matching the triangle's 1.6-radius span."""
+    half_size = 0.8 * radius
+    side = max(1, round(2 * half_size))
+    return pygame.Rect(round(center_pos.x - side / 2),
+                       round(center_pos.y - side / 2), side, side)
+
+
+def draw_shape(surface: pygame.Surface, shape_type: str, color: Color, center_pos: 'Position', radius: float):
+    """Helper function to draw different shapes with a darker interior and full-color outline."""
+    draw_radius = int(max(1, radius))
+    interior_color = darken_color(color)
+
+    if shape_type == 'circle':
+        pygame.draw.circle(surface, interior_color, (center_pos.x, center_pos.y), draw_radius)
+    elif shape_type == 'square':
+        pygame.draw.rect(surface, interior_color, station_icon_rect(center_pos, radius))
+    elif shape_type == 'strikecraft_wing':
+        cx, cy = center_pos.x, center_pos.y
+        r = draw_radius
+        
+        # Define the vertices of the three smaller triangles arranged into a triangle
+        t1_p1 = (cx, cy - r)
+        t1_p2 = (cx - int(r * 0.4), cy - int(r * 0.2))
+        t1_p3 = (cx + int(r * 0.4), cy - int(r * 0.2))
+        
+        t2_p1 = (cx - int(r * 0.4), cy - int(r * 0.2))
+        t2_p2 = (cx - int(r * 0.8), cy + int(r * 0.6))
+        t2_p3 = (cx, cy + int(r * 0.6))
+        
+        t3_p1 = (cx + int(r * 0.4), cy - int(r * 0.2))
+        t3_p2 = (cx, cy + int(r * 0.6))
+        t3_p3 = (cx + int(r * 0.8), cy + int(r * 0.6))
+        
+        pygame.draw.polygon(surface, interior_color, [t1_p1, t1_p2, t1_p3])
+        pygame.draw.polygon(surface, interior_color, [t2_p1, t2_p2, t2_p3])
+        pygame.draw.polygon(surface, interior_color, [t3_p1, t3_p2, t3_p3])
+    elif shape_type == 'triangle':
+        p1 = (center_pos.x, center_pos.y - draw_radius) 
+        p2 = (center_pos.x - int(draw_radius * 0.8), center_pos.y + int(draw_radius * 0.6)) 
+        p3 = (center_pos.x + int(draw_radius * 0.8), center_pos.y + int(draw_radius * 0.6)) 
+        pygame.draw.polygon(surface, interior_color, [p1, p2, p3])
+    else:
+        pygame.draw.circle(surface, interior_color, (center_pos.x, center_pos.y), draw_radius)
+
+    draw_wireframe_shape(surface, shape_type, color, center_pos, radius, width=1)
+
+
+def draw_wireframe_shape(surface: pygame.Surface, shape_type: str, color: Color, center_pos: 'Position', radius: float, width: int = 1):
+    """Draws an unfilled outline/wireframe shape for holographic or under-construction markers."""
+    draw_radius = int(max(1, radius))
+
+    if shape_type == 'circle':
+        pygame.draw.circle(surface, color, (center_pos.x, center_pos.y), draw_radius, width)
+    elif shape_type == 'square':
+        pygame.draw.rect(surface, color, station_icon_rect(center_pos, radius), width)
+    elif shape_type == 'strikecraft_wing':
+        cx, cy = center_pos.x, center_pos.y
+        r = draw_radius
+        t1 = [(cx, cy - r), (cx - int(r * 0.4), cy - int(r * 0.2)), (cx + int(r * 0.4), cy - int(r * 0.2))]
+        t2 = [(cx - int(r * 0.4), cy - int(r * 0.2)), (cx - int(r * 0.8), cy + int(r * 0.6)), (cx, cy + int(r * 0.6))]
+        t3 = [(cx + int(r * 0.4), cy - int(r * 0.2)), (cx, cy + int(r * 0.6)), (cx + int(r * 0.8), cy + int(r * 0.6))]
+        pygame.draw.polygon(surface, color, t1, width)
+        pygame.draw.polygon(surface, color, t2, width)
+        pygame.draw.polygon(surface, color, t3, width)
+    elif shape_type == 'triangle':
+        p1 = (center_pos.x, center_pos.y - draw_radius)
+        p2 = (center_pos.x - int(draw_radius * 0.8), center_pos.y + int(draw_radius * 0.6))
+        p3 = (center_pos.x + int(draw_radius * 0.8), center_pos.y + int(draw_radius * 0.6))
+        pygame.draw.polygon(surface, color, [p1, p2, p3], width)
+    else:
+        pygame.draw.circle(surface, color, (center_pos.x, center_pos.y), draw_radius, width)
+
+
+def draw_scaffold_brackets(surface: pygame.Surface, color: Color, center_pos: 'Position', radius: float, inflate: int = 6):
+    """Draws technical L-brackets at the corners of a construction scaffold bounding box."""
+    rect = station_icon_rect(center_pos, radius).inflate(inflate, inflate)
+    left, top, width, height = rect.x, rect.y, rect.width, rect.height
+    arm_len = max(2, min(width, height) // 4)
+    # 4 corners
+    # Top-left
+    pygame.draw.line(surface, color, (left, top), (left + arm_len, top), 1)
+    pygame.draw.line(surface, color, (left, top), (left, top + arm_len), 1)
+    # Top-right
+    right = left + width
+    pygame.draw.line(surface, color, (right, top), (right - arm_len, top), 1)
+    pygame.draw.line(surface, color, (right, top), (right, top + arm_len), 1)
+    # Bottom-left
+    bottom = top + height
+    pygame.draw.line(surface, color, (left, bottom), (left + arm_len, bottom), 1)
+    pygame.draw.line(surface, color, (left, bottom), (left, bottom - arm_len), 1)
+    # Bottom-right
+    pygame.draw.line(surface, color, (right, bottom), (right - arm_len, bottom), 1)
+    pygame.draw.line(surface, color, (right, bottom), (right, bottom - arm_len), 1)

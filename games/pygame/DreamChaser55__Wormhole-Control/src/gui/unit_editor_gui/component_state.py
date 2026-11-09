@@ -1,0 +1,273 @@
+"""
+component_state.py
+
+Component selection, component/ability toggles, toggle label updates,
+and hull restriction enforcement.
+"""
+
+from constants import HullSize
+from gui.equipment_input import INPUT_FIELDS
+from .param_readers import read_all
+from custom_unit_templates import (
+    HULL_RESTRICTIONS,
+    ADVANCED_HYPERDRIVE_MIN_HULL,
+    ADVANCED_CLOAKING_MIN_HULL,
+    get_ability_required_components,
+)
+from .catalog import COMPONENT_ROWS, HYPERDRIVE_TYPES, CLOAKING_TYPES, ability_button_text
+from .widget_factory import replace_dropdown, set_wrapped_button_text
+from .turret_editor import rebuild_turret_list, hide_turret_list
+
+
+def toggle_component(editor, key: str) -> None:
+    """Toggles enabling or disabling a component while verifying hull size restrictions.
+
+    Args:
+        editor: UnitEditorWindow instance.
+        key (str): Attribute key corresponding to the target component (e.g., 'has_engine').
+    """
+    current = getattr(editor._comp, key, False)
+    # Check restrictions before enabling
+    if not current:
+        restricted = HULL_RESTRICTIONS.get(editor._hull_size, set())
+        if key in restricted:
+            editor._set_status(f"⚠ {key} not allowed on {editor._hull_size.name} hull.", error=True)
+            return
+    if key == "has_titan_component" and current:
+        from titan_balance import TITAN_ABILITIES
+        if set(editor._comp.abilities) & TITAN_ABILITIES:
+            editor._set_status("Remove Titan abilities before removing the Titan Core.", error=True)
+            return
+    setattr(editor._comp, key, not current)
+    read_all(editor)
+    refresh_hull_controls(editor)
+    update_component_toggle_labels(editor)
+    update_ability_toggle_labels(editor)
+    editor._sync_dynamic_costs()
+    editor._update_capacity_label()
+    editor._update_summary()
+
+
+def toggle_ability(editor, aname: str) -> None:
+    """Toggles selection of a special ability after verifying required component prerequisites.
+
+    Args:
+        editor: UnitEditorWindow instance.
+        aname (str): Name identifier of the ability to toggle.
+    """
+    req_keys = get_ability_required_components(aname)
+    comp_labels = {row["key"]: row["label"] for row in COMPONENT_ROWS}
+    missing = [k for k in req_keys if not getattr(editor._comp, k, False)]
+    if missing and aname not in editor._selected_abilities:
+        req_names = ", ".join(comp_labels.get(k, k) for k in missing)
+        editor._set_status(f"⚠ '{aname.replace('_', ' ').title()}' requires component: {req_names}.", error=True)
+        return
+
+    if aname in editor._selected_abilities:
+        editor._selected_abilities.remove(aname)
+    else:
+        editor._selected_abilities.add(aname)
+    editor._comp.abilities = list(editor._selected_abilities)
+    update_ability_toggle_labels(editor)
+    editor._sync_dynamic_costs()
+    editor._update_capacity_label()
+    editor._update_summary()
+
+
+def update_component_toggle_labels(editor) -> None:
+    """Refreshes component toggle button text labels."""
+    c = editor._comp
+    for row in COMPONENT_ROWS:
+        key = row["key"]
+        label = row["label"]
+        enabled = getattr(c, key, False)
+        btn = editor._comp_toggles.get(key)
+        if btn:
+            set_wrapped_button_text(btn, f"[x] {label}" if enabled else f"[ ] {label}",
+                                    editor._comp_help_buttons[key].relative_rect.height)
+    # Wrapping can change when the selection marker changes; keep each row intact.
+    y = 0
+    for key, btn in editor._comp_toggles.items():
+        widgets = [btn, editor._comp_help_buttons[key], editor._comp_cost_labels[key],
+                   editor._comp_select_btns[key]]
+        height = max(widget.relative_rect.height for widget in widgets)
+        for widget in widgets:
+            widget.set_relative_position((widget.relative_rect.x, y))
+        y += height + 3
+    if editor._comp_scroll_container:
+        width = max(btn.relative_rect.right for btn in editor._comp_select_btns.values())
+        editor._comp_scroll_container.set_scrollable_area_dimensions((width, y))
+
+
+def update_ability_toggle_labels(editor) -> None:
+    """Refreshes ability toggle button text labels and enabled states."""
+    c = editor._comp
+    y = 0
+    for aname, btn in editor._ability_buttons.items():
+        req_keys = get_ability_required_components(aname)
+        missing = [k for k in req_keys if not getattr(c, k, False)]
+        if aname in ('tracking_lock', 'flak_barrage') and not any(
+                getattr(t.variant, 'name', str(t.variant)).upper() == 'ANTI_STRIKECRAFT' for t in c.turrets):
+            missing.append('anti-strikecraft turret')
+        if missing:
+            if aname in editor._selected_abilities:
+                editor._selected_abilities.remove(aname)
+                editor._comp.abilities = list(editor._selected_abilities)
+            btn.disable()
+        else:
+            btn.enable()
+        set_wrapped_button_text(btn, ability_button_text(aname, aname in editor._selected_abilities, missing),
+                                editor._ability_help_buttons[aname].relative_rect.height)
+        # Dynamic-height buttons wrap within the column; reflow when requirements change.
+        btn.set_relative_position((0, y))
+        help_btn = editor._ability_help_buttons[aname]
+        gap = max(2, int(2 * editor.display_config.text_scale))
+        help_btn.set_relative_position((btn.relative_rect.right + gap, y))
+        y += max(btn.relative_rect.height, help_btn.relative_rect.height) + 3
+    if editor._ability_scroll_container:
+        width = next(iter(editor._ability_help_buttons.values())).relative_rect.right
+        editor._ability_scroll_container.set_scrollable_area_dimensions((width, y))
+
+
+def on_hull_changed(editor, hull_name: str) -> None:
+    """Handles hull size dropdown changes."""
+    try:
+        editor._hull_size = HullSize[hull_name]
+    except KeyError:
+        return
+    apply_hull_restrictions(editor)
+    update_component_toggle_labels(editor)
+    editor._sync_dynamic_costs()
+    editor._update_capacity_label()
+    editor._update_summary()
+
+
+def select_component(editor, key: str) -> None:
+    """Set the active component and update detail panel displays."""
+    editor._selected_component_key = key
+    for k, btn in editor._comp_select_btns.items():
+        btn.set_text("▶▶▶" if k == key else ">>>")
+    refresh_component_details(editor)
+
+
+def refresh_component_details(editor) -> None:
+    """Refresh visibility of component detail widgets based on selected component."""
+    key = editor._selected_component_key
+    row_label = "Component Details"
+    for r in COMPONENT_ROWS:
+        if r["key"] == key:
+            row_label = f"Details: {r['label']}"
+            break
+    if editor._details_hdr:
+        editor._details_hdr.set_text(row_label)
+
+    for g_key, group in editor._details_groups.items():
+        if g_key == key:
+            for elem in group:
+                elem.show()
+        else:
+            for elem in group:
+                elem.hide()
+
+    if key == "has_weapon_bays":
+        rebuild_turret_list(editor)
+    else:
+        hide_turret_list(editor)
+
+    if key == "has_ability_component":
+        update_ability_toggle_labels(editor)
+
+
+def apply_hull_restrictions(editor) -> None:
+    """Disable forbidden components for the current hull size."""
+    restricted = HULL_RESTRICTIONS.get(editor._hull_size, set())
+    for key in restricted:
+        setattr(editor._comp, key, False)
+    if editor._hull_size == HullSize.STRIKECRAFT_WING:
+        editor._comp.sensor_long_range_hexes = 0
+        entry = getattr(editor, "_sensor_long_range_entry", None)
+        if entry:
+            entry.set_text("0")
+    refresh_hull_controls(editor)
+    # Advanced hyperdrive restriction
+    hull_sizes = list(HullSize)
+    min_idx = hull_sizes.index(ADVANCED_HYPERDRIVE_MIN_HULL)
+    if hull_sizes.index(editor._hull_size) < min_idx:
+        if editor._comp.hyperdrive_type == "ADVANCED":
+            editor._comp.hyperdrive_type = "BASIC"
+            if editor._hd_type_dropdown:
+                editor._hd_type_dropdown = replace_dropdown(
+                    editor,
+                    editor._hd_type_dropdown,
+                    HYPERDRIVE_TYPES,
+                    "BASIC",
+                    "#hd_type_dropdown",
+                    group_key="has_hyperdrive",
+                )
+
+    # Advanced cloaking restriction
+    min_clk_idx = hull_sizes.index(ADVANCED_CLOAKING_MIN_HULL)
+    if hull_sizes.index(editor._hull_size) < min_clk_idx:
+        if getattr(editor._comp, "cloaking_type", "BASIC") == "ADVANCED":
+            editor._comp.cloaking_type = "BASIC"
+            if getattr(editor, "_cloaking_type_dropdown", None):
+                editor._cloaking_type_dropdown = replace_dropdown(
+                    editor,
+                    editor._cloaking_type_dropdown,
+                    CLOAKING_TYPES,
+                    "BASIC",
+                    "#cloaking_type_dropdown",
+                    group_key="has_cloaking_device",
+                )
+
+
+    # Wing type show/hide & enable/disable
+    if editor._wt_dropdown and editor._wt_lbl:
+        if editor._hull_size == HullSize.STRIKECRAFT_WING:
+            editor._wt_dropdown.enable()
+            if editor._selected_component_key == "has_strikecraft_bay":
+                editor._wt_lbl.show()
+                editor._wt_dropdown.show()
+        else:
+            editor._wt_dropdown.disable()
+            editor._wt_lbl.hide()
+            editor._wt_dropdown.hide()
+
+    read_all(editor)
+    refresh_hull_controls(editor)
+
+    update_component_toggle_labels(editor)
+    editor._sync_dynamic_costs()
+    editor._update_capacity_label()
+
+
+def refresh_hull_controls(editor) -> None:
+    """Refresh hull-dependent controls without changing the loaded design."""
+    restricted = HULL_RESTRICTIONS.get(editor._hull_size, set())
+    for row in COMPONENT_ROWS:
+        key = row["key"]
+        btn = editor._comp_toggles.get(key)
+        sbtn = editor._comp_select_btns.get(key)
+        if key in restricted:
+            if btn:
+                btn.disable()
+            if sbtn:
+                has_error = any(INPUT_FIELDS[field].component == key
+                                for field in getattr(editor, '_field_errors', {})
+                                if field in INPUT_FIELDS)
+                sbtn.enable() if has_error else sbtn.disable()
+        else:
+            if btn:
+                btn.enable()
+            if sbtn:
+                sbtn.enable()
+    wing = editor._hull_size == HullSize.STRIKECRAFT_WING
+    entry = getattr(editor, "_sensor_long_range_entry", None)
+    if wing:
+        if entry:
+            entry.disable()
+    elif entry:
+        entry.enable()
+    label = getattr(editor, "_sensor_long_range_label", None)
+    if label:
+        label.set_text("Intra-sector only" if wing else "Long-Range (hexes):")

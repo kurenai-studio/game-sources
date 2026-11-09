@@ -1,0 +1,144 @@
+import logging
+from game_logging import format_unit_for_log
+from typing import TYPE_CHECKING
+import dataclasses
+
+from campaign_graph import sync_docked_sector
+from .base import UnitComponent
+from geometry import Position
+from constants import HullSize, HANGAR_HULL_COST_PER_SLOT
+from deployment_placement import find_deployment_position
+
+if TYPE_CHECKING:
+    from domain.units import Unit
+    from galaxy import Galaxy
+    from game import Game
+
+logger = logging.getLogger(__name__)
+
+class HangarComponent(UnitComponent):
+    """A component that allows a unit to store and transport smaller units."""
+    STATE_CONFIG = ('max_slots',)
+    STATE_RUNTIME = ()
+    STATE_REFS = ()
+    STATE_CHILDREN = ("docked_units",)
+    DISPLAY_NAME: str = "Hangar"
+    SIDEBAR_ORDER: int = 11
+    max_slots: int = 0
+    docked_units: list['Unit'] = dataclasses.field(default_factory=list)
+
+    def __init__(self, unit: 'Unit', max_slots: int = 0, hull_cost: float = 0.0):
+        super().__init__(unit, hull_cost=hull_cost)
+        self.max_slots = max_slots
+        self.docked_units = []
+
+    @staticmethod
+    def calc_hull_cost(slots: int) -> float:
+        """Compute the hull cost of a Hangar component from hangar_slots."""
+        if slots <= 0:
+            return 0.0
+        return float(slots * HANGAR_HULL_COST_PER_SLOT)
+
+    def get_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_sidebar_data(game_state)
+        used_slots = self.get_used_slots()
+        data.append({'type': 'label', 'text': f"Capacity: {used_slots} / {self.max_slots} slots", 'object_id': '#sidebar_info_label', 'height': 20})
+        data.append({'type': 'label', 'text': "Docked Ships:", 'object_id': '#sidebar_section_header_label', 'height': 24})
+        if not self.docked_units:
+            data.append({'type': 'label', 'text': "  None", 'object_id': '#sidebar_info_label', 'height': 20})
+        else:
+            for docked_ship in self.docked_units:
+                size_slots = 1 if docked_ship.hull_size == HullSize.TINY else 2
+                ship_label = f"  - {docked_ship.name} ({size_slots} slot)" if size_slots == 1 else f"  - {docked_ship.name} ({size_slots} slots)"
+                data.append({'type': 'label', 'text': ship_label, 'object_id': '#sidebar_info_label', 'height': 20})
+                data.append({
+                    'type': 'button',
+                    'text': f"Deploy {docked_ship.name}",
+                    'object_id': '#sidebar_expand_button',
+                    'action_id': 'deploy_ship',
+                    'target_data': (self.unit.id, docked_ship.id),
+                    'height': 25
+                })
+        return data
+
+    def get_basic_sidebar_data(self, game_state: 'Game') -> list[dict]:
+        data = super().get_basic_sidebar_data(game_state)
+        if self.is_destroyed:
+            return data
+        used_slots = self.get_used_slots()
+        data.append({
+            'type': 'label',
+            'text': f"• Docked Ships: {len(self.docked_units)} ({used_slots}/{self.max_slots} slots)",
+            'object_id': '#sidebar_value_label',
+            'height': 18,
+            'indent_level': 1
+        })
+        return data
+
+
+    def get_used_slots(self) -> int:
+        slots = 0
+        for u in self.docked_units:
+            if u.hull_size == HullSize.TINY:
+                slots += 1
+            elif u.hull_size == HullSize.SMALL:
+                slots += 2
+        return slots
+
+    def can_dock(self, unit: 'Unit') -> bool:
+        from dismantling import offline
+        if offline(self.unit) or offline(unit):
+            return False
+        if unit.hull_size != HullSize.TINY:
+            return False
+        needed = 1
+        return self.get_used_slots() + needed <= self.max_slots
+
+    def dock(self, unit: 'Unit', galaxy_ref: 'Galaxy', *, on_docked=None) -> bool:
+        if not self.can_dock(unit):
+            return False
+        
+        # Remove from system
+        if unit.in_system and unit.in_hex is not None:
+            system = galaxy_ref.systems.get(unit.in_system)
+            if system:
+                system.remove_unit(unit)
+        
+        unit.in_system = self.unit.in_system
+        unit.in_hex = self.unit.in_hex
+        unit.position = Position(self.unit.position.x, self.unit.position.y)
+        sync_docked_sector(unit)
+        
+        self.docked_units.append(unit)
+        from environmental_resistance import deactivate
+        deactivate(unit)
+        from wormhole_stabilization import interrupt
+        interrupt(unit)
+        if on_docked is not None:
+            on_docked()
+        if unit.commander_component:
+            unit.commander_component.clear_explicit_orders()
+            unit.commander_component.suspend_stance_activity("docked")
+            
+        logger.debug(f"Unit {format_unit_for_log(unit)} docked into carrier {format_unit_for_log(self.unit)}.")
+        return True
+
+    def deploy(self, unit: 'Unit', galaxy_ref: 'Galaxy') -> bool:
+        """Place a docked craft safely; failed searches leave all membership intact."""
+        from dismantling import offline
+        if offline(self.unit) or offline(unit):
+            return False
+        if unit not in self.docked_units:
+            return False
+        
+        position = find_deployment_position(self.unit, unit, galaxy_ref)
+        if position is None:
+            return False
+        unit.in_system = self.unit.in_system
+        unit.in_hex = self.unit.in_hex
+        unit.position = position
+        galaxy_ref.systems[unit.in_system].add_unit(unit)
+            
+        self.docked_units.remove(unit)
+        logger.debug(f"Unit {format_unit_for_log(unit)} deployed from carrier {format_unit_for_log(self.unit)}.")
+        return True

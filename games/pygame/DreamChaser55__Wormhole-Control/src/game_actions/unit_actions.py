@@ -1,0 +1,556 @@
+"""GUI action handlers for unit commands, stances, abilities, and carrier wing deployment."""
+from tactical_ui import handle_action as handle_tactical_action
+import logging
+from game_logging import format_unit_for_log
+import pygame
+import typing
+
+from domain.units import Unit
+from events import CancelOrdersEvent, LayMinefieldEvent, UseAbilityEvent, EnterGasGiantEvent, LeaveGasGiantEvent
+from geometry import distance, hex_distance
+from pathfinding import find_intersystem_path
+from unit_components.enums import UnitStance
+from unit_orders.hangar import DeployAllWingsOrder, DeployUnitOrder, DockOrder
+from unit_orders.mining import UnloadResourcesOrder
+from unit_orders.inhibitor import ToggleInhibitorOrder
+
+logger = logging.getLogger(__name__)
+
+
+
+def handle_deploy_ship(game, action: dict) -> None:
+    carrier_id = action.get('carrier_id')
+    docked_unit_id = action.get('docked_unit_id')
+    carrier = game.galaxy.get_unit_by_id(carrier_id) if game.galaxy else None
+    if carrier and (carrier.hangar_component or carrier.strikecraft_bay_component):
+        current_player = game.players[game.current_player_index] if game.players else None
+        if carrier.owner == current_player:
+            from domain.celestials import is_position_in_magnetic_storm, is_position_blocked_by_celestial_field
+            from constants import HullSize
+            is_strikecraft = any(u.id == docked_unit_id for u in getattr(carrier.strikecraft_bay_component, 'docked_units', []) if getattr(u, 'hull_size', None) == HullSize.STRIKECRAFT_WING)
+            if is_strikecraft and is_position_in_magnetic_storm(game.galaxy, carrier.in_system, carrier.in_hex, carrier.position):
+                if getattr(game, 'gui', None):
+                    game.gui.show_warning_dialog(
+                        "Cannot launch strikecraft wings inside a magnetic storm.",
+                        title="Magnetic Storm Hazard"
+                    )
+                game.sidebar_needs_update = True
+                return
+            docked_unit = None
+            for comp_name in ('hangar_component', 'strikecraft_bay_component'):
+                comp = getattr(carrier, comp_name, None)
+                if comp:
+                    for u in getattr(comp, 'docked_units', []):
+                        if u.id == docked_unit_id:
+                            docked_unit = u
+                            break
+            if docked_unit and is_position_blocked_by_celestial_field(game.galaxy, carrier.in_system, carrier.in_hex, carrier.position, docked_unit):
+                if getattr(game, 'gui', None):
+                    game.gui.show_warning_dialog(
+                        f"Cannot deploy unit <b>{docked_unit.name}</b> ({docked_unit.hull_size.name}) inside an impassable dense celestial field.",
+                        title="Field Density Restriction"
+                    )
+                game.sidebar_needs_update = True
+                return
+            deploy_order = DeployUnitOrder(carrier, {"docked_unit_id": docked_unit_id})
+            if carrier.commander_component:
+                carrier.commander_component.add_order(deploy_order)
+                logger.debug(f"Issued DEPLOY_UNIT order for carrier {format_unit_for_log(carrier)} (docked unit ID: {docked_unit_id}).")
+    game.sidebar_needs_update = True
+
+
+def handle_launch_all_wings(game, action: dict) -> None:
+    carrier_id = action.get('carrier_id')
+    carrier = game.galaxy.get_unit_by_id(carrier_id) if game.galaxy else None
+    if carrier and carrier.strikecraft_bay_component:
+        current_player = game.players[game.current_player_index] if game.players else None
+        if carrier.owner == current_player:
+            from domain.celestials import is_position_in_magnetic_storm
+            if is_position_in_magnetic_storm(game.galaxy, carrier.in_system, carrier.in_hex, carrier.position):
+                if getattr(game, 'gui', None):
+                    game.gui.show_warning_dialog(
+                        "Cannot launch strikecraft wings inside a magnetic storm.",
+                        title="Magnetic Storm Hazard"
+                    )
+                game.sidebar_needs_update = True
+                return
+            deploy_order = DeployAllWingsOrder(carrier)
+            if carrier.commander_component:
+                carrier.commander_component.add_order(deploy_order)
+                logger.debug(f"Issued DEPLOY_ALL_WINGS order for carrier {format_unit_for_log(carrier)}.")
+    game.sidebar_needs_update = True
+
+
+def handle_recall_ship(game, action: dict) -> None:
+    carrier_id = action.get('carrier_id')
+    launched_unit_id = action.get('launched_unit_id')
+    carrier = game.galaxy.get_unit_by_id(carrier_id) if game.galaxy else None
+    launched_unit = game.galaxy.get_unit_by_id(launched_unit_id) if game.galaxy else None
+    if carrier and launched_unit and carrier.strikecraft_bay_component:
+        current_player = game.players[game.current_player_index] if game.players else None
+        if carrier.owner == current_player:
+            dock_order = DockOrder(launched_unit, {"target_carrier_id": carrier.id})
+            if launched_unit.commander_component:
+                launched_unit.commander_component.add_order(dock_order)
+                logger.debug(f"Issued DOCK order for launched wing {format_unit_for_log(launched_unit)} to dock to carrier {format_unit_for_log(carrier)}.")
+    game.sidebar_needs_update = True
+
+
+def handle_select_wing_production(game, action: dict) -> None:
+    carrier_id = action.get('carrier_id')
+    carrier = game.galaxy.get_unit_by_id(carrier_id) if game.galaxy else None
+    if carrier and carrier.strikecraft_bay_component:
+        current_player = game.players[game.current_player_index] if game.players else None
+        if carrier.owner == current_player:
+            bay = carrier.strikecraft_bay_component
+            slot_index = action.get('slot_index')
+            if type(slot_index) is int and 0 <= slot_index < bay.max_slots and bay.production_blocker(slot_index) is None:
+                from gui.wing_production_window import WingProductionWindow
+                existing = getattr(game.gui, 'wing_production_window', None)
+                if existing:
+                    existing.close()
+                game.gui.wing_production_window = WingProductionWindow(game.gui, carrier, slot_index)
+    game.sidebar_needs_update = True
+
+
+def _iter_friendly_refineries(galaxy, unit: Unit) -> list:
+    """Helper to collect all friendly refineries across galaxy star systems."""
+    friendly_refineries = []
+    for system in galaxy.systems.values():
+        for hex_obj in system.hexes.values():
+            for u in hex_obj.units:
+                if u.owner == unit.owner:
+                    if getattr(u, 'metal_refinery_component', None) is not None or \
+                       getattr(u, 'crystal_refinery_component', None) is not None:
+                        friendly_refineries.append(u)
+    return friendly_refineries
+
+
+def _refinery_distance(galaxy, unit: Unit, refinery: Unit) -> float:
+    """Helper to calculate sector/inter-system path distance from a unit to a refinery."""
+    if unit.in_system == refinery.in_system:
+        if unit.in_hex == refinery.in_hex:
+            return distance(unit.position, refinery.position)
+        else:
+            return hex_distance(unit.in_hex, refinery.in_hex) * 10000.0
+    else:
+        path = find_intersystem_path(galaxy.system_graph, unit.in_system, refinery.in_system, unit.hull_size)
+        if path is None:
+            return float('inf')
+        return (len(path) - 1) * 1000000.0 + hex_distance(unit.in_hex, refinery.in_hex) * 10000.0
+
+
+def handle_unload_resources_nearest(game, action: dict) -> None:
+    unit_id = action.get('unit_id')
+    shift_pressed = action.get('shift_pressed', False)
+    unit = game.galaxy.get_unit_by_id(unit_id) if game.galaxy else None
+    if unit and getattr(unit, 'mining_component', None) is not None:
+        mining_comp = unit.mining_component
+        if mining_comp.raw_metal_cargo <= 0 and mining_comp.raw_crystal_cargo <= 0:
+            if getattr(game, 'gui', None):
+                game.gui.show_warning_dialog(
+                    f"Unit <b>{unit.name}</b> has no raw metal or crystal cargo to unload.",
+                    title="Cargo Empty"
+                )
+            game.sidebar_needs_update = True
+            return
+
+        friendly_refineries = _iter_friendly_refineries(game.galaxy, unit)
+
+        nearest_metal = None
+        min_metal_dist = float('inf')
+        nearest_crystal = None
+        min_crystal_dist = float('inf')
+
+        for r in friendly_refineries:
+            dist = _refinery_distance(game.galaxy, unit, r)
+            if dist == float('inf'):
+                continue
+            if getattr(r, 'metal_refinery_component', None) is not None:
+                if dist < min_metal_dist:
+                    min_metal_dist = dist
+                    nearest_metal = r
+            if getattr(r, 'crystal_refinery_component', None) is not None:
+                if dist < min_crystal_dist:
+                    min_crystal_dist = dist
+                    nearest_crystal = r
+
+        orders_to_add = []
+        if mining_comp.raw_metal_cargo > 0 and nearest_metal is not None:
+            orders_to_add.append(UnloadResourcesOrder(unit, {"target_unit_id": nearest_metal.id}))
+        if mining_comp.raw_crystal_cargo > 0 and nearest_crystal is not None:
+            orders_to_add.append(UnloadResourcesOrder(unit, {"target_unit_id": nearest_crystal.id}))
+
+        if orders_to_add:
+            if not shift_pressed and unit.commander_component:
+                unit.commander_component.clear_explicit_orders()
+            for order in orders_to_add:
+                if unit.commander_component:
+                    unit.commander_component.add_order(order)
+                    logger.debug(f"Added UnloadResourcesOrder to unit {format_unit_for_log(unit)} queue targeting refinery ID {order.parameters['target_unit_id']}.")
+        else:
+            if getattr(game, 'gui', None):
+                game.gui.show_warning_dialog(
+                    f"No friendly operational refineries found in range to receive cargo from <b>{unit.name}</b>.",
+                    title="No Refinery Found"
+                )
+    game.sidebar_needs_update = True
+
+
+def handle_lay_minefield(game, action: dict) -> None:
+    action_type = action['action']
+    unit_id = action.get('unit_id')
+    shift_pressed = action.get('shift_pressed', False)
+    mtype = action.get('minefield_type', 'anti_strikecraft' if action_type == 'lay_minefield_anti_strikecraft' else 'anti_ship')
+    unit = game.galaxy.get_unit_by_id(unit_id) if game.galaxy else None
+    if unit:
+        game.event_bus.publish(LayMinefieldEvent(
+            units=[unit],
+            minefield_type=mtype,
+            shift_pressed=shift_pressed
+        ))
+        logger.debug(f"GUI: Lay Minefield ({mtype}) button pressed for unit {format_unit_for_log(unit)}.")
+    game.sidebar_needs_update = True
+
+
+def _issue_stance(game, unit, stance: UnitStance) -> None:
+    """Keep human selection and stale widget events on the shared command path."""
+    from game_ai.commands import CommandGateway
+    from game_ai.contracts import Command, CommandBatch
+    result = CommandGateway(game).apply_batch(
+        game.players[game.current_player_index],
+        CommandBatch((Command('set_stance', (unit.id,), stance=stance.value),)),
+    )
+    if not result.accepted and game.gui:
+        game.gui.show_warning_dialog(
+            '<br>'.join(error.message for error in result.errors), title="Invalid Stance"
+        )
+
+
+def handle_set_stance(game, action: dict) -> None:
+    unit_id = action.get('unit_id')
+    stance_display_name = action.get('stance_display_name')
+    unit = game.galaxy.get_unit_by_id(unit_id) if game.galaxy else None
+    current_player = game.players[game.current_player_index] if game.players else None
+    if unit and unit.commander_component and stance_display_name:
+        if unit.owner == current_player:
+            matching_stance = None
+            for stance in UnitStance:
+                if stance.display_name == stance_display_name:
+                    matching_stance = stance
+                    break
+            if matching_stance is not None:
+                _issue_stance(game, unit, matching_stance)
+            else:
+                logger.debug(f"Stance not found for display name: {stance_display_name}")
+    game.sidebar_needs_update = True
+
+
+def handle_cycle_stance(game, action: dict) -> None:
+    unit_id = action.get('unit_id')
+    unit = game.galaxy.get_unit_by_id(unit_id) if game.galaxy else None
+    current_player = game.players[game.current_player_index] if game.players else None
+    if unit and unit.commander_component:
+        if unit.owner == current_player:
+            allowed_stances = unit.commander_component.get_allowed_stances()
+            if allowed_stances:
+                current_stance = unit.commander_component.stance
+                if current_stance not in allowed_stances:
+                    current_stance = allowed_stances[0]
+                current_idx = allowed_stances.index(current_stance)
+                next_idx = (current_idx + 1) % len(allowed_stances)
+                _issue_stance(game, unit, allowed_stances[next_idx])
+    game.sidebar_needs_update = True
+
+
+def handle_rename_unit(game, action: dict) -> None:
+    from unit_naming import rename_unit
+    selected_units = [obj for obj in game.selected_objects if isinstance(obj, Unit)]
+    current_player = game.players[game.current_player_index] if game.players else None
+    if selected_units and isinstance(selected_units[0], Unit) and selected_units[0].owner == current_player:
+        unit_to_rename = selected_units[0]
+        try:
+            rename_unit(unit_to_rename, action.get('new_name', ''))
+        except ValueError:
+            logger.debug("Rename rejected: invalid unit name.")
+    game.sidebar_needs_update = True
+
+
+def handle_use_ability(game, action: dict) -> None:
+    ability_type_str = action.get('ability_type_str')
+    if ability_type_str == 'nebula_catalyst':
+        game.pending_catalyst_body_id = None
+    requires_unit = action.get('requires_target_unit', False)
+    requires_pos = action.get('requires_target_position', False) or ability_type_str == 'deep_scan'
+    selected_units = [u for u in game.selected_objects if isinstance(u, Unit)]
+    if selected_units and ability_type_str:
+        keys = pygame.key.get_pressed()
+        shift_pressed = bool(keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT])
+
+        if requires_unit or requires_pos:
+            game.pending_ability = (ability_type_str, requires_unit, requires_pos)
+            logger.debug(f"Ability {ability_type_str} awaiting target (unit={requires_unit}, pos={requires_pos}).")
+        else:
+            game.event_bus.publish(UseAbilityEvent(
+                units=selected_units,
+                ability_type_str=ability_type_str,
+                shift_pressed=shift_pressed,
+            ))
+            logger.debug(f"Fired self-targeted ability {ability_type_str} for {len(selected_units)} unit(s) (shift={shift_pressed}).")
+    game.sidebar_needs_update = True
+
+
+def handle_stop_unit(game, action: dict) -> None:
+    unit_id = action.get('unit_id')
+    unit = game.galaxy.get_unit_by_id(unit_id) if (game.galaxy and unit_id is not None) else None
+    current_player = game.players[game.current_player_index] if game.players else None
+    if unit and unit.owner == current_player:
+        game.event_bus.publish(CancelOrdersEvent([unit]))
+    game.sidebar_needs_update = True
+
+
+def handle_stop_selected_units(game, action: dict) -> None:
+    current_player = game.players[game.current_player_index] if game.players else None
+    units_to_stop = [
+        u for u in game.selected_objects
+        if isinstance(u, Unit) and u.owner == current_player and u.commander_component and u.commander_component.get_active_orders_count() > 0
+    ]
+    if units_to_stop:
+        game.event_bus.publish(CancelOrdersEvent(units_to_stop))
+    game.sidebar_needs_update = True
+
+
+def handle_toggle_inhibitor(game, action: dict) -> None:
+    """Toggles hyperspace inhibitor fields on all selected owned units.
+
+    Args:
+        game: Target game instance.
+        action (dict): Action payload containing the 'shift_pressed' queueing flag.
+    """
+    shift_pressed = action.get('shift_pressed', False)
+    for unit in game.selected_objects:
+        if isinstance(unit, Unit) and unit.inhibitor_component:
+            if shift_pressed:
+                turn_on = not unit.inhibitor_component.is_active
+                unit.commander_component.add_order(
+                    ToggleInhibitorOrder(unit, {'turn_on': turn_on}))
+                logger.debug(f"Queued TOGGLE_INHIBITOR order for {format_unit_for_log(unit)}.")
+            else:
+                success = unit.inhibitor_component.toggle(galaxy_ref=game.galaxy)
+                if success:
+                    logger.debug(f"Directly toggled inhibitor for {format_unit_for_log(unit)}.")
+                else:
+                    logger.debug(f"Direct inhibitor toggle failed for {format_unit_for_log(unit)}.")
+                    if getattr(game, 'gui', None):
+                        game.gui.show_warning_dialog(
+                            f"Failed to toggle Hyperspace Inhibitor Field on unit <b>{unit.name}</b>.",
+                            title="Toggle Failed"
+                        )
+    game.sidebar_needs_update = True
+
+
+def handle_toggle_cloaking(game, action: dict) -> None:
+    """Toggles cloaking device on all selected owned units.
+
+    Args:
+        game: Target game instance.
+        action (dict): Action payload containing the 'shift_pressed' queueing flag.
+    """
+    for unit in game.selected_objects:
+        if isinstance(unit, Unit) and unit.cloaking_component:
+            success = unit.cloaking_component.toggle()
+            if success:
+                logger.debug(f"Directly toggled cloaking for {format_unit_for_log(unit)}.")
+            else:
+                logger.debug(f"Direct cloaking toggle failed for {format_unit_for_log(unit)}.")
+                if getattr(game, 'gui', None):
+                    game.gui.show_warning_dialog(
+                        f"Failed to toggle Cloaking Device on unit <b>{unit.name}</b>.",
+                        title="Toggle Failed"
+                    )
+    game.sidebar_needs_update = True
+
+
+def handle_confirm_retrofit(game, action: dict) -> None:
+    from events import RefitUnitEvent
+    target_unit = action.get("target_unit")
+    constructor_units = action.get("constructor_units") or []
+    component_type = action.get("component_type")
+    component_config = action.get("component_config") or {}
+    cost_credits = action.get("cost_credits")
+    time_to_build = action.get("time_to_build")
+    shift_pressed = action.get("shift_pressed", False)
+
+    if target_unit and constructor_units:
+        from refit_validation import evaluate_refit
+        result = evaluate_refit(target_unit, 'ADD', component_type, component_config)
+        if result.errors:
+            if getattr(game, 'gui', None):
+                from html import escape
+                game.gui.show_warning_dialog('<br>'.join(escape(e) for e in result.errors), title='Invalid Retrofit')
+            return
+        component_config = result.configuration
+        cost_credits, time_to_build = result.cost_credits, result.duration
+        game.event_bus.publish(RefitUnitEvent(
+            units=constructor_units,
+            target_unit=target_unit,
+            action="ADD",
+            component_type=component_type,
+            component_config=component_config,
+            cost_credits=cost_credits,
+            time_to_build=time_to_build,
+            shift_pressed=shift_pressed,
+        ))
+    game.sidebar_needs_update = True
+
+
+def handle_ci_sweep(game, action: dict) -> None:
+    """Dispatches a Counter-Intelligence sweep event for the target unit or selected units.
+
+    Args:
+        game: Target game instance.
+        action (dict): Action payload containing 'unit_id' and optional 'shift_pressed'.
+    """
+    from events import CISweepEvent
+    unit_id = action.get('unit_id')
+    units = []
+    if unit_id is not None:
+        unit = game.galaxy.get_unit_by_id(unit_id) if game.galaxy else None
+        if unit:
+            units = [unit]
+    else:
+        units = [u for u in game.selected_objects if isinstance(u, Unit)]
+
+    if units:
+        game.event_bus.publish(CISweepEvent(
+            units=units,
+            shift_pressed=action.get('shift_pressed', False)
+        ))
+    game.sidebar_needs_update = True
+
+
+def handle_enter_gas_giant(game, action: dict) -> None:
+    gas_giant_id = action.get('gas_giant_id', action.get('target_data'))
+    gas_giant = game.galaxy.get_celestial_body_by_id(gas_giant_id) if game.galaxy and gas_giant_id is not None else None
+    if not gas_giant:
+        return
+
+    unit_id = action.get('unit_id')
+    if unit_id is not None:
+        unit = game.galaxy.get_unit_by_id(unit_id) if game.galaxy else None
+        units = [unit] if unit else []
+    else:
+        units = [u for u in game.selected_objects if isinstance(u, Unit)]
+
+    current_player = game.players[game.current_player_index] if game.players else None
+    valid_units = [u for u in units if u.owner == current_player]
+    if valid_units:
+        game.event_bus.publish(EnterGasGiantEvent(
+            units=valid_units,
+            gas_giant=gas_giant,
+            shift_pressed=action.get('shift_pressed', False)
+        ))
+    game.sidebar_needs_update = True
+
+
+def handle_order_unit_leave_gas_giant(game, action: dict) -> None:
+    unit_id = action.get('unit_id', action.get('target_data'))
+    unit = game.galaxy.get_unit_by_id(unit_id) if game.galaxy and unit_id is not None else None
+    current_player = game.players[game.current_player_index] if game.players else None
+    if unit and unit.owner == current_player:
+        game.event_bus.publish(LeaveGasGiantEvent(
+            units=[unit],
+            shift_pressed=action.get('shift_pressed', False)
+        ))
+    game.sidebar_needs_update = True
+
+
+def handle_order_all_leave_gas_giant(game, action: dict) -> None:
+    gas_giant_id = action.get('gas_giant_id', action.get('target_data'))
+    gas_giant = game.galaxy.get_celestial_body_by_id(gas_giant_id) if game.galaxy and gas_giant_id is not None else None
+    if not gas_giant:
+        return
+    current_player = game.players[game.current_player_index] if game.players else None
+    units = [u for u in getattr(gas_giant, 'hidden_units', []) if u.owner == current_player]
+    if units:
+        game.event_bus.publish(LeaveGasGiantEvent(
+            units=units,
+            shift_pressed=action.get('shift_pressed', False)
+        ))
+    game.sidebar_needs_update = True
+
+
+def handle_planetary_upgrade(game, action):
+    from tactical_ui import issue
+    issue(game, {"type": "upgrade_planetary_defenses", "unit_ids": [], "target_id": action["target_data"], "queue": False})
+
+
+def handle_select_constructor_unit(game, action: dict) -> None:
+    unit_id = action.get('target_data') or action.get('unit_id')
+    if unit_id is not None and getattr(game, 'galaxy', None):
+        unit = game.galaxy.get_unit_by_id(unit_id)
+        if unit:
+            game.selected_objects = [unit]
+            game.sidebar_needs_update = True
+
+
+def handle_cancel_construction_job(game, action: dict) -> None:
+    unit_id = action.get('target_data') or action.get('unit_id')
+    if unit_id is not None and getattr(game, 'galaxy', None):
+        unit = game.galaxy.get_unit_by_id(unit_id)
+        if unit and getattr(unit, 'constructor_component', None):
+            constructor = unit.constructor_component
+            order = constructor._owning_construction_order()
+            if order:
+                order.cancel()
+            else:
+                constructor.cancel_construction()
+            game.selected_objects = [unit]
+            game.sidebar_needs_update = True
+
+
+def handle_dismantling(game, action):
+    from campaign_graph import find_unit
+    from tactical_ui import issue
+    if action['action'] == 'dismantle_wing':
+        actor_id, target_id = action['target_data']
+        actor, target = find_unit(game.galaxy, actor_id), find_unit(game.galaxy, target_id)
+        if actor and target and actor.owner == game.players[game.current_player_index]:
+            from gui.dismantling_window import DismantlingWindow
+            game.gui.dismantling_window = DismantlingWindow(game.gui, actor, target, action.get('shift_pressed', False))
+    elif action['action'] == 'cancel_dismantling':
+        actor_id, order_id = action['target_data']
+        issue(game, {'type': 'cancel_order', 'unit_ids': [actor_id], 'order_id': order_id})
+    else:
+        actor_id, enabled = action['target_data']
+        issue(game, {'type': 'set_wing_production_enabled', 'unit_ids': [actor_id], 'enabled': enabled})
+
+
+HANDLERS: typing.Dict[str, typing.Callable[[typing.Any, dict], None]] = {
+    **{name: handle_dismantling for name in ('dismantle_wing', 'set_wing_production_enabled', 'cancel_dismantling')},
+    'upgrade_planetary_defenses': handle_planetary_upgrade,
+    'deploy_ship': handle_deploy_ship,
+    'launch_all_wings': handle_launch_all_wings,
+    'recall_ship': handle_recall_ship,
+    'select_wing_production': handle_select_wing_production,
+    'unload_resources_nearest': handle_unload_resources_nearest,
+    'lay_minefield': handle_lay_minefield,
+    'lay_minefield_anti_ship': handle_lay_minefield,
+    'lay_minefield_anti_strikecraft': handle_lay_minefield,
+    'set_stance': handle_set_stance,
+    'cycle_stance': handle_cycle_stance,
+    'rename_unit': handle_rename_unit,
+    'use_ability': handle_use_ability,
+    **{name: handle_tactical_action for name in ('select_deployable', 'choose_catalyst_nebula', 'cancel_tactical_ability', 'toggle_resistance_ability', 'recover_tactical_cache', 'attack_deployable')},
+    'stop_unit': handle_stop_unit,
+    'stop_selected_units': handle_stop_selected_units,
+    'select_constructor_unit': handle_select_constructor_unit,
+    'cancel_construction_job': handle_cancel_construction_job,
+    'toggle_inhibitor': handle_toggle_inhibitor,
+    'toggle_cloaking': handle_toggle_cloaking,
+    'confirm_retrofit': handle_confirm_retrofit,
+    'ci_sweep': handle_ci_sweep,
+    'enter_gas_giant': handle_enter_gas_giant,
+    'order_unit_leave_gas_giant': handle_order_unit_leave_gas_giant,
+    'order_all_leave_gas_giant': handle_order_all_leave_gas_giant,
+}
