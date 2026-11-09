@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://72546vffaj3k"]
+
+[ext_resource type="Script" uid="uid://bb26gyw8ig0w2" path="res://scripts/resource_display.gd" id="1_bsg47"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jp26k"]
+size = Vector2(50, 50)
+
+[node name="Resource" type="Control" unique_id=635031890]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_behavior_recursive = 2
+script = ExtResource("1_bsg47")
+
+[node name="ResourceCount" type="RichTextLabel" parent="." unique_id=1299760325]
+layout_mode = 0
+offset_left = 59.0
+offset_top = 6.0
+offset_right = 105.0
+offset_bottom = 42.0
+theme_override_font_sizes/normal_font_size = 26
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+
+[node name="ResourceSprite" type="Sprite2D" parent="." unique_id=168067230]
+scale = Vector2(0.1, 0.1)
+centered = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=2055302027]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=893908519]
+position = Vector2(25, 25)
+shape = SubResource("RectangleShape2D_jp26k")
+
+[connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]

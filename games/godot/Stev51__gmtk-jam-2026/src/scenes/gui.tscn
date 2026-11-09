@@ -1,0 +1,171 @@
+[gd_scene format=3 uid="uid://dbvqj3w2xuecq"]
+
+[ext_resource type="PackedScene" uid="uid://c714yyeqdlji" path="res://scenes/clock_display.tscn" id="1_efmwq"]
+[ext_resource type="Script" uid="uid://d0snhcruvkcpx" path="res://scripts/resource_displays.gd" id="1_jqlde"]
+[ext_resource type="PackedScene" uid="uid://72546vffaj3k" path="res://scenes/resource_display.tscn" id="1_mfius"]
+[ext_resource type="PackedScene" uid="uid://cfc8td78n7mfk" path="res://scenes/country_hover_box.tscn" id="2_mfius"]
+[ext_resource type="Texture2D" uid="uid://caxgngp1bgr2y" path="res://assets/img/icons/icon_money.png" id="3_08a8y"]
+[ext_resource type="Texture2D" uid="uid://cyp7yknou4mfx" path="res://assets/img/icons/icon_uranium.png" id="4_v3be1"]
+[ext_resource type="PackedScene" uid="uid://bar7va3a6cbpv" path="res://scenes/country_click_box.tscn" id="5_jqlde"]
+[ext_resource type="Texture2D" uid="uid://8yge7kmg1qe5" path="res://assets/img/icons/icon_nukes.png" id="5_xqxrh"]
+[ext_resource type="Texture2D" uid="uid://b4bdggxbb1bt5" path="res://assets/img/icons/icon_research.png" id="6_qupqx"]
+[ext_resource type="Texture2D" uid="uid://ch5aovckp7h8q" path="res://assets/img/icons/icon_labs.png" id="7_jw8q3"]
+[ext_resource type="Texture2D" uid="uid://ccdkptgt6dr7l" path="res://assets/img/icons/icon_mines.png" id="8_bglms"]
+[ext_resource type="Texture2D" uid="uid://dudk5fxat7rpl" path="res://assets/img/icons/icon_influence.png" id="9_xqxrh"]
+[ext_resource type="PackedScene" uid="uid://cvu272j0ovlpy" path="res://scenes/time_controls.tscn" id="11_qupqx"]
+
+[node name="GUI" type="Control" unique_id=363270447]
+z_index = 99
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopBar" type="Control" parent="." unique_id=1184544585]
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 85.0
+mouse_filter = 2
+
+[node name="Background" type="ColorRect" parent="TopBar" unique_id=172638746]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 85.0
+mouse_filter = 2
+color = Color(0.16565639, 0.16565639, 0.16565648, 1)
+
+[node name="ClockBG" type="ColorRect" parent="TopBar" unique_id=1882244682]
+layout_mode = 0
+offset_left = 885.0
+offset_right = 1035.0
+offset_bottom = 150.0
+mouse_filter = 2
+color = Color(0.16470589, 0.16470589, 0.16470589, 1)
+
+[node name="ResourceDisplays" type="Control" parent="TopBar" unique_id=281639460]
+anchors_preset = 0
+offset_right = 885.0
+offset_bottom = 85.0
+mouse_filter = 2
+script = ExtResource("1_jqlde")
+
+[node name="GridContainer" type="GridContainer" parent="TopBar/ResourceDisplays" unique_id=1709750397]
+layout_mode = 0
+offset_left = 15.0
+offset_top = 15.0
+offset_right = 1920.0
+offset_bottom = 85.0
+mouse_filter = 2
+theme_override_constants/h_separation = 210
+theme_override_constants/v_separation = 100
+columns = 10
+
+[node name="Money" parent="TopBar/ResourceDisplays/GridContainer" unique_id=417750439 instance=ExtResource("1_mfius")]
+layout_mode = 2
+title = "Money"
+icon = ExtResource("3_08a8y")
+
+[node name="DeltaLabel" type="RichTextLabel" parent="TopBar/ResourceDisplays/GridContainer/Money" unique_id=921013858]
+layout_mode = 0
+offset_left = 55.0
+offset_top = 42.0
+offset_right = 225.0
+offset_bottom = 70.0
+theme_override_font_sizes/italics_font_size = 20
+bbcode_enabled = true
+text = "[i]+ 0.0 / s"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+vertical_alignment = 1
+
+[node name="Uranium" parent="TopBar/ResourceDisplays/GridContainer" unique_id=1717653351 instance=ExtResource("1_mfius")]
+layout_mode = 2
+title = "Uranium"
+description = "Used to produce nukes"
+icon = ExtResource("4_v3be1")
+
+[node name="Nukes" parent="TopBar/ResourceDisplays/GridContainer" unique_id=2050375959 instance=ExtResource("1_mfius")]
+layout_mode = 2
+title = "Nuclear Warheads"
+description = "Nuke count increases willingness of other countries to join the armistace"
+icon = ExtResource("5_xqxrh")
+
+[node name="Research" parent="TopBar/ResourceDisplays/GridContainer" unique_id=635031890 instance=ExtResource("1_mfius")]
+layout_mode = 2
+title = "Research Progress"
+description = "Used to research nuke production"
+icon = ExtResource("6_qupqx")
+
+[node name="BlankSpacer" parent="TopBar/ResourceDisplays/GridContainer" unique_id=984680270 instance=ExtResource("1_mfius")]
+layout_mode = 2
+
+[node name="BlankSpacer2" parent="TopBar/ResourceDisplays/GridContainer" unique_id=1709461876 instance=ExtResource("1_mfius")]
+layout_mode = 2
+
+[node name="Labs" parent="TopBar/ResourceDisplays/GridContainer" unique_id=1588233358 instance=ExtResource("1_mfius")]
+layout_mode = 2
+title = "Labs"
+description = "Increase research production"
+icon = ExtResource("7_jw8q3")
+
+[node name="Mines" parent="TopBar/ResourceDisplays/GridContainer" unique_id=536699157 instance=ExtResource("1_mfius")]
+layout_mode = 2
+title = "Mines"
+description = "Increase uranium production"
+icon = ExtResource("8_bglms")
+
+[node name="Influence" parent="TopBar/ResourceDisplays/GridContainer" unique_id=1027774118 instance=ExtResource("1_mfius")]
+layout_mode = 2
+title = "Self-Influence"
+description = "Your influence on your own country."
+icon = ExtResource("9_xqxrh")
+
+[node name="DeltaLabel" type="RichTextLabel" parent="TopBar/ResourceDisplays/GridContainer/Influence" unique_id=1375941907]
+layout_mode = 0
+offset_left = 55.0
+offset_top = 42.0
+offset_right = 225.0
+offset_bottom = 70.0
+theme_override_font_sizes/italics_font_size = 20
+bbcode_enabled = true
+text = "[i]+ 0.0 / s"
+fit_content = true
+scroll_active = false
+autowrap_mode = 0
+vertical_alignment = 1
+
+[node name="ClockDisplay" parent="TopBar" unique_id=1149426984 instance=ExtResource("1_efmwq")]
+layout_mode = 1
+offset_left = 960.0
+offset_top = 75.0
+offset_right = 920.0
+offset_bottom = 35.0
+scale = Vector2(0.08, 0.08)
+mouse_filter = 2
+
+[node name="TimeSpeedControls" type="Control" parent="TopBar" unique_id=1144191744]
+anchors_preset = 0
+offset_left = 1030.0
+offset_top = 37.5
+offset_right = 1070.0
+offset_bottom = 77.5
+mouse_filter = 2
+
+[node name="TimeControls" parent="TopBar" unique_id=961636268 instance=ExtResource("11_qupqx")]
+layout_mode = 1
+offset_left = 1045.0
+offset_top = 7.5
+offset_right = -855.0
+offset_bottom = -7.5
+
+[node name="CountryHoverBox" parent="." unique_id=1145551380 instance=ExtResource("2_mfius")]
+visible = false
+layout_mode = 1
+
+[node name="CountryClickBox" parent="." unique_id=1626015699 instance=ExtResource("5_jqlde")]
+visible = false
+layout_mode = 1

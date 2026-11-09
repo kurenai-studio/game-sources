@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://cvu272j0ovlpy"]
+
+[ext_resource type="Texture2D" uid="uid://bur27y8yq1xg1" path="res://assets/img/buttons/menu/button_pause.png" id="1_2tsan"]
+[ext_resource type="Script" uid="uid://qig8fstpaou0" path="res://scripts/time_controls.gd" id="1_ljr2f"]
+[ext_resource type="Texture2D" uid="uid://b2ttxhu1m6a5h" path="res://assets/img/buttons/menu/button_x1_speed.png" id="2_65qly"]
+[ext_resource type="Texture2D" uid="uid://b23xwvnw0rppb" path="res://assets/img/buttons/menu/button_x2_speed.png" id="3_ljr2f"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_plykv"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.65882355, 0.65882355, 0.65882355, 0)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="TimeControls" type="Control" unique_id=961636268]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_behavior_recursive = 2
+script = ExtResource("1_ljr2f")
+
+[node name="ButtonPause" type="Control" parent="." unique_id=1844322800]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Sprite2D" type="Sprite2D" parent="ButtonPause" unique_id=669063789]
+scale = Vector2(0.04, 0.04)
+texture = ExtResource("1_2tsan")
+centered = false
+
+[node name="Button" type="Button" parent="ButtonPause" unique_id=1797247]
+layout_mode = 0
+offset_right = 20.0
+offset_bottom = 20.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_plykv")
+
+[node name="ButtonX1" type="Control" parent="." unique_id=18336506]
+anchors_preset = 0
+offset_top = 25.0
+offset_right = 20.0
+offset_bottom = 45.0
+
+[node name="Sprite2D" type="Sprite2D" parent="ButtonX1" unique_id=1205122971]
+scale = Vector2(0.04, 0.04)
+texture = ExtResource("2_65qly")
+centered = false
+
+[node name="Button" type="Button" parent="ButtonX1" unique_id=1056124066]
+layout_mode = 0
+offset_right = 20.0
+offset_bottom = 20.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_plykv")
+
+[node name="ButtonX2" type="Control" parent="." unique_id=1754167988]
+anchors_preset = 0
+offset_top = 50.0
+offset_right = 20.0
+offset_bottom = 70.0
+
+[node name="Sprite2D" type="Sprite2D" parent="ButtonX2" unique_id=987095638]
+scale = Vector2(0.04, 0.04)
+texture = ExtResource("3_ljr2f")
+centered = false
+
+[node name="Button" type="Button" parent="ButtonX2" unique_id=1189036106]
+layout_mode = 0
+offset_right = 20.0
+offset_bottom = 20.0
+focus_mode = 0
+theme_override_styles/normal = SubResource("StyleBoxFlat_plykv")
+
+[connection signal="pressed" from="ButtonPause/Button" to="." method="_on_pause_button_pressed"]
+[connection signal="pressed" from="ButtonX1/Button" to="." method="_on_x1_button_pressed"]
+[connection signal="pressed" from="ButtonX2/Button" to="." method="_on_x2_button_pressed"]

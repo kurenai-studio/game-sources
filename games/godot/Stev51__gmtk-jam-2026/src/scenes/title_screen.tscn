@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://bw4rnt3fj624v"]
+
+[ext_resource type="Script" uid="uid://bxdatfdnvt1fp" path="res://scripts/title_screen.gd" id="1_fgkus"]
+[ext_resource type="Texture2D" uid="uid://cycablgu8ea3f" path="res://assets/img/title_screen.png" id="2_sa3yf"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sa3yf"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s4lrb"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0, 0, 0, 0.6)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mgrm8"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.225, 0.225, 0.225, 0.6)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="TitleScreen" type="Node2D" unique_id=609619238]
+script = ExtResource("1_fgkus")
+
+[node name="Background" type="Sprite2D" parent="." unique_id=1103859405]
+texture = ExtResource("2_sa3yf")
+centered = false
+
+[node name="PlayButton" type="Button" parent="." unique_id=678217695]
+offset_left = 1250.0
+offset_top = 694.0
+offset_right = 1600.0
+offset_bottom = 794.0
+theme_override_font_sizes/font_size = 56
+theme_override_styles/normal = SubResource("StyleBoxFlat_sa3yf")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_s4lrb")
+theme_override_styles/hover = SubResource("StyleBoxFlat_mgrm8")
+text = "Start Game"
+
+[connection signal="pressed" from="PlayButton" to="." method="_on_play_button_pressed"]

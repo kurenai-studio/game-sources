@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://cjni3qideqpy6"]
+
+[ext_resource type="Script" uid="uid://6lfcx33p23f8" path="res://scripts/win_screen.gd" id="1_erk2x"]
+[ext_resource type="Texture2D" uid="uid://b2n44kt0nveqm" path="res://assets/img/win_screen.png" id="2_erk2x"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uglf1"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1n1m7"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0, 0, 0, 0.6)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_73mov"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.225, 0.225, 0.225, 0.6)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="LoseScreen" type="Node2D" unique_id=2065586147]
+z_index = 200
+script = ExtResource("1_erk2x")
+
+[node name="Background" type="Sprite2D" parent="." unique_id=2116441171]
+texture = ExtResource("2_erk2x")
+centered = false
+
+[node name="CloseButton" type="Button" parent="." unique_id=857076167]
+offset_left = 785.0
+offset_top = 710.0
+offset_right = 1135.0
+offset_bottom = 810.0
+theme_override_font_sizes/font_size = 56
+theme_override_styles/normal = SubResource("StyleBoxFlat_uglf1")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_1n1m7")
+theme_override_styles/hover = SubResource("StyleBoxFlat_73mov")
+text = "View Map"
+
+[connection signal="pressed" from="CloseButton" to="." method="_on_close_button_pressed"]
