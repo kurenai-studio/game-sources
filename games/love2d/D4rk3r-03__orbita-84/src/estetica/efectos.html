@@ -1,0 +1,168 @@
+<title>Efectos Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: tres partes (explosiones, escudo, jefes); cada propuesta animada con su nota */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 1100px; margin: 0 auto; display: grid; gap: 44px; }
+  header { display: grid; gap: 10px; }
+  .sello {
+    justify-self: start; font-family: var(--maquina); color: var(--sello);
+    border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px;
+    transform: rotate(-2deg);
+  }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 44px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 20px; color: var(--lcd); margin: 0; }
+  h3 { font-family: var(--pixel); font-weight: 400; font-size: 14px; color: var(--suave); margin: 0; letter-spacing: .05em; }
+  p { margin: 0; color: var(--suave); max-width: 72ch; }
+  header p { color: var(--texto); }
+  section { display: grid; gap: 14px; }
+  .bloque { display: grid; gap: 10px; }
+
+  .rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .cuatro { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 860px) { .cuatro { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  figure { margin: 0; display: grid; gap: 6px; min-width: 0; align-content: start; }
+  figcaption { font-size: 14px; color: var(--suave); display: grid; gap: 2px; }
+  figcaption b { font-family: var(--pixel); font-weight: 400; font-size: 12px; letter-spacing: .05em; color: var(--lcd); }
+  figure.hoy figcaption b { color: var(--sello); }
+  .rec { font-family: var(--maquina); color: var(--sello); }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; }
+  img.lcd { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; }
+
+  .jefes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .jefe { background: var(--hoja); border-radius: 12px; padding: 12px; display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: start; }
+  .jefe .pantalla { padding: 4px; }
+  .jefe .datos { display: grid; gap: 4px; min-width: 0; }
+  .jefe .datos b { font-family: var(--pixel); font-weight: 400; font-size: 14px; color: var(--lcd); }
+  .jefe .datos span { font-size: 14px; color: var(--suave); }
+  .chip { justify-self: start; font-family: var(--pixel); font-size: 10px; border-radius: 4px; padding: 1px 6px; background: var(--casco); color: var(--suave); }
+  .chip.rehacer { background: var(--sello); color: var(--bisel); }
+  .chip.animar { background: var(--lcd); color: var(--bisel); }
+  .resumen { background: var(--hoja); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; }
+  .resumen p { color: var(--texto); }
+</style>
+
+<main>
+  <header>
+    <span class="sello">EN REVISIÓN · EFECTOS · 3</span>
+    <h1>Explosiones, escudo y jefes</h1>
+    <p>Tercera ronda. Ya están en el juego y en la web: la explosión D (chispa y humo), la muerte de jefe con onda, el escudo B, el fénix B y la serpiente A. Queda elegir el ojo y el núcleo: arriba de todo están las versiones nuevas, más macizas, para que se sientan jefes.</p>
+  </header>
+
+  <section>
+    <h2>OJO Y NÚCLEO, CON VIBRA DE JEFE</h2>
+    <p>Te gustaron el ojo que vigila y el reactor, pero no se sentían jefes. Lo que les faltaba era masa: eran líneas finas, y los jefes que funcionan (el coloso, la pirámide, el gigante) son bloques macizos. Ahora el cuerpo va lleno en tinta y lo que te gustó queda recortado en claro: el ojo es un hueco claro con el iris que te sigue, y las aspas del reactor son luz que gira. También crecieron, de 15 a 21-29 píxeles de ancho.</p>
+    <div id="segunda" style="display: contents"></div>
+  </section>
+
+  <section>
+    <h2>EXPLOSIONES</h2>
+    <p>La nave revienta tres enemigos seguidos. Todas son cuadros dibujados a mano, sin física, como en las maquinitas.</p>
+    <div class="rejilla">
+      <figure class="hoy"><div class="pantalla"><img class="lcd" src="explosion_hoy.gif" alt="Explosión de hoy"></div><figcaption><b>Hoy</b>Dos cuadros de 5×5.</figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="explosion_chispa.gif" alt="Explosión A: chispa"></div><figcaption><b>A · Chispa</b>Destello que se abre en estrella y se apaga en cuatro puntas.</figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="explosion_humo.gif" alt="Explosión B: destello y humo"></div><figcaption><b>B · Destello y humo</b>Bola, anillo y humo en tono medio que sube.</figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="explosion_chispa_humo.gif" alt="Explosión D: chispa y humo"></div><figcaption><b>D · Chispa y humo</b>La estrella de A y el humo de B.<span class="rec">Elegida · ya en el juego</span></figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="explosion_cruz.gif" alt="Explosión E: cruz de rayos"></div><figcaption><b>E · Rayos</b>Ocho rayos que crecen, se despegan del centro y se apagan en las puntas.</figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="explosion_onda.gif" alt="Explosión F: onda"></div><figcaption><b>F · Onda</b>Un rombo que se abre como onda de choque, con un eco en tono medio.</figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="explosion_disuelve.gif" alt="Explosión G: disolución"></div><figcaption><b>G · Disolución</b>Una bola maciza que se deshace en damero, como un LCD que se apaga.</figcaption></figure>
+    </div>
+    <div class="bloque">
+      <h3>MUERTE DE UN JEFE</h3>
+      <p>Tiembla con explosiones encima, la pantalla se invierte un cuadro y queda un estallido al doble de tamaño. Se puede combinar con cualquier explosión de arriba.</p>
+      <div class="rejilla">
+        <figure><div class="pantalla"><img class="lcd" src="muerte_retro_onda.gif" alt="Muerte de jefe con chispa y humo y una onda final"></div><figcaption><b>Chispa y humo + onda</b>Coloso de Roswell.<span class="rec">Elegida · ya en el juego</span></figcaption></figure>
+        <figure><div class="pantalla"><img class="lcd" src="muerte_retro_cruz.gif" alt="Muerte de jefe con rayos"></div><figcaption><b>Rayos + rayos grandes</b>Nodriza de Phoenix.</figcaption></figure>
+        <figure><div class="pantalla"><img class="lcd" src="muerte_retro_disuelve.gif" alt="Muerte de jefe con chispas y disolución"></div><figcaption><b>Chispas + disolución</b>Gigante del Baikal.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>ESCUDO DE LOS JEFES</h2>
+    <p>Elegiste B, el contorno en tono medio, y ya está en el juego y en la web. Sigue la forma de cada jefe a dos píxeles y se enciende en tinta cuando rebota un tiro.</p>
+    <div class="cuatro">
+      <figure><div class="pantalla"><img class="lcd" src="escudo_medio_jefe.gif" alt="Escudo en el coloso"></div><figcaption><b>Coloso</b></figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escudo_medio_nodriza.gif" alt="Escudo en la nodriza"></div><figcaption><b>Nodriza</b></figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escudo_medio_ojo_abierto.gif" alt="Escudo en el ojo"></div><figcaption><b>Ojo</b></figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escudo_medio_tenaza.gif" alt="Escudo en la tenaza"></div><figcaption><b>Tenaza</b></figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>PRIMEROS BOCETOS</h2>
+    <p>La primera ronda, como referencia. Elegiste el fénix B y la serpiente A (ya en el juego); del ojo y el núcleo salió la versión nueva de arriba.</p>
+    <div id="bocetos" style="display: contents"></div>
+  </section>
+</main>
+
+<script>
+  const jefes = [
+    ["ojo", "OJO · LOS HILL 1961", [
+      ["hoy", "Hoy", "Una cabeza con los ojos como huecos; casi toda es una mancha."],
+      ["a", "A · El ojo que vigila", "Un ojo gigante con párpado grueso. El iris sigue a la nave y el párpado baja por partes. Va directo con la «mirada» de su ataque."],
+      ["b", "B · El gris", "La cabeza del visitante que describieron los Hill, maciza, con ojos almendrados en tono medio y una pupila con brillo que se mueve."],
+    ], "a"],
+    ["fenix", "FÉNIX · PHOENIX 1997", [
+      ["hoy", "Hoy", "Una V de un píxel; se ve frágil para ser la nave nodriza."],
+      ["a", "A · El bumerán", "Alas en V de tres píxeles con quilla en tono medio. Las luces son huecos claros que corren de la punta a las alas."],
+      ["b", "B · La masa", "Una V maciza y pesada con las luces en el borde de atrás, encendiéndose en cadena. Se lee como una sombra enorme."],
+    ], "b"],
+    ["nucleo", "NÚCLEO · HANGAR 18", [
+      ["hoy", "Hoy", "Círculos quietos con una cruz."],
+      ["a", "A · El reactor", "Anillo con cuatro aspas en molinete que giran y un centro que late."],
+      ["b", "B · El motor recuperado", "Una carcasa con remaches y aletas, y una ventana redonda con la turbina girando: la pieza que se llevaron al hangar."],
+    ], "a"],
+    ["serpiente", "SERPIENTE · LUBBOCK 1951", [
+      ["hoy", "Hoy", "Una bola y cuatro bolas detrás."],
+      ["a", "A · La formación", "La cabeza es una V chica de luces que apunta a la nave y abre la punta al disparar; detrás, rombos de luz que laten en ola. Así se veían las luces de Lubbock."],
+      ["b", "B · El dragón", "Cabeza con cresta y fauces que se abren al disparar; el cuerpo son vértebras con aletas que suben y bajan."],
+    ], "a"],
+  ];
+  const segunda = [
+    ["OJO · LOS HILL 1961", [
+      ["ojo_a", "Primera versión", "El ojo que vigila, de líneas."],
+      ["ojo_acorazado", "A · El ojo en la carne", "Una masa viva con el ojo claro al centro, cuatro púas arriba y tentáculos gruesos que se mecen. El iris te sigue y el párpado baja por partes."],
+      ["ojo_coronado", "B · El ojo acorazado", "Un casco macizo de placas con remaches, visera con púas y cañones a los costados; el ojo mira por la ranura."],
+    ], "ojo_acorazado"],
+    ["NÚCLEO · HANGAR 18", [
+      ["nucleo_a", "Primera versión", "El reactor de líneas."],
+      ["reactor_armado", "A · El reactor macizo", "Un disco oscuro de 21×21 con cuatro aspas de luz que giran en remolino, un anillo de remaches y el centro que late."],
+      ["reactor_tenazas", "B · El reactor armado", "El mismo disco montado entre dos módulos con cañones hacia la nave y pistones que bombean arriba y abajo."],
+    ], "reactor_tenazas"],
+  ];
+  const lugar2 = document.getElementById("segunda");
+  for (const [titulo, props, rec] of segunda) {
+    const filas = props.map(([n, t, nota]) =>
+      `<figure class="${t === "Primera versión" ? "hoy" : ""}"><div class="pantalla"><img class="lcd" src="${n}.gif" alt="${titulo}: ${t}, ampliado"></div><div class="pantalla"><img class="lcd" src="escena_${n}.gif" alt="${titulo}: ${t}, a tamaño real"></div><figcaption><b>${t}</b>${nota}${n === rec ? '<span class="rec">Mi recomendación</span>' : ""}</figcaption></figure>`).join("");
+    lugar2.insertAdjacentHTML("beforeend", `<div class="bloque"><h3>${titulo}</h3><div class="rejilla">${filas}</div></div>`);
+  }
+  const lugar = document.getElementById("bocetos");
+  for (const [clave, titulo, props, rec] of jefes) {
+    const filas = props.map(([p, t, nota]) => {
+      const n = `${clave}_${p}`;
+      return `<figure class="${p === "hoy" ? "hoy" : ""}"><div class="pantalla"><img class="lcd" src="${n}.gif" alt="${titulo}: ${t}, ampliado"></div><div class="pantalla"><img class="lcd" src="escena_${n}.gif" alt="${titulo}: ${t}, a tamaño real"></div><figcaption><b>${t}</b>${nota}${p === rec ? '<span class="rec">Mi recomendación</span>' : ""}</figcaption></figure>`;
+    }).join("");
+    lugar.insertAdjacentHTML("beforeend", `<div class="bloque"><h3>${titulo}</h3><div class="rejilla">${filas}</div></div>`);
+  }
+</script>

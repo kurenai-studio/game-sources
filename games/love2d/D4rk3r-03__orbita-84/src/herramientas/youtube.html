@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Órbita 84</title>
+<meta name="author" content="D4rk3r">
+<!-- El SDK de YouTube Playables va antes que cualquier código del juego -->
+<script src="https://www.youtube.com/game_api/v1"></script>
+<style>
+  /* Página mínima para YouTube Playables: el juego ocupa todo y dibuja sus propios controles */
+  html, body { margin: 0; height: 100%; background: #1f281c; overflow: hidden; }
+  #canvas {
+    position: fixed; inset: 0; width: 100vw !important; height: 100vh !important; height: 100dvh !important;
+    image-rendering: pixelated; outline: none; touch-action: none; display: block;
+  }
+  #aviso {
+    position: fixed; inset: 0; display: grid; place-items: center;
+    color: #c7f0d9; font: bold 18px/1 monospace; letter-spacing: .15em;
+    pointer-events: none; /* nunca tapa los toques del juego */
+  }
+  #aviso[hidden] { display: none; }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
+<div id="aviso">CARGANDO</div>
+<script>
+(function () {
+  // Fuera de YouTube (pruebas locales) se usa un reemplazo que guarda en el navegador.
+  var enYoutube = typeof ytgame !== "undefined" && ytgame.IN_PLAYABLES_ENV;
+  var yt = enYoutube ? ytgame : {
+    game: {
+      firstFrameReady: function () { console.log("[prueba] firstFrameReady"); },
+      gameReady: function () { console.log("[prueba] gameReady"); },
+      loadData: function () { try { return Promise.resolve(localStorage.getItem("orbita84") || ""); } catch (e) { return Promise.resolve(""); } },
+      saveData: function (d) { try { localStorage.setItem("orbita84", d); } catch (e) {} console.log("[prueba] saveData", d); return Promise.resolve(); }
+    },
+    system: {
+      isAudioEnabled: function () { return true; },
+      getLanguage: function () { return Promise.resolve(navigator.language || "es"); },
+      onAudioEnabledChange: function () { return function () {}; },
+      onPause: function (f) { window.__pausa = f; return function () {}; },
+      onResume: function (f) { window.__sigue = f; return function () {}; }
+    },
+    engagement: { sendScore: function (p) { console.log("[prueba] sendScore", p.value); return Promise.resolve(); } }
+  };
+
+  var lienzo = document.getElementById("canvas");
+  var aviso = document.getElementById("aviso");
+
+  // ---------- sonido: se guardan los AudioContext que crea el juego para poder congelarlos
+  var contextos = [];
+  var Original = window.AudioContext || window.webkitAudioContext;
+  if (Original) {
+    var Envuelto = function (opciones) { var c = new Original(opciones); contextos.push(c); return c; };
+    Envuelto.prototype = Original.prototype;
+    window.AudioContext = Envuelto;
+    if (window.webkitAudioContext) window.webkitAudioContext = Envuelto;
+  }
+  var pausado = false, conSonido = yt.system.isAudioEnabled();
+  function aplicarSonido() {
+    contextos.forEach(function (c) {
+      try { (pausado || !conSonido) ? c.suspend() : c.resume(); } catch (e) {}
+    });
+  }
+
+  // ---------- teclas que el juego entiende como órdenes de la página
+  var codigos = { F7: 118, F8: 119, F9: 120 };
+  function tecla(codigo) {
+    ["keydown", "keyup"].forEach(function (tipo) {
+      var ev = new KeyboardEvent(tipo, { key: codigo, code: codigo, bubbles: true, cancelable: true });
+      Object.defineProperty(ev, "keyCode", { get: function () { return codigos[codigo]; } });
+      Object.defineProperty(ev, "which", { get: function () { return codigos[codigo]; } });
+      document.dispatchEvent(ev);
+    });
+  }
+  // Escape cerraría el juego y F11 no aplica: no se los pasamos
+  window.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" || e.key === "F11") { e.stopImmediatePropagation(); return; }
+    if ([9, 32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) e.preventDefault();
+  }, true);
+
+  yt.system.onAudioEnabledChange(function (si) {
+    conSonido = si;
+    tecla(si ? "F8" : "F7");
+    aplicarSonido();
+  });
+  yt.system.onPause(function () { pausado = true; tecla("F9"); aplicarSonido(); });
+  yt.system.onResume(function () { pausado = false; aplicarSonido(); });
+
+  // ---------- mensajes del juego: líneas "ORBITA84:tipo:dato"
+  var listo = false;
+  function mensaje(linea) {
+    var m = /^ORBITA84:(\w+):(.*)$/.exec(linea);
+    if (!m) { console.log(linea); return; }
+    if (m[1] === "listo" && !listo) {
+      listo = true;
+      aviso.hidden = true;
+      // si YouTube empezó sin sonido, el juego arranca callado
+      if (!conSonido) tecla("F7");
+      aplicarSonido();
+      yt.game.firstFrameReady();
+      yt.game.gameReady();
+    } else if (m[1] === "guardar") {
+      yt.game.saveData(m[2]).catch(function (e) { console.warn("no se pudo guardar", e); });
+    } else if (m[1] === "puntaje") {
+      var n = parseInt(m[2], 10);
+      if (n > 0) yt.engagement.sendScore({ value: n }).catch(function (e) { console.warn("no se pudo enviar el puntaje", e); });
+    }
+  }
+
+  function arrancar(guardado, idioma) {
+    var argumentos = ["./game.love", "--youtube"];
+    if (guardado) argumentos.push("--ajustes=" + guardado);
+    if (idioma) argumentos.push("--idioma=" + idioma);
+    if (window.matchMedia("(pointer: coarse)").matches) argumentos.push("--tactil");
+    window.Module = {
+      arguments: argumentos,
+      INITIAL_MEMORY: 16777216,
+      print: mensaje,
+      printErr: console.error.bind(console),
+      canvas: lienzo,
+      setStatus: function (texto) {
+        if (texto) return;
+        // el juego toma el tamaño real de la pantalla al recibir un "resize"
+        setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 50);
+      },
+      monitorRunDependencies: function () {}
+    };
+    cargar("game.js", function () { cargar("love.js", function () { Love(Module); }); });
+  }
+
+  function cargar(src, despues) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = despues;
+    s.onerror = function () { aviso.textContent = "NO PUDO CARGAR"; };
+    document.body.appendChild(s);
+  }
+
+  lienzo.addEventListener("webglcontextlost", function (e) { e.preventDefault(); });
+  lienzo.addEventListener("pointerdown", function () { lienzo.focus(); });
+
+  // primero se leen los récords guardados en la nube y el idioma del jugador, luego arranca el juego
+  var idioma = Promise.resolve(yt.system.getLanguage ? yt.system.getLanguage() : "").catch(function () { return ""; });
+  var datos = yt.game.loadData().catch(function () { return ""; });
+  Promise.all([datos, idioma]).then(function (r) { arrancar(r[0] || "", r[1] || ""); });
+})();
+</script>
+</body>
+</html>

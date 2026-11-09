@@ -1,0 +1,196 @@
+<title>Íconos Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: escenas de juego por propuesta, tabla de poderes y elección al pie */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --tinta: #42523d;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 980px; margin: 0 auto; display: grid; gap: 36px; }
+  header { display: grid; gap: 10px; }
+  .sello {
+    justify-self: start; font-family: var(--maquina); color: var(--sello);
+    border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px;
+    transform: rotate(-2deg);
+  }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 46px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 18px; color: var(--lcd); margin: 0; }
+  p { margin: 0; color: var(--suave); max-width: 70ch; }
+  header p { color: var(--texto); }
+  section { display: grid; gap: 14px; }
+  .nota { font-family: var(--maquina); color: var(--sello); }
+
+  img.lcd { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; }
+  .escenas { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  figure { margin: 0; display: grid; gap: 6px; min-width: 0; align-content: start; }
+  figcaption { display: grid; gap: 2px; }
+  figcaption b { font-family: var(--pixel); font-weight: 400; font-size: 13px; letter-spacing: .06em; color: var(--lcd); }
+  figcaption span { font-size: 14px; color: var(--suave); }
+
+  .tabla { overflow-x: auto; background: var(--hoja); border-radius: 12px; padding: 6px 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; }
+  th { font-family: var(--pixel); font-weight: 400; font-size: 11px; letter-spacing: .08em; color: var(--suave); text-align: left; padding: 8px 6px; }
+  td { padding: 8px 6px; border-top: 1px solid var(--casco); vertical-align: middle; }
+  td.nombre b { font-family: var(--pixel); font-weight: 400; font-size: 13px; display: block; }
+  td.nombre span { font-size: 14px; color: var(--suave); }
+  .chip { display: inline-block; font-family: var(--pixel); font-size: 10px; color: var(--bisel); background: var(--sello); border-radius: 4px; padding: 0 6px; margin-left: 6px; vertical-align: 2px; }
+  td img { image-rendering: pixelated; display: block; height: 54px; width: auto; }
+  td.glifo img { height: 44px; }
+  td.quiero label { display: flex; gap: 8px; align-items: center; cursor: pointer; font-size: 14px; color: var(--texto); }
+  td.quiero input { width: 18px; height: 18px; accent-color: var(--lcd); }
+
+  .hoy { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  .hoy img { image-rendering: pixelated; height: 54px; width: auto; }
+  .hoy .chico img { height: 44px; }
+
+  .elegir { display: flex; flex-wrap: wrap; gap: 8px; }
+  .elegir label {
+    font-family: var(--pixel); font-size: 12px; letter-spacing: .06em; cursor: pointer;
+    border: 2px solid var(--casco); background: var(--bisel); color: var(--suave);
+    padding: 6px 12px; border-radius: 6px;
+  }
+  .elegir input { position: absolute; opacity: 0; pointer-events: none; }
+  .elegir label:has(input:checked) { background: var(--lcd); border-color: var(--lcd); color: var(--tinta); }
+  .elegir label:has(input:focus-visible) { outline: 2px solid var(--sello); outline-offset: 2px; }
+  .resumen { background: var(--casco); border-radius: 12px; padding: 14px; display: grid; gap: 12px; }
+  pre { margin: 0; white-space: pre-wrap; font-family: var(--maquina); font-size: 15px; color: var(--texto); background: var(--bisel); padding: 12px; border-radius: 8px; }
+  button {
+    justify-self: start; font-family: var(--pixel); font-size: 13px; letter-spacing: .06em;
+    background: var(--sello); color: var(--bisel); border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid var(--lcd); outline-offset: 2px; }
+</style>
+
+<main>
+  <header>
+    <span class="sello">CLASIFICADO · ÍCONOS</span>
+    <h1>Íconos de los poderes</h1>
+    <p>La idea es una sola familia: cada poder tiene un glifo de 3×5 que es el mismo en el marcador y dentro de la mejora que flota. Así, lo que recoges se reconoce arriba. Entre las propuestas cambia solo el marco de la mejora. Todo lo que se recoge va en tinta.</p>
+    <p class="nota">Elige un marco, marca los poderes nuevos que quieres y copia el resumen del final.</p>
+  </header>
+
+  <section>
+    <h2>HOY</h2>
+    <p>Las cuatro mejoras son cajas de 5×5 con una figura hueca adentro, y el marcador usa dibujos distintos: el corazón, el rayo y el pulso no aparecen en ninguna mejora.</p>
+    <div class="hoy">
+      <img src="hoy_triple.png" alt="Mejora triple de hoy">
+      <img src="hoy_rayo.png" alt="Mejora rayo de hoy">
+      <img src="hoy_escudo.png" alt="Mejora escudo de hoy">
+      <img src="hoy_vida.png" alt="Mejora vida de hoy">
+      <span class="chico"><img src="hoymarc_vida.png" alt="Vida en el marcador de hoy"></span>
+      <span class="chico"><img src="hoymarc_rayo.png" alt="Rayo en el marcador de hoy"></span>
+      <span class="chico"><img src="hoymarc_pulso.png" alt="Pulso en el marcador de hoy"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>EN JUEGO</h2>
+    <p>La misma oleada con tres mejoras flotando (triple, escudo y tiempo perdido) entre balas y enemigos. Arriba, el marcador nuevo con el nivel en tono medio.</p>
+    <div class="escenas">
+      <figure><div class="pantalla"><img class="lcd" src="escena_hoy.png" alt="Escena con los íconos de hoy"></div><figcaption><b>HOY</b><span>Cajas de 5×5.</span></figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escena_capsula.png" alt="Escena con mejoras en cápsula"></div><figcaption><b>A · CÁPSULA</b><span>Marco redondeado de 7×7, como una píldora de arcade.</span></figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escena_carpeta.png" alt="Escena con mejoras en carpeta"></div><figcaption><b>B · CARPETA</b><span>Una carpeta de expediente con pestaña: cada mejora es un archivo.</span></figcaption></figure>
+      <figure><div class="pantalla"><img class="lcd" src="escena_radar.png" alt="Escena con mejoras en mira de radar"></div><figcaption><b>C · MIRA DE RADAR</b><span>Solo las esquinas, como la mira que fija un blanco o el marco de una foto de prueba.</span></figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>TODOS LOS PODERES</h2>
+    <p>Los cinco de hoy con su glifo retocado y los cinco nuevos que propuse. Los nuevos van con la etiqueta NUEVO.</p>
+    <div class="tabla">
+      <table>
+        <thead><tr><th>Poder</th><th>Marcador</th><th>A</th><th>B</th><th>C</th><th>¿Lo quiero?</th></tr></thead>
+        <tbody id="filas"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>MARCADOR CON CADA ESPECIAL</h2>
+    <p>Rayo, pulso, tiempo perdido, bengalas y sonda, con el nivel entre los especiales y los puntos.</p>
+    <div class="pantalla" style="max-width: 560px"><img class="lcd" src="marcadores.png" alt="Marcador con cada especial"></div>
+  </section>
+
+  <section class="resumen">
+    <h2>TU ELECCIÓN</h2>
+    <div class="elegir" id="marcos"></div>
+    <pre id="texto"></pre>
+    <button type="button" id="copiar">Copiar resumen</button>
+  </section>
+</main>
+
+<script>
+  const poderes = [
+    ["vida", "VIDA", "Corazón.", false],
+    ["triple", "TRIPLE", "Tres tiros, como las balas del juego.", false],
+    ["rayo", "RAYO", "Relámpago.", false],
+    ["pulso", "PULSO", "Onda que se abre.", false],
+    ["escudo", "ESCUDO", "Escudo macizo con punta.", false],
+    ["tiempo", "TIEMPO PERDIDO", "Reloj de arena: todo va lento 3 segundos.", true],
+    ["bengala", "BENGALAS", "Chispa: señuelos que atraen las balas apuntadas.", true],
+    ["sonda", "SONDA", "Satélite con paneles que te sigue y dispara contigo.", true],
+    ["tractor", "HAZ TRACTOR", "Cono de luz: atrae mejoras y se traga alguna bala.", true],
+    ["carga", "CARGADO", "Mantienes el botón y sale un tiro gordo que atraviesa.", true],
+  ];
+  const quiero = {};
+  const cuerpo = document.getElementById("filas");
+  for (const [id, nombre, texto, nuevo] of poderes) {
+    const tr = document.createElement("tr");
+    const imgs = ["capsula", "carpeta", "radar"].map((m) => `<td><img src="${m}_${id}.png" alt="${nombre} en marco ${m}"></td>`).join("");
+    tr.innerHTML = `<td class="nombre"><b>${nombre}${nuevo ? '<span class="chip">NUEVO</span>' : ""}</b><span>${texto}</span></td>` +
+      `<td class="glifo"><img src="glifo_${id}.png" alt="Glifo de ${nombre}"></td>` + imgs +
+      `<td class="quiero">${nuevo ? `<label><input type="checkbox" id="quiero-${id}"> Sí</label>` : ""}</td>`;
+    cuerpo.append(tr);
+    if (nuevo) {
+      quiero[id] = false;
+      tr.querySelector("input").addEventListener("change", (e) => { quiero[id] = e.target.checked; escribir(); });
+    }
+  }
+  const marcos = [["capsula", "A · CÁPSULA"], ["carpeta", "B · CARPETA"], ["radar", "C · MIRA DE RADAR"], ["hoy", "DEJAR LAS DE HOY"]];
+  let marco = "capsula";
+  const caja = document.getElementById("marcos");
+  for (const [valor, rotulo] of marcos) {
+    const label = document.createElement("label");
+    label.innerHTML = `<input type="radio" name="marco" id="marco-${valor}" value="${valor}"${valor === marco ? " checked" : ""}><span>${rotulo}</span>`;
+    label.querySelector("input").addEventListener("change", () => { marco = valor; escribir(); });
+    caja.append(label);
+  }
+  function escribir() {
+    const nombreMarco = Object.fromEntries(marcos)[marco];
+    const si = poderes.filter((p) => p[3] && quiero[p[0]]).map((p) => p[1]);
+    const no = poderes.filter((p) => p[3] && !quiero[p[0]]).map((p) => p[1]);
+    document.getElementById("texto").textContent =
+      `Íconos:\nMarco: ${nombreMarco}\nPoderes nuevos que quiero: ${si.length ? si.join(", ") : "ninguno"}\nNo por ahora: ${no.length ? no.join(", ") : "ninguno"}`;
+  }
+  escribir();
+  document.getElementById("copiar").addEventListener("click", (ev) => {
+    const boton = ev.currentTarget;
+    const texto = document.getElementById("texto");
+    const listo = () => { boton.textContent = "Copiado"; setTimeout(() => (boton.textContent = "Copiar resumen"), 1500); };
+    const seleccionar = () => {
+      const r = document.createRange(); r.selectNodeContents(texto);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      boton.textContent = "Selecciónalo y copia";
+    };
+    try { navigator.clipboard.writeText(texto.textContent).then(listo, seleccionar); } catch (e) { seleccionar(); }
+  });
+</script>

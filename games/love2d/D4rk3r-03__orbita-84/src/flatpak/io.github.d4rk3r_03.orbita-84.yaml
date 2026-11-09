@@ -1,0 +1,71 @@
+# Receta de Flatpak para Flathub: compila LÖVE 11.5 (con LuaJIT) y le suma el juego.
+# Prueba local: bash flatpak/probar.sh (usa el código de esta carpeta en lugar del de GitHub).
+id: io.github.d4rk3r_03.orbita-84
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+command: orbita84
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --socket=pulseaudio
+  # mandos de juego
+  - --device=all
+  - --env=SDL_VIDEO_WAYLAND_WMCLASS=io.github.d4rk3r_03.orbita-84
+  - --env=SDL_VIDEO_X11_WMCLASS=io.github.d4rk3r_03.orbita-84
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+  - '*.la'
+  - '*.a'
+
+modules:
+  - name: luajit
+    no-autogen: true
+    make-args:
+      - BUILDMODE=dynamic
+      - PREFIX=${FLATPAK_DEST}
+    make-install-args:
+      - PREFIX=${FLATPAK_DEST}
+    sources:
+      - type: git
+        url: https://github.com/openresty/luajit2.git
+        tag: v2.1-20260724
+        commit: 982cd8323eafd8604a9e5f2a916aa50b9f67d9ed
+    cleanup:
+      - /bin
+
+  - name: libmodplug
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://downloads.sourceforge.net/modplug-xmms/libmodplug-0.8.9.0.tar.gz
+        sha256: 457ca5a6c179656d66c01505c0d95fafaead4329b9dbaa0f997d00a3508ad9de
+
+  - name: love
+    buildsystem: autotools
+    sources:
+      - type: archive
+        url: https://github.com/love2d/love/releases/download/11.5/love-11.5-linux-src.tar.gz
+        sha256: 066e0843f71aa9fd28b8eaf27d41abb74bfaef7556153ac2e3cf08eafc874c39
+    cleanup:
+      - /share/applications
+      - /share/icons
+      - /share/mime
+      - /share/pixmaps
+
+  - name: orbita84
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 -t /app/share/orbita84 juego/*.lua
+      - printf '#!/bin/sh\nexec love /app/share/orbita84 "$@"\n' > orbita84.sh
+      - install -Dm755 orbita84.sh /app/bin/orbita84
+      - install -Dm644 flatpak/io.github.d4rk3r_03.orbita-84.desktop -t /app/share/applications
+      - install -Dm644 flatpak/io.github.d4rk3r_03.orbita-84.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 flatpak/icono.png /app/share/icons/hicolor/512x512/apps/io.github.d4rk3r_03.orbita-84.png
+    sources:
+      - type: git
+        url: https://github.com/D4rk3r-03/orbita-84.git
+        tag: v1.0.0

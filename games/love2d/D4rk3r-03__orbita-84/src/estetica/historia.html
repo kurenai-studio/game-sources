@@ -1,0 +1,226 @@
+<title>Guion Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: el caso en orden de lectura (prólogo, actos, final) y el borrador editable al pie */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --tinta: #42523d;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 980px; margin: 0 auto; display: grid; gap: 40px; }
+  header { display: grid; gap: 10px; }
+  .sello {
+    justify-self: start; font-family: var(--maquina); color: var(--sello);
+    border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px;
+    transform: rotate(-2deg);
+  }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 46px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 18px; color: var(--lcd); margin: 0; }
+  h3 { font-family: var(--maquina); font-weight: 400; font-size: 17px; color: var(--sello); margin: 0; }
+  p { margin: 0; color: var(--suave); max-width: 70ch; }
+  header p { color: var(--texto); }
+  section { display: grid; gap: 14px; }
+  .sinopsis { font-family: var(--maquina); color: var(--texto); background: var(--hoja); padding: 16px; border-radius: 10px; display: grid; gap: 8px; max-width: 76ch; }
+  .sinopsis p { color: var(--texto); }
+
+  img.lcd { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; }
+  .tira { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  figure { margin: 0; display: grid; gap: 6px; min-width: 0; align-content: start; }
+  figcaption { font-size: 14px; color: var(--suave); }
+
+  .nivel { background: var(--hoja); border-radius: 12px; padding: 12px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .nivel .datos { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+  .nivel .datos b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .nivel .datos span { font-size: 14px; color: var(--suave); }
+  .nivel .datos .antes { font-family: var(--maquina); color: var(--sello); }
+  @media (max-width: 560px) { .nivel { grid-template-columns: minmax(0, 1fr); } }
+
+  .tabla { overflow-x: auto; background: var(--hoja); border-radius: 12px; padding: 6px 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 600px; font-variant-numeric: tabular-nums; }
+  th { font-family: var(--pixel); font-weight: 400; font-size: 11px; letter-spacing: .08em; color: var(--suave); text-align: left; padding: 8px 6px; }
+  td { padding: 7px 6px; border-top: 1px solid var(--casco); font-size: 15px; }
+  td.n { font-family: var(--pixel); font-size: 13px; color: var(--lcd); }
+  .chip { font-family: var(--pixel); font-size: 10px; border-radius: 4px; padding: 1px 6px; background: var(--casco); color: var(--suave); white-space: nowrap; }
+  .chip.sube { background: var(--sello); color: var(--bisel); }
+
+  .borrador { background: var(--casco); border-radius: 12px; padding: 14px; display: grid; gap: 12px; }
+  .campos { display: grid; gap: 8px; }
+  .campo { display: grid; grid-template-columns: 9.5em minmax(0, 1fr) 3.5em; gap: 10px; align-items: center; }
+  .campo label { font-family: var(--pixel); font-size: 11px; color: var(--suave); }
+  .campo input { font-family: var(--maquina); font-size: 16px; text-transform: uppercase; background: var(--bisel); color: var(--texto); border: 2px solid var(--hoja); border-radius: 6px; padding: 6px 8px; min-width: 0; }
+  .campo input:focus-visible { outline: 2px solid var(--lcd); outline-offset: 1px; }
+  .campo output { font-family: var(--pixel); font-size: 11px; color: var(--suave); text-align: right; font-variant-numeric: tabular-nums; }
+  .campo output.largo { color: var(--sello); }
+  @media (max-width: 560px) { .campo { grid-template-columns: minmax(0, 1fr) 3.5em; } .campo label { grid-column: 1 / -1; } }
+  pre { margin: 0; white-space: pre-wrap; font-family: var(--maquina); font-size: 15px; color: var(--texto); background: var(--bisel); padding: 12px; border-radius: 8px; }
+  button {
+    justify-self: start; font-family: var(--pixel); font-size: 13px; letter-spacing: .06em;
+    background: var(--sello); color: var(--bisel); border: 0; border-radius: 6px; padding: 8px 14px; cursor: pointer;
+  }
+  button:focus-visible { outline: 2px solid var(--lcd); outline-offset: 2px; }
+  .nota { font-family: var(--maquina); color: var(--sello); }
+</style>
+
+<main>
+  <header>
+    <span class="sello">CLASIFICADO · GUION</span>
+    <h1>Expediente 84: el caso completo</h1>
+    <p>Borrador del guion con el orden por actos, el mapa de Betty Hill y el giro de los expedientes del futuro. Tono serio. Las pantallas son muestras en la paleta verde con la fuente real del juego, que no tiene tildes. Todavía no cambié nada en el juego.</p>
+    <p class="nota">Puedes corregir los informes al final de la página (máximo 19 letras) y copiarme el resumen.</p>
+  </header>
+
+  <section>
+    <h2>SINOPSIS</h2>
+    <div class="sinopsis">
+      <p>1984. Un programa secreto junta diez casos en los que se repiten las mismas luces. Dos expedientes no tienen sentido: Bélgica 1990 y Phoenix 1997 llegaron con una fecha que todavía no pasó.</p>
+      <p>Cada objeto que derribas deja una luz. Al principio son puntos sueltos. En Los Hill se entiende qué son: el mapa estelar que Betty Hill dibujó en 1961, después de que se la llevaron.</p>
+      <p>Completo, el mapa no muestra de dónde vienen, sino por dónde entran: una pirámide bajo el Triángulo de las Bermudas, ahí donde desapareció el Vuelo 19 en 1945.</p>
+      <p>Al cerrar la puerta aparecen las dos estrellas grandes, Zeta Reticuli, y se resuelve el giro: los informes de 1990 y 1997 llevan tu firma. En la vuelta 2, las luces vuelven.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>PRÓLOGO</h2>
+    <p>Dos pantallas antes del nivel 1, solo en partidas nuevas. Se pueden saltar con START.</p>
+    <div class="tira">
+      <figure><div class="pantalla"><img class="lcd" src="prologo_1.png" alt="Prólogo: 1984, programa secreto, diez casos, las mismas luces"></div></figure>
+      <figure><div class="pantalla"><img class="lcd" src="prologo_2.png" alt="Prólogo: dos expedientes tienen fecha que aún no llega"></div></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>EL ORDEN</h2>
+    <p>Los niveles quedan ordenados por actos. Con este orden, la dificultad de los jefes sube casi sola. Duración y golpes son de la última auditoría, con el piloto automático.</p>
+    <div class="tabla">
+      <table>
+        <thead><tr><th>Nivel</th><th>Caso</th><th>Modo</th><th>Jefe</th><th>Hoy</th><th>Duración · golpes</th><th>Ajuste</th></tr></thead>
+        <tbody>
+          <tr><td colspan="7"><h3>Acto I · Avistamientos</h3></td></tr>
+          <tr><td class="n">1</td><td>Roswell 1947</td><td>aire</td><td>platillo</td><td>1</td><td>32 s · 3,8</td><td><span class="chip">igual</span></td></tr>
+          <tr><td class="n">2</td><td>Bélgica 1990</td><td>aire</td><td>triángulo negro</td><td>2</td><td>27 s · 3,8</td><td><span class="chip">igual</span></td></tr>
+          <tr><td class="n">3</td><td>Phoenix 1997</td><td>tierra</td><td>la V</td><td>3</td><td>26 s · 3,0</td><td><span class="chip">igual</span></td></tr>
+          <tr><td colspan="7"><h3>Acto II · Contacto</h3></td></tr>
+          <tr><td class="n">4</td><td>Hangar 18</td><td>cueva</td><td>insignia</td><td>6</td><td>35 s · 3,8</td><td><span class="chip">igual</span></td></tr>
+          <tr><td class="n">5</td><td>Los Hill 1961</td><td>cueva</td><td>el ojo</td><td>4</td><td>41 s · 4,8</td><td><span class="chip">igual</span></td></tr>
+          <tr><td colspan="7"><h3>Acto III · Se esconden</h3></td></tr>
+          <tr><td class="n">6</td><td>Shag Harbour 1967</td><td>mar</td><td>el objeto</td><td>7</td><td>33 s · 5,0</td><td><span class="chip">igual</span></td></tr>
+          <tr><td class="n">7</td><td>Baikal 1982</td><td>hielo</td><td>el gigante</td><td>9</td><td>40 s · 6,0</td><td><span class="chip">igual</span></td></tr>
+          <tr><td class="n">8</td><td>Golfo Nuevo 1960</td><td>mar de noche</td><td>fantasma</td><td>10</td><td>41 s · 2,8</td><td><span class="chip sube">más duro</span></td></tr>
+          <tr><td class="n">9</td><td>Lubbock 1951</td><td>aire</td><td>tren de luces</td><td>5</td><td>56 s · 7,8</td><td><span class="chip">igual</span></td></tr>
+          <tr><td colspan="7"><h3>Final · La puerta</h3></td></tr>
+          <tr><td class="n">10</td><td>Bermudas 1945</td><td>submarino</td><td>pirámide</td><td>8</td><td>76 s · 12</td><td><span class="chip">pulir</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Las dos cuevas quedan seguidas en el acto II, y eso cuadra con la historia: la base y la abducción. La pirámide es la pelea más larga y queda como jefe final, aunque conviene pulirla para que se sienta épica y no larga.</p>
+  </section>
+
+  <section>
+    <h2>CARTELES DE NIVEL</h2>
+    <p>El cartel de siempre suma una línea de informe debajo del caso.</p>
+    <div id="carteles" class="tira"></div>
+  </section>
+
+  <section>
+    <h2>EL MAPA ENTRE NIVELES</h2>
+    <p>Después de cada jefe se prende una estrella, marcada con la mira de radar de las mejoras. Desde Los Hill aparecen en tono medio las líneas del mapa y las estrellas que faltan. Las dos grandes, Zeta Reticuli, se prenden al cerrar la puerta.</p>
+    <div id="mapas" class="tira"></div>
+  </section>
+
+  <section>
+    <h2>FINAL</h2>
+    <p>Tres pantallas al vencer la pirámide, antes de los récords. En la vuelta 2, el cartel del nivel 1 cambia su informe.</p>
+    <div class="tira">
+      <figure><div class="pantalla"><img class="lcd" src="final_1.png" alt="Final: la puerta se cierra"></div></figure>
+      <figure><div class="pantalla"><img class="lcd" src="final_2.png" alt="Final: los informes de 1990 y 1997 llevan tu firma"></div></figure>
+      <figure><div class="pantalla"><img class="lcd" src="final_3.png" alt="Final: fin del expediente"></div></figure>
+      <figure><div class="pantalla"><img class="lcd" src="vuelta_2.png" alt="Vuelta 2: las luces vuelven"></div><figcaption>Vuelta 2</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="borrador">
+    <h2>BORRADOR DE TEXTOS</h2>
+    <p>Cada informe cabe en 19 letras. El contador se pone rojo si te pasas.</p>
+    <div class="campos" id="campos"></div>
+    <pre id="texto"></pre>
+    <button type="button" id="copiar">Copiar resumen</button>
+  </section>
+</main>
+
+<script>
+  const niveles = [
+    ["ROSWELL 1947", "ALGO CAYO DEL CIELO", "UNA LUZ. NADA MAS"],
+    ["BELGICA 1990", "ESTE AUN NO OCURRE", "OTRA. MUY LEJOS"],
+    ["PHOENIX 1997", "LLEGO ANTES DE HORA", "TRES PUNTOS"],
+    ["HANGAR 18", "VIENEN POR LO SUYO", "NO ESTAN AL AZAR"],
+    ["LOS HILL 1961", "ELLA DIBUJO UN MAPA", "ES UN MAPA"],
+    ["SHAG HARBOUR 1967", "SE HUNDIO SIN RUIDO", "FALTAN CINCO"],
+    ["BAIKAL 1982", "VIVE BAJO EL HIELO", "SE ACERCAN"],
+    ["GOLFO NUEVO 1960", "LA ARMADA LOS VIO", "CASI COMPLETO"],
+    ["LUBBOCK 1951", "SE PONEN EN FILA", "ES POR DONDE ENTRAN"],
+    ["BERMUDAS 1945", "EL VUELO 19 CRUZO", "LA PUERTA SE CIERRA"],
+  ];
+  const dos = (n) => String(n).padStart(2, "0");
+  const carteles = document.getElementById("carteles");
+  const mapas = document.getElementById("mapas");
+  niveles.forEach(([caso, informe, tras], i) => {
+    const n = i + 1;
+    carteles.insertAdjacentHTML("beforeend",
+      `<figure><div class="pantalla"><img class="lcd" src="cartel_${dos(n)}.png" alt="Cartel del nivel ${n}, ${caso}: ${informe}"></div><figcaption>${n} · ${caso}</figcaption></figure>`);
+    mapas.insertAdjacentHTML("beforeend",
+      `<figure><div class="pantalla"><img class="lcd" src="mapa_${dos(n)}.png" alt="Mapa tras el jefe ${n}: ${tras}"></div><figcaption>Tras el jefe ${n}</figcaption></figure>`);
+  });
+
+  const campos = document.getElementById("campos");
+  const textos = niveles.map((n) => n[1]);
+  niveles.forEach(([caso], i) => {
+    const fila = document.createElement("div");
+    fila.className = "campo";
+    fila.innerHTML = `<label for="informe-${i + 1}">${i + 1} · ${caso}</label><input id="informe-${i + 1}" maxlength="24" value="${textos[i]}"><output for="informe-${i + 1}"></output>`;
+    const input = fila.querySelector("input");
+    const cuenta = fila.querySelector("output");
+    const contar = () => {
+      textos[i] = input.value.toUpperCase();
+      cuenta.textContent = `${textos[i].length}/19`;
+      cuenta.classList.toggle("largo", textos[i].length > 19);
+      escribir();
+    };
+    input.addEventListener("input", contar);
+    campos.append(fila);
+    setTimeout(contar);
+  });
+  function escribir() {
+    document.getElementById("texto").textContent = "Guion:\n" +
+      niveles.map(([caso], i) => `${i + 1}. ${caso}: ${textos[i]}`).join("\n");
+  }
+  escribir();
+  document.getElementById("copiar").addEventListener("click", (ev) => {
+    const boton = ev.currentTarget;
+    const texto = document.getElementById("texto");
+    const listo = () => { boton.textContent = "Copiado"; setTimeout(() => (boton.textContent = "Copiar resumen"), 1500); };
+    const seleccionar = () => {
+      const r = document.createRange(); r.selectNodeContents(texto);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      boton.textContent = "Selecciónalo y copia";
+    };
+    try { navigator.clipboard.writeText(texto.textContent).then(listo, seleccionar); } catch (e) { seleccionar(); }
+  });
+</script>

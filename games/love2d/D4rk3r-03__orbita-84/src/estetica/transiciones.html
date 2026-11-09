@@ -1,0 +1,97 @@
+<title>Transiciones Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: una tarjeta por estilo, con el cambio nivel → mapa y portada → prólogo */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 1100px; margin: 0 auto; display: grid; gap: 36px; }
+  header { display: grid; gap: 10px; }
+  .sello {
+    justify-self: start; font-family: var(--maquina); color: var(--sello);
+    border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px;
+    transform: rotate(-2deg);
+  }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 44px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 18px; color: var(--lcd); margin: 0; }
+  p { margin: 0; color: var(--suave); max-width: 72ch; }
+  header p { color: var(--texto); }
+
+  .estilos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .estilo { background: var(--hoja); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+  .estilo b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .estilo span { font-size: 14px; color: var(--suave); }
+  .estilo .rec { font-family: var(--maquina); color: var(--sello); }
+
+  section { display: grid; gap: 12px; }
+  .fila { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 860px) { .fila { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .fila { grid-template-columns: minmax(0, 1fr); } }
+  figure { margin: 0; display: grid; gap: 6px; min-width: 0; align-content: start; }
+  figcaption { font-family: var(--pixel); font-size: 11px; letter-spacing: .06em; color: var(--suave); }
+  figure.hoy figcaption { color: var(--sello); }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; }
+  img.lcd { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; aspect-ratio: 7 / 4; object-fit: cover; }
+  .nota { font-size: 14px; }
+</style>
+<style>
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .tarjeta { background: var(--hoja); border-radius: 12px; padding: 12px; display: grid; gap: 8px; align-content: start; }
+  .tarjeta .par { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .tarjeta b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .tarjeta span { font-size: 14px; color: var(--suave); }
+  .tarjeta .rec { font-family: var(--maquina); color: var(--sello); }
+  .tarjeta.hoy b { color: var(--sello); }
+</style>
+
+<main>
+  <header>
+    <span class="sello">EN REVISIÓN · TRANSICIONES</span>
+    <h1>Cambios de pantalla</h1>
+    <p>Hoy todas las pantallas cambian de golpe. Estas muestras usan capturas reales del juego (Roswell → mapa de Betty Hill, y portada → prólogo) con seis maneras de pasar de una a otra. Cada una dura entre 0,3 y 0,5 segundos y va y vuelve para que se vea dos veces.</p>
+  </header>
+  <section>
+    <h2>LOS ESTILOS</h2>
+    <div class="tarjetas" id="tarjetas"></div>
+  </section>
+  <section>
+    <h2>DÓNDE IRÍA</h2>
+    <p>Mi propuesta: la carpeta en los cambios grandes de la historia (portada → prólogo, nivel → mapa, mapa → nivel, final), porque se lee como abrir y cerrar el expediente, y la persiana, más corta, para entrar y salir de los menús y de la pausa. La tele que se apaga quedaría bien para el FIN DEL JUEGO.</p>
+  </section>
+</main>
+
+<script>
+  const estilos = [
+    ["hoy", "Hoy", "Corte directo, sin transición."],
+    ["persiana", "A · Persiana", "Franjas de tinta que se cierran cada seis filas y se abren sobre la pantalla nueva. Corta y limpia."],
+    ["iris", "B · Iris", "Un círculo que se cierra sobre la nave y se abre en la pantalla siguiente, como en los dibujos animados viejos."],
+    ["radar", "C · Barrido de radar", "Una línea gira desde el centro y deja detrás la pantalla nueva con una estela en tono medio."],
+    ["damero", "D · Damero", "Los píxeles se encienden en un patrón ordenado hasta llenar la pantalla y se apagan sobre la nueva, como un LCD que cambia de imagen."],
+    ["carpeta", "E · Carpeta", "Dos tapas de tinta entran desde los lados y se juntan con el «84» en el lomo, como cerrar el expediente; después se abren."],
+    ["apagado", "F · Tele que se apaga", "La pantalla se aplasta en una línea y un punto, y la siguiente se abre desde ahí."],
+  ];
+  const t = document.getElementById("tarjetas");
+  for (const [k, nombre, nota] of estilos) {
+    const rec = k === "carpeta" ? '<span class="rec">Mi recomendación</span>' : "";
+    t.insertAdjacentHTML("beforeend",
+      `<div class="tarjeta ${k === "hoy" ? "hoy" : ""}"><b>${nombre}</b><div class="par"><div class="pantalla"><img class="lcd" src="${k}_nivel_mapa.gif" alt="${nombre}: del nivel de Roswell al mapa"></div><div class="pantalla"><img class="lcd" src="${k}_portada_prologo.gif" alt="${nombre}: de la portada al prólogo"></div></div><span>${nota}</span>${rec}</div>`);
+  }
+</script>

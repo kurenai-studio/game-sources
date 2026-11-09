@@ -1,0 +1,104 @@
+<title>Jefes macizos Expediente 84</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Special+Elite&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Carpeta de expediente: una sección por jefe, cada propuesta con el dibujo grande y en la pantalla */
+  :root {
+    --casco: #1d2a3f;
+    --hoja: #24334c;
+    --bisel: #0f1622;
+    --lcd: #c7f0d9;
+    --texto: #e6ecf3;
+    --suave: #9fb0c6;
+    --sello: #e0806a;
+    --pixel: "Silkscreen", "Courier New", monospace;
+    --maquina: "Special Elite", "Courier New", monospace;
+    --cuerpo: "Atkinson Hyperlegible", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { background: var(--bisel); }
+  body {
+    color: var(--texto); font-family: var(--cuerpo); font-size: 16px; line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+  }
+  main { max-width: 1100px; margin: 0 auto; display: grid; gap: 36px; }
+  header { display: grid; gap: 10px; }
+  .sello {
+    justify-self: start; font-family: var(--maquina); color: var(--sello);
+    border: 2px solid var(--sello); padding: 2px 10px; letter-spacing: .12em; font-size: 14px;
+    transform: rotate(-2deg);
+  }
+  h1 { font-family: var(--pixel); font-weight: 400; font-size: clamp(28px, 7vw, 44px); margin: 0; line-height: 1; text-wrap: balance; }
+  h2 { font-family: var(--pixel); font-weight: 400; font-size: 18px; color: var(--lcd); margin: 0; }
+  p { margin: 0; color: var(--suave); max-width: 72ch; }
+  header p { color: var(--texto); }
+
+  .estilos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .estilo { background: var(--hoja); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+  .estilo b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .estilo span { font-size: 14px; color: var(--suave); }
+  .estilo .rec { font-family: var(--maquina); color: var(--sello); }
+
+  section { display: grid; gap: 12px; }
+  .fila { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 860px) { .fila { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 420px) { .fila { grid-template-columns: minmax(0, 1fr); } }
+  figure { margin: 0; display: grid; gap: 6px; min-width: 0; align-content: start; }
+  figcaption { font-family: var(--pixel); font-size: 11px; letter-spacing: .06em; color: var(--suave); }
+  figure.hoy figcaption { color: var(--sello); }
+  .pantalla { background: var(--casco); border-radius: 8px; padding: 6px; }
+  img.lcd { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; aspect-ratio: 7 / 4; object-fit: cover; }
+  .nota { font-size: 14px; }
+</style>
+<style>
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+  .tarjeta { background: var(--hoja); border-radius: 12px; padding: 12px; display: grid; gap: 8px; align-content: start; }
+  .tarjeta .par { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .tarjeta b { font-family: var(--pixel); font-weight: 400; font-size: 15px; color: var(--lcd); }
+  .tarjeta span { font-size: 14px; color: var(--suave); }
+  .tarjeta .rec { font-family: var(--maquina); color: var(--sello); }
+  .tarjeta.hoy b { color: var(--sello); }
+</style>
+
+<style>
+  .tarjeta .trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tarjeta figure .pantalla img { image-rendering: pixelated; display: block; width: 100%; height: auto; border-radius: 3px; }
+  .tarjeta .caso { font-family: var(--maquina); font-size: 13px; color: var(--suave); }
+  .escenas { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+</style>
+<style>
+  .jefe { display: grid; gap: 12px; }
+  .ops { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .op { background: var(--hoja); border-radius: 12px; padding: 12px; display: grid; gap: 8px; align-content: start; }
+  .op b { font-family: var(--pixel); font-weight: 400; font-size: 14px; color: var(--lcd); }
+  .op.hoy b { color: var(--sello); }
+  .op span { font-size: 14px; color: var(--suave); }
+  .op .grande { background: var(--casco); border-radius: 8px; padding: 6px; display: grid; place-items: center; min-height: 120px; }
+  .op .grande img { image-rendering: pixelated; max-width: 100%; height: auto; display: block; }
+  .caso { font-family: var(--maquina); color: var(--suave); font-size: 14px; }
+</style>
+<main>
+  <header>
+    <span class="sello">EN REVISIÓN · JEFES</span>
+    <h1>Jefes macizos</h1>
+    <p>Bocetos para los cinco jefes que faltaban revisar, con la misma regla del ojo y del reactor: masa en tinta, lo llamativo recortado en claro y partes que se mueven. Cada propuesta aparece en grande y en la pantalla del juego, donde pelea ese jefe.</p>
+    <p><b>Ya en el juego:</b> fénix C, tenaza B, Shag B y fantasma A. <b>Falta elegir:</b> el coloso de Roswell, que ahora tiene cinco propuestas (arriba).</p>
+  </header>
+  <div id="jefes" style="display:grid; gap:36px"></div>
+  <section>
+    <h2>NOTAS</h2>
+    <p class="nota">Todos crecen un poco (entre 4 y 10 píxeles de ancho). Al aplicarlos reviso los puntos de disparo y la vida de cada jefe para que el combate dure lo mismo. El fantasma del Golfo Nuevo se ve aquí en colores normales; en el juego esa pantalla va invertida.</p>
+  </section>
+</main>
+
+<script>
+  const jefes = [["coloso", "Roswell 1947", [["hoy", "Hoy", "Platillo de 17x9."], ["a", "A · El platillo macizo", "Disco grueso, cúpula con ventanas y luces que corren por el borde. 23x11."], ["b", "B · Con cañón", "El mismo disco con un cañón que retrocede al disparar. 23x11."], ["c", "C · El piloto", "La cúpula es un vidrio claro y adentro se ve la cabeza del gris, que parpadea. 23x11."], ["d", "D · Los restos", "El platillo estrellado: una grieta clara, chispas y humo que sale de la herida. 23x13."], ["e", "E · El doble disco", "Dos platillos encimados con luces que giran en sentidos contrarios. 23x12."]]], ["fenix", "Luces de Phoenix 1997", [["hoy", "Hoy", "Una V de líneas finas, 27x9."], ["a", "A · El bumerán macizo", "Alas gruesas, casco al centro y siete luces claras que corren a las puntas. 35x11."], ["b", "B · La nodriza", "Un triángulo lleno que tapa medio cielo, luces abajo y una compuerta que se abre al soltar. 37x12."], ["c", "C · El ala con motores", "La V maciza con góndolas que echan fuego en las puntas y un ojo grande al centro. 35x12."]]], ["tenaza", "Triángulo belga 1990", [["hoy", "Hoy", "Triángulo de 18x13."], ["a", "A · El triángulo macizo", "Tres luces grandes en las esquinas y la luz del centro que late. 20x15."], ["b", "B · La tenaza", "El triángulo con dos pinzas al frente que se abren y cierran antes de embestir. 24x15."]]], ["shag", "Shag Harbour 1967", [["hoy", "Hoy", "Casco de 19x6."], ["a", "A · El casco hundido", "Cúpula maciza con cuatro ventanas que se encienden en fila. 23x8."], ["b", "B · La quilla de luces", "Media luna de lado con luces abajo y una antena. 23x9."]]], ["fantasma", "Golfo Nuevo 1960", [["hoy", "Hoy", "Submarino de 20x6."], ["a", "A · El submarino macizo", "Casco grueso, torreta con periscopio, ojos de buey y hélice que gira. 24x8."], ["b", "B · El objeto sin forma", "Un casco ancho como raya, con ojos al frente y aletas que ondulan. 24x8."]]]];
+  const raiz = document.getElementById("jefes");
+  for (const [j, caso, ops] of jefes) {
+    const tarjetas = ops.map(([c, titulo, idea]) =>
+      `<div class="op ${c === "hoy" ? "hoy" : ""}"><b>${titulo}</b><div class="grande"><img src="${j}_${c}.gif" alt="${caso}, ${titulo}, en grande"></div><div class="pantalla"><img class="lcd" src="escena_${j}_${c}.gif" alt="${caso}, ${titulo}, en la pantalla"></div><span>${idea}</span></div>`).join("");
+    raiz.insertAdjacentHTML("beforeend", `<section class="jefe"><h2>${j.toUpperCase()}</h2><span class="caso">${caso}</span><div class="ops">${tarjetas}</div></section>`);
+  }
+</script>
