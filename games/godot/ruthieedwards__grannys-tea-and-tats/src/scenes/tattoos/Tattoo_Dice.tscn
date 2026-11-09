@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://5ppo1aw5xtf8"]
+
+[ext_resource type="Texture2D" uid="uid://77rhci0ojah5" path="res://assets/images/tattoos/dice-test.png" id="1_6gdhn"]
+
+[sub_resource type="Curve2D" id="Curve2D_rvslj"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 532, 87, 0, 0, 0, 0, 439, 217, 0, 0, 0, 0, 462, 235, 0, 0, 0, 0, 481, 270, 0, 0, 0, 0, 498, 319, 0, 0, 0, 0, 513, 350, 0, 0, 0, 0, 571, 344, 0, 0, 0, 0, 610, 333, 0, 0, 0, 0, 655, 321, 0, 0, 0, 0, 628, 266, 0, 0, 0, 0, 605, 223, 0, 0, 0, 0, 587, 190, 0, 0, 0, 0, 592, 134, 0, 0, 0, 0, 609, 95, 0, 0, 0, 0, 641, 146, 0, 0, 0, 0, 670, 180, 0, 0, 0, 0, 707, 217, 0, 0, 0, 0, 691, 256, 0, 0, 0, 0, 677, 286, 0, 0, 0, 0, 663, 314)
+}
+point_count = 20
+
+[sub_resource type="Curve2D" id="Curve2D_qnwvq"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 456, 217, 0, 0, 0, 0, 493, 226, 0, 0, 0, 0, 523, 217, 0, 0, 0, 0, 575, 198, 0, 0, 0, 0, 585, 195)
+}
+point_count = 5
+
+[sub_resource type="Curve2D" id="Curve2D_0bbpv"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 541, 90, 0, 0, 0, 0, 577, 92, 0, 0, 0, 0, 602, 94)
+}
+point_count = 3
+
+[node name="Tattoo" type="Node2D" unique_id=1687928336]
+
+[node name="Tattoo BG" type="Sprite2D" parent="." unique_id=2039408506]
+position = Vector2(640, 360)
+texture = ExtResource("1_6gdhn")
+
+[node name="TargetGroup" type="Node2D" parent="." unique_id=1639315888]
+
+[node name="Path2D" type="Path2D" parent="TargetGroup" unique_id=2094914596]
+curve = SubResource("Curve2D_rvslj")
+
+[node name="Path2D2" type="Path2D" parent="TargetGroup" unique_id=665207860]
+curve = SubResource("Curve2D_qnwvq")
+
+[node name="Path2D3" type="Path2D" parent="TargetGroup" unique_id=893973124]
+curve = SubResource("Curve2D_0bbpv")

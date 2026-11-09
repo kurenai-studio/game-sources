@@ -1,0 +1,119 @@
+[gd_scene format=3 uid="uid://bidrg8qr8l7n3"]
+
+[ext_resource type="Script" uid="uid://5dad3d6lteu5" path="res://scripts/main.gd" id="1_rvslj"]
+[ext_resource type="PackedScene" uid="uid://o7afd6sa7rm4" path="res://scenes/tattoos/Tattoo_Diamond.tscn" id="3_jlsqs"]
+[ext_resource type="PackedScene" uid="uid://d4d3l26xoio4a" path="res://scenes/tattoos/Tattoo_Teapot.tscn" id="3_nxtc6"]
+[ext_resource type="PackedScene" uid="uid://bnsotsolf5e24" path="res://scenes/tattoos/Tattoo_Book.tscn" id="4_q8u5g"]
+[ext_resource type="PackedScene" uid="uid://clwi0w0jf8yjh" path="res://scenes/tattoos/Tattoo_Cat.tscn" id="5_cvmbd"]
+[ext_resource type="Texture2D" uid="uid://irxp4cbn686w" path="res://assets/images/cursor.png" id="5_nxtc6"]
+[ext_resource type="PackedScene" uid="uid://dq5pgkfstb5dr" path="res://scenes/tattoos/Tattoo_Mint.tscn" id="6_ft6cd"]
+[ext_resource type="Script" uid="uid://bhltalwykkt7e" path="res://scripts/customcursor.gd" id="6_nxtc6"]
+[ext_resource type="PackedScene" uid="uid://knf4a70l3qsj" path="res://scenes/tattoos/Tattoo_Yarn.tscn" id="7_bb450"]
+[ext_resource type="Script" uid="uid://cdavvex2aygsh" path="res://scripts/scoretoast.gd" id="7_nxtc6"]
+[ext_resource type="AudioStream" uid="uid://cw1rrlhr2rspy" path="res://assets/audio/buzz.mp3" id="8_jlsqs"]
+[ext_resource type="PackedScene" uid="uid://1fca56bemlg4" path="res://scenes/tattoos/Tattoo_Heart.tscn" id="8_nfivy"]
+[ext_resource type="PackedScene" uid="uid://c0yw0cee6l7ln" path="res://scenes/tattoos/Tattoo_Tomato.tscn" id="9_1nqs0"]
+[ext_resource type="AudioStream" uid="uid://bwmv3ufl18p5e" path="res://assets/audio/countdown.mp3" id="9_q8u5g"]
+[ext_resource type="PackedScene" uid="uid://bbytb6vfdl55n" path="res://scenes/tattoos/Tattoo_Phonograph.tscn" id="10_1iba3"]
+[ext_resource type="PackedScene" uid="uid://dyp20ubd26k6b" path="res://scenes/tattoos/Tattoo_8Ball.tscn" id="11_yxlcp"]
+
+[node name="Main" type="Node2D" unique_id=1981611149]
+script = ExtResource("1_rvslj")
+max_allowed_distance = 8.0
+line_width = 6.0
+tattoo_pool = Array[PackedScene]([ExtResource("3_nxtc6"), ExtResource("3_jlsqs"), ExtResource("4_q8u5g"), ExtResource("5_cvmbd"), ExtResource("6_ft6cd"), ExtResource("7_bb450"), ExtResource("8_nfivy"), ExtResource("9_1nqs0"), ExtResource("10_1iba3"), ExtResource("11_yxlcp")])
+
+[node name="TattooContainer" type="Node2D" parent="." unique_id=1085823010]
+
+[node name="DrawingCanvas" type="Node2D" parent="." unique_id=711227209]
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1629789829]
+layer = 0
+
+[node name="Cursor" type="Sprite2D" parent="UI" unique_id=949547526]
+z_index = 100
+position = Vector2(650, 408)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("5_nxtc6")
+centered = false
+offset = Vector2(-15.42, -259.9)
+flip_h = true
+script = ExtResource("6_nxtc6")
+jitter_amount = 10.0
+jitter_speed = 80.0
+
+[node name="SubmitButton" type="Button" parent="UI" unique_id=2059679343]
+offset_left = 59.0
+offset_top = 615.0
+offset_right = 202.0
+offset_bottom = 681.0
+text = "Done"
+
+[node name="ScoreToast" type="Control" parent="UI" unique_id=992071567]
+layout_mode = 3
+anchors_preset = 0
+offset_top = 722.0
+offset_bottom = 722.0
+script = ExtResource("7_nxtc6")
+slide_distance = 130.0
+
+[node name="ColorRect" type="ColorRect" parent="UI/ScoreToast" unique_id=1941408392]
+layout_mode = 0
+offset_right = 1283.0
+offset_bottom = 127.0
+color = Color(0.272, 0.32, 0.3024, 1)
+
+[node name="ScoreLabel" type="Label" parent="UI/ScoreToast" unique_id=1941632754]
+layout_mode = 0
+offset_left = 664.0
+offset_top = 40.0
+offset_right = 761.0
+offset_bottom = 87.0
+theme_override_font_sizes/font_size = 36
+text = "--"
+
+[node name="ScoreFieldLabel" type="Label" parent="UI/ScoreToast" unique_id=2100398616]
+layout_mode = 0
+offset_left = 505.0
+offset_top = 40.0
+offset_right = 640.0
+offset_bottom = 87.0
+theme_override_font_sizes/font_size = 36
+text = "SCORE:"
+
+[node name="NextButton" type="Button" parent="UI/ScoreToast" unique_id=569270352]
+layout_mode = 0
+offset_left = 45.0
+offset_top = 33.0
+offset_right = 354.0
+offset_bottom = 100.0
+text = "Next Customer"
+
+[node name="CountSFX" type="AudioStreamPlayer" parent="UI/ScoreToast" unique_id=1355028399]
+stream = ExtResource("9_q8u5g")
+volume_db = -9.521
+
+[node name="LevelLabel" type="Label" parent="UI" unique_id=1682421905]
+offset_left = 1043.0
+offset_top = 667.0
+offset_right = 1218.0
+offset_bottom = 698.0
+theme_override_colors/font_color = Color(0.09411765, 0.17254902, 0.13725491, 1)
+theme_override_font_sizes/font_size = 24
+text = "Customer: --"
+horizontal_alignment = 2
+
+[node name="ResetButton" type="Button" parent="UI" unique_id=1777398989]
+offset_left = 54.0
+offset_top = -101.0
+offset_right = 191.0
+offset_bottom = -24.0
+text = "Reset"
+
+[node name="BuzzSFX" type="AudioStreamPlayer" parent="." unique_id=1561857776]
+stream = ExtResource("8_jlsqs")
+volume_db = -9.521
+
+[connection signal="pressed" from="UI/SubmitButton" to="." method="_on_btn_submit_pressed"]
+[connection signal="pressed" from="UI/ScoreToast/NextButton" to="." method="_on_next_button_pressed"]
+[connection signal="pressed" from="UI/ResetButton" to="." method="_on_btn_reset_pressed"]
