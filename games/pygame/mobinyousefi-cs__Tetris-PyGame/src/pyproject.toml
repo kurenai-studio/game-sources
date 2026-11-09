@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tetris"
+version = "0.1.0"
+description = "Tetris Game built with PyGame"
+authors = [{name = "Mobin Yousefi", email = ""}]
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+dependencies = [
+  "pygame>=2.5.0",
+]
+
+[project.scripts]
+tetris = "tetris.main:main"
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I", "UP", "B", "C90"]
+ignore = ["E203", "E266", "E501"]
+
+[tool.black]
+line-length = 100
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-q"
+testpaths = ["tests"]
