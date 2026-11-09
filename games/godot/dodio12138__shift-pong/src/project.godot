@@ -1,0 +1,36 @@
+; Engine configuration file.
+
+config_version=5
+
+[application]
+
+config/name="SHIFT PONG"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="PingPong GameOff"
+run/main_scene="res://main.tscn"
+config/icon="res://icon.png"
+config/features=PackedStringArray("4.7", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/dpi/allow_hidpi.web=false
+
+[physics]
+
+common/physics_ticks_per_second=240
+common/max_physics_steps_per_frame=16
+common/physics_ticks_per_second.web=120
+common/max_physics_steps_per_frame.web=8
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+anti_aliasing/quality/msaa_3d=0
+
+[internationalization]
+
+locale/fallback="zh"
