@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://7mux8lo0ke4"]
+
+[ext_resource type="Script" uid="uid://dker8e4fxhlf" path="res://objects/skaters/player.gd" id="1_uce12"]
+[ext_resource type="Texture2D" uid="uid://i5qm0g4tkuh0" path="res://sprites/character-arrow.svg" id="2_uce12"]
+[ext_resource type="Texture2D" uid="uid://rp72ibl1o7fv" path="res://sprites/character-oval-outline.svg" id="3_bfqqb"]
+[ext_resource type="Texture2D" uid="uid://cem60sjvahuab" path="res://sprites/character-oval-inside.svg" id="4_dyjsn"]
+[ext_resource type="Texture2D" uid="uid://c8b74x1t8b2v" path="res://sprites/8bit_chevron.png" id="5_chevron"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_7fj4o"]
+
+[node name="Player" type="Node2D" unique_id=1253797390]
+z_index = 2
+script = ExtResource("1_uce12")
+
+[node name="Angle" type="Line2D" parent="." unique_id=1653330159]
+z_index = 2
+texture_filter = 1
+texture_repeat = 2
+position = Vector2(0, 40)
+points = PackedVector2Array(0, 0, 80, 0)
+width = 16.0
+default_color = Color(0.22035533, 1, 0.62395877, 1)
+texture = ExtResource("5_chevron")
+texture_mode = 1
+
+[node name="Pointer" type="Sprite2D" parent="." unique_id=810725406]
+modulate = Color(0.93142647, 1, 0.6463891, 1)
+z_index = 2
+z_as_relative = false
+position = Vector2(-0.5, -8.999998)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_uce12")
+
+[node name="CircleOutline" type="Sprite2D" parent="." unique_id=909587024]
+modulate = Color(0.93142647, 1, 0.6463891, 1)
+z_index = -5
+z_as_relative = false
+material = SubResource("CanvasItemMaterial_7fj4o")
+position = Vector2(-0.5, 20)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("3_bfqqb")
+
+[node name="CircleFill" type="Sprite2D" parent="." unique_id=511250472]
+modulate = Color(0.93142647, 1, 0.6463891, 1)
+z_index = -5
+z_as_relative = false
+material = SubResource("CanvasItemMaterial_7fj4o")
+position = Vector2(-0.5, 20)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("4_dyjsn")

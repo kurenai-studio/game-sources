@@ -1,0 +1,87 @@
+[gd_scene format=3 uid="uid://tn613bbsa4xm"]
+
+[ext_resource type="Theme" uid="uid://c0b4q46jrp2me" path="res://menu/theme.tres" id="1_chmv6"]
+[ext_resource type="Script" uid="uid://2dakwbknt74l" path="res://menu/main_menu.gd" id="2_f5okj"]
+[ext_resource type="Texture2D" uid="uid://cg1i3w702x3cu" path="res://sprites/rink.png" id="3_rink"]
+
+[node name="MainMenu" type="Control" unique_id=1177999504]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_chmv6")
+script = ExtResource("2_f5okj")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1137272398]
+modulate = Color(0.5, 0.5, 0.5, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_rink")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1960952876]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_chmv6")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1439040152]
+layout_mode = 2
+theme = ExtResource("1_chmv6")
+theme_override_constants/separation = 20
+
+[node name="Title" type="RichTextLabel" parent="CenterContainer/VBoxContainer" unique_id=541593654]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+bbcode_enabled = true
+text = "[font_size=40]OPEN
+PRACTICE[/font_size]
+[font_size=20]A FOSS Hockey Game[/font_size]"
+fit_content = true
+horizontal_alignment = 1
+
+[node name="Practice" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1297484779]
+custom_minimum_size = Vector2(300, 60)
+layout_mode = 2
+theme = ExtResource("1_chmv6")
+text = "Practice"
+
+[node name="Match" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1144194092]
+custom_minimum_size = Vector2(300, 60)
+layout_mode = 2
+text = "Match"
+
+[node name="Season" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1144194095]
+custom_minimum_size = Vector2(300, 60)
+layout_mode = 2
+text = "Season"
+
+[node name="Setup" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1144194094]
+custom_minimum_size = Vector2(300, 60)
+layout_mode = 2
+text = "Setup"
+
+[node name="JoystickToggle" type="CheckButton" parent="CenterContainer/VBoxContainer" unique_id=2056199114]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 60)
+layout_mode = 2
+theme = ExtResource("1_chmv6")
+text = "On-Screen Joystick"
+alignment = 1
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Practice" to="." method="_on_practice_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Match" to="." method="_on_match_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Season" to="." method="_on_season_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Setup" to="." method="_on_setup_pressed"]
+[connection signal="toggled" from="CenterContainer/VBoxContainer/JoystickToggle" to="." method="_on_joystick_toggled"]

@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://daupcjejdlj5y"]
+
+[ext_resource type="Texture2D" uid="uid://b34u6mibkiurc" path="res://sprites/net.png" id="1_aspga"]
+
+[node name="Node" type="Node2D" unique_id=566522780]
+y_sort_enabled = true
+
+[node name="Post1" type="Sprite2D" parent="." unique_id=875826356]
+y_sort_enabled = true
+texture_filter = 1
+position = Vector2(27, -94)
+scale = Vector2(4, 4)
+texture = ExtResource("1_aspga")
+region_enabled = true
+region_rect = Rect2(10, 0, 6, 16)
+
+[node name="Back" type="Sprite2D" parent="." unique_id=969493266]
+z_index = 2
+texture_filter = 1
+position = Vector2(-3, -2)
+scale = Vector2(4, 4)
+texture = ExtResource("1_aspga")
+centered = false
+offset = Vector2(-6, -31)
+region_enabled = true
+region_rect = Rect2(0, 0, 11, 47)
+
+[node name="Post2" type="Sprite2D" parent="." unique_id=1858560379]
+y_sort_enabled = true
+texture_filter = 1
+position = Vector2(5, 92)
+scale = Vector2(4, 4)
+texture = ExtResource("1_aspga")
+region_enabled = true
+region_rect = Rect2(0, 47, 16, 15)

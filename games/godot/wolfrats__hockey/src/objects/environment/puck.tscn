@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://087q0jqlan76"]
+
+[ext_resource type="Script" uid="uid://bl2luahqyy0ss" path="res://objects/environment/puck.gd" id="1_0yy2u"]
+[ext_resource type="Texture2D" uid="uid://gus727oakv01" path="res://sprites/puck.png" id="2_i0e0h"]
+[ext_resource type="Texture2D" uid="uid://i5qm0g4tkuh0" path="res://sprites/character-arrow.svg" id="3_i0e0h"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_est1s"]
+friction = 0.1
+bounce = 0.9
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_0eafs"]
+radius = 3.259601
+
+[node name="Puck" type="RigidBody2D" unique_id=844181388 groups=["pucks"]]
+y_sort_enabled = true
+collision_layer = 50
+collision_mask = 62
+mass = 0.2
+physics_material_override = SubResource("PhysicsMaterial_est1s")
+gravity_scale = 0.0
+lock_rotation = true
+continuous_cd = 2
+contact_monitor = true
+max_contacts_reported = 10
+linear_damp_mode = 1
+linear_damp = 0.5
+angular_damp = 100.0
+script = ExtResource("1_0yy2u")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=406336950]
+texture_filter = 1
+position = Vector2(-4, 36)
+scale = Vector2(0.33, 0.33)
+texture = ExtResource("2_i0e0h")
+region_rect = Rect2(224, 120, 24, 24)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1481518937]
+position = Vector2(0, 40)
+scale = Vector2(4, 4)
+shape = SubResource("CircleShape2D_0eafs")
+
+[node name="Pointer" type="Sprite2D" parent="." unique_id=1076896887]
+z_index = 10
+z_as_relative = false
+position = Vector2(-1, -48.999996)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("3_i0e0h")
+
+[node name="PointerAbove" type="Sprite2D" parent="." unique_id=312557572]
+visible = false
+z_index = 10
+z_as_relative = false
+position = Vector2(-1, -48.999996)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("3_i0e0h")

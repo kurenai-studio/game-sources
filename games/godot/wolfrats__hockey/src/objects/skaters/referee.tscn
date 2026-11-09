@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://c7t4freferee"]
+
+[ext_resource type="Script" uid="uid://kmocaytrd8fk" path="res://objects/skaters/referee.gd" id="1_ref"]
+[ext_resource type="Shader" uid="uid://bayrnhw0sqoa4" path="res://shaders/no-stick.gdshader" id="2_3c2pq"]
+[ext_resource type="Texture2D" uid="uid://ck3e16inc2wj8" path="res://sprites/skater-all.png" id="2_20trb"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_arvj2"]
+friction = 0.5
+bounce = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x5j4y"]
+shader = ExtResource("2_3c2pq")
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3c2pq"]
+atlas = ExtResource("2_20trb")
+region = Rect2(0, 0, 5376, 192)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_h81v3"]
+radius = 6.5036798
+
+[node name="Referee" type="RigidBody2D" unique_id=226805643]
+y_sort_enabled = true
+collision_layer = 8
+collision_mask = 12
+physics_material_override = SubResource("PhysicsMaterial_arvj2")
+gravity_scale = 0.0
+lock_rotation = true
+contact_monitor = true
+max_contacts_reported = 5
+script = ExtResource("1_ref")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=1640821347]
+texture_filter = 1
+material = SubResource("ShaderMaterial_x5j4y")
+texture = SubResource("AtlasTexture_3c2pq")
+region_enabled = true
+region_rect = Rect2(0, 0, 192, 192)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1143848332]
+position = Vector2(0, 51.125)
+scale = Vector2(4, 4)
+shape = SubResource("CircleShape2D_h81v3")
+
+[node name="SightCone" type="Polygon2D" parent="." unique_id=1691492759]
+color = Color(1, 1, 0, 0.2)

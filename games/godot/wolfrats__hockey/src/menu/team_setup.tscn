@@ -1,0 +1,247 @@
+[gd_scene format=3 uid="uid://dd8f1k3l4o5u"]
+
+[ext_resource type="Theme" uid="uid://c0b4q46jrp2me" path="res://menu/theme.tres" id="1_theme"]
+[ext_resource type="Script" uid="uid://tqvgh0rmayuq" path="res://menu/team_setup.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://cg1i3w702x3cu" path="res://sprites/rink.png" id="3_rink"]
+
+[node name="TeamSetup" type="Control" unique_id=418654409]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_theme")
+script = ExtResource("2_script")
+
+[node name="Background" type="TextureRect" parent="." unique_id=1863586041]
+modulate = Color(0.5, 0.5, 0.5, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_rink")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1287822439]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Title" type="Label" parent="VBoxContainer" unique_id=1726139362]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 48
+text = "TEAM SETUP"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=346074231]
+layout_mode = 2
+theme_override_constants/separation = 100
+alignment = 1
+
+[node name="HomeTeam" type="VBoxContainer" parent="VBoxContainer/HBoxContainer" unique_id=2098657404]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Title" type="Label" parent="VBoxContainer/HBoxContainer/HomeTeam" unique_id=668127347]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Home Team"
+horizontal_alignment = 1
+
+[node name="HomeLabel" type="Label" parent="VBoxContainer/HBoxContainer/HomeTeam" unique_id=387923301]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Team 1"
+horizontal_alignment = 1
+
+[node name="Colors" type="HBoxContainer" parent="VBoxContainer/HBoxContainer/HomeTeam" unique_id=177749330]
+layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 1
+
+[node name="HomeHead" type="ColorRect" parent="VBoxContainer/HBoxContainer/HomeTeam/Colors" unique_id=76754361]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="HomeBody" type="ColorRect" parent="VBoxContainer/HBoxContainer/HomeTeam/Colors" unique_id=851259009]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="HomeFoot" type="ColorRect" parent="VBoxContainer/HBoxContainer/HomeTeam/Colors" unique_id=550861378]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="VBoxContainer/HBoxContainer/HomeTeam" unique_id=455870700]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Prev" type="Button" parent="VBoxContainer/HBoxContainer/HomeTeam/Buttons" unique_id=1535797433]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = "<"
+
+[node name="Next" type="Button" parent="VBoxContainer/HBoxContainer/HomeTeam/Buttons" unique_id=1732218328]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = ">"
+
+[node name="HomeDifficultyLabel" type="Label" parent="VBoxContainer/HBoxContainer/HomeTeam" unique_id=1537846197]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "AI: Easy"
+horizontal_alignment = 1
+
+[node name="HomeDifficulty" type="HSlider" parent="VBoxContainer/HBoxContainer/HomeTeam" unique_id=240336065]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 2.0
+tick_count = 3
+ticks_on_borders = true
+
+[node name="AwayTeam" type="VBoxContainer" parent="VBoxContainer/HBoxContainer" unique_id=984826549]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Title" type="Label" parent="VBoxContainer/HBoxContainer/AwayTeam" unique_id=2011295890]
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Away Team"
+horizontal_alignment = 1
+
+[node name="AwayLabel" type="Label" parent="VBoxContainer/HBoxContainer/AwayTeam" unique_id=588961625]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Team 2"
+horizontal_alignment = 1
+
+[node name="Colors" type="HBoxContainer" parent="VBoxContainer/HBoxContainer/AwayTeam" unique_id=1785983494]
+layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 1
+
+[node name="AwayHead" type="ColorRect" parent="VBoxContainer/HBoxContainer/AwayTeam/Colors" unique_id=1145809230]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="AwayBody" type="ColorRect" parent="VBoxContainer/HBoxContainer/AwayTeam/Colors" unique_id=389103976]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="AwayFoot" type="ColorRect" parent="VBoxContainer/HBoxContainer/AwayTeam/Colors" unique_id=1955131075]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+
+[node name="Buttons" type="HBoxContainer" parent="VBoxContainer/HBoxContainer/AwayTeam" unique_id=952341428]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Prev" type="Button" parent="VBoxContainer/HBoxContainer/AwayTeam/Buttons" unique_id=1423094262]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = "<"
+
+[node name="Next" type="Button" parent="VBoxContainer/HBoxContainer/AwayTeam/Buttons" unique_id=956047798]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = ">"
+
+[node name="AwayDifficultyLabel" type="Label" parent="VBoxContainer/HBoxContainer/AwayTeam" unique_id=1850745483]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "AI: Easy"
+horizontal_alignment = 1
+
+[node name="AwayDifficulty" type="HSlider" parent="VBoxContainer/HBoxContainer/AwayTeam" unique_id=375298115]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 2.0
+tick_count = 3
+ticks_on_borders = true
+
+[node name="GoalieControl" type="CheckBox" parent="VBoxContainer" unique_id=653139017]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+text = "Allow Goalie Control"
+
+[node name="TimeLabel" type="Label" parent="VBoxContainer" unique_id=485428032]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+custom_maximum_size = Vector2(500, -1)
+layout_mode = 2
+size_flags_horizontal = 4
+theme = ExtResource("1_theme")
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 6
+text = "Period Length: 2 min"
+horizontal_alignment = 1
+
+[node name="Time" type="HSlider" parent="VBoxContainer" unique_id=1911035187]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+custom_maximum_size = Vector2(500, -1)
+layout_mode = 2
+size_flags_horizontal = 22
+size_flags_vertical = 4
+max_value = 4.0
+value = 2.0
+rounded = true
+tick_count = 6
+ticks_on_borders = true
+ticks_position = 1
+
+[node name="Buttons" type="HBoxContainer" parent="VBoxContainer" unique_id=513619183]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="Back" type="Button" parent="VBoxContainer/Buttons" unique_id=1113038401]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Back"
+
+[node name="Play" type="Button" parent="VBoxContainer/Buttons" unique_id=718801761]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+text = "Play"
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/HomeTeam/Buttons/Prev" to="." method="_on_home_prev_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/HomeTeam/Buttons/Next" to="." method="_on_home_next_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/AwayTeam/Buttons/Prev" to="." method="_on_away_prev_pressed"]
+[connection signal="pressed" from="VBoxContainer/HBoxContainer/AwayTeam/Buttons/Next" to="." method="_on_away_next_pressed"]
+[connection signal="value_changed" from="VBoxContainer/Time" to="." method="_on_time_value_changed"]
+[connection signal="pressed" from="VBoxContainer/Buttons/Back" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="VBoxContainer/Buttons/Play" to="." method="_on_play_pressed"]
