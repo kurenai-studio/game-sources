@@ -1,0 +1,291 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feature/**"]
+    tags-ignore: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # Windows 运行器的 stdout 默认是 cp1252 管道，无法输出中文 →
+  # 统一强制 UTF-8（脚本内部也有兜底，此处为双保险）
+  PYTHONIOENCODING: utf-8
+  PYTHONUTF8: "1"
+  # CI 运行器没有声卡：SDL 若尝试访问真实音频设备会刷出大量 ALSA 报错
+  # 并可能拖慢测试。统一用 dummy 音频驱动并让音效层完全不初始化混音器
+  # ——音效的波形合成逻辑仍会被完整测试，只是不真正发声。
+  SDL_AUDIODRIVER: dummy
+  SDL_VIDEODRIVER: dummy
+  BLOCKWARGAME_NO_AUDIO: "1"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: 校验 · ${{ matrix.os }} · Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 文档自检要比对「最新 git 标签 == 基线」。默认的浅克隆不带标签，
+          # 那条校验会静默跳过——取全量历史才能真的校验。
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: 语法编译检查
+        run: python -m compileall -q core ui tools main.py
+
+      - name: 未定义名检查（本地同款，无需联网）
+        run: python tools/check_names.py
+
+      - name: 打包脚本兼容性检查（编码 / 输出目录）
+        run: python tools/check_scripts.py
+
+      - name: 文字锚点静态检查（pygame 只认 9 种锚点）
+        run: python tools/check_anchors.py
+
+      - name: UI 布局自检（按钮重叠 / 越界 / 遮挡）
+        run: python tools/check_layout.py
+
+      - name: 静态检查（仅致命错误）
+        run: |
+          python -m pip install ruff
+          ruff check --select E9,F63,F7,F82,F821 .
+
+      - name: 数据校验（地图 + 武器库）
+        run: python main.py --check
+
+      - name: 作战逻辑自检（26 条不变量）
+        run: python tools/diag.py 20
+
+      - name: 规则层单元测试（纯函数输入输出 / 覆盖清单）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_units.py
+
+      - name: 技术债守卫（随机兜底 / 位置索引 / 地块索引 / 探测指纹）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_debt.py
+
+      - name: 同格共存规则自检（空地同格 / 敌我判定 / 机动落点）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_stack.py
+
+      - name: 对局回放自检（可复现 / 可重演）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_replay.py
+
+      - name: 模组接口自检（注册 / 钩子 / 错误隔离）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_mods.py
+
+      - name: 单位图标包自检（清单 / 位图 / 降级）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_icons.py
+
+      - name: 战役编辑器自检（编排 / 校验 / 保存）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_campaign_editor.py
+
+      - name: 性能回归自检（渲染 / 探测 / 结论一致性）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_perf.py
+
+      - name: AI 战术库自检（可达性 / 保底移动 / 战术规则）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_ai_tactics.py
+
+      - name: 规则钩子自检（条件 / 效果 / 容错）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_hooks.py
+
+      - name: 事件总线自检（五条阵亡路径 / 订阅分发 / 错误隔离）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_bus.py
+
+      - name: 平衡体检（兵种树 / 想定部署）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/balance_check.py
+
+      - name: 主题与教学自检（浅色适配 / 教学触发边界）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_theme.py
+
+      - name: 文档自检（目录 / 锚点 / 版本号）
+        run: python tools/check_docs.py
+
+      - name: SDK 文档自检（目录 / 符号可解析 / 清单全覆盖）
+        run: python tools/check_sdk.py
+
+      - name: 模组 SDK 自检（manifest / 版本承诺 / 依赖 / 注入）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_sdk.py
+
+      - name: 语言包校验（覆盖率 / 占位符 / 译文残留）
+        run: python tools/lang_check.py
+
+      - name: 本地化运行时自检（分层包 / 回退链 / 格式化）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_i18n.py
+
+      - name: 键盘导航自检（设置 / 主菜单 / 系统菜单）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_keyboard.py
+
+      - name: 无障碍自检（字号三档度量 / 色盲形状标识）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_a11y.py
+
+      - name: 分享与观战自检（想定包校验和 / 回放内嵌想定 / AI 对战可复现）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_share.py
+
+      - name: 存档自检（随机流往返 / 坏档不崩）
+        run: python tools/test_save.py
+
+      - name: 机制边界自检（风与烟幕 / 工事工期 / 多段拦截）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_mechanics.py
+
+      - name: 兵种相克自检（连续函数 / 有界 / 不串命中率）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_counter.py
+
+      - name: 补给链自检（断粮降火力 / 备件 / 油料）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_logistics.py
+
+      - name: 想定战术校验自检（谁也打不到 / 制高点 / 防空伞）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_validate.py
+
+      - name: AI 战术深化自检（改派 / 撤退 / 集火 / 交叉火力 / 佯攻 / A/B 不失分）
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/test_ai_deep.py
+
+      - name: 无界面 UI 冒烟测试
+        env:
+          SDL_VIDEODRIVER: dummy
+        run: python tools/smoke_test.py
+
+      - name: 双 AI 推演
+        # 按**地图名**引用而不是序号——新增地图不会打乱既有引用
+        run: |
+          python main.py --sim 16 --map steppe_thunder
+          python main.py --sim 18 --map strait_shield
+          python main.py --sim 8 --map training_ground
+          # 大型想定（128×128）：回合数少，只验证能加载并正常推进
+          python main.py --sim 3 --map strait_confrontation
+
+  balance:
+    name: 平衡性回归（多种子）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt
+      - name: 5 个随机种子 × 2 张想定
+        shell: bash          # 启用 pipefail：python 的非零退出码不能被 tee 吞掉
+        run: |
+          python - <<'PY' | tee balance.txt
+          import sys
+          sys.path.insert(0, ".")
+          import tools.simcheck as sc
+          from core.enums import Side
+          rows = []
+          for mp, turns in (("steppe_thunder", 16), ("strait_shield", 18)):
+              for seed in (7, 1234, 2024, 555, 999):
+                  st = sc.run(mp, turns, seed)
+                  w = st.winner.value if st.winner else "平局"
+                  rows.append((mp, seed, st.vp[Side.BLUE], st.vp[Side.RED],
+                               st.casualties[Side.BLUE], st.casualties[Side.RED], w))
+          print("| 想定 | 种子 | 蓝VP | 红VP | 蓝损 | 红损 | 胜方 |")
+          print("|---|---|---|---|---|---|---|")
+          for r in rows:
+              print(f"| {r[0]} | {r[1]} | {r[2]} | {r[3]} | {r[4]} | {r[5]} | {r[6]} |")
+          blue = sum(1 for r in rows if r[6] == "BLUE")
+          red = sum(1 for r in rows if r[6] == "RED")
+          print(f"\n蓝方胜 {blue} / 红方胜 {red} / 共 {len(rows)} 局")
+          # 严重失衡（一方全胜）时让 CI 失败，避免平衡回归被忽略
+          if blue == 0 or red == 0:
+              sys.exit("严重失衡：一方全胜，请调整想定或参数")
+          PY
+      - name: 写入任务摘要
+        if: always()
+        run: |
+          {
+            echo "## 平衡性回归"
+            echo ""
+            cat balance.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  package:
+    name: 打包（${{ matrix.os }}）
+    needs: verify
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: 构建安装包
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            powershell -ExecutionPolicy Bypass -File packaging/build_windows.ps1
+          else
+            bash packaging/build_linux.sh
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 方块兵棋-${{ matrix.os }}
+          path: |
+            packaging/dist/
+          if-no-files-found: error
