@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://wi2otwdo8br2"]
+
+[ext_resource type="Texture2D" uid="uid://bpoxw3tuggoa4" path="res://assets/sprites/repair.png" id="1_77h7c"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3q1yy"]
+size = Vector2(44, 86)
+
+[node name="RepairBanch" type="StaticBody2D" unique_id=500109928]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1583784252]
+texture = ExtResource("1_77h7c")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1167014859]
+position = Vector2(0, 5)
+shape = SubResource("RectangleShape2D_3q1yy")

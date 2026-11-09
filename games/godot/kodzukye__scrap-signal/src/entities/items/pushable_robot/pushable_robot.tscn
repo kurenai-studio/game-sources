@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://dge55wtv1sf8i"]
+
+[ext_resource type="Script" uid="uid://d0yuo06hfqfq4" path="res://entities/items/pushable_robot/pushable_robot.gd" id="1_cwr2g"]
+[ext_resource type="Texture2D" uid="uid://c0uhk72pn2w7" path="res://assets/sprites/damaged_robot.png" id="2_6yl5d"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cwr2g"]
+size = Vector2(26, 31)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5bkgq"]
+size = Vector2(81.5, 32.25)
+
+[node name="PushableRobot" type="CharacterBody2D" unique_id=418482729]
+collision_layer = 32
+collision_mask = 33
+script = ExtResource("1_cwr2g")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1829584255]
+texture = ExtResource("2_6yl5d")
+region_rect = Rect2(128, 64, 32, 32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=330974052]
+position = Vector2(0, -0.5)
+shape = SubResource("RectangleShape2D_cwr2g")
+
+[node name="DetectionArea" type="Area2D" parent="." unique_id=1137135914]
+collision_layer = 48
+collision_mask = 49
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=2045146233]
+position = Vector2(0, -0.125)
+shape = SubResource("RectangleShape2D_5bkgq")

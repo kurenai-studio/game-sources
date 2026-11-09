@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://do61r73dbypfd"]
+
+[ext_resource type="Script" uid="uid://d20gkytolhrgi" path="res://levels/journal.gd" id="1_22265"]
+[ext_resource type="Texture2D" uid="uid://cl6rwoc5egg4x" path="res://tests/assets/sprites/objects/rpgItems.png" id="1_k1px1"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_lnklh"]
+size = Vector2(14, 14)
+
+[node name="Journal" type="Area2D" unique_id=2014306468]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_22265")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1022488019]
+texture = ExtResource("1_k1px1")
+region_enabled = true
+region_rect = Rect2(96, 32, 16, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=437524935]
+shape = SubResource("RectangleShape2D_lnklh")

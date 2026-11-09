@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cdbyh8k83rr4s"]
+
+[ext_resource type="Script" uid="uid://bya6ev5rv6b3p" path="res://levels/atelier/repair_station.gd" id="1_t8081"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8qptw"]
+
+[node name="RepairStation" type="Area2D" unique_id=2010614652]
+collision_layer = 21
+script = ExtResource("1_t8081")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=523919440]
+shape = SubResource("RectangleShape2D_8qptw")

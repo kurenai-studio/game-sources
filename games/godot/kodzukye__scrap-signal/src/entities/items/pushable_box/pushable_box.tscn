@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://1x65ioo8tdro"]
+
+[ext_resource type="Texture2D" uid="uid://bbr6t3088svah" path="res://assets/tilesets/entrepot-tilesets.png" id="1_1rdxk"]
+[ext_resource type="Script" uid="uid://ghp173k2ioey" path="res://entities/items/pushable_box/pushable_box.gd" id="1_cwr2g"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cwr2g"]
+size = Vector2(26, 28)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5bkgq"]
+size = Vector2(81.5, 28.5)
+
+[node name="PushableBox" type="CharacterBody2D" unique_id=418482729]
+collision_layer = 32
+collision_mask = 33
+script = ExtResource("1_cwr2g")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1829584255]
+texture = ExtResource("1_1rdxk")
+region_enabled = true
+region_rect = Rect2(128, 64, 32, 32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=330974052]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_cwr2g")
+
+[node name="DetectionArea" type="Area2D" parent="." unique_id=1137135914]
+collision_layer = 48
+collision_mask = 49
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea" unique_id=2045146233]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_5bkgq")

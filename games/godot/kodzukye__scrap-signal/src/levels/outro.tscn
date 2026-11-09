@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://ch02pkamkqs54"]
+
+[ext_resource type="Script" uid="uid://debulicnb7svj" path="res://levels/outro.gd" id="1_h06aq"]
+
+[node name="Outro" type="Control" unique_id=1833410421]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_h06aq")
+
+[node name="Background" type="ColorRect" parent="." unique_id=191018081]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0627451, 0.0627451, 0.0627451, 1)
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=770397751]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=903366084]
+layout_mode = 2
+
+[node name="TextLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=75612304]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LogLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=2046115793]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_font_sizes/font_size = 6
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContinueLabel" type="Label" parent="." unique_id=1769574127]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -23.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 6
+text = "[ Press to continue ]"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FadeRect" type="ColorRect" parent="." unique_id=1321625862]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)

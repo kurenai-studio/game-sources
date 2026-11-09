@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://c52luh50w8hi2"]
+
+[ext_resource type="Script" uid="uid://bp7xyba18cvpj" path="res://levels/unlock_zone.gd" id="1_s6vo7"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ucfsg"]
+
+[node name="UnlockZone" type="Area2D" unique_id=448954065]
+collision_layer = 16
+collision_mask = 32
+script = ExtResource("1_s6vo7")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1908169056]
+shape = SubResource("RectangleShape2D_ucfsg")
