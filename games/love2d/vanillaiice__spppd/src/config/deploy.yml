@@ -1,0 +1,137 @@
+# Two things share one name ($SPPPD_DOMAIN) on one server ($SPPPD_HOST):
+#
+# - The website is the Kamal app: a Caddy image built from site/Dockerfile, behind the
+#   kamal-proxy that already serves the server's other sites over HTTPS. Deploy it with
+#   `make deploy-site` (bin/site-deploy), which builds it with this version's downloads.
+# - The relay is an accessory: a stock image, with the static binary uploaded next to
+#   it, on UDP 8080. Deploy it with `make deploy-relay` (bin/relay-deploy), which builds
+#   the binary and loads the dashboard's password.
+#
+# The server's details come from .env, which isn't in git: SPPPD_HOST, SPPPD_SSH_USER,
+# SPPPD_DOMAIN and SPPPD_DASHBOARD_TOKEN, and optionally SPPPD_OLD_DOMAINS: earlier
+# names, comma-separated, that the website redirects to SPPPD_DOMAIN. Backups are
+# off unless SPPPD_BACKUP=on, and then need SPPPD_BACKUP_BUCKET, SPPPD_BACKUP_ENDPOINT, SPPPD_BACKUP_REGION,
+# LITESTREAM_ACCESS_KEY_ID and LITESTREAM_SECRET_ACCESS_KEY. Each script loads it and deploys only its own
+# part. Use them, not kamal directly; for the aliases below, load .env first:
+#   set -a; . ./.env; set +a
+service: spppd
+image: spppd-site
+
+servers:
+  - <%= ENV.fetch('SPPPD_HOST') %>
+
+ssh:
+  user: <%= ENV.fetch('SPPPD_SSH_USER') %>
+
+# localhost: Kamal runs a registry on this machine and the server pulls through the SSH connection.
+registry:
+  server: localhost:5555
+
+# kamal-proxy already owns 80/443 on the server and routes by host, like the other apps.
+# It takes the old names too, with a certificate each, and Caddy redirects them.
+proxy:
+  hosts: <%= ([ENV.fetch('SPPPD_DOMAIN')] + ENV.fetch('SPPPD_OLD_DOMAINS', '').split(',').map(&:strip).reject(&:empty?)).to_json %>
+  ssl: true
+  app_port: 80
+  healthcheck:
+    path: /up
+
+# Caddy redirects any other name to this one.
+env:
+  clear:
+    SPPPD_DOMAIN: <%= ENV.fetch('SPPPD_DOMAIN') %>
+
+# Built from the working tree, not a git checkout, because the downloads in
+# site/public/download aren't in git. The root .dockerignore lets in only what it needs.
+builder:
+  arch: amd64
+  context: .
+  dockerfile: site/Dockerfile
+
+accessories:
+  relay:
+    # Only a home for the static binary, which uses nothing from it. Keep it on a
+    # supported release all the same: 3.24 is supported until May 2028.
+    image: alpine:3.24
+    host: <%= ENV.fetch('SPPPD_HOST') %>
+    # Analytics are on for the official server; PRIVACY.md says what they keep.
+    # -status serves /api/status on the kamal network only, where the website's Caddy
+    # passes it on. It isn't published on the server.
+    # -temp-db keeps the rooms and the dashboard's activity through a restart, so a
+    # deploy doesn't end races. The backup leaves that file alone.
+    cmd: /srv/relay -addr :8080 -dashboard :9090 -status :8081 -db /data/relay.db -temp-db /data/relay-temp.db -analytics
+    # UDP, open to the world, for the game. Docker keeps the sender's address, which
+    # the rate limit and bans depend on.
+    port: "8080:8080/udp"
+    files:
+      # z relabels it for SELinux, and does nothing on a server without it.
+      - dist/relay-linux:/srv/relay:ro,z
+    # Bans, dashboard users and analytics, in ~/spppd-relay/data on the server.
+    directories:
+      - data:/data
+    options:
+      # The dashboard stays on the server's loopback. Reach it over SSH:
+      # ssh -L 9090:127.0.0.1:9090 $SPPPD_SSH_USER@$SPPPD_HOST
+      publish: "127.0.0.1:9090:9090"
+      restart: unless-stopped
+      # The log holds IP addresses, so it's capped at about 10 MB. PRIVACY.md says so.
+      log-opt: max-size=10m
+      # It faces the internet and needs nothing from the system. It runs as the
+      # deploy user, who owns the data folder; bin/relay-deploy looks the IDs up.
+      # Other kamal commands never start it, so they can do without.
+      user: "<%= ENV.fetch('SPPPD_RELAY_USER', 'nobody') %>"
+      read-only: true
+      cap-drop: ALL
+      security-opt: no-new-privileges:true
+      # Far above what it uses, so a runaway can't take the server down with it.
+      memory: 256m
+      pids-limit: 128
+    env:
+      secret:
+        # The first dashboard user's password, for the user "admin". It's only
+        # used while there are no users, so changing it later on the dashboard
+        # sticks across deploys.
+        - SPPPD_DASHBOARD_TOKEN
+
+  backup:
+    # Litestream copies the relay's database to an S3-style bucket a few seconds after
+    # each change (config/litestream.yml). Deploy it with `make deploy-backup`
+    # (bin/backup-deploy). Off unless .env has SPPPD_BACKUP=on; then a relay deploy
+    # restarts it first.
+    image: litestream/litestream:0.5.17
+    host: <%= ENV.fetch('SPPPD_HOST') %>
+    # On a server with no database yet, it first restores the backup. That has to
+    # happen before the relay starts: a new, empty database would otherwise be backed
+    # up over the good copy. If the restore fails, it never starts backing up, and
+    # bin/relay-deploy stops without starting the relay.
+    cmd: "-c 'litestream restore -if-db-not-exists -if-replica-exists /data/relay.db && exec litestream replicate'"
+    files:
+      - config/litestream.yml:/etc/litestream.yml:ro
+    # The relay's own data folder, not a folder of its own.
+    volumes:
+      - $PWD/spppd-relay/data:/data
+    options:
+      entrypoint: /bin/sh
+      restart: unless-stopped
+      log-opt: max-size=10m
+      # The same user as the relay, so the files it adds there stay the relay's.
+      user: "<%= ENV.fetch('SPPPD_RELAY_USER', 'nobody') %>"
+      cap-drop: ALL
+      security-opt: no-new-privileges:true
+      memory: 256m
+      pids-limit: 128
+    env:
+      clear:
+        SPPPD_BACKUP_BUCKET: "<%= ENV.fetch('SPPPD_BACKUP_BUCKET', '') %>"
+        SPPPD_BACKUP_ENDPOINT: "<%= ENV.fetch('SPPPD_BACKUP_ENDPOINT', '') %>"
+        SPPPD_BACKUP_REGION: "<%= ENV.fetch('SPPPD_BACKUP_REGION', '') %>"
+      secret:
+        - LITESTREAM_ACCESS_KEY_ID
+        - LITESTREAM_SECRET_ACCESS_KEY
+
+aliases:
+  site-logs: app logs -f
+  relay-logs: accessory logs relay -f
+  relay-users: accessory exec relay --reuse "/srv/relay -db /data/relay.db user list"
+# To add a user or reset a password from here:
+# kamal accessory exec relay --reuse --interactive "/srv/relay -db /data/relay.db user passwd admin"

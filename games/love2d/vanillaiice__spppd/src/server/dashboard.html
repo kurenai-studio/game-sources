@@ -1,0 +1,321 @@
+{{define "style"}}<style>
+:root {
+  color-scheme: light dark;
+  --bg: #f6f6f3; --panel: #ffffff; --line: #deded8; --text: #1d1d1b; --muted: #6c6c66;
+  --accent: #c8321e; --ok: #1f7a4d;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131312; --panel: #1c1c1a; --line: #30302c; --text: #eeeee9; --muted: #9b9b93;
+    --accent: #ff6a52; --ok: #5ccf96;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 ui-sans-serif, system-ui, sans-serif;
+}
+.wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+h1 { margin: 0; font-size: 20px; letter-spacing: .04em; }
+h2 { margin: 28px 0 8px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+#state { font-size: 13px; color: var(--ok); }
+body.offline #state { color: var(--accent); font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; }
+.stat b { display: block; font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+.table { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; font-weight: 500; color: var(--muted); }
+tr:last-child td { border-bottom: 0; }
+.mono { font-family: ui-monospace, monospace; font-size: 13px; font-variant-numeric: tabular-nums; }
+.actions { display: flex; gap: 6px; justify-content: flex-end; }
+.driver { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 0; }
+.badge { font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--ok); border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; }
+.muted { color: var(--muted); font-size: 12px; }
+.empty { margin: 0; padding: 12px 14px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; }
+form { margin: 0; }
+button, input {
+  font: inherit; font-size: 13px; color: var(--text); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px;
+}
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); color: var(--accent); }
+.ban-form { display: flex; gap: 6px; margin-top: 10px; }
+.ban-form input { width: 220px; max-width: 100%; }
+.log { max-height: 340px; overflow-y: auto; padding: 8px 12px; }
+.log:empty::before { content: "Nothing has happened yet."; color: var(--muted); font-family: ui-sans-serif, system-ui, sans-serif; }
+.log div { padding: 2px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.log time { color: var(--muted); margin-right: 4px; }
+.who { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
+.row-form { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.row-form input { width: 180px; max-width: 100%; }
+.note { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.error { margin: 8px 0 0; font-size: 13px; color: var(--accent); }
+.notice { margin: 8px 0 0; font-size: 13px; color: var(--ok); }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+a { color: var(--accent); }
+.login { max-width: 320px; margin: 15vh auto 0; padding: 0 16px; }
+.login form { display: grid; gap: 10px; margin-top: 16px; }
+.login input, .login button { padding: 8px 10px; font-size: 15px; }
+</style>{{end}}
+
+{{define "page"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPPPD Relay</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+{{template "style"}}
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SPPPD Relay</h1>
+    <div class="who">
+      <span id="state">Live</span>
+      {{if .Viewer.Name}}<span>{{.Viewer.Name}}</span>
+      <form hx-post="/logout"><button>Log out</button></form>{{end}}
+    </div>
+  </header>
+  <main id="live" hx-get="/live" hx-trigger="every 2s" hx-swap="innerHTML">{{template "live" .}}</main>
+  <h2>Recent activity</h2>
+  <div id="activity" class="table log mono" tabindex="0" hx-get="/activity" hx-trigger="every 2s" hx-swap="none">{{template "activity" .}}</div>
+  <h2>Ban an IP</h2>
+  <form class="ban-form" hx-post="/ban" hx-target="#live" hx-swap="innerHTML" hx-on::after-request="if (event.detail.successful) this.reset()">
+    <input name="ip" placeholder="203.0.113.7" aria-label="IP address" required>
+    <button>Ban</button>
+  </form>
+  {{if .Analytics}}<section id="analytics" hx-get="/analytics" hx-trigger="every 60s" hx-swap="innerHTML">{{template "analytics" .}}</section>{{end}}
+  <section id="drivers">{{template "drivers" .}}</section>
+  <section id="users">{{template "users" .}}</section>
+</div>
+<script src="/htmx.js"></script>
+<script>
+  const state = document.getElementById("state");
+  const activity = document.getElementById("activity");
+  // Redrawing under a selection would throw it away before it could be copied.
+  const selecting = () => !getSelection().isCollapsed;
+
+  document.body.addEventListener("htmx:sendError", () => {
+    document.body.classList.add("offline");
+    state.textContent = "Relay not responding";
+  });
+  document.body.addEventListener("htmx:afterOnLoad", () => {
+    document.body.classList.remove("offline");
+    state.textContent = selecting() ? "Paused while text is selected" : "Live";
+  });
+  document.body.addEventListener("htmx:beforeSwap", (e) => {
+    if (e.detail.requestConfig.verb === "get" && selecting()) e.detail.shouldSwap = false;
+  });
+
+  // The relay keeps UTC. Show the viewer's own clock instead, and the day on anything
+  // not from today, or last night's lines read as later than this evening's.
+  const pad = (n) => String(n).padStart(2, "0");
+  const day = (d) => d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  function localise(root) {
+    const today = new Date().toDateString();
+    for (const el of root.querySelectorAll("time[datetime]")) {
+      const d = new Date(el.dateTime);
+      if (isNaN(d)) continue;
+      const clock = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      if (el.hasAttribute("data-date")) {
+        el.textContent = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${clock}`;
+      } else {
+        const time = `${clock}:${pad(d.getSeconds())}`;
+        el.textContent = d.toDateString() === today ? time : `${day(d)} ${time}`;
+      }
+      el.title = d.toString();
+    }
+  }
+  localise(document);
+  document.body.addEventListener("htmx:afterSettle", (e) => localise(e.detail.elt));
+
+  // The list only gains lines and loses the oldest. Swapping it whole would put the
+  // scroll back at the top, every two seconds. Newest comes first, so the view moves
+  // down by what was added and stays on the same lines.
+  activity.addEventListener("htmx:afterRequest", (e) => {
+    if (!e.detail.successful || selecting()) return;
+    const fresh = document.createElement("div");
+    fresh.innerHTML = e.detail.xhr.responseText;
+    const rows = [...fresh.children];
+    const newest = Number(activity.firstElementChild?.dataset.seq ?? 0);
+    // A restarted relay counts from one again.
+    if (rows.length && Number(rows[0].dataset.seq) < newest) {
+      activity.replaceChildren(...rows);
+      localise(activity);
+      return;
+    }
+    const added = rows.filter((row) => Number(row.dataset.seq) > newest);
+    const top = activity.scrollTop, height = activity.scrollHeight;
+    activity.prepend(...added);
+    if (top > 0) activity.scrollTop = top + activity.scrollHeight - height;
+    while (activity.children.length > rows.length) activity.lastElementChild.remove();
+    // All of it, not just what was added: at midnight today's lines become yesterday's.
+    localise(activity);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "a") return;
+    if (activity.matches(":hover") || activity.contains(document.activeElement)) {
+      e.preventDefault();
+      getSelection().selectAllChildren(activity);
+    }
+  });
+</script>
+</body>
+</html>
+{{end}}
+
+{{define "live"}}
+<div class="stats">
+  <div class="stat"><b>{{len .Rooms}}</b><span>rooms waiting</span></div>
+  <div class="stat"><b>{{len .Races}}</b><span>races running</span></div>
+  <div class="stat"><b>{{.Players}}</b><span>players, of {{.MaxPlayers}} allowed</span></div>
+  {{if .MaxRooms}}<div class="stat"><b>{{.OpenRooms}}</b><span>rooms open, of {{.MaxRooms}} allowed</span></div>{{end}}
+  <div class="stat"><b>{{.Rate.PacketsIn}}</b><span>packets/s in, {{.Rate.PacketsOut}} out</span></div>
+  <div class="stat"><b>{{bytes .Rate.BytesIn}}</b><span>per second in, {{bytes .Rate.BytesOut}} out</span></div>
+  <div class="stat"><b>{{age .Uptime}}</b><span>up, {{bytes .Total.BytesIn}} received</span></div>
+  <div class="stat"><b>{{.Dropped}}</b><span>packets dropped by the rate limit</span></div>
+</div>
+
+<h2>Waiting rooms</h2>
+{{if .Rooms}}<div class="table"><table>
+  <tr><th>Code</th><th>Drivers</th><th>Open for</th><th></th></tr>
+  {{range .Rooms}}{{template "room" .}}{{end}}
+</table></div>{{else}}<p class="empty">No rooms waiting.</p>{{end}}
+
+<h2>Races</h2>
+{{if .Races}}<div class="table"><table>
+  <tr><th>Code</th><th>Drivers</th><th>Running</th><th></th></tr>
+  {{range .Races}}{{template "room" .}}{{end}}
+</table></div>{{else}}<p class="empty">No races running.</p>{{end}}
+
+<h2>Banned IPs</h2>
+{{if .Banned}}<div class="table"><table>
+  <tr><th>IP</th><th>Since</th><th>By</th><th></th></tr>
+  {{range .Banned}}<tr>
+    <td class="mono">{{.IP}}</td>
+    <td><time data-date datetime="{{instant .At}}">{{date .At}}</time></td>
+    <td>{{.By}}</td>
+    <td><div class="actions">
+      <form hx-post="/unban" hx-target="#live" hx-swap="innerHTML"><input type="hidden" name="ip" value="{{.IP}}"><button>Unban</button></form>
+    </div></td>
+  </tr>{{end}}
+</table></div>{{else}}<p class="empty">Nobody is banned.</p>{{end}}
+{{end}}
+
+{{define "activity"}}{{range .Events}}<div data-seq="{{.Seq}}"><time datetime="{{instant .At}}">{{clock .At}}</time> {{.Text}}</div>{{end}}{{end}}
+
+{{define "room"}}<tr>
+  <td class="mono">{{.Code}}{{if .Kind}} <span class="badge">QUICK</span>{{end}}</td>
+  <td class="mono">{{range .Drivers}}<div class="driver">P{{.Slot}} {{.Addr}}{{if .Name}} {{.Name}}{{end}}{{if .Away}} (away){{end}}
+    <form hx-post="/ban" hx-target="#live" hx-swap="innerHTML" hx-confirm="Ban {{.IP}}?"><input type="hidden" name="ip" value="{{.IP}}"><button>Ban</button></form>
+  </div>{{end}}</td>
+  <td>{{age .Age}}{{if .Filling}}<div class="muted">filling {{age .FillIn}}</div>{{end}}</td>
+  <td><div class="actions">
+    <form hx-post="/close" hx-target="#live" hx-swap="innerHTML"><input type="hidden" name="addr" value="{{.First}}"><button>Close</button></form>
+  </div></td>
+</tr>{{end}}
+
+{{define "analytics"}}
+<h2>Analytics</h2>
+<div class="stats">
+  <div class="stat"><b>{{.Analytics.Week}}</b><span>unique IPs, last 7 days</span></div>
+  <div class="stat"><b>{{.Analytics.Window}}</b><span>unique IPs, last {{.Analytics.WindowDays}} days</span></div>
+</div>
+{{if .Analytics.Days}}<div class="table" style="margin-top: 10px"><table>
+  <tr><th>Day (UTC)</th><th class="num">Unique IPs</th><th class="num">Rooms</th><th class="num">Joins</th><th class="num">Races</th><th class="num">Racers</th><th class="num">Peak</th><th class="num">Refused</th><th class="num" title="Seats taken back after a lost connection">Back</th><th class="num" title="Drivers made">New drivers</th><th class="num">In</th><th class="num">Out</th></tr>
+  {{range .Analytics.Days}}<tr>
+    <td class="mono">{{.Day}}</td><td class="num">{{.UniqueIPs}}</td><td class="num">{{.Rooms}}</td><td class="num">{{.Joins}}</td>
+    <td class="num">{{.Races}}</td><td class="num">{{.Racers}}</td><td class="num">{{.PeakPlayers}}</td><td class="num">{{.Refused}}</td><td class="num">{{.Backs}}</td><td class="num">{{.Signups}}</td>
+    <td class="num">{{bytes .BytesIn}}</td><td class="num">{{bytes .BytesOut}}</td>
+  </tr>{{end}}
+</table></div>{{else}}<p class="empty" style="margin-top: 10px">Nothing counted yet.</p>{{end}}
+<p class="note">The last 14 days. A race is a room that started racing, rematches included.
+  Download everything: <a href="/export/daily.csv">daily.csv</a>, <a href="/export/races.csv">races.csv</a>.</p>
+{{end}}
+
+{{define "drivers"}}
+<h2>Drivers</h2>
+<form class="row-form" hx-get="/drivers" hx-target="#drivers">
+  <input name="q" value="{{.DriverQuery}}" placeholder="name or number" aria-label="Find a driver" autocomplete="off">
+  <button>Find</button>
+</form>
+{{if .Drivers}}<div class="table" style="margin-top: 10px"><table>
+  <tr><th class="num">No.</th><th>Name</th><th>Since</th><th>Last seen</th><th>Devices</th><th></th></tr>
+  {{$q := .DriverQuery}}{{range .Drivers}}<tr>
+    <td class="num mono">{{.ID}}</td>
+    <td class="mono">{{.Name}}{{if .Banned}} <span class="badge">BANNED</span>{{end}}</td>
+    <td><time data-date datetime="{{instant .Created}}">{{date .Created}}</time></td>
+    <td class="mono">{{.Seen}}</td>
+    <td>{{range .Devices}}<div>{{.Label}} <span class="muted">{{.Added}} to {{.Seen}}</span></div>{{end}}</td>
+    <td><div class="actions">
+      <form hx-post="/drivers/rename" hx-target="#drivers" hx-confirm="Rename {{.Name}} to DRIVER{{.ID}}?"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="q" value="{{$q}}"><button>Reset name</button></form>
+      {{if .Banned}}<form hx-post="/drivers/unban" hx-target="#drivers"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="q" value="{{$q}}"><button>Unban</button></form>
+      {{else}}<form hx-post="/drivers/ban" hx-target="#drivers" hx-confirm="Ban driver {{.Name}}?"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="q" value="{{$q}}"><button>Ban</button></form>{{end}}
+    </div></td>
+  </tr>{{end}}
+</table></div>{{else}}<p class="empty" style="margin-top: 10px">{{if .DriverQuery}}No driver matches.{{else}}No drivers yet.{{end}}</p>{{end}}
+<p class="note">{{.DriverTotal}} drivers in all. The newest 50 that match are shown. A banned driver can't take a seat anywhere.</p>
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+{{end}}
+
+{{define "users"}}
+<h2>Dashboard users</h2>
+{{if .Viewer.Local}}
+<p class="empty">No users yet, so anyone on this machine can use this page, and nobody else can.
+  Add a user to require a login, which also lets the page be reached from elsewhere.</p>
+{{else}}
+<div class="table"><table>
+  <tr><th>Name</th><th>Added</th><th></th></tr>
+  {{$me := .Viewer.Name}}{{range .Users}}<tr>
+    <td>{{.Name}}{{if eq .Name $me}} (you){{end}}</td>
+    <td><time data-date datetime="{{instant .Created}}">{{date .Created}}</time></td>
+    <td><div class="actions">{{if ne .Name $me}}
+      <form hx-post="/users/delete" hx-target="#users" hx-confirm="Remove {{.Name}}?"><input type="hidden" name="name" value="{{.Name}}"><button>Remove</button></form>
+    {{end}}</div></td>
+  </tr>{{end}}
+</table></div>
+{{end}}
+<form class="row-form" hx-post="/users/add" hx-target="#users">
+  <input name="name" placeholder="name" aria-label="New user's name" autocomplete="off" required>
+  <input name="password" type="password" placeholder="password, 8 or more" aria-label="New user's password" autocomplete="new-password" required>
+  <button>Add user</button>
+</form>
+{{if .Viewer.Name}}
+<form class="row-form" hx-post="/users/password" hx-target="#users">
+  <input name="current" type="password" placeholder="current password" aria-label="Current password" autocomplete="current-password" required>
+  <input name="password" type="password" placeholder="new password" aria-label="New password" autocomplete="new-password" required>
+  <button>Change my password</button>
+</form>
+{{end}}
+{{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+{{if .Notice}}<p class="notice">{{.Notice}}</p>{{end}}
+{{end}}
+
+{{define "login"}}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPPPD Relay</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+{{template "style"}}
+</head>
+<body>
+<div class="login">
+  <h1>SPPPD Relay</h1>
+  {{if .Error}}<p class="error">{{.Error}}</p>{{end}}
+  <form method="post" action="/login">
+    <input name="name" placeholder="name" aria-label="Name" autocomplete="username" required autofocus>
+    <input name="password" type="password" placeholder="password" aria-label="Password" autocomplete="current-password" required>
+    <button>Log in</button>
+  </form>
+</div>
+</body>
+</html>
+{{end}}

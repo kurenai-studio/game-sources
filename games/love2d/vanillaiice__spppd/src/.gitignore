@@ -1,0 +1,20 @@
+dist/
+.backup/
+# The relay's database, when it's run from here.
+*.db
+*.db-wal
+*.db-shm
+# The website's build, and its download sizes (make site-downloads).
+site/node_modules/
+site/dist/
+site/.astro/
+site/public/download/
+site/src/downloads.json
+# The official server's details and dashboard password, read by the deploy scripts.
+.env
+
+# Video kit (end cards, thumbnails), kept out of the repo
+kit/
+
+# A go build in server/ writes the relay here.
+server/server
