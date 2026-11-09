@@ -1,0 +1,135 @@
+
+#----------------------------- Global Properties ----------------------------#
+
+/outputDir:bin/$(Platform)
+/intermediateDir:obj/$(Platform)
+/platform:DesktopGL
+/config:
+/profile:Reach
+/compress:False
+
+#-------------------------------- References --------------------------------#
+
+
+/reference:C:/Users/gandifil/.nuget/packages/monogame.extended.content.pipeline/6.0.1/tools/MonoGame.Extended.Content.Pipeline.dll
+/reference:C:/Users/gandifil/.nuget/packages/freetexturepackerpipeline/1.0.0/lib/net6.0/FreeTexturePackerPipeline.dll
+/reference:C:/Users/gandifil/.nuget/packages/freetexturepackerreader/1.0.0/lib/net6.0/FreeTexturePackerReader.dll
+#---------------------------------- Content ---------------------------------#
+
+#begin images/grass_tile.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:TextureFormat=NoChange
+/build:images/grass_tile.png
+
+#begin images/viking.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:TextureFormat=NoChange
+/build:images/viking.png
+
+#begin images/viking.spritesheet
+/importer:SpriteSheetImporter
+/processor:SpriteSheetProcessor
+/build:images/viking.spritesheet
+
+#begin characters/player.json
+/copy:characters/player.json
+
+#begin images/viking.json
+/copy:images/viking.json
+
+#begin sounds/swing3.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:sounds/swing3.wav
+
+#begin images/blood.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:TextureFormat=NoChange
+/build:images/blood.png
+
+#begin sounds/ogre/ogre1.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:sounds/ogre/ogre1.wav
+
+#begin sounds/ogre/ogre2.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:sounds/ogre/ogre2.wav
+
+#begin sounds/ogre/ogre3.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:sounds/ogre/ogre3.wav
+
+#begin sounds/ogre/ogre4.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:sounds/ogre/ogre4.wav
+
+#begin sounds/ogre/ogre5.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/build:sounds/ogre/ogre5.wav
+
+#begin effects/cutEffect.fx
+/importer:EffectImporter
+/processor:EffectProcessor
+/build:effects/cutEffect.fx
+
+#begin effects/blood1.ember
+/importer:ParticleEffectImporter
+/processor:ParticleEffectProcessor
+/build:effects/blood1.ember
+
+#begin maps/island.tmx
+/importer:TiledTilemapImporter
+/processor:TilemapProcessor
+/build:maps/island.tmx
+
+#begin maps/Tilemap_color3.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:TextureFormat=NoChange
+/build:maps/Tilemap_color3.png
+
+#begin maps/Tilemap_color3.tsx
+/importer:TilemapTilesetImporter
+/processor:TilemapTilesetProcessor
+/build:maps/Tilemap_color3.tsx
+
+#begin maps/Water Background color.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:TextureFormat=NoChange
+/build:maps/Water Background color.png
+
+#begin maps/Water Background color.tsx
+/importer:TilemapTilesetImporter
+/processor:TilemapTilesetProcessor
+/build:maps/Water Background color.tsx
+
+#begin fonts/04b_30.fnt
+/importer:BitmapFontImporter
+/processor:BitmapFontProcessor
+/build:fonts/04b_30.fnt
+
+#begin fonts/04B_30.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:fonts/04B_30.spritefont
+
+#begin fonts/04B_30_5x.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/build:fonts/04B_30_5x.spritefont
+
+#begin effects/blood_particle.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:TextureFormat=NoChange
+/build:effects/blood_particle.png
+
