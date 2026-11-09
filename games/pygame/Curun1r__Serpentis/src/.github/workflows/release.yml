@@ -1,0 +1,132 @@
+name: Build & Release
+
+# Builds standalone Serpentis executables for Windows, macOS and Linux
+# with PyInstaller, then attaches them to a GitHub Release.
+#
+# Trigger a release by tagging a commit and pushing the tag:
+#   git tag serpentis_1.11.1
+#   git push origin serpentis_1.11.1
+#
+# You can also run it manually from the Actions tab (workflow_dispatch).
+
+on:
+  push:
+    tags:
+      - 'serpentis_*'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate release
+        run: |
+          python -m pip install -r requirements-dev.txt
+          python -m pip check
+          ruff check .
+          pytest -q
+          python -c "import os; from app_info import RELEASE_TAG; ref = os.environ['GITHUB_REF_NAME']; assert os.environ['GITHUB_REF_TYPE'] != 'tag' or ref == RELEASE_TAG, f'Tag {ref} does not match {RELEASE_TAG}'"
+
+  build:
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            platform: macOS
+            artifact: Serpentis-macOS.zip
+          - os: windows-latest
+            platform: Windows
+            artifact: Serpentis-Windows.exe
+          - os: ubuntu-latest
+            platform: Linux
+            artifact: Serpentis-Linux.tar.gz
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install -r requirements-build.txt
+          python -m pip check
+          python scripts/build_icons.py --check
+
+      # macOS: build a versioned app bundle and preserve its symlinks in the ZIP.
+      - name: Build (macOS)
+        if: matrix.platform == 'macOS'
+        shell: bash
+        run: |
+          pyinstaller packaging/serpentis-macos.spec
+          python scripts/verify_build.py dist/Serpentis.app/Contents/MacOS/Serpentis
+          cd dist && zip -r -y "../${{ matrix.artifact }}" Serpentis.app
+
+      # The Windows artwork has its own transparent, multi-size ICO export.
+      - name: Build (Windows)
+        if: matrix.platform == 'Windows'
+        shell: bash
+        run: |
+          pyinstaller --onefile --windowed --name Serpentis \
+            --icon serpentis.ico --add-data "image;image" main.py
+          python scripts/verify_build.py dist/Serpentis.exe
+          mv dist/Serpentis.exe "${{ matrix.artifact }}"
+
+      # Linux: plain onefile binary, packed as tar.gz to keep the executable bit.
+      - name: Build (Linux)
+        if: matrix.platform == 'Linux'
+        shell: bash
+        run: |
+          pyinstaller --onefile --name Serpentis \
+            --add-data "image:image" main.py
+          chmod +x dist/Serpentis
+          python scripts/verify_build.py dist/Serpentis
+          python scripts/verify_linux_desktop.py dist/Serpentis
+          mkdir -p dist/linux-release
+          cp dist/Serpentis dist/linux-release/Serpentis
+          cp image/serpentis-icon.png dist/linux-release/serpentis.png
+          cp packaging/linux-README.txt dist/linux-release/README.txt
+          tar -czf "${{ matrix.artifact }}" -C dist/linux-release .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate download checksums
+        run: python scripts/checksums.py artifacts
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: artifacts/*
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: true
+          make_latest: 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
