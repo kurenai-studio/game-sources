@@ -1,0 +1,144 @@
+[gd_scene format=3 uid="uid://dlilpistler03"]
+
+[ext_resource type="Script" uid="uid://bp5le5x6wshg4" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://cxpwqkkeudhdd" path="res://scripts/arena_grid.gd" id="2_grid"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="Script" uid="uid://bt4pqw8lir456" path="res://addons/horde_kit/horde_spawner.gd" id="4_spawner"]
+[ext_resource type="Script" uid="uid://dwv8q51gvvbhm" path="res://addons/horde_kit/spawn_wave.gd" id="5_wave"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="6_enemy"]
+[ext_resource type="PackedScene" path="res://scenes/enemy_spirit.tscn" id="7_spirit"]
+[ext_resource type="PackedScene" path="res://scenes/enemy_skull.tscn" id="8_skull"]
+[ext_resource type="PackedScene" path="res://scenes/enemy_slime.tscn" id="15_slime"]
+[ext_resource type="PackedScene" path="res://scenes/enemy_eye.tscn" id="16_eye"]
+[ext_resource type="PackedScene" path="res://scenes/enemy_beast.tscn" id="17_beast"]
+[ext_resource type="Script" uid="uid://bqcujmdbdh7a5" path="res://scripts/damage_numbers.gd" id="9_numbers"]
+[ext_resource type="Script" uid="uid://ceerx4lltmat0" path="res://scripts/xp_bar.gd" id="10_xp_bar"]
+[ext_resource type="Script" uid="uid://bele6ovdw2e1o" path="res://scripts/energy_bars.gd" id="11_energy"]
+[ext_resource type="Script" uid="uid://c7eh37gx4vamu" path="res://scripts/boss_bar.gd" id="14_boss_bar"]
+
+[sub_resource type="Environment" id="Environment_glow"]
+background_mode = 3
+glow_levels/1 = 1.0
+glow_levels/2 = 1.0
+glow_levels/3 = 0.6
+glow_intensity = 1.2
+glow_blend_mode = 0
+glow_hdr_threshold = 1.2
+
+[sub_resource type="Resource" id="Resource_spiders"]
+script = ExtResource("5_wave")
+enemy_scene = ExtResource("6_enemy")
+end_time = 270.0
+batch_size = 3
+
+[sub_resource type="Resource" id="Resource_spirits"]
+script = ExtResource("5_wave")
+enemy_scene = ExtResource("7_spirit")
+start_time = 20.0
+end_time = 270.0
+interval = 1.5
+batch_size = 3
+
+[sub_resource type="Resource" id="Resource_skulls"]
+script = ExtResource("5_wave")
+enemy_scene = ExtResource("8_skull")
+start_time = 60.0
+end_time = 270.0
+interval = 0.6
+batch_size = 4
+
+[sub_resource type="Resource" id="Resource_slimes"]
+script = ExtResource("5_wave")
+enemy_scene = ExtResource("15_slime")
+start_time = 40.0
+end_time = 270.0
+interval = 2.5
+batch_size = 2
+
+[sub_resource type="Resource" id="Resource_eyes"]
+script = ExtResource("5_wave")
+enemy_scene = ExtResource("16_eye")
+start_time = 60.0
+end_time = 270.0
+interval = 4.0
+
+[sub_resource type="Resource" id="Resource_beasts"]
+script = ExtResource("5_wave")
+enemy_scene = ExtResource("17_beast")
+start_time = 90.0
+end_time = 270.0
+interval = 5.0
+
+[node name="Main" type="Node2D" unique_id=103967578]
+script = ExtResource("1_main")
+
+[node name="Darkness" type="CanvasModulate" parent="." unique_id=1177944251]
+color = Color(0.58, 0.56, 0.68, 1)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1300233945]
+environment = SubResource("Environment_glow")
+
+[node name="Grid" type="Node2D" parent="." unique_id=1856103745]
+script = ExtResource("2_grid")
+
+[node name="Enemies" type="Node2D" parent="." unique_id=1228567266]
+
+[node name="Player" parent="." unique_id=1246867226 instance=ExtResource("3_player")]
+
+[node name="DamageNumbers" type="Node2D" parent="." unique_id=2092177304]
+script = ExtResource("9_numbers")
+
+[node name="HordeSpawner" type="Node2D" parent="." unique_id=2063516340]
+script = ExtResource("4_spawner")
+waves = Array[ExtResource("5_wave")]([SubResource("Resource_spiders"), SubResource("Resource_spirits"), SubResource("Resource_skulls"), SubResource("Resource_slimes"), SubResource("Resource_eyes"), SubResource("Resource_beasts")])
+target_path = NodePath("../Player")
+spawn_parent_path = NodePath("../Enemies")
+spawn_radius = 380.0
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=915886455]
+
+[node name="XpBar" type="Control" parent="HUD" unique_id=1185770660]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 4.0
+offset_top = 4.0
+offset_right = -4.0
+offset_bottom = 14.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("10_xp_bar")
+
+[node name="StatusLabel" type="Label" parent="HUD" unique_id=803007609]
+unique_name_in_owner = true
+offset_left = 8.0
+offset_top = 18.0
+offset_right = 632.0
+offset_bottom = 30.0
+theme_override_font_sizes/font_size = 8
+
+[node name="BossBar" type="Control" parent="HUD" unique_id=1731406954]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 34.0
+offset_bottom = 56.0
+grow_horizontal = 2
+mouse_filter = 2
+script = ExtResource("14_boss_bar")
+
+[node name="EnergyBars" type="Control" parent="HUD" unique_id=2097496521]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -32.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("11_energy")

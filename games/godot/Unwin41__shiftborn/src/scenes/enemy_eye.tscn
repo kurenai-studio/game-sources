@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="1_base"]
+[ext_resource type="Script" path="res://scripts/ranged_enemy.gd" id="2_script"]
+[ext_resource type="SpriteFrames" path="res://assets/sprite_frames/eye.tres" id="3_frames"]
+
+[node name="EnemyEye" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+move_speed = 38.0
+max_health = 5.0
+xp_value = 2
+particle_color = Color(0.95, 0.85, 0.9, 1)
+resisted_form = 0
+
+[node name="Sprite" parent="." index="0"]
+sprite_frames = ExtResource("3_frames")

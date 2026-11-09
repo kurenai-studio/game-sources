@@ -1,0 +1,172 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot-bin
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Download Godot and export templates
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          mkdir -p ~/godot-bin "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          curl -fsSL -o /tmp/godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d /tmp/godot
+          mv "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" ~/godot-bin/godot
+          curl -fsSL -o /tmp/templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q /tmp/templates.tpz -d /tmp/tpl
+          mv /tmp/tpl/templates/* "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+
+      - name: Put Godot on PATH
+        run: echo "$HOME/godot-bin" >> "$GITHUB_PATH"
+
+      - name: Import project
+        run: godot --headless --import
+
+      - name: Unit tests
+        run: godot --headless -s res://tests/run_tests.gd
+
+      - name: Smoke test
+        run: timeout 180 godot --headless --fixed-fps 60 -s res://tests/smoke_test.gd
+
+      - name: Export
+        run: |
+          mkdir -p build/web build/linux build/windows build/macos
+          touch build/.gdignore
+          godot --headless --export-release "Web" build/web/index.html
+          godot --headless --export-release "Linux" build/linux/shiftborn.x86_64
+          godot --headless --export-release "Windows Desktop" build/windows/shiftborn.exe
+          godot --headless --export-release "macOS" build/macos/shiftborn.zip
+          test -f build/web/index.html
+          test -f build/linux/shiftborn.x86_64
+          test -f build/windows/shiftborn.exe
+          test -f build/macos/shiftborn.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: build/web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: build/linux
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: build/windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: build/macos
+
+      # The web build goes live only with a release tag, together with the
+      # downloadable builds, so work in progress on main stays private.
+      - name: Upload Pages artifact
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  pages:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+  # Publishes tagged builds as zips on GitHub Releases. v0.x tags are
+  # marked as pre-releases.
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: build
+      - name: Zip builds
+        run: |
+          mkdir dist
+          name="shiftborn-${GITHUB_REF_NAME}"
+          # Artifacts drop the executable bit; zip keeps it for Linux users.
+          chmod +x build/linux/shiftborn.x86_64
+          (cd build/windows && zip -qr "../../dist/$name-windows.zip" .)
+          (cd build/linux && zip -qr "../../dist/$name-linux.zip" .)
+          cp build/macos/shiftborn.zip "dist/$name-macos.zip"
+          ls -l dist
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          flags=()
+          case "$GITHUB_REF_NAME" in v0.*) flags+=(--prerelease) ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Shiftborn $GITHUB_REF_NAME" \
+            --generate-notes "${flags[@]}"
+
+  # Pushes tagged releases to itch.io. Needs repo secret BUTLER_API_KEY
+  # and repo variable ITCH_GAME (for example "unwin41/shiftborn").
+  itch:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v') && vars.ITCH_GAME != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+      ITCH_GAME: ${{ vars.ITCH_GAME }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: build
+      - name: Install butler
+        run: |
+          curl -fsSL -o /tmp/butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q /tmp/butler.zip -d ~/butler && chmod +x ~/butler/butler
+      - name: Push to itch.io
+        run: |
+          chmod +x build/linux/shiftborn.x86_64
+          version="${GITHUB_REF_NAME#v}"
+          for channel in web linux windows; do
+            ~/butler/butler push "build/$channel" "$ITCH_GAME:$channel" --userversion "$version"
+          done
+          ~/butler/butler push build/macos/shiftborn.zip "$ITCH_GAME:mac" --userversion "$version"
