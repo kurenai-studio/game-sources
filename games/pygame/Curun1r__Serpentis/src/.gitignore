@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# PyInstaller
+dist/
+build/
+*.spec
+!packaging/serpentis-macos.spec
+
+# Player data (scores and settings are local to each machine)
+data/
+
+# Local config override — copy config.example.json → config.json to customise
+config.json
+
+# macOS app bundle (generated locally)
+*.app
+icon.iconset/
+
+# Optional local Pipenv lock; tracked requirements*.txt are the canonical pins.
+Pipfile.lock
