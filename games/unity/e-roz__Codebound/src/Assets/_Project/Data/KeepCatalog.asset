@@ -1,0 +1,211 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4aaae0431711304d838dc9e55acb57a, type: 3}
+  m_Name: KeepCatalog
+  m_EditorClassIdentifier: 
+  chapters:
+  - id: vaults
+    name: The Vaults
+    isSealed: 0
+    rooms:
+    - id: 1-1
+      title: The Twin Guards
+      roomType: Predict
+      concept: Reference types
+    - id: 1-2
+      title: Copy That
+      roomType: Trace
+      concept: Value types vs references
+    - id: 1-3
+      title: The Shared Inventory
+      roomType: Bug hunt
+      concept: Sharing a List by mistake
+    - id: 1-4
+      title: Copy of a Copy
+      roomType: Repair
+      concept: Shallow vs deep copy
+    - id: 1-5
+      title: The Empty Chest
+      roomType: Bug hunt
+      concept: NullReferenceException
+    - id: 1-6
+      title: Who Changed My Guard?
+      roomType: Interview
+      concept: Mutation vs reassignment
+  - id: gates
+    name: The Gates
+    isSealed: 0
+    rooms:
+    - id: 2-1
+      title: The Gate Rules
+      roomType: Predict
+      concept: '&& and || precedence'
+    - id: 2-2
+      title: The Last Guard
+      roomType: Bug hunt
+      concept: Off-by-one errors
+    - id: 2-3
+      title: The Gate That Never Closes
+      roomType: Trace
+      concept: Loops that never end
+    - id: 2-4
+      title: The Toll Boundary
+      roomType: Repair
+      concept: '> vs >= at the boundary'
+    - id: 2-5
+      title: The Split Treasure
+      roomType: Bug hunt
+      concept: Integer division and zero
+    - id: 2-6
+      title: The Visitor Form
+      roomType: Code review
+      concept: Parse vs TryParse
+  - id: workshop
+    name: The Workshop
+    isSealed: 0
+    rooms:
+    - id: 3-1
+      title: The Healer Machine
+      roomType: Predict
+      concept: Return values
+    - id: 3-2
+      title: The Greedy Counter
+      roomType: Bug hunt
+      concept: Side effects
+    - id: 3-3
+      title: The Stack of Clues
+      roomType: Trace
+      concept: Reading a stack trace
+    - id: 3-4
+      title: The Silent Failure
+      roomType: Bug hunt
+      concept: Swallowed exceptions
+    - id: 3-5
+      title: Red, Then Green
+      roomType: Repair
+      concept: Test first
+    - id: 3-6
+      title: The Forty-Line Monster
+      roomType: Code review
+      concept: One method, one job
+  - id: archive
+    name: The Archive
+    isSealed: 0
+    rooms:
+    - id: 4-1
+      title: The Duplicate Scrolls
+      roomType: Predict
+      concept: List vs HashSet
+    - id: 4-2
+      title: The Shelf That Shrinks
+      roomType: Bug hunt
+      concept: Changing a list while looping
+    - id: 4-3
+      title: The Missing Key
+      roomType: Trace
+      concept: Dictionary lookups
+    - id: 4-4
+      title: The Case-Sensitive Index
+      roomType: Bug hunt
+      concept: Case-sensitive keys
+    - id: 4-5
+      title: Searching the Whole Shelf
+      roomType: Repair
+      concept: Search cost: List vs HashSet
+    - id: 4-6
+      title: The Right Container
+      roomType: Code review
+      concept: Choosing a collection
+  - id: great-hall
+    name: The Great Hall
+    isSealed: 0
+    rooms:
+    - id: 5-1
+      title: The Shared Health
+      roomType: Predict
+      concept: Static vs instance fields
+    - id: 5-2
+      title: The Open Chest
+      roomType: Bug hunt
+      concept: Encapsulation
+    - id: 5-3
+      title: The Gentle Dog
+      roomType: Trace
+      concept: virtual and override
+    - id: 5-4
+      title: The Identical Twins
+      roomType: Bug hunt
+      concept: Reference vs value equality
+    - id: 5-5
+      title: The Flightless Bird
+      roomType: Repair
+      concept: Inheritance vs interfaces
+    - id: 5-6
+      title: Depend on the Interface
+      roomType: Code review
+      concept: Dependency injection
+  - id: towers
+    name: The Towers
+    isSealed: 0
+    rooms:
+    - id: 6-1
+      title: The Lost Customers
+      roomType: Predict
+      concept: INNER vs LEFT JOIN
+    - id: 6-2
+      title: The Missing WHERE
+      roomType: Bug hunt
+      concept: UPDATE needs WHERE
+    - id: 6-3
+      title: The Empty Name
+      roomType: Trace
+      concept: JSON keys and properties
+    - id: 6-4
+      title: The Order That Arrives Twice
+      roomType: Bug hunt
+      concept: Retries and idempotency
+    - id: 6-5
+      title: The Hidden 404
+      roomType: Repair
+      concept: HTTP status codes
+    - id: 6-6
+      title: Trust No Input
+      roomType: Code review
+      concept: SQL injection
+  - id: architect
+    name: Architect's Chamber
+    isSealed: 0
+    rooms:
+    - id: 7-1
+      title: The Conflict Markers
+      roomType: Predict
+      concept: Merge conflicts
+    - id: 7-2
+      title: The Commit That Broke It
+      roomType: Trace
+      concept: Finding a bad commit
+    - id: 7-3
+      title: The Test That Cannot Fail
+      roomType: Bug hunt
+      concept: Tests that can fail
+    - id: 7-4
+      title: The Flaky Guard Test
+      roomType: Repair
+      concept: Flaky tests and the clock
+    - id: 7-5
+      title: The Master Key
+      roomType: Trace
+      concept: Root cause
+    - id: 7-6
+      title: The Smallest Safe Change
+      roomType: Code review
+      concept: Small, tested changes
