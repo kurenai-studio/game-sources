@@ -1,0 +1,77 @@
+[gd_scene format=3 uid="uid://brp7qejx48b8k"]
+
+[ext_resource type="Script" uid="uid://dtdalku8ahtiv" path="res://Scripts/level_complete_powerup_select.gd" id="1_lktin"]
+
+[node name="LevelCompletePowerupSelect" type="Control" unique_id=271330207]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_lktin")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1900804490]
+layout_mode = 0
+offset_right = 720.0
+offset_bottom = 720.0
+color = Color(0, 0, 0.24705882, 1)
+
+[node name="LeftButton" type="Button" parent="." unique_id=1972250050]
+layout_mode = 1
+offset_left = 69.0
+offset_top = 395.0
+offset_right = 228.0
+offset_bottom = 426.0
+text = "Better Oil"
+
+[node name="RightButton" type="Button" parent="." unique_id=345908074]
+layout_mode = 0
+offset_left = 499.0
+offset_top = 395.0
+offset_right = 668.0
+offset_bottom = 426.0
+text = "Lighter Lens"
+
+[node name="DescriptionText" type="Label" parent="." unique_id=303319655]
+layout_mode = 1
+offset_left = 54.0
+offset_top = 237.5
+offset_right = 666.0
+offset_bottom = 282.5
+theme_override_font_sizes/font_size = 32
+text = "With your earned funds, you can either:"
+
+[node name="LevelCompleteLabel" type="Label" parent="." unique_id=596999826]
+layout_mode = 1
+offset_left = 175.5
+offset_top = 176.5
+offset_right = 544.5
+offset_bottom = 243.5
+theme_override_font_sizes/font_size = 48
+text = "Level Complete!"
+
+[node name="LeftDescription" type="Label" parent="." unique_id=1028892157]
+layout_mode = 0
+offset_left = 26.0
+offset_top = 324.0
+offset_right = 276.0
+offset_bottom = 373.0
+text = "Use better oil to make your light
+burn longer and refuel faster."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RightDescription" type="Label" parent="." unique_id=775724033]
+layout_mode = 0
+offset_left = 446.0
+offset_top = 324.0
+offset_right = 709.0
+offset_bottom = 373.0
+text = "Install a lighter lens you can move
+faster."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="LeftButton" to="." method="_on_left_button_pressed"]
+[connection signal="pressed" from="RightButton" to="." method="_on_right_button_pressed"]

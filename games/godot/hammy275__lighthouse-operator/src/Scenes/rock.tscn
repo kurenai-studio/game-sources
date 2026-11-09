@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://d0rbdkjm5pldx"]
+
+[ext_resource type="Script" uid="uid://dec37nrww8opa" path="res://Scripts/rock.gd" id="1_5mkji"]
+[ext_resource type="Texture2D" uid="uid://jroesntoypvs" path="res://Images/Rock/Rock1.png" id="1_lgx4v"]
+[ext_resource type="Shader" uid="uid://b1sd5bvcea3hx" path="res://Shaders/rock.gdshader" id="2_vd8au"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vd8au"]
+size = Vector2(20, 35)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_800pl"]
+size = Vector2(63, 25)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wrm1d"]
+shader = ExtResource("2_vd8au")
+shader_parameter/circle_center = Vector2(0, 0)
+shader_parameter/radius_squared = 0.0
+
+[node name="Rock" type="Area2D" unique_id=1938764703]
+collision_layer = 9
+collision_mask = 8
+script = ExtResource("1_5mkji")
+
+[node name="SmallRockCollision" type="CollisionShape2D" parent="." unique_id=256707300]
+position = Vector2(-1, 0.5)
+shape = SubResource("RectangleShape2D_vd8au")
+
+[node name="BigRockCollision" type="CollisionShape2D" parent="." unique_id=1739228332]
+position = Vector2(0.5, 4.5)
+shape = SubResource("RectangleShape2D_800pl")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=1837762976]
+material = SubResource("ShaderMaterial_wrm1d")
+texture = ExtResource("1_lgx4v")

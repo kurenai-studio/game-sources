@@ -1,0 +1,74 @@
+[gd_scene format=3 uid="uid://dcbccgmsstrn0"]
+
+[ext_resource type="Script" uid="uid://bxrudil6vw0wu" path="res://Scripts/end_screen.gd" id="1_1gwaw"]
+[ext_resource type="Texture2D" uid="uid://bustsrhsp8uod" path="res://Images/Tutorial/shine_on_obstacles.png" id="1_f2mtv"]
+
+[node name="EndScreen" type="Control" unique_id=1503344177]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1gwaw")
+
+[node name="Background" type="ColorRect" parent="." unique_id=447693493]
+layout_mode = 0
+offset_right = 720.0
+offset_bottom = 720.0
+color = Color(0, 0, 0.24705882, 1)
+
+[node name="Title" type="Label" parent="." unique_id=1171583149]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -46.0
+offset_right = 46.0
+offset_bottom = 23.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 48
+text = "
+Game Over!"
+
+[node name="Score" type="Label" parent="." unique_id=598988703]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -26.0
+offset_right = 26.0
+offset_bottom = 23.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 32
+text = "
+
+
+
+
+
+
+Score: %d
+Ships Crashed: %d
+High Score: %d"
+horizontal_alignment = 1
+
+[node name="ShineOnObstacles" type="TextureRect" parent="." unique_id=1141159680]
+layout_mode = 0
+offset_left = 265.00003
+offset_top = 141.0
+offset_right = 516.0
+offset_bottom = 392.0
+scale = Vector2(0.75, 0.75)
+texture = ExtResource("1_f2mtv")
+
+[node name="PlayAgainButton" type="Button" parent="." unique_id=84353591]
+layout_mode = 0
+offset_left = 278.0
+offset_top = 500.0
+offset_right = 442.0
+offset_bottom = 542.0
+theme_override_font_sizes/font_size = 24
+text = "Play Again!"
+
+[connection signal="pressed" from="PlayAgainButton" to="." method="_on_play_again_button_pressed"]
