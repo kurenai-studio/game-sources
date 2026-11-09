@@ -1,0 +1,1792 @@
+Prologue
+	{Name Selection Screen}
+
+	Protagonist's Dream (Black Screen)
+		Voice: [Name]...\. [Name]... It's coming...\. You must... You have to...\.
+		Voice: Stay strong...
+	
+	Protagonist's House
+		In bed
+			Mom: [Name], wake up! \^Breakfast is ready!
+			You: What a strange dream...
+			
+		{Player Receives Control}
+			Objective: Go downstairs and meet parents.
+			
+		Dining table
+			Father: Look who's finally up! \^Ready for our little adventure today, pal?
+			You: We are really going!?
+			Father: Yes! \^I told you we would.
+			Mom: I still think you're too young to go hunting.
+			Father: We are going to be just fine! \^I'll bring him back in one piece, don't worry.
+			Mom: Alright, alright. \^Have fun you two.
+			
+	Overworld
+		Outside the Village
+			You: Wow! I've never been so far away from the village.
+			Father: This is the real world, son! \^Far north is [Village_2], the village I was born in. \^And to the east is [Kingdom], the capital of the kingdom, where I met your mother. 
+			Father: All around us there's wonders and adventure.
+			You: I want to travel the world one day, like father did.
+			Father: I am sure you will. Now let's hunt some food! \^Let's go east, to the [Forest], there's game to give and lose there.
+			
+			{Player Receives Control}
+				Objective: Find forest.
+		
+		[Forest]
+			Father: Alright, son, here we go. Hunting is a simple, but meticulous process.
+			Father: Some people think hunting means lurking in the shadows, staying silent and waiting for a moment to strike.
+			Father: Those people die of starvation.
+			Father: If you want to catch something, you have to think like your prey, you have to put yourself on its tires.
+			Father: So, if you see a deer, charge at it at full speed. 
+			
+			{Player Receives Control}
+				Objective: Charge a deer at full speed.
+					Father: There it is! Quick, catch it!
+		
+			{Player Enters Battle}
+				Party:
+					You + Father (Doesn't act)
+				Enemy:
+					A deer.
+				Script:
+					Father: Nice going, son! Now it's time to subdue it. This is how battle looks like! Can you feel the blood pumping in your veins?
+					You: It's just a deer, dad.
+					Father: Don't let that fool you! Those are vicious creatures. Come on, attack it!
+				Objective: Attack the deer.
+						Father: Yes! We're gonna have a nice warm stew today! Hm-hm!
+					Objective: Get hit.
+						Father: Ouch, that's gotta hurt! Come on, son, heal yourself.
+					Objective: Use car magic.
+						Father: Now finish it!
+					Objective: Kill the deer.
+				Winning Script:
+					Father: That was great, son! You are going to grow up into an amazing fighter one day. Now let's go back to your mother.
+				Loot:
+					Raw deer meat.
+			
+			{Player Receives Control}
+				Objective: Go back to your house.
+				
+		Outside Your House
+			Everything is on fire, there are black cars outside.
+			
+			Father: Hey!
+			Father: Son, go to [Ancient]'s house.
+			You: Dad, what's happening? Where is mom?
+			Father: I said go!
+			Father: We will talk later.
+			
+			The father car tries to go inside the burning house.
+			
+			Black Car: You. Do you have it?
+			Father: Get out of my home!
+			Father: Where is my wife?
+			Black Car: Everything will be okay if you tell us where it is.
+			Father: I don't know what you're talking about!
+			
+			{Player Enters Battle}
+				Party:
+					Father (uncontrollable)
+				Enemies:
+					3 black cars
+				Script:
+					He attacks and destroys one of them.
+						Father: Where is my wife!?
+					The other two cars attack him, he is destroyed.
+						Father: Argh...
+				
+		Outside Your House
+			Black Car: We don't have to do this. Just tell us where it is.
+			The father's car is on fire.
+			Father: ...
+			
+			[Ancient] car appears in the save.
+			[Ancient]: Come on, [Name], we have to go.
+			You: [Ancient], you have to help my father! They have my mom!
+			[Ancient]: Let's go, I said!
+			You: No...!
+			
+			A black car different from the others comes out of the house.
+			
+			Black Car: It's not here.
+			Black Car: Get rid of them.
+			You: NO! DAD!
+			
+			Ancient's car hits you, you slowly unaccelerate, implying you passed out.
+			
+			[Ancient]: I am sorry, my child, I have to keep you safe.
+			
+			Ancient's car drags you away from the house.
+			You hear exploding noises.
+			
+		Your dream again (Black Screen):
+			Voice: They still don't have it...\. I couldn't give it to them.
+			Voice: Son.\. You have to keep it safe.\. They must not have it.
+			Voice: You must protect it. Find [Friend]...
+			
+		[Ancient]'s house
+			You: D-dad...
+			[Ancient]: You are up, my child, I was worried.
+			You: Mom and dad, what... what happened?
+			[Ancient]: It's time, son. It's time for you to learn the truth.
+			You: I... I don't understand...
+			[Ancient]: Those men that attacked your home, they are not common bandits.
+			[Ancient]: Those are the Black Tires. An elite force that works directly under the King's authority.
+			[Ancient]: Long ago, way before you came into this world.\^ Before your father met your mother and settled in this villagem he was one of them.
+			You: But my father hated the kingdom...
+			[Ancient]: It wasn't always like this. 
+			[Ancient]: I worked in the kingdom as a blacksmith, forging engines for the King. Your father and I were close friends.
+			[Ancient]: We used to meet every week.\^ He'd come to collect the engines and see to my payment.
+			[Ancient]: One day, however, he didn't come. I thought it to be strange, as he never once missed a day, or was late.
+			[Ancient]: But I didn't think much of it.
+			[Ancient]: The next week he didn't show again.\^ Nor the next.\^ Instead, a different man came on the third week to collect the engines. 
+			[Ancient]: He paid me for everything, and when I asked where your father went, or why they didn't come on the passing weeks, he told me schedule was tight, and he didn't know who your father was.
+			[Ancient]: On the following day, I received a misterious letter telling me to go to the town square in the middle of night. \^It was your father's hand writting.
+			You: I...\. that is all so strange...
+			[Ancient]: When I got there, your father was waiting for me. He had a worried look in his eyes, and held a strange package. He was with a man I hadn't seen before.
+			[Ancient]: There, he introduced to his friend [Friend], and they told me the world was in great danger.
+			[Ancient]: They told me in that package was an amulet of great power. That the king used dark and untold arts to create this amuled. \^That he seeked to become a god.
+			[Ancient]: I didn't understand at the time, \^but I trusted your father.
+			[Ancient]: He asked me to change his car color, so he wouldn't be recognized. So I did.
+			[Ancient]: On the following night, we met your mother on the east gate of the city, and she led us through a secret passage outside.
+			[Ancient]: Once we got out, your father gave the amulet to [Friend]. He was told to hide it, and come back to the kingdom. As for me, your father and your mother, we ran away to this village.
+			You: It's all about the amulet, then... \.My dreams...\. they...
+			[Ancient]: If the Black Tires find the amulet, the world will be in great danger. 
+			You: I must find it. My father, he was talking to me in my dreams.
+			[Ancient]: I cannot tell you not to go, child. But if you must, know that it will be dangerous.
+			[Ancient]: I knew this moment would come one day, but as time passed, and I got older, for a couple of sweet moments, I thought it wouldn't.
+			[Ancient]: In the basement you can find everything I gathered in preparation for this day. But now I am old, and weak, it is of no use to me.
+			[Ancient]: Take it, child. Find [Friend] and protect the amulet!
+			You: I will! My father's death will not be in vain!
+			
+			{Player Receives Control}
+				Objective: Find chests with items, gold and equips in the basement.
+					Objective: Go to [Kingdom] and find [Friend].
+					
+Chapter 1
+	Overworld
+		Objective: Go east towards the bridge that leads to the capital.
+	Battle:
+		Deers.
+		
+	At the bridge
+		You see a broken bridge. 3 red cars are facing a green car, they appear to be arguing.
+		
+		Red car 1: You're cornered, you filthy thief!
+		Green car: Hey, come on, this is a misuderstading!
+		Red car 2: Shut up, thief! You'll pay for what you stole with your life!
+		You: Hey! Leave him alone!
+		Red car 1: Stay out of this, kid!
+		
+		{Player Enters Battle}
+			Party:
+				Player + Green Car (Not controllable)
+			Enemies:
+				3 Red Cars
+			Sript:
+				Red car 1: I'm gonna show you what we do to thiefs around here!
+				You: What did you steal to make them so angry!?
+				Green car: Nothing! \. Well, \. something. \^ But we have some more pressing matters as of now!
+			Objective:
+				Win battle.
+			Loot:
+				2 small potions
+				Gold
+				
+		Red car 3: Let's get the hell out of here! That kid is insane!
+		Green car: Yeah, you better run!
+		You: Damn, that bridge is busted. 
+		Green car: Yeah, that almost got me killed. Woosh! You need to cross too?
+		You: I need to get to [Kingdom].
+		Green car: Dude, sweet! I do too! I know a way around the river, but it's a little bit dangerous. Not okay to go there alone, but the two of us can handle it. \^Probably. \^We make a heck of a team!
+		You: I don't usually team up with thiefs...
+		Green car: Dude, I only steal from jerks. And old people. \. Kidding. Haha, \.I'm funny.
+		You: You are one strange man.
+		
+		{Name Selection Screen}
+			Green Car is now [GC]
+		
+		[GC]: Name's [GC]. Nice to meet you.
+		You: I'm [Name]. Nice to meet you too. \^ You are as strange as your name.
+		[GC]: Don't worry about it. So, let's get going. It's easy, just follow the river side, always north, we'll find a way through there.
+		You: Alright.
+		
+		{Player Receives Control}
+			Objective:
+				Follow the river side until the entrance to the forest.
+			Battle:
+				Goblins
+				Wolves
+	
+	Entrance to the forest
+		You: Wait...\. I've heard about this place...!
+		You: Your "alternative path" is through the [Dungeon1]!?
+		[GC]: Dude. \^Chill. \^It's cool.
+		You: You know a witch lives here, right?
+		[GC]: Nah, those are legends, man. I've been here a thousand times, it's alright, kinda gloomy, though.
+		You: I thought you said it wasn't okay to come here alone.
+		[GC]: Don't worry about it. Let's go.
+		
+		{Player Receives Control}
+			Objective:
+				Find the exit to the forest.
+			Battle:
+				Spiders
+				Worms
+				Goblins
+		
+	On the exit
+		[GC]: Yo, there it is! I told you it was cool.
+		You: Yeah, let's get out of here. This place gives me chills.
+		[GC]: For sure, let's ditch.
+		
+		You move forward, but green car stays.
+		
+		You: Stop joking around, let's go.
+		[GC]: For sure, for sure, just gimme a second.
+		You: What is up with you, [GC]?
+		[GC]: Erm. \^. I kind of, maybe, can't move.
+		You: Are you kidding me?
+		You: Wait, are those spider web in your tires!?
+		???: Kyahahahahahahahahaha!
+		
+		A car with a witch hat appears in front of you.
+		
+		[Witch]: You got some sweet rides over there, kids.
+		[Witch]: Can't wait to add them to my car collection!
+		[Witch]: And you to my stomach, of course.
+		[GC]: Dude, a little help here.
+		
+		Your car turns towards [GC]'s, a cutting sound is heard, the webs are cut.
+		
+		You: Let us pass!
+		[Witch]: Kyahahahahahaha!
+		
+		{Player Enters Battle}
+			Party:
+				Player + [GC]
+			Enemies:
+				Witch
+					Attacks:
+						Normal Hit
+						Web Bind: Player can't move, until he's hit (can be hit by friends)
+						Summon Spiders: Summons 2 small spiders
+			Sript:
+				Random:
+					[Witch]: Hmmm, I am gonna put some sweet bench seats on those cars...
+					[GC]: You are insane!
+					[Witch]: Kyahahahahahaha!
+			Objective:
+				Win battle.
+			Loot:
+				2 small potions
+				Gold
+			Winning:
+				You: Yes!
+				[GC]: Take that you car seat destroyer!
+				
+		[GC]: See? Told you it was cool.
+		You: I want to hit you right now. Let's get out of here.
+		
+		Both cars exit the forest.
+			
+	Outside the dungeon
+		[GC]: Al-righty-doo, we're here!
+		You: We crossed the river. Do you know where [Kingdom] is?
+		[GC]: Southeast until we see a huge castle. Can't miss it.
+		
+		{Player Receives Control}
+			Objective:
+				Find [Dungeon].
+			Battle:
+				Stronger Wolves
+				Stronger Golbins
+				Bears
+				
+	On the entrance of[Kingdom]
+		Two gards stand outside the gate. Getting close triggers the dialogue.
+		
+		Guard: Halt! Who goes there, and what business do you have in [Kingdom]?
+		You: My name is [Name], this is my friend [GC].
+		[GC]: Yo.
+		You: We just want to visit the market, buy some potions, and we'll be on our way.
+		Guard: Hm. \^Okay.
+		Guard: Don't cause any trouble.
+		
+		Guards move aside and the gate opens. Player enters it.
+		
+Chapter 2
+	[GC]: Hey man, I got some business to sort out here. Thanks for hand.
+	You: Thanks for the help, [GC]. I hope we can meet again.
+	[GC]: Yo dude, this isn't good bye, alright, I'll be in the [Inn], just meet me there whenever you need.
+	
+	[GC] leaves the party.
+	
+	{Player Receives Control}
+		Objective: Find [Friend].
+
+	Inside [Kingdom]
+		Item Shop
+			Potions
+				Medium HP
+				Medium MP
+			Antidote
+			Phoenix Down
+		
+		Blacksmith Shop
+			Weapons
+				Iron Short Sword
+				Steel Short Sword
+				Iron Dagger
+				Steel Dagger
+			Armor
+				Iron Cap
+				Steel helmet
+				Chainmail
+				Platemail
+			Shields
+				Iron Shield
+				Steel Shield
+			Acessories
+				Car Dice
+				Hawaian Dancing Girl
+				Dog Hobhead
+				"Children Inside" Sticker
+		
+		Magic Sop
+			Car Magic
+				Heal
+				Fire
+				Ice
+				Agility
+		
+		[Friend's] House
+			Getting to it, you see that the door is locked.
+			There is a lot of unread mail stuffing the mail box.
+			
+			You: Look at all that mail. He hasn't been home for a while.
+			Stranger: Hey kid! You lost or something?
+			
+			Stranger car walks towards you.
+			
+			Stranger: Hi, sorry if I startled you. I saw that you were looking around old [Friend]'s houd. I'm his brother, [Stranger], what can I help you with?
+			You: You're [Friend]'s brother? /^Where can I find him??, I need to speak to him, he's a friend of my father.
+			[Stranger]: A friend of your... /.wait a minute...!/. [Name]!? Holy Delorian, I haven't seen you since you were just a Mini Cooper!
+			You: I... do you know me and my father? I'm sorry, I don't recognize you.
+			[Stranger]: Of course you don't, you were just a baby last time you saw me. But then, if you're here... that must mean it's happening.
+			You: Yes. My house was attacked a couple of days ago. They took my mother... /^Father tried to protect us, but they were three against one... 
+			[Stranger]: Your father was a brave man. Come one, let's talk inside.
+			
+			[Stranger] comes closer to the door, an unlocking sound is heard. Scenary changes to the inside of an abandoned house, you and [Strange] are sitting on a table.
+			
+			[Stranger]: Things have been rough here in the capital. Guards are guarding the entrance to the city, people are being inquired to go in and out, and all sorts of things.
+			[Stranger]: They're trying to do things under the sheets, but it's still obvious.
+			[Stranger]: My brother knew something was fishy when the Black Tires started to search down houses and interrogate people.
+			[Stranger]: He gathered resources and went out to go warn your father, tell him to run away with you and your mother as soon as possible, but they got him on the way out.
+			You: What...? /^How could they know?
+			[Stranger]: I don't know. But they sure as hell did. Now my brother is sitting on a jail cell.
+			[Stranger]: I've been thinkering a plan to rescue him, but it's complicated. The old dungeon floor has direct access to the prison, but it's sealed shut and guarded day and night.
+			You: I happen to have a friend that can help us. He's an experienced thief, I bet he'll know what to do.
+			[Stranger]: That's great news. I'll try to gather some information. Thanks for the help, [Name]. The world depends on us.
+			You: Let's not let it down!
+			
+		[Inn]
+			Before talking to [Stranger]
+				The inn is a mixture of tavern and hotel. There are two floors, the first has a balcony to order food, drink or rent rooms, and a number of tables and seats occupied by different vehicles. The second floor has the rooms that can be rented.
+				[GC] is sitted on one of the tables.
+				
+				Talking to him
+					[GC]: What's up, dog.
+					You: I'm trying to find a person named [Friend]. He's a friend of my father, and I desperately need to talk to him.
+					[GC]: Hm. I see. The capital is a big city, but I'd try the Town Plaza. There are a lot of houses there, you might get lucky.
+					You: Ok, thanks.
+					
+			After talking to [Stranger]
+				You enter the inn and see [GC] talking to a red sports car.
+				
+				[GC]: I paid my part, man, now you keep your promise.
+				Red Car: I don't think so, dude. There's something called interest, you know what that is? It's been far too long. You still owe me.
+				[GC}: This is getting ridiculous, [RC]. Everytime I pay you, you come up with some new crap I gotta do.
+				Red Car: You are not in a situation to make demands, pal. You do what I say, that's final.
+				[GC]: Look, if you're not gonna bail her out, I quit! /^I'm just working for free, dude.
+				Red Car: You ditch me, and she stays there forever.
+				Red Car: Be there. Tomorrow, midnight, come alone. You know the drill.
+				[GC]: ...
+				
+				[RC] leaves the inn.
+				
+				{Player Receives Control}
+					Objective: Talk to [GC].
+					
+				You: Hey, [GC]. Is everything okay?
+				[GC]: Not really, man, not really. I'm on a bumpy ride right now.
+				You: What's happening? I'm sorry, I couldn't help but listen, what was that guy talking about?
+				[GC]: That's [RC]. That guy is shady business, dude. My sister got hooked up on some nasty crap, man, NOZ galons, pink Neon Lights, some pretty heavy stuff. [RC]'s the guy dealing all that junk here in the capital.
+				[GC]: She got messed up because of that crap, and asked for my help. She worked hard and got herself clean, but we owed a lot of money to [RC].
+				[GC]: So we made a deal. I agreed working for him, in exchange that he didn't hurt my sister. As a condition, she has to work on his "business", so I don't "try anything funny". She mostly just delivers products.
+				You: I understand now. \^I came here to ask for your help, but it seems like we need to deal with that [RC] guy first.
+				[GC]: We can't, man. If we do anything, he's gonna hurt [Sister].
+				You: I have a plan. \^I met the person I was looking for, he's a friend. Follow me, I'll introduce you guys.
+				
+				Fades out to [Friend's] house.
+			
+		[Friend's] house
+			[Stranger]: It's taking too long, isn't it?
+			[GC]: They work exactly by the books, if you catch my drift.
+			You: She'll be here soon, I know it.
+			
+			Door knocks. [Stranger] walks over and opens it, a light blue car enters with two sports orange cars.
+			
+			Orange Car: [GC]! I knew something was fishy about this abandoned house delivery.
+			You: You, let her go!
+			[Sister]: [GC] leave it alone, the're gonna hurt you!
+			[GC]: Don't worry, sis, we got this.
+			Orange Car: Boss is not gonna like this, [GC]!
+			[GC]: You're not gonna like it either!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC] + [Stranger]
+				Enemies:
+					2x Orange Car
+						Attacks:
+							Normal Hit
+							NOZ: Increases speed.
+							Pink Neon: Blinds.
+				Sript:
+					[Orange Car]: You should not have messed with us, [GC].
+					[GC]: We'll see about that.
+				Objective:
+					Win battle.
+				Loot:
+					NOZ Gallon
+					Gold
+				Winning:
+					You: Nice going!
+					
+			[Sister]: What are you doing!? What are you gonna do now?
+			[GC]: They're out cold. We have a couple of hours, maybe minutes to go to [RC]'s stablishment and beat the living crap out of those clowns.
+			[Stranger]: I took out their gas too, they're not going anywhere.
+			You: Good. Let's teach them not to mess with innocent people like that.
+			[GC]: [RC]'s place is north of the city, on the town square. [Stranger], thanks for taking care of [Sister].
+			[Stranger]: Don't mention it. Now go teach some punks a lesson.
+			
+			{Player Receives Control}
+				Objective: Find [RC]'s place.
+			
+		Near [RC]'s stablishment
+			[GC]: It's right there. You can see some idiots guarding the door. Nice job keeping things discrete, morons.
+			You: Let's go.
+			
+			{Player Receives Control}
+				Objective: Enter [RC]'s place.
+				
+		On [RC]'s door
+			Before the [GC] quest
+				[Orange Car]: Beat it, kiddo, before you get hurt.
+			During [GC] quest
+				[Orange Car]: Yo, [GC], your sister isn't here. She's delivering.
+				[GC]: Oh, you don't know how much I wanted to do this.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC]
+				Enemies:
+					2x Orange Car
+						Attacks:
+							Normal Hit
+							NOZ: Increases speed.
+							Pink Neon: Blinds.
+				Sript:
+					[Orange Car]: What the hell are you doing!?
+					[GC]: Something I should have done long ago.
+				Objective:
+					Win battle.
+				Loot:
+					NOZ Gallon.
+					Gold
+				Winning:
+					You: Take that!
+		
+		Inside of [RC]'s establishment (Dungeon2)
+			{Player Receives Control}
+				Objective: Find [RC].
+		
+			Pretty messed up house, with a bunch of Orange Cars. This has a bunch of rooms like this, some have treasure chests with items inside, like gold, potions, and equips.
+				
+				Orange Car: [GC]!? The heck you think you're doing?
+				[GC]: Get them!
+
+				{Player Enters Battle}
+					Party:
+						Player + [GC]
+					Enemies:
+						4x Orange Car
+							Attacks:
+								Normal Hit
+								NOZ: Increases speed.
+								Pink Neon: Blinds.
+					Objective:
+						Win battle.
+					Loot:
+						NOZ Gallon.
+						Gold
+		
+		Inside [RC]'s room
+			A mafioso like room. There's a table with [RC] sitting behind it.
+			
+			[RC]: I am very disappointed in you [GC]. \^I thought we had a deal. \^I thought of you as a man who honored his word.
+			[GC]: You are completely nuts! You've been holding me hostage for so long, and you intended to keep exploiting me and [Sister]. /^Enough is enough.
+			[RC]: It's a shame. I'll have to end both of you here and now.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC]
+				Enemies:
+					RC
+						Attacks:
+							Normal Hit
+							NOZ: Increases speed.
+							Pink Neon: Blinds.
+							Tire Wrecker: Slows.
+				Objective:
+					Win battle.
+				Loot:
+					NOZ Gallon
+					Medium potion
+					Gold
+			
+			[GC]: You stay away from me and my sister, creep.
+			[GC]: Come on, [Name], this will probably just gonna make them angrier. We gotta take [Sister] to safety.
+			You: Sure, let's go.
+			
+			Fades out to [Friend]'s house.
+		
+		[Friend's] house
+			[Stranger]: Things are going to be even harder now. Are you sure [RC] won't contact authorities?
+			[GC]: The guy's dirty as hell, he's not gonna want cops sniffing around. We're fine.
+			[Stranger]: Ok then, with [Sister] safe in my wife's house, we can go forward with your plan, [GC].
+			[GC]: It's pretty straight forward. We break into the old dungeon using the sewer path. It's gonna smell like crap and be infested with rats, but's it's never guarded.
+			[GC]: There is a trapdoor leading to it, and is locked, but you can leave that to me.
+			[GC]: The path to the trapdoor is the tricky part. It's heavily guarded. We'll have to sneak past them, then the rest is easy.
+			You: Sounds like a plan.
+			[Stranger]: Now is a good time to get some rest and gather some good resources. Talk to me when you're ready to go.
+			
+			{Player Receives Control}
+				Objective (Optional): Buy things.
+				Objective: Talk to stranger to go forward with the plan.
+			
+			Talking with [Stranger]
+				[Stranger]: Are we all set to go?
+					Yes: 
+						Fades out towards the trapdoor.
+					No:
+						[Stranger]: Okay. Talk to me when you're ready.
+				
+Chapter 3
+	In front of the trapdoor
+		You: Wow, you meant it when you said heavily guarded.
+		[GC]: This is gonna be easy, just lay low and stay off the lights.
+		
+		{Player Receives Control}
+				Objective: Sneak past the guards.
+				This is a minigame, basically a little labyrinth where you have to avoid being seen by the gards (don't touch the lights).
+		
+		[GC]: Woo, that was CRAZY. Told you it was gonna be alright.
+		You: A little too close for me.
+		[GC]: Lemme work out this baby here.
+		[GC]: And/../../.. Done. /^Easy.
+		[Stranger]: Let's go, we don't want to be here when the sun comes up.
+		
+		Fade in to sewers.
+		
+	Sewers
+		You: This place creeps me out.
+		[Stranger]: So disgusting. Let's move.
+		
+		{Player Receives Control}
+			Objective: Find the way to the prison cells.
+			Battle:
+				Mutant Rat
+				Mutant Slug
+				Mutant Cockroach
+		
+		On the gate to the prison cells
+			You: This is locked. Can you crack it open, [GC]?
+			[GC]: Damn. No. That's some kind of mechanical lock. There should be a lever somewhere.
+			[Stranger]: Let's find it.
+			
+		{Player Receives Control}
+			Objective: Find the lever to open the gate.
+			Battle:
+				Mutant Rat
+				Mutant Slug
+				Mutant Cockroach
+				
+		In front of the lever
+			[GC]: There it is! In front of that gigantic rat.
+			[Strange]: That is one big rat.
+			You: Come on, guys, brace yourselves!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC] + [Stranger]
+				Enemies:
+					Giant Rat
+						Attacks:
+							Normal Hit
+							Venomous Bite: Poisons
+							Summon small rats: summons 2 small rats.
+				Objective:
+					Win battle.
+				Loot:
+					Antidote
+					Big potions
+					Gold
+				Winning:
+					[GC]: Nice! Now let's pull that thing.
+					
+			{Player Receives Control}
+				Objective: Pull lever.
+			
+			A clink sound is heard.
+			
+			You: That must have been the gate. Come on, let's go!
+			
+			{Player Receives Control}
+				Objective: Enter the gate.
+				Battle:
+					Mutant Rat
+					Mutant Slug
+					Mutant Cockroach
+		
+			Entering the gate, fade out to the prison cells.
+		
+		Old dungeon
+			[GC]: Alright, we're in. From now on, there's probably gonna be trouble, so stay sharp.
+			You: Let's find the way to [Friend]'s cell.
+			
+			{Player Receives Control}
+				Objective: Find [Friend]'s cell.
+				Battle:
+					Guards
+				
+		On cell
+			[Stranger]: Brother! I was so worried.
+			[Friend]: [Stranger]...! I knew you'd come.
+			[Stranger]: We can talk later! [GC], can you unlock the door?
+			[GC]: Leave it to me!
+			You: Guys, we got company!
+			[Stranger]: Let's leave them occupied while [GC] handles the door.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger]
+				Enemies:
+					3x Guards
+						Attacks:
+							Normal Hit
+							Fire.
+				Objective:
+					Win battle.
+				Loot:
+					Big potions
+					Gold
+				
+			You: [GC]...? How's it going over there?
+			[GC]: Don't rush the magic, bro!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger]
+				Enemies:
+					3x Guards
+						Attacks:
+							Normal Hit
+							Fire.
+				Objective:
+					Win battle.
+				Loot:
+					Gold
+						
+			[GC]: Almost there!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger]
+				Enemies:
+					3x Guards
+						Attacks:
+							Normal Hit
+							Fire.
+				Objective:
+					Win battle.
+				Loot:
+					Gold
+					
+			[GC]: Got it!
+			[Friend]: Let's go. There are more coming, for sure.
+			
+			Fades out to [Friend]'s house.
+			
+		[Friend]'s house
+			[Friend]: I was too late...
+			[Friend]: Damn it!
+			[Friend]: I should've been more careful. I'm sorry, [Name], I couldn't protect you. Or your family.
+			You: It's okay, [Friend]. You did the best you could. Now is not the time to mourn, thoug. What is the amulet? Why is the king so interested in it.
+			[Friend]: Back when me and your father were part of the Black Tires, the king sent us on strange missions across the land to find strange artifacts.
+			[Friend]: We traveled all around the world searching for each piece, doing whatever it took to get hold of them.
+			[Friend]: Then one day your father came to me with a piece of paper. It was an ancient document, describing the creation of the amulet. A device so powerful no man should ever control. And we were fetching all the pieces to craft it.
+			[GC]: Wow... how powerful is a device that no man should ever control?
+			[Friend]: Too powerful.
+			[Friend]: The amulet, when complete and charged, gives the person holding the power to control any car.
+			[Stranger]: Control of the mind...
+			[Friend]: Yes. A person would be next to you, moving, but you'd never know if that's her will.
+			You: That is saddistic.
+			[Friend]: We were shocked it first, but it all made sense then. The king is a strange person, and his lust for power was always appearent, but we never thought he'd go so far.
+			[Friend]: So we agreed to stop him. We took the pieces that we had, and the unfinished amulet, and ran away.
+			[Friend]: I hid the pieces and the amulet on the catacombs in [Dungeon3], so no one would find it.
+			[Friend]: The rest is history.
+			You: So we are safe, right? The king doensn't know where the pieces are.
+			[Friend]: I wish it was that simple.
+			[Friend]: It's appearent by my imprisionament that someone is feeding information to the king.
+			[Stranger]: I thought so too. They were quick to catch you just as you went out to warn [Name]'s family.
+			You: But who could it be?
+			[Friend]: I don't know.
+			[Friend]: What I do know is that the amulet might not be safe. We were foolish to try and hide it. It should have been destroyed.
+			[GC]: So this is how it ends, huh? We go on a sucide mission inside an ancient catacomb to destroy an ancient amulet. Sounds like fun.
+			You: We must part as soon as possible.
+			[Stranger]: But not unprepared. Let's all prepare for our journey. Come to me when you're ready to leave.
+			[GC]: Cool.
+			You: Let's do this.
+				
+			{Player Receives Control}
+				Objective (Optional): Buy things.
+				Objective: Talk to [Friend] to go forward with the plan.
+			
+			Talking with [Friend]
+				[Friend]: Are we all set to go?
+					Yes: 
+						Fades out to overworld.
+					No:
+						[Friend]: Okay. Talk to me when you're ready.
+Chapter 4
+	Towards the catacombs
+		[Friend]: The catacombs are southwest from here. Let's move quick.
+		
+		{Player Receives Control}
+			Objective:
+				Find [Dungeon3].
+			Battle:
+				Even Stronger Wolves
+				Even Stronger Golbins
+				Stronger Bears
+
+	In front of the catacombs
+		[Friend]: Well, we are here. Now the challenge begins.
+		[Friend]: After I put the pieces inside, I raided the place with inumerous monsters.
+		[GC]: Now that's wonderful.
+		[Friend]: Not only that, I put a lock mechanism on the door.
+		[Friend]: We're going to need to unlock it to get inside.
+		[GC]: Leave that to my skillful hands.
+		
+		{Player Receives Control}
+			Objective:
+				Solve Minigame
+					Maybe: 8-puzzle
+		
+		[GC]: That was so easy, it hurt!
+		You: Nice going, [GC]!
+		[Stranger]: Come on, let's go in.
+		
+	Inside the catacombs
+		[Friend]: The pieces are trapped inside a locked room. Stay sharp for enemies.
+		[Friend]: There are two more locks like the one on the entrance. We have to find those to proceed.
+		
+		{Player Receives Control}
+			Objective:
+				Find the puzzles and solve them.
+			Battle:
+				Mummy
+				Skeleton
+		
+		Puzzle 1
+			You: Time for you to shine, [GC].
+			[GC]: I'm always shining, thank you.
+		
+		Puzzle 2
+			You: [GC], you know what to do.
+			[GC]: On it.
+			
+		Both puzzles complete
+			Clicking noise sounds
+			[Stranger]: The door unlocked.
+			[Friend]: Now all we have to do it find it.
+			
+		{Player Receives Control}
+			Objective:
+				Find the door to the last floor.
+			Battle:
+				Mummy
+				Skeleton
+		
+		On the door
+			You: Finally, there it is!
+			???: I'm sorry, my child, I can't let you through.
+			
+			Your mother's car comes out of the door.
+			
+			You: Mom!? What are you doing here.
+			Mom: You... you stubborn, foolish boy. Why wouldn't you just stay with [Ancient]? Why did you have to come here?
+			You: Mom, the amulet, the king is going to...
+			Mom: Is going to what, son? The king is going to save us all. Don't you see it, my child? Are You all blind?
+			Mom: Cars that move by themselves. Freedom to us. You can have your father back, we can live our lives in freedom.
+			You: What... mom... are you... saying...
+			[Stranger]: She's gone, [Name]...
+			[Friend]: We have to stop her!
+			Mom: I am sorry for this, my child.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger] + [Friend] + [GC]
+				Enemies:
+					Mom
+						Normal Attack
+						Tire Wrecker
+				Objective:
+					Win battle.
+				Loot:
+					Nothing.
+					
+			Mom: Why... you... you are just like your father.
+			Mom: I won't let you ruin this!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger] + [Friend] + [GC]
+				Enemies:
+					Mom Second Form
+						Normal Attack
+						Fire
+						Ice
+						Water
+				Script:
+					Mom: This is what true freedom looks like!
+					You: What...!?
+				Objective:
+					Win battle.
+				Loot:
+					Nothing.
+					
+			Fades out from white to normal.
+			
+			[GC]: Wait... what just...
+			[Stranger]: I feel strange...
+			[Friend]: Wait, is that... on the ground... the amulet!? What in the name of...
+			
+			The father walks into the room, carless.
+			
+			[Father]: My son!
+			You: Fa-father!
+			
+			You come out of the car and run towards them.
+				Try to make the sprites hug
+			
+			[GC]: What in the world just happened...
+			[GC]: And why are we all on cars...
+Prologue
+	{Name Selection Screen}
+
+	Protagonist's Dream (Black Screen)
+		Voice: [Name]...\. [Name]... It's coming...\. You must... You have to...\.
+		Voice: Stay strong...
+	
+	Protagonist's House
+		In bed
+			Mom: [Name], wake up! \^Breakfast is ready!
+			You: What a strange dream...
+			
+		{Player Receives Control}
+			Objective: Go downstairs and meet parents.
+			
+		Dining table
+			Father: Look who's finally up! \^Ready for our little adventure today, pal?
+			You: We are really going!?
+			Father: Yes! \^I told you we would.
+			Mom: I still think you're too young to go hunting.
+			Father: We are going to be just fine! \^I'll bring him back in one piece, don't worry.
+			Mom: Alright, alright. \^Have fun you two.
+			
+	Overworld
+		Outside the Village
+			You: Wow! I've never been so far away from the village.
+			Father: This is the real world, son! \^Far north is [Village_2], the village I was born in. \^And to the east is [Kingdom], the capital of the kingdom, where I met your mother. 
+			Father: All around us there's wonders and adventure.
+			You: I want to travel the world one day, like father did.
+			Father: I am sure you will. Now let's hunt some food! \^Let's go east, to the [Forest], there's game to give and lose there.
+			
+			{Player Receives Control}
+				Objective: Find forest.
+		
+		[Forest]
+			Father: Alright, son, here we go. Hunting is a simple, but meticulous process.
+			Father: Some people think hunting means lurking in the shadows, staying silent and waiting for a moment to strike.
+			Father: Those people die of starvation.
+			Father: If you want to catch something, you have to think like your prey, you have to put yourself on its tires.
+			Father: So, if you see a deer, charge at it at full speed. 
+			
+			{Player Receives Control}
+				Objective: Charge a deer at full speed.
+					Father: There it is! Quick, catch it!
+		
+			{Player Enters Battle}
+				Party:
+					You + Father (Doesn't act)
+				Enemy:
+					A deer.
+				Script:
+					Father: Nice going, son! Now it's time to subdue it. This is how battle looks like! Can you feel the blood pumping in your veins?
+					You: It's just a deer, dad.
+					Father: Don't let that fool you! Those are vicious creatures. Come on, attack it!
+				Objective: Attack the deer.
+						Father: Yes! We're gonna have a nice warm stew today! Hm-hm!
+					Objective: Get hit.
+						Father: Ouch, that's gotta hurt! Come on, son, heal yourself.
+					Objective: Use car magic.
+						Father: Now finish it!
+					Objective: Kill the deer.
+				Winning Script:
+					Father: That was great, son! You are going to grow up into an amazing fighter one day. Now let's go back to your mother.
+				Loot:
+					Raw deer meat.
+			
+			{Player Receives Control}
+				Objective: Go back to your house.
+				
+		Outside Your House
+			Everything is on fire, there are black cars outside.
+			
+			Father: Hey!
+			Father: Son, go to [Ancient]'s house.
+			You: Dad, what's happening? Where is mom?
+			Father: I said go!
+			Father: We will talk later.
+			
+			The father car tries to go inside the burning house.
+			
+			Black Car: You. Do you have it?
+			Father: Get out of my home!
+			Father: Where is my wife?
+			Black Car: Everything will be okay if you tell us where it is.
+			Father: I don't know what you're talking about!
+			
+			{Player Enters Battle}
+				Party:
+					Father (uncontrollable)
+				Enemies:
+					3 black cars
+				Script:
+					He attacks and destroys one of them.
+						Father: Where is my wife!?
+					The other two cars attack him, he is destroyed.
+						Father: Argh...
+				
+		Outside Your House
+			Black Car: We don't have to do this. Just tell us where it is.
+			The father's car is on fire.
+			Father: ...
+			
+			[Ancient] car appears in the save.
+			[Ancient]: Come on, [Name], we have to go.
+			You: [Ancient], you have to help my father! They have my mom!
+			[Ancient]: Let's go, I said!
+			You: No...!
+			
+			A black car different from the others comes out of the house.
+			
+			Black Car: It's not here.
+			Black Car: Get rid of them.
+			You: NO! DAD!
+			
+			Ancient's car hits you, you slowly unaccelerate, implying you passed out.
+			
+			[Ancient]: I am sorry, my child, I have to keep you safe.
+			
+			Ancient's car drags you away from the house.
+			You hear exploding noises.
+			
+		Your dream again (Black Screen):
+			Voice: They still don't have it...\. I couldn't give it to them.
+			Voice: Son.\. You have to keep it safe.\. They must not have it.
+			Voice: You must protect it. Find [Friend]...
+			
+		[Ancient]'s house
+			You: D-dad...
+			[Ancient]: You are up, my child, I was worried.
+			You: Mom and dad, what... what happened?
+			[Ancient]: It's time, son. It's time for you to learn the truth.
+			You: I... I don't understand...
+			[Ancient]: Those men that attacked your home, they are not common bandits.
+			[Ancient]: Those are the Black Tires. An elite force that works directly under the King's authority.
+			[Ancient]: Long ago, way before you came into this world.\^ Before your father met your mother and settled in this villagem he was one of them.
+			You: But my father hated the kingdom...
+			[Ancient]: It wasn't always like this. 
+			[Ancient]: I worked in the kingdom as a blacksmith, forging engines for the King. Your father and I were close friends.
+			[Ancient]: We used to meet every week.\^ He'd come to collect the engines and see to my payment.
+			[Ancient]: One day, however, he didn't come. I thought it to be strange, as he never once missed a day, or was late.
+			[Ancient]: But I didn't think much of it.
+			[Ancient]: The next week he didn't show again.\^ Nor the next.\^ Instead, a different man came on the third week to collect the engines. 
+			[Ancient]: He paid me for everything, and when I asked where your father went, or why they didn't come on the passing weeks, he told me schedule was tight, and he didn't know who your father was.
+			[Ancient]: On the following day, I received a misterious letter telling me to go to the town square in the middle of night. \^It was your father's hand writting.
+			You: I...\. that is all so strange...
+			[Ancient]: When I got there, your father was waiting for me. He had a worried look in his eyes, and held a strange package. He was with a man I hadn't seen before.
+			[Ancient]: There, he introduced to his friend [Friend], and they told me the world was in great danger.
+			[Ancient]: They told me in that package was an amulet of great power. That the king used dark and untold arts to create this amuled. \^That he seeked to become a god.
+			[Ancient]: I didn't understand at the time, \^but I trusted your father.
+			[Ancient]: He asked me to change his car color, so he wouldn't be recognized. So I did.
+			[Ancient]: On the following night, we met your mother on the east gate of the city, and she led us through a secret passage outside.
+			[Ancient]: Once we got out, your father gave the amulet to [Friend]. He was told to hide it, and come back to the kingdom. As for me, your father and your mother, we ran away to this village.
+			You: It's all about the amulet, then... \.My dreams...\. they...
+			[Ancient]: If the Black Tires find the amulet, the world will be in great danger. 
+			You: I must find it. My father, he was talking to me in my dreams.
+			[Ancient]: I cannot tell you not to go, child. But if you must, know that it will be dangerous.
+			[Ancient]: I knew this moment would come one day, but as time passed, and I got older, for a couple of sweet moments, I thought it wouldn't.
+			[Ancient]: In the basement you can find everything I gathered in preparation for this day. But now I am old, and weak, it is of no use to me.
+			[Ancient]: Take it, child. Find [Friend] and protect the amulet!
+			You: I will! My father's death will not be in vain!
+			
+			{Player Receives Control}
+				Objective: Find chests with items, gold and equips in the basement.
+					Objective: Go to [Kingdom] and find [Friend].
+					
+Chapter 1
+	Overworld
+		Objective: Go east towards the bridge that leads to the capital.
+	Battle:
+		Deers.
+		
+	At the bridge
+		You see a broken bridge. 3 red cars are facing a green car, they appear to be arguing.
+		
+		Red car 1: You're cornered, you filthy thief!
+		Green car: Hey, come on, this is a misuderstading!
+		Red car 2: Shut up, thief! You'll pay for what you stole with your life!
+		You: Hey! Leave him alone!
+		Red car 1: Stay out of this, kid!
+		
+		{Player Enters Battle}
+			Party:
+				Player + Green Car (Not controllable)
+			Enemies:
+				3 Red Cars
+			Sript:
+				Red car 1: I'm gonna show you what we do to thiefs around here!
+				You: What did you steal to make them so angry!?
+				Green car: Nothing! \. Well, \. something. \^ But we have some more pressing matters as of now!
+			Objective:
+				Win battle.
+			Loot:
+				2 small potions
+				Gold
+				
+		Red car 3: Let's get the hell out of here! That kid is insane!
+		Green car: Yeah, you better run!
+		You: Damn, that bridge is busted. 
+		Green car: Yeah, that almost got me killed. Woosh! You need to cross too?
+		You: I need to get to [Kingdom].
+		Green car: Dude, sweet! I do too! I know a way around the river, but it's a little bit dangerous. Not okay to go there alone, but the two of us can handle it. \^Probably. \^We make a heck of a team!
+		You: I don't usually team up with thiefs...
+		Green car: Dude, I only steal from jerks. And old people. \. Kidding. Haha, \.I'm funny.
+		You: You are one strange man.
+		
+		{Name Selection Screen}
+			Green Car is now [GC]
+		
+		[GC]: Name's [GC]. Nice to meet you.
+		You: I'm [Name]. Nice to meet you too. \^ You are as strange as your name.
+		[GC]: Don't worry about it. So, let's get going. It's easy, just follow the river side, always north, we'll find a way through there.
+		You: Alright.
+		
+		{Player Receives Control}
+			Objective:
+				Follow the river side until the entrance to the forest.
+			Battle:
+				Goblins
+				Wolves
+	
+	Entrance to the forest
+		You: Wait...\. I've heard about this place...!
+		You: Your "alternative path" is through the [Dungeon1]!?
+		[GC]: Dude. \^Chill. \^It's cool.
+		You: You know a witch lives here, right?
+		[GC]: Nah, those are legends, man. I've been here a thousand times, it's alright, kinda gloomy, though.
+		You: I thought you said it wasn't okay to come here alone.
+		[GC]: Don't worry about it. Let's go.
+		
+		{Player Receives Control}
+			Objective:
+				Find the exit to the forest.
+			Battle:
+				Spiders
+				Worms
+				Goblins
+		
+	On the exit
+		[GC]: Yo, there it is! I told you it was cool.
+		You: Yeah, let's get out of here. This place gives me chills.
+		[GC]: For sure, let's ditch.
+		
+		You move forward, but green car stays.
+		
+		You: Stop joking around, let's go.
+		[GC]: For sure, for sure, just gimme a second.
+		You: What is up with you, [GC]?
+		[GC]: Erm. \^. I kind of, maybe, can't move.
+		You: Are you kidding me?
+		You: Wait, are those spider web in your tires!?
+		???: Kyahahahahahahahahaha!
+		
+		A car with a witch hat appears in front of you.
+		
+		[Witch]: You got some sweet rides over there, kids.
+		[Witch]: Can't wait to add them to my car collection!
+		[Witch]: And you to my stomach, of course.
+		[GC]: Dude, a little help here.
+		
+		Your car turns towards [GC]'s, a cutting sound is heard, the webs are cut.
+		
+		You: Let us pass!
+		[Witch]: Kyahahahahahaha!
+		
+		{Player Enters Battle}
+			Party:
+				Player + [GC]
+			Enemies:
+				Witch
+					Attacks:
+						Normal Hit
+						Web Bind: Player can't move, until he's hit (can be hit by friends)
+						Summon Spiders: Summons 2 small spiders
+			Sript:
+				Random:
+					[Witch]: Hmmm, I am gonna put some sweet bench seats on those cars...
+					[GC]: You are insane!
+					[Witch]: Kyahahahahahaha!
+			Objective:
+				Win battle.
+			Loot:
+				2 small potions
+				Gold
+			Winning:
+				You: Yes!
+				[GC]: Take that you car seat destroyer!
+				
+		[GC]: See? Told you it was cool.
+		You: I want to hit you right now. Let's get out of here.
+		
+		Both cars exit the forest.
+			
+	Outside the dungeon
+		[GC]: Al-righty-doo, we're here!
+		You: We crossed the river. Do you know where [Kingdom] is?
+		[GC]: Southeast until we see a huge castle. Can't miss it.
+		
+		{Player Receives Control}
+			Objective:
+				Find [Dungeon].
+			Battle:
+				Stronger Wolves
+				Stronger Golbins
+				Bears
+				
+	On the entrance of[Kingdom]
+		Two gards stand outside the gate. Getting close triggers the dialogue.
+		
+		Guard: Halt! Who goes there, and what business do you have in [Kingdom]?
+		You: My name is [Name], this is my friend [GC].
+		[GC]: Yo.
+		You: We just want to visit the market, buy some potions, and we'll be on our way.
+		Guard: Hm. \^Okay.
+		Guard: Don't cause any trouble.
+		
+		Guards move aside and the gate opens. Player enters it.
+		
+Chapter 2
+	[GC]: Hey man, I got some business to sort out here. Thanks for hand.
+	You: Thanks for the help, [GC]. I hope we can meet again.
+	[GC]: Yo dude, this isn't good bye, alright, I'll be in the [Inn], just meet me there whenever you need.
+	
+	[GC] leaves the party.
+	
+	{Player Receives Control}
+		Objective: Find [Friend].
+
+	Inside [Kingdom]
+		Item Shop
+			Potions
+				Medium HP
+				Medium MP
+			Antidote
+			Phoenix Down
+		
+		Blacksmith Shop
+			Weapons
+				Iron Short Sword
+				Steel Short Sword
+				Iron Dagger
+				Steel Dagger
+			Armor
+				Iron Cap
+				Steel helmet
+				Chainmail
+				Platemail
+			Shields
+				Iron Shield
+				Steel Shield
+			Acessories
+				Car Dice
+				Hawaian Dancing Girl
+				Dog Hobhead
+				"Children Inside" Sticker
+		
+		Magic Sop
+			Car Magic
+				Heal
+				Fire
+				Ice
+				Agility
+		
+		[Friend's] House
+			Getting to it, you see that the door is locked.
+			There is a lot of unread mail stuffing the mail box.
+			
+			You: Look at all that mail. He hasn't been home for a while.
+			Stranger: Hey kid! You lost or something?
+			
+			Stranger car walks towards you.
+			
+			Stranger: Hi, sorry if I startled you. I saw that you were looking around old [Friend]'s houd. I'm his brother, [Stranger], what can I help you with?
+			You: You're [Friend]'s brother? /^Where can I find him??, I need to speak to him, he's a friend of my father.
+			[Stranger]: A friend of your... /.wait a minute...!/. [Name]!? Holy Delorian, I haven't seen you since you were just a Mini Cooper!
+			You: I... do you know me and my father? I'm sorry, I don't recognize you.
+			[Stranger]: Of course you don't, you were just a baby last time you saw me. But then, if you're here... that must mean it's happening.
+			You: Yes. My house was attacked a couple of days ago. They took my mother... /^Father tried to protect us, but they were three against one... 
+			[Stranger]: Your father was a brave man. Come one, let's talk inside.
+			
+			[Stranger] comes closer to the door, an unlocking sound is heard. Scenary changes to the inside of an abandoned house, you and [Strange] are sitting on a table.
+			
+			[Stranger]: Things have been rough here in the capital. Guards are guarding the entrance to the city, people are being inquired to go in and out, and all sorts of things.
+			[Stranger]: They're trying to do things under the sheets, but it's still obvious.
+			[Stranger]: My brother knew something was fishy when the Black Tires started to search down houses and interrogate people.
+			[Stranger]: He gathered resources and went out to go warn your father, tell him to run away with you and your mother as soon as possible, but they got him on the way out.
+			You: What...? /^How could they know?
+			[Stranger]: I don't know. But they sure as hell did. Now my brother is sitting on a jail cell.
+			[Stranger]: I've been thinkering a plan to rescue him, but it's complicated. The old dungeon floor has direct access to the prison, but it's sealed shut and guarded day and night.
+			You: I happen to have a friend that can help us. He's an experienced thief, I bet he'll know what to do.
+			[Stranger]: That's great news. I'll try to gather some information. Thanks for the help, [Name]. The world depends on us.
+			You: Let's not let it down!
+			
+		[Inn]
+			Before talking to [Stranger]
+				The inn is a mixture of tavern and hotel. There are two floors, the first has a balcony to order food, drink or rent rooms, and a number of tables and seats occupied by different vehicles. The second floor has the rooms that can be rented.
+				[GC] is sitted on one of the tables.
+				
+				Talking to him
+					[GC]: What's up, dog.
+					You: I'm trying to find a person named [Friend]. He's a friend of my father, and I desperately need to talk to him.
+					[GC]: Hm. I see. The capital is a big city, but I'd try the Town Plaza. There are a lot of houses there, you might get lucky.
+					You: Ok, thanks.
+					
+			After talking to [Stranger]
+				You enter the inn and see [GC] talking to a red sports car.
+				
+				[GC]: I paid my part, man, now you keep your promise.
+				Red Car: I don't think so, dude. There's something called interest, you know what that is? It's been far too long. You still owe me.
+				[GC}: This is getting ridiculous, [RC]. Everytime I pay you, you come up with some new crap I gotta do.
+				Red Car: You are not in a situation to make demands, pal. You do what I say, that's final.
+				[GC]: Look, if you're not gonna bail her out, I quit! /^I'm just working for free, dude.
+				Red Car: You ditch me, and she stays there forever.
+				Red Car: Be there. Tomorrow, midnight, come alone. You know the drill.
+				[GC]: ...
+				
+				[RC] leaves the inn.
+				
+				{Player Receives Control}
+					Objective: Talk to [GC].
+					
+				You: Hey, [GC]. Is everything okay?
+				[GC]: Not really, man, not really. I'm on a bumpy ride right now.
+				You: What's happening? I'm sorry, I couldn't help but listen, what was that guy talking about?
+				[GC]: That's [RC]. That guy is shady business, dude. My sister got hooked up on some nasty crap, man, NOZ galons, pink Neon Lights, some pretty heavy stuff. [RC]'s the guy dealing all that junk here in the capital.
+				[GC]: She got messed up because of that crap, and asked for my help. She worked hard and got herself clean, but we owed a lot of money to [RC].
+				[GC]: So we made a deal. I agreed working for him, in exchange that he didn't hurt my sister. As a condition, she has to work on his "business", so I don't "try anything funny". She mostly just delivers products.
+				You: I understand now. \^I came here to ask for your help, but it seems like we need to deal with that [RC] guy first.
+				[GC]: We can't, man. If we do anything, he's gonna hurt [Sister].
+				You: I have a plan. \^I met the person I was looking for, he's a friend. Follow me, I'll introduce you guys.
+				
+				Fades out to [Friend's] house.
+			
+		[Friend's] house
+			[Stranger]: It's taking too long, isn't it?
+			[GC]: They work exactly by the books, if you catch my drift.
+			You: She'll be here soon, I know it.
+			
+			Door knocks. [Stranger] walks over and opens it, a light blue car enters with two sports orange cars.
+			
+			Orange Car: [GC]! I knew something was fishy about this abandoned house delivery.
+			You: You, let her go!
+			[Sister]: [GC] leave it alone, the're gonna hurt you!
+			[GC]: Don't worry, sis, we got this.
+			Orange Car: Boss is not gonna like this, [GC]!
+			[GC]: You're not gonna like it either!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC] + [Stranger]
+				Enemies:
+					2x Orange Car
+						Attacks:
+							Normal Hit
+							NOZ: Increases speed.
+							Pink Neon: Blinds.
+				Sript:
+					[Orange Car]: You should not have messed with us, [GC].
+					[GC]: We'll see about that.
+				Objective:
+					Win battle.
+				Loot:
+					NOZ Gallon
+					Gold
+				Winning:
+					You: Nice going!
+					
+			[Sister]: What are you doing!? What are you gonna do now?
+			[GC]: They're out cold. We have a couple of hours, maybe minutes to go to [RC]'s stablishment and beat the living crap out of those clowns.
+			[Stranger]: I took out their gas too, they're not going anywhere.
+			You: Good. Let's teach them not to mess with innocent people like that.
+			[GC]: [RC]'s place is north of the city, on the town square. [Stranger], thanks for taking care of [Sister].
+			[Stranger]: Don't mention it. Now go teach some punks a lesson.
+			
+			{Player Receives Control}
+				Objective: Find [RC]'s place.
+			
+		Near [RC]'s stablishment
+			[GC]: It's right there. You can see some idiots guarding the door. Nice job keeping things discrete, morons.
+			You: Let's go.
+			
+			{Player Receives Control}
+				Objective: Enter [RC]'s place.
+				
+		On [RC]'s door
+			Before the [GC] quest
+				[Orange Car]: Beat it, kiddo, before you get hurt.
+			During [GC] quest
+				[Orange Car]: Yo, [GC], your sister isn't here. She's delivering.
+				[GC]: Oh, you don't know how much I wanted to do this.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC]
+				Enemies:
+					2x Orange Car
+						Attacks:
+							Normal Hit
+							NOZ: Increases speed.
+							Pink Neon: Blinds.
+				Sript:
+					[Orange Car]: What the hell are you doing!?
+					[GC]: Something I should have done long ago.
+				Objective:
+					Win battle.
+				Loot:
+					NOZ Gallon.
+					Gold
+				Winning:
+					You: Take that!
+		
+		Inside of [RC]'s establishment (Dungeon2)
+			{Player Receives Control}
+				Objective: Find [RC].
+		
+			Pretty messed up house, with a bunch of Orange Cars. This has a bunch of rooms like this, some have treasure chests with items inside, like gold, potions, and equips.
+				
+				Orange Car: [GC]!? The heck you think you're doing?
+				[GC]: Get them!
+
+				{Player Enters Battle}
+					Party:
+						Player + [GC]
+					Enemies:
+						4x Orange Car
+							Attacks:
+								Normal Hit
+								NOZ: Increases speed.
+								Pink Neon: Blinds.
+					Objective:
+						Win battle.
+					Loot:
+						NOZ Gallon.
+						Gold
+		
+		Inside [RC]'s room
+			A mafioso like room. There's a table with [RC] sitting behind it.
+			
+			[RC]: I am very disappointed in you [GC]. \^I thought we had a deal. \^I thought of you as a man who honored his word.
+			[GC]: You are completely nuts! You've been holding me hostage for so long, and you intended to keep exploiting me and [Sister]. /^Enough is enough.
+			[RC]: It's a shame. I'll have to end both of you here and now.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC]
+				Enemies:
+					RC
+						Attacks:
+							Normal Hit
+							NOZ: Increases speed.
+							Pink Neon: Blinds.
+							Tire Wrecker: Slows.
+				Objective:
+					Win battle.
+				Loot:
+					NOZ Gallon
+					Medium potion
+					Gold
+			
+			[GC]: You stay away from me and my sister, creep.
+			[GC]: Come on, [Name], this will probably just gonna make them angrier. We gotta take [Sister] to safety.
+			You: Sure, let's go.
+			
+			Fades out to [Friend]'s house.
+		
+		[Friend's] house
+			[Stranger]: Things are going to be even harder now. Are you sure [RC] won't contact authorities?
+			[GC]: The guy's dirty as hell, he's not gonna want cops sniffing around. We're fine.
+			[Stranger]: Ok then, with [Sister] safe in my wife's house, we can go forward with your plan, [GC].
+			[GC]: It's pretty straight forward. We break into the old dungeon using the sewer path. It's gonna smell like crap and be infested with rats, but's it's never guarded.
+			[GC]: There is a trapdoor leading to it, and is locked, but you can leave that to me.
+			[GC]: The path to the trapdoor is the tricky part. It's heavily guarded. We'll have to sneak past them, then the rest is easy.
+			You: Sounds like a plan.
+			[Stranger]: Now is a good time to get some rest and gather some good resources. Talk to me when you're ready to go.
+			
+			{Player Receives Control}
+				Objective (Optional): Buy things.
+				Objective: Talk to stranger to go forward with the plan.
+			
+			Talking with [Stranger]
+				[Stranger]: Are we all set to go?
+					Yes: 
+						Fades out towards the trapdoor.
+					No:
+						[Stranger]: Okay. Talk to me when you're ready.
+				
+Chapter 3
+	In front of the trapdoor
+		You: Wow, you meant it when you said heavily guarded.
+		[GC]: This is gonna be easy, just lay low and stay off the lights.
+		
+		{Player Receives Control}
+				Objective: Sneak past the guards.
+				This is a minigame, basically a little labyrinth where you have to avoid being seen by the gards (don't touch the lights).
+		
+		[GC]: Woo, that was CRAZY. Told you it was gonna be alright.
+		You: A little too close for me.
+		[GC]: Lemme work out this baby here.
+		[GC]: And/../../.. Done. /^Easy.
+		[Stranger]: Let's go, we don't want to be here when the sun comes up.
+		
+		Fade in to sewers.
+		
+	Sewers
+		You: This place creeps me out.
+		[Stranger]: So disgusting. Let's move.
+		
+		{Player Receives Control}
+			Objective: Find the way to the prison cells.
+			Battle:
+				Mutant Rat
+				Mutant Slug
+				Mutant Cockroach
+		
+		On the gate to the prison cells
+			You: This is locked. Can you crack it open, [GC]?
+			[GC]: Damn. No. That's some kind of mechanical lock. There should be a lever somewhere.
+			[Stranger]: Let's find it.
+			
+		{Player Receives Control}
+			Objective: Find the lever to open the gate.
+			Battle:
+				Mutant Rat
+				Mutant Slug
+				Mutant Cockroach
+				
+		In front of the lever
+			[GC]: There it is! In front of that gigantic rat.
+			[Strange]: That is one big rat.
+			You: Come on, guys, brace yourselves!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [GC] + [Stranger]
+				Enemies:
+					Giant Rat
+						Attacks:
+							Normal Hit
+							Venomous Bite: Poisons
+							Summon small rats: summons 2 small rats.
+				Objective:
+					Win battle.
+				Loot:
+					Antidote
+					Big potions
+					Gold
+				Winning:
+					[GC]: Nice! Now let's pull that thing.
+					
+			{Player Receives Control}
+				Objective: Pull lever.
+			
+			A clink sound is heard.
+			
+			You: That must have been the gate. Come on, let's go!
+			
+			{Player Receives Control}
+				Objective: Enter the gate.
+				Battle:
+					Mutant Rat
+					Mutant Slug
+					Mutant Cockroach
+		
+			Entering the gate, fade out to the prison cells.
+		
+		Old dungeon
+			[GC]: Alright, we're in. From now on, there's probably gonna be trouble, so stay sharp.
+			You: Let's find the way to [Friend]'s cell.
+			
+			{Player Receives Control}
+				Objective: Find [Friend]'s cell.
+				Battle:
+					Guards
+				
+		On cell
+			[Stranger]: Brother! I was so worried.
+			[Friend]: [Stranger]...! I knew you'd come.
+			[Stranger]: We can talk later! [GC], can you unlock the door?
+			[GC]: Leave it to me!
+			You: Guys, we got company!
+			[Stranger]: Let's leave them occupied while [GC] handles the door.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger]
+				Enemies:
+					3x Guards
+						Attacks:
+							Normal Hit
+							Fire.
+				Objective:
+					Win battle.
+				Loot:
+					Big potions
+					Gold
+				
+			You: [GC]...? How's it going over there?
+			[GC]: Don't rush the magic, bro!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger]
+				Enemies:
+					3x Guards
+						Attacks:
+							Normal Hit
+							Fire.
+				Objective:
+					Win battle.
+				Loot:
+					Gold
+						
+			[GC]: Almost there!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger]
+				Enemies:
+					3x Guards
+						Attacks:
+							Normal Hit
+							Fire.
+				Objective:
+					Win battle.
+				Loot:
+					Gold
+					
+			[GC]: Got it!
+			[Friend]: Let's go. There are more coming, for sure.
+			
+			Fades out to [Friend]'s house.
+			
+		[Friend]'s house
+			[Friend]: I was too late...
+			[Friend]: Damn it!
+			[Friend]: I should've been more careful. I'm sorry, [Name], I couldn't protect you. Or your family.
+			You: It's okay, [Friend]. You did the best you could. Now is not the time to mourn, thoug. What is the amulet? Why is the king so interested in it.
+			[Friend]: Back when me and your father were part of the Black Tires, the king sent us on strange missions across the land to find strange artifacts.
+			[Friend]: We traveled all around the world searching for each piece, doing whatever it took to get hold of them.
+			[Friend]: Then one day your father came to me with a piece of paper. It was an ancient document, describing the creation of the amulet. A device so powerful no man should ever control. And we were fetching all the pieces to craft it.
+			[GC]: Wow... how powerful is a device that no man should ever control?
+			[Friend]: Too powerful.
+			[Friend]: The amulet, when complete and charged, gives the person holding the power to control any car.
+			[Stranger]: Control of the mind...
+			[Friend]: Yes. A person would be next to you, moving, but you'd never know if that's her will.
+			You: That is saddistic.
+			[Friend]: We were shocked it first, but it all made sense then. The king is a strange person, and his lust for power was always appearent, but we never thought he'd go so far.
+			[Friend]: So we agreed to stop him. We took the pieces that we had, and the unfinished amulet, and ran away.
+			[Friend]: I hid the pieces and the amulet on the catacombs in [Dungeon3], so no one would find it.
+			[Friend]: The rest is history.
+			You: So we are safe, right? The king doensn't know where the pieces are.
+			[Friend]: I wish it was that simple.
+			[Friend]: It's appearent by my imprisionament that someone is feeding information to the king.
+			[Stranger]: I thought so too. They were quick to catch you just as you went out to warn [Name]'s family.
+			You: But who could it be?
+			[Friend]: I don't know.
+			[Friend]: What I do know is that the amulet might not be safe. We were foolish to try and hide it. It should have been destroyed.
+			[GC]: So this is how it ends, huh? We go on a sucide mission inside an ancient catacomb to destroy an ancient amulet. Sounds like fun.
+			You: We must part as soon as possible.
+			[Stranger]: But not unprepared. Let's all prepare for our journey. Come to me when you're ready to leave.
+			[GC]: Cool.
+			You: Let's do this.
+				
+			{Player Receives Control}
+				Objective (Optional): Buy things.
+				Objective: Talk to [Friend] to go forward with the plan.
+			
+			Talking with [Friend]
+				[Friend]: Are we all set to go?
+					Yes: 
+						Fades out to overworld.
+					No:
+						[Friend]: Okay. Talk to me when you're ready.
+Chapter 4
+	Towards the catacombs
+		[Friend]: The catacombs are southwest from here. Let's move quick.
+		
+		{Player Receives Control}
+			Objective:
+				Find [Dungeon3].
+			Battle:
+				Even Stronger Wolves
+				Even Stronger Golbins
+				Stronger Bears
+
+	In front of the catacombs
+		[Friend]: Well, we are here. Now the challenge begins.
+		[Friend]: After I put the pieces inside, I raided the place with inumerous monsters.
+		[GC]: Now that's wonderful.
+		[Friend]: Not only that, I put a lock mechanism on the door.
+		[Friend]: We're going to need to unlock it to get inside.
+		[GC]: Leave that to my skillful hands.
+		
+		{Player Receives Control}
+			Objective:
+				Solve Minigame
+					Maybe: 8-puzzle
+		
+		[GC]: That was so easy, it hurt!
+		You: Nice going, [GC]!
+		[Stranger]: Come on, let's go in.
+		
+	Inside the catacombs
+		[Friend]: The pieces are trapped inside a locked room. Stay sharp for enemies.
+		[Friend]: There are two more locks like the one on the entrance. We have to find those to proceed.
+		
+		{Player Receives Control}
+			Objective:
+				Find the puzzles and solve them.
+			Battle:
+				Mummy
+				Skeleton
+		
+		Puzzle 1
+			You: Time for you to shine, [GC].
+			[GC]: I'm always shining, thank you.
+		
+		Puzzle 2
+			You: [GC], you know what to do.
+			[GC]: On it.
+			
+		Both puzzles complete
+			Clicking noise sounds
+			[Stranger]: The door unlocked.
+			[Friend]: Now all we have to do it find it.
+			
+		{Player Receives Control}
+			Objective:
+				Find the door to the last floor.
+			Battle:
+				Mummy
+				Skeleton
+		
+		On the door
+			You: Finally, there it is!
+			???: I'm sorry, my child, I can't let you through.
+			
+			Your mother's car comes out of the door.
+			
+			You: Mom!? What are you doing here.
+			Mom: You... you stubborn, foolish boy. Why wouldn't you just stay with [Ancient]? Why did you have to come here?
+			You: Mom, the amulet, the king is going to...
+			Mom: Is going to what, son? The king is going to save us all. Don't you see it, my child? Are You all blind?
+			Mom: Cars that move by themselves. Freedom to us. You can have your father back, we can live our lives in freedom.
+			You: What... mom... are you... saying...
+			[Stranger]: She's gone, [Name]...
+			[Friend]: We have to stop her!
+			Mom: I am sorry for this, my child.
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger] + [Friend] + [GC]
+				Enemies:
+					Mom
+						Normal Attack
+						Tire Wrecker
+				Objective:
+					Win battle.
+				Loot:
+					Nothing.
+					
+			Mom: Why... you... you are just like your father.
+			Mom: I won't let you ruin this!
+			
+			{Player Enters Battle}
+				Party:
+					Player + [Stranger] + [Friend] + [GC]
+				Enemies:
+					Mom Second Form
+						Normal Attack
+						Fire
+						Ice
+						Water
+				Script:
+					Mom: This is what true freedom looks like!
+					You: What...!?
+				Objective:
+					Win battle.
+				Loot:
+					Nothing.
+					
+			Fades out from white to normal.
+			
+			[GC]: Wait... what just...
+			[Stranger]: I feel strange...
+			[Friend]: Wait, is that... on the ground... the amulet!? What in the name of...
+			
+			The father walks into the room, carless.
+			
+			[Father]: My son!
+			You: Fa-father!
+			
+			You come out of the car and run towards them.
+				Try to make the sprites hug
+			
+			[GC]: What in the world just happened...
+			[GC]: And why are we all on cars...
