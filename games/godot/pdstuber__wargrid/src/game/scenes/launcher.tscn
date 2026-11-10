@@ -1,0 +1,124 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/launcher.gd" id="1"]
+
+[node name="Launcher" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Box" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Center/Box"]
+layout_mode = 2
+text = "Wargrid"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 40
+
+[node name="Offline" type="Button" parent="Center/Box"]
+layout_mode = 2
+text = "Play offline"
+
+[node name="FactionRow" type="HBoxContainer" parent="Center/Box"]
+layout_mode = 2
+
+[node name="Own" type="OptionButton" parent="Center/Box/FactionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Your faction"
+
+[node name="Opponent" type="OptionButton" parent="Center/Box/FactionRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Opponent faction (offline only)"
+
+[node name="Map" type="OptionButton" parent="Center/Box"]
+layout_mode = 2
+tooltip_text = "Map for Play offline and Create match; Join plays the host's map"
+
+[node name="RelayUrl" type="LineEdit" parent="Center/Box"]
+layout_mode = 2
+text = "wss://relay.pdstuber.dev/ws"
+placeholder_text = "Relay URL"
+
+[node name="Create" type="Button" parent="Center/Box"]
+layout_mode = 2
+text = "Create match"
+
+[node name="JoinRow" type="HBoxContainer" parent="Center/Box"]
+layout_mode = 2
+
+[node name="Code" type="LineEdit" parent="Center/Box/JoinRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "Match code"
+max_length = 6
+
+[node name="Join" type="Button" parent="Center/Box/JoinRow"]
+layout_mode = 2
+text = "Join"
+
+[node name="Credits" type="Button" parent="Center/Box"]
+layout_mode = 2
+text = "Credits"
+
+[node name="WaitRow" type="HBoxContainer" parent="Center/Box"]
+visible = false
+layout_mode = 2
+
+[node name="Copy" type="Button" parent="Center/Box/WaitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Copy code"
+
+[node name="Cancel" type="Button" parent="Center/Box/WaitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="Status" type="Label" parent="Center/Box"]
+custom_minimum_size = Vector2(520, 48)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="Legal" type="Label" parent="Center/Box"]
+custom_minimum_size = Vector2(520, 0)
+layout_mode = 2
+text = "© 2026 Philipp Stuber; Ashfall, Dry Wells and Broken Crown maps © 2025 Electronic Arts Inc., modified. Free software under the GNU GPL, with no warranty. License and source: github.com/pdstuber/wargrid"
+horizontal_alignment = 1
+autowrap_mode = 3
+theme_override_font_sizes/font_size = 12
+
+[node name="CreditsPanel" type="PanelContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 32.0
+offset_top = 32.0
+offset_right = -32.0
+offset_bottom = -32.0
+
+[node name="Box" type="VBoxContainer" parent="CreditsPanel"]
+layout_mode = 2
+
+[node name="Text" type="RichTextLabel" parent="CreditsPanel/Box"]
+layout_mode = 2
+size_flags_vertical = 3
+selection_enabled = true
+
+[node name="Close" type="Button" parent="CreditsPanel/Box"]
+layout_mode = 2
+text = "Close"

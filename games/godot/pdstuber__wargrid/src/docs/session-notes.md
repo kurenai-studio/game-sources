@@ -1,0 +1,295 @@
+# Session notes
+
+Working handoff record, not authoritative design. Follow [kickoff](kickoff.md) and [wrap-up](wrapup.md). Setup lives in the [development notes](development.md); design in [blueprint](blueprint.md).
+
+## Session
+
+2026-11-10 (night run and morning questionnaire) **Overnight queue finished; nothing pushed** (`main` 16 commits ahead of `origin/main` at day end; the push needs the user's own `git push`, the session could not get approval). INI dump tool: gate re-check PASS, python checks exit 0, both in [its verification](reference/zh-ini-dump-verification.md); a CI test now guards `Attack` / `FireWeapon` (`5f53c6e`). Avoidance round 2 on `spike-avoidance` (`ecbb2dc`, not merged): R1, R2 (claimed cells) and R3 (near-enough stop) all miss the +0.5 ms cap (R1 0.00 to 0.13 ms over; R2 dearer; R3 no cheaper and 199 suite failures); packed 300-unit moves never finish (`run_benchmark.sh` leg limit) under any variant; r0 passes `run_benchmark.sh` on the quiet machine. "Quiet" was no WoW at desktop-baseline load about 1.4 (load below 1.0 unreachable; user accepted). Round 2 part of `docs/reference/unit-avoidance-spike.md` on that branch, reviewed by Opus against the raw data, 8 findings fixed. Three no-regret plans drafted on `plans-no-regret` (`6644408`, not approved to run). Morning questionnaire (10 answers): plan answers written into the plans; cost cap covers six rows; round 3 is one cost experiment on R1, then a design brainstorm on a miss ([design answers](reference/design-answers-2026-11-08.md)). Evidence and morning summary: `~/projects/wargrid-overnight-work/morning-summary-2026-11-10.md` (outside the repo). Not done: Steam Deck, rendered benchmark, 44 of 48 screenshots unviewed. Later the same day (docs only): art lab placed right after avoidance round 3; turret aiming answered (6 Zero Hour defaults); native sim spike handoff saved and placed after the interface and determinism notes; queue written into Next action and `AGENTS.md`.
+
+2026-11-09 (evening) **Design question round, docs only** (commits `bf789a3`, `2a54940`, `7a644b1` on `main`, not pushed; no code or tests touched). Answered: ground batch A systems (all Zero Hour defaults, plus FRC rebuild holes in gate A4, raised by the user and checked in source), M7.5 art scope, look and world (look A/B questions on two mock-up pages at real size; seven world questions wait for the in-game art lab), performance targets (browser main target, Steam Deck budget kept, Low/High quality, draw-call ceiling, art lab spike soon, then a simulation performance spike), HUD (selling, Guard, pings without text). Log: [answers 2026-11-09](questions/answers-2026-11-09.md). An Opus research agent checked how OpenRA, Recoil and Zero Hour describe and draw units (data per kind, one renderer); an Opus review of the docs diff found consistency gaps, fixed in `7a644b1`. Checked later the same evening: a GLA rebuild is free (WorkerAIUpdate.cpp:408-416); a ZH turret must be aligned before it fires (TurretAI.cpp:1169-1199), while Wargrid fires ignoring heading by M6 decision; whether turret aiming joins the simulation is an open question for the user. The A/B mock-up generator and click-recording server stayed in the session scratchpad. Later the same evening: the user set the rule that gameplay plays like Zero Hour while UI/UX may take modern RTS improvements (blueprint §2, questions RULES.md); GPT HUD mock-ups v2 and v3 (Deck, compact, 120-unit selection, placement) are in `docs/images/hud-v2/` and `hud-v3/` with review points in [next-m76-hud.md](questions/next-m76-hud.md) (production hotkeys changed to letters in v2 by Claude); an Opus agent re-checked the HUD answers against modern RTS: [hud-modern-recheck.md](questions/hud-modern-recheck.md), 12 open questions, postponed by the user.
+
+2026-11-09 (afternoon) **Converted maps playable merged to `main`, pushed and deployed (no release, no playtest, user decision).** First CI run on `af632dd` failed on both Windows jobs: four Credits checks (CR3, CR10, CR11 x2) because the test helper `_credits()` assumed LF and Windows checks out CRLF; fixed in `17e7f3d` (production code was fine), Opus review agreed. CI run 42600101613 on `17e7f3d` green on all jobs; `main` fast-forwarded to it, relay deployed (protocol 2; `/health` ok, probe `RELAY WELCOME 71`), `wargrid-web-test` deployed (`/health` 200), `main` pushed, `origin/converted-maps` and the local branch deleted. An Opus check of the 37 published commits for secrets, personal data and EA content (the repo is public) found nothing blocking (only `/Users/pdstuber` paths in docs). Production web NOT deployed: `deploy_web.sh` refuses the `-dev` version, so the live 0.9.0 site gets "protocol mismatch" online until the next release. Then the user merged `spike-design` (geometric 2.5D art direction replaces pixel art, `412a16c`); suite on `412a16c` 609 / 137,307 / 0, exit 0; docs stale-checked and updated (README, development notes, blueprint, AGENTS.md). macOS traces compared with run 42600101613 afterwards: all matched (replay, economy, combat 1200, team 100, netplay 301). Not done: any playtest, a browser look at the test app, an online match through the new relay.
+
+2026-11-09 (morning, superseded by the entry above) **Converted maps playable finished on branch `converted-maps`, all local, not pushed** (the push was denied because the session still ran with the night settings, which deny every approval). Morning questionnaire with the user ([answers](questions/answers-2026-11-09.md)), then fixes, each test-first with a fresh implementer and a fresh Opus reviewer: bot waves target enemy bases and fight units met on the way (`DEFENCE_RADIUS`; a first 30-cell radius was rejected as pin-fitted), pins re-pinned in their own commit including `Fm1` (cap 50,000, FRC wins at 48,051), relay "protocol mismatch" before settings checks, Godot third-party notices in Credits, credit and start-spot test gaps, replays and desync reports carry map, seed and starts. Final checks on `9ed2331` (docs only after it): suite 609 / 137,307 / 0, `TESTS PASSED`; lint, warnings, python; `go test -race`, `golangci-lint`, conformance 41; all 11 netplay scenarios (`match` tick 9024); team match; `run_benchmark.sh` passes with combat open p95 1.857 and hordes300 2.855 above the 1.82 budget (recorded, not loosened). Rows: [converted maps verification](reference/converted-maps-verification.md). Not verified: Linux and Windows CI, a rendered look at the 92k-character Credits panel, any playtest. Also decided today (blueprint §7): every building and unit except superweapons belongs in the roster (missing buildings listed), Supply Drop Zone, Internet Center and the Hacker's money ability go into ground batch A, end-game income and wave size for M8, a test relay as R1.3, a Zero Hour data dump tool before batch A, fog follow-ups (map revealed at start as in retail multiplayer; line of sight for direct fire in batch A). Design questions moved into the repo: [docs/questions](questions/README.md).
+
+2026-11-09 (night) **Unit avoidance research spike done on branch `spike-avoidance`** (worktree `../wargrid-wt-avoid`, 4 local commits from `main`, mode off by default; not pushed): approach A (Zero Hour-style yielding) fails the +0.5 ms cap on both movement rows; approach B (OpenRA-style reservation) passes movement only because units give up and never resume, and fails hordes300. Note: `docs/reference/unit-avoidance-spike.md` on that branch (reviewed by Opus against the raw data). Steam Deck not measured.
+
+2026-11-08 (late) **Sound spike done, merged to `main` and released as 0.9.0** (tag `v0.9.0`, release run 42513892364 success, relay and `wargrid-web` redeployed; the `spike-sound` branch is deleted, the worktree `../wargrid-wt` stays on a detached HEAD): futuristic effects, vocoder announcer, music, three volume sliders plus a Mute button and `M` (user addition), Effects bus trim -6 dB and cannon 0 dB (user, by ear: -3.8 at Gate B, raised after the Firefox web check), music kept at Vorbis q2 (user), QOA = raw (user). Done: CI green on the exported builds after the `ResourceLoader.exists` fix, Firefox web check, user playtest (online by tests only; a friend is playtesting). Merged, pushed and released; open: a friend's playtest findings on sound. Evidence: [design](superpowers/specs/2026-11-08-sound-spike-design.md), [plan](superpowers/plans/2026-11-08-sound-spike.md), [handoff](sound-spike-prompt.txt), [evidence](reference/sound-spike.md), [resume record](reference/sound-spike-verification.md).
+
+2026-11-08 (night) **Converted maps: online map agreement and start spots decided** (docs only; no code or tests touched). Zero Hour (`GameInfo.cpp`, `GameLogic.cpp`), OpenRA and RecoilEngine read for how they agree on a map and pick starts. User decisions via questionnaire, recorded in the handoff's "Decided" section ([converted maps prompt](converted-maps-prompt.txt)): relay change with protocol 2, host picks the map, opaque `settings` in `hello` echoed in `start`, relay-generated `seed`, joiner refuses on map hash mismatch, Zero Hour's start-spot rule. Corrected: Ashfall's farthest 1v1 pair is 1/5 (diagonal), not 1/4. Anti-cheat later (user) does not change the opaque choice; it moved the seed to the relay.
+
+2026-11-08 (evening) **Converted maps playable planned** (`3ce1ea8`, docs only, not pushed): the user's handoff is [converted maps prompt](converted-maps-prompt.txt) (Dry Wells, Broken Crown and Ashfall selectable offline and online 1v1). The user placed the task before unit avoidance (blueprint §7 order) and renamed it from "Ashfall playable". Camera limits dropped from its scope, because `main.gd` already clamps panning to the map size; pan speed and the empty corners go into the rendered check. Corrected: different builds are already refused by the relay (`relay/room.go:139`), so only a map mismatch desyncs.
+
+2026-11-08 (afternoon) **0.8.0 released** (tag `v0.8.0` on `b8af9ad`; run 42480130047 success; relay and `wargrid-web` redeployed, both `/health` 200; zips for Linux, macOS, Windows). Before it: test deploy of `873f6a9` to `wargrid-web-test` (fly release v6, security headers now present there too); the user played Dry Wells there ("looks good"). `main` then started `0.9.0-dev` (`2b6dbd9`). Release notes of `v0.6.0-rc.1`, `v0.6.0`, `v0.7.0` and `v0.8.0` rewritten by hand (approved by the user) because `--generate-notes` only lists PRs; proper fix proposed as R1.2 (blueprint §7). M9 got the user's lobby look ([mockup](images/lobby-mockup.jpg)) and backend stack (relay unchanged; Go with `chi/v5` for more complex new services) in `38f258d`. CI run 42478039943 on `4c98b9a` finished green. Suite at wrap-up on `38f258d` (`0.9.0-dev`): 504 / 136,252 / 0, exit 0. Not seen by me: the released builds or production site in a browser.
+
+2026-11-08 **More maps and small supply piles merged to `main` and pushed** (merge `4c98b9a`, docs `62d07b0`): the launcher plays Dry Wells, Broken Crown converted, small supply piles as separate sources; suite 504 / 136,252 / 0 on the merged tree, lint, warnings and python checks pass; CI run 42478039943 on `4c98b9a`: lints, relay, Docker and tools green, Godot tests and exported builds still running at wrap-up. Details in the dated note below.
+
+2026-11-08 **Post-M7 performance spike done and merged to local `main`** (fast-forward, `137120b` after the hash-mapping docs pass; pushed 2026-11-08 with the maps merge `4c98b9a`; branch `perf-spike` deleted; parked branch `perf-spike-parallel` kept). Trace-preserving sim fixes (per-owner target grid, lazy flat records, radius cache, horde step, selective typing, `x*x` instead of `pow`), the Ashfall rendered layout with a cached structure layer, HUD snapshot fix, cheaper harness `settled()`, benchmark gates tightened and the movement budget now enforced (new values in the ledger's T3 table). Final p95 on this Mac, medians (baseline to HEAD): combat open 2.751 to 1.868, dense 3.083 to 1.808, hordes300 5.552 to 2.838, team match 1.409 to 1.308, movement now about 0.7 (harness snapshot removed, a new baseline). Combat open (by 0.045 ms) and hordes300 stay above the 1.82 ms budget; budgets, F = 5.5 and the Ashfall guard (3.3) unchanged; the Steam Deck native F is 3.5-4.4, browser 5.0-5.2 against the Mac editor. Mixed WASM (MacBook Air) and native macOS (Mac mini) match through the live relay, about 10 minutes with fighting, no desync (user report; macOS arm64 only). Verified at wrap-up on `137120b`: suite 491 / 136,050 / 0, lint, warnings and python checks pass; the four traces and 7 pins were checked at the last acceptance before the rebase (`accept.sh`), not rerun after it (the rebase only added CI and Godot-install tooling). Reviews: Opus gate reviews (findings fixed), ultra review (one of three free runs left: two used), `/ponytail-review` (no changes). Not done, listed as remaining work in the ledger: scaling sweep, memory proxy, the P3 read-only snapshot probe, the persistent shared grid for hordes300, the AI-seat and A* re-pin ideas; recommended against: `_hold_cells` occupancy set, native threads, custom Godot builds. Safari, Chrome and the relay match from the fly origin untested. C++ / GDExtension not investigated, by user decision. Evidence: [performance ledger](reference/performance.md#post-m7-performance-spike-2026-11), [perf-spike-verification](reference/perf-spike-verification.md). Commit hashes in the spike docs were rewritten by a rebase and mapped.
+
+Older entries (2026-11-04 to 2026-11-07): [session notes archive](session-notes-archive.md).
+
+## Pending user action
+
+- Overnight runs start with `--settings ~/projects/wargrid-overnight-work/night-settings.json` (refuses instead of prompting; adds the avoidance worktree and the overnight work directory; pre-allows `run_game.sh` and `open -a Firefox`). Daytime sessions start without it, or every approval is refused.
+- Converted maps playable: **done**, playtested and released as 0.10.0 on 2026-11-09 (details in the Session entry and [converted maps verification](reference/converted-maps-verification.md#user-playtest-2026-11-09-evening)). Still unchecked, optional: Linux/Windows desktop builds, Chrome, Firefox, a hidden tab during an online match, whether bots leave their base dock on Dry Wells; F3 overlay on a 60 % keyboard (Fn + 3) and a menu toggle for it (candidate for the M7.6 HUD round).
+- Unit avoidance: round 2 done 2026-11-10, no variant meets the cap. Next: write the round 3 handoff (one cost experiment on R1, design answers "After round 2"); answer the 14 round 2 open questions in the spike note's "Open questions (round 2)" on `spike-avoidance` (packed moves, test rewrites, crusher list among them). Rebase `spike-avoidance` onto `main` before round 3 (picks up the six-row cap wording). Steam Deck only if a variant passes the cap on the Mac.
+- M7 exit gate, still pending: the user's playtest (offline FRC: right-click collect, pile placement and income feel, tunnels and pickup riders, Esc menu; online FRC against China or USA on the test deploy; unverified online: Chrome/Firefox, two WASM clients, hidden tab). Open rulings (helicopter lockout of ground collectors, edge margin 1 vs 2, 700-unit search radius, Chinook x4, 30 s clearance timeout, harness fork changes F1-F3, combat stress ceilings): [M7 verification](reference/m7-verification.md). Delete `origin/m7-factions` (stale at `11672f4`; everything is on `main`) if wanted. One free ultra review remains.
+- Performance spike (done, merged to local `main`, 2026-11-08): pushed 2026-11-08 with `4c98b9a`. Optional: delete `perf-spike-parallel` (parked threading proof of concept, [verdict](reference/perf-spike-verification.md): safe, not worth it). Open choices: the trimmed dense ceiling 1.93 / 2.27 instead of the applied 2.64 / 3.95, any looser budget via F (not proposed), the A* / AI-seat re-pin ideas. Open, optional checks: Chrome (Safari played 2026-11-09), a relay match from the fly origin.
+- Branches and worktrees (2026-11-09, updated 2026-11-10): local branches left are `main`, `spike-avoidance` (worktree `../wargrid-wt-avoid`, not merged), `plans-no-regret` (three draft plans, not merged), `zh-ini-dump` (merged into `main`, deletable), `spike-script-performance` (merged into `main`, worktree `../wargrid-wt` clean; deletable), `perf-spike-parallel` (parked threading proof of concept) and `spike-more-maps-pre-rebase` (backup ref). The merged local spike branches were deleted 2026-11-09 (`m7-factions` was at `3b6b9f1`); worktrees `../wargrid-wt-2` and `../wargrid-wt-3` stay on detached HEADs. Merged branches still on origin and deletable if wanted: `m7-factions` (stale), `static-checks`, `spike-relay-improvements`, `m5-online`, `spike-python-linting`, `spike-sound` and the old milestone branches; check with `git branch -r --merged origin/main`.
+- M6 playtest fixes are not seen on screen (headless only); a rendered look would also settle whether a target box still covers a building's health bar (only unit bars were moved and tested). Minor: the new "Choose one builder" / "Select a production building" messages stay until the next command, like the older error lines.
+- GDScript static checks: Task 3 skipped (decided). Open, optional: type the `navigation: RefCounted` handles the same way as `sim`.
+- Review the new `Simulation` typing only if wanted: it had the suite, traces, netplay and CI but no separate reviewer.
+- Approve (or change) the proposed M7.9 fog, M8 and M8.1 scope in blueprint §7 (all labelled proposed, 2026-11-05); the attention-budget numbers are chosen at M8 planning from evidence.
+- M7.5 art pass: scope, look and most world questions answered 2026-11-09 (blueprint M7.5); world Q1, Q6, Q7, Q9-Q11, Q13 wait for the in-game art lab spike, which runs soon on its own branch; draft handoff [art lab prompt](art-lab-prompt.txt), slot decided 2026-11-10 (right after avoidance spike round 3, before the avoidance milestone), startable once round 3 reaches its gate (turret question answered 2026-11-10). M7.1 is replaced by ground batches A and B (user, 2026-11-06). Approve the proposed batch A gates (blueprint §7, scope refined 2026-11-07); its design session comes after unit avoidance.
+- Turret aiming: answered 2026-11-10 (6 answers, all Zero Hour defaults: aim before firing, ground batch A, soldiers face targets, per-unit rates, 2 s recenter hold, turreted units fire while driving): [design answers](reference/design-answers-2026-11-08.md#turret-aiming-user-2026-11-10-impact-note), [impact note](reference/turret-aiming.md).
+- HUD round (M7.6): answered 2026-11-09 late evening on a click page (design answers, HUD). Open for M7.6 planning: the production hotkey grid must avoid A, G, S.
+- Simulation core and digest: interview done 2026-11-09 late evening (23 answers); three plans drafted 2026-11-10 on `plans-no-regret` (interface note, determinism rules note, digest plus golden scenarios; order: interface and determinism before digest), user answers written in. Placed 2026-11-10: interface and determinism notes after the art lab and before the [native sim spike](native-sim-spike-prompt.txt) (handoff saved, not started; confirm its decision rule and headroom 1.5 at invocation); the digest plan stays unplaced. Next: approve the plans.
+- Read and answer when convenient: [engine portability and horde mode](reference/engine-portability-and-horde-mode.md) and [lobby backend brainstorm](reference/lobby-backend-brainstorm.md) (Opus research, 2026-11-09 evening; files appear when the agents finish).
+- M5.1 parity: retaliation join radius settled 2026-11-06 (no discrepancy, the earlier "48 units" was a unit slip; see [M5.1 verification](reference/m5.1-verification.md#retaliation-parity-check-measured-source-build-scenario-retaliate_ranger-2026-11-05)). Return home after the attacker dies measured the same day (10 ticks vs 7-11 frames, matches); the leash-driven return and the return rescan are still unmeasured.
+- M4.1 playtest findings (user, 2026-11-04) are open; to be tackled outside M5, see [M4.1 verification](reference/m4.1-verification.md). Deferred minors: BM7 lane pin, R5 other-command coverage.
+- Global agent rules: grok removed from the review route in `~/dotfiles/config/agents/AGENTS.md` (user, 2026-11-05); that dotfiles change is uncommitted and is the user's to commit. `grok` can be uninstalled.
+- Spike harness (other ports, load driver, raw results) copied to `~/projects/wargrid-relay-spike`, outside git; delete when no longer wanted.
+- M5 open items: repeat the friend match (macOS vs Windows on the fixed build) later; real fly bill later (user: "fine for now"); Railway check done in the 2026-11-05 [relay stack spike](reference/relay-stack-spike.md) (comparison in [relay scaling](reference/relay-scaling.md#flyio-vs-railway-measured-2026-11-0405); sleep/wake still untested); suspend during a live match unobserved.
+- Check in a fresh session whether the project skill settings shrank the skill listing (baseline 48,567 bytes; revert if not).
+
+## Deferred experiments and research
+
+- Relay scaling and project goal (user, 2026-11-04, relaxed 2026-11-05): the project is also an architecture exploration, so over-engineering is acceptable. One relay machine is acceptable for now ("we could get pretty far with it"); it is not highly available, so high-availability options are still worth exploring in M9 (options and an assessment in [relay scaling](reference/relay-scaling.md#high-availability-options-proposed-2026-11-05)). Placed in M9 (user, 2026-11-04): cloud-agnostic multi-machine relay (no provider-only routing, so no `fly-replay`), fly.io stays the host for now. Railway evaluation and the synthetic-room load test were done in the 2026-11-05 [relay stack spike](reference/relay-stack-spike.md): about one 3v3 room per shared-cpu-1x machine at the 6.25 % CPU baseline; M9 design inputs (batching, compact command log, Elixir-style room patterns) recorded there. Proposal review and options: [relay scaling](reference/relay-scaling.md).
+- Source/config-supported economy and combat values remain RETAIL_UNVERIFIED; departures stay explicit in reference/design notes.
+- AI moods (Sleep, Alert 1.1, Aggressive 1.5) deferred to M8 bots (user, 2026-11-03).
+- Retail `ForceIdleMSEC` INI value unread (code default 1 frame); `stop` re-acquire delay uses the existing 15-tick stagger instead.
+
+## Next action
+
+**Queue (blueprint §7, user 2026-11-10), offer the first open item at kickoff:** (1) avoidance spike round 3 (handoff to write); (2) art lab spike ([handoff](art-lab-prompt.txt), startable after (1)); (3) sim interface and determinism rules notes (plans on `plans-no-regret`, need approval); (4) native simulation core spike: run `docs/native-sim-spike-prompt.txt` once (2) and (3) are done; (5) unit avoidance milestone. Mark each done here when it reaches its gate.
+
+**Next session:** `main` is clean at 0.11.0-dev; if `git log origin/main..main` is not empty (INI dump tool, gate records, design answers, handoffs; unpushed on 2026-11-10), ask the user about pushing first (CI then runs the new INI test). The overnight queue is done (Session entry 2026-11-10). Offer queue item (1): write the avoidance round 3 handoff (with the 14 round 2 questions). Alternatives: approving the three `plans-no-regret` plans (the digest plan is still unplaced), the HUD round (the 12 re-check questions in [hud-modern-recheck.md](questions/hud-modern-recheck.md) plus the mock-up review points in [next-m76-hud.md](questions/next-m76-hud.md); best as a click page), the ground batch B questions ([next-batch-b.md](questions/next-batch-b.md)) and the unit avoidance brainstorm (from the spike note on `spike-avoidance`). The M7 playtest can come first if the user wants. Earlier next-action text: [session notes archive](session-notes-archive.md).
+
+## 2026-11-08 — Sound spike: A/B decisions in Firefox (user)
+
+The user liked deciding by blind or labelled A/B comparison pages opened in Firefox (`open -a Firefox`, no autoplay, neutral labels, key kept in a separate file) a lot: Gate S, the music quality ladder (current q2 vs q1, q0, q5), the Mammoth tracker render vs the shipped encode (shipped won), and in-game captioned listening scenes (effects at 0, -3, -6 dB; announcer lines with NOW PLAYING markers; Space/Enter skip, P pause). Reuse it as the default way to pick between candidates, notably for the M7.5 art-direction spike (candidates A and B side by side on one scene, same camera and unit counts, labelled neutrally) and for lobby layout and flow in M9 (clickable or screenshot pages, one decision per page). Keep steps few (about five), each long enough to judge, with a visible "step N of M" and the logged values beside the verdict.
+
+## 2026-11-08 — More maps and small supply piles
+
+Merged to `main` at `4c98b9a` and pushed; CI run 42478039943 queued at push. Dry Wells (Tournament Desert) and Broken Crown (Fallen Empire) converted; the launcher plays Dry Wells offline and online via `SkirmishMain.map_path`, while tests, replays, benchmarks and pins keep `skirmish.json`. Supply sources carry an optional `footprint` and `delete_when_empty`; Tournament Desert's 12 `SupplyPileSmall` are 1 × 1, 50-box sources removed in the step that takes their last box, as in Zero Hour (`SupplyWarehouseDockUpdate.cpp:113-121`). Subagent-driven run: 6 tasks, each reviewed, Opus whole-branch review clean after one fix wave; suite 504 cases, benchmark as baseline. Evidence and open items: [more maps](reference/more-maps.md), [design](superpowers/specs/2026-11-08-small-supply-piles-design.md), [plan](superpowers/plans/2026-11-08-small-supply-piles.md). Left open by ruling: the converter does not check that a source sits on open cells; mixed-version online play fails at tick 30 instead of being refused at match start.
+
+## 2026-11-05 — M6 planning decisions
+
+User decisions (2026-11-05, planning only; plan `~/.claude/plans/nifty-sprouting-globe.md`):
+- Headless is enough for M6; 1v1 skirmish stays on 48×32, no big-map presentation.
+- Parity decision list: edge-to-edge range, Ranger cadence 4/4/22, Crusader splash, and all three movement items (3-frame start delay, acceleration/braking, turn-in-place).
+- Map converted from EA's GPL-3 (+ additional terms) `Twilight Flame.map` in `~/projects/CnC_Modding_Support` (`3aad8e4`) by a repo tool; EA notice and terms kept, own map name, AGENTS.md map-data rule to be amended. Matters most: scale, elevation, start positions, attack routes.
+- Elevation affects passability only (cliffs block, ramps connect).
+- One M6 (not split M6/M6.1); feel changes before final measurement.
+- Teams confirmed: up to 8 seats with team ids, hostility = different team, team victory; bot seats run the existing skirmish policy; lockstep stays 2-seat. Splash hurts allies (source default). Firing ignores heading (no turrets) in M6.
+- Done: evidence note `docs/reference/m6-map-and-feel.md`, design (builder-checked, approved), execution plan `docs/superpowers/plans/2026-11-05-m6-teams-full-map.md`; AGENTS.md map-data exception, blueprint §7/§12/§14 and README updated. Plan checked for cheaper-model execution by two cold Sonnet-medium reads (11 then 6 high/medium gaps, all fixed: model routing per task, Task 1 values table, per-tick movement rule, start-delay trigger, epsilons, provisional re-pins with Task 12 confirming). Root `prompt.txt` written. Not committed. Next: `/wrapup`, then a fresh-session kickoff with "resume from prompt.txt".
+
+## 2026-11-05 — Relay shutdown and crash isolation
+
+- User request (branch `spike-relay-improvements`): signal handling and a production-readiness pass. Plan: `~/.claude/plans/i-ve-created-a-branch-declarative-wilkes.md`.
+- Facts checked: fly sends SIGINT by default, `kill_timeout` 5 s default, 300 s max (docs.fly.io/reference/configuration); `http.Server.Shutdown` does not wait for WebSockets, so the registry tracks rooms. Old fly logs show the previous binary simply "exited with signal SIGINT".
+- Built: on the first signal the listener closes, unfilled lobbies close, started matches run `WARGRID_DRAIN_MS` (3500, user: "4s is fine", lowered so drain + 1 s close grace stays under 5 s), then forced close; every room logs `MATCH END`; a second signal exits at once. `recover` per room plus gws `Recovery`; `room.post` never blocks on a dead room; non-integer env knobs exit 2. Tests in `relay/shutdown_test.go` (mutation-checked); `run_netplay.sh relay-term` now asserts end reason, timing, exit 0 and `MATCH END`.
+- Not done (named, M9 or no payoff now): join rate limit, connection caps, bounded outbound queues, metrics endpoint, close frame for sockets that never sent `hello`. A second SIGINT from a non-interactive `sh` background job is ignored (shell starts it with SIGINT ignored; Go restores that); SIGTERM verified.
+
+## 2026-11-05 — Zero Hour parity harness spike
+
+Branch `spike-parity` (docs, `tools/zh_parity/`, one CI line; no game code). Upstream source cannot build on macOS and Wine fails under Rosetta for Linux in Apple `container`; the native fork `../GeneralsGameCode-macOS` (local branch `wargrid-parity`, `eb595cfc9`, never pushed) builds with Command Line Tools and runs headless and silent. User decisions ("go with your recommendations"): route adopted, counts as level 1 (M7 gate met, source-build caveat), harness in `tools/zh_parity/` for any milestone ([how-to](reference/zero-hour-parity-harness.md)), container/MinGW/Wine leftovers removed. Measured (source build): cruise speeds, turn rates, Ranger/Dozer acceleration match INI within 0.15% (Crusader lurches on its first frame); Crusader 60-frame interval matches; range is edge-to-edge (stationary maxima 122 and 183, +22%), Ranger burst 4/4/22 (time-to-kill +12%), tank shells splash neighbouring infantry, orders start moving after 3 frames. Open: the [decision list](reference/zero-hour-parity-spike.md#decision-list-proposal-for-the-next-combat-feel-work); Chinook supply scenario delivers no money (cause unknown). Rule learned: always `-headless -noaudio` (a windowed run blasted sound).
+
+## 2026-11-05 — Relay stack spike and Go relay
+
+- User request: compare relay stacks (Go + gws, Rust + Axum, current Kotlin, Elixir chosen as fourth) on performance, resources, fly fit, ease and maintenance, considering M9. Six builds passed one 35-case black-box suite; local Apple-container benchmarks, fly and Railway trial deployments, all temporary apps deleted. Findings and numbers: [relay stack spike](reference/relay-stack-spike.md).
+- Key findings: fly's shared-CPU burst balance does not accrue while suspended, so a 3v3 room must fit the 6.25 % baseline (Go/Rust/Elixir about 5–6 % per room, Kotlin 23 % and throttled); the Kotlin/Ktor CIO relay burned CPU while idle (cause unverified); a raw per-frame reconnect log is infeasible on 256 MB; Railway works but adds about 28 ms per round trip from Bavaria.
+- User decisions: replace the relay with the go-idiomatic port in the repo and on fly; keep the conformance suite; add golangci-lint; remove grok from reviews. User's fly org is on the legacy (free) Hobby plan (allowances in README Relay section).
+- Mistakes caught during the day: Rust ports lacked `TCP_NODELAY` (hid write cost), first harness CPU windows were skewed by 2 s `container stats` calls, a fill run hung on a missing deadline, a commit message overstated the CPU gain (amended before push). The documented grok command hangs headless; replaced by a fresh-context reviewer.
+
+## 2026-11-04 — M5 human matches
+
+- Friend match (macOS editor run vs friend's Windows 11 export): no desync, command p95 96.0 / 84.6 ms, but ticks ran at about 57/s: `online_main.gd` catch-up ran 2 ticks per frame permanently. Fixed with a bounded per-frame credit (`f82114f`, test first) plus the false "Connection to relay lost" after match end.
+- Mac mini vs MacBook Air M1 at 30 Hz: 6,001 ticks, about 1.55 KB/s per client, command p95 191.4 / 205.0 ms (n=30 / 13), RTT p95 41.9 / 33.7 ms. End-screen text not confirmed by the user.
+- User decisions: step 2 used two Macs; repeat friend match deferred ("confident they work"); play feedback filed as informal M4.1 playtest notes in [M4.1 verification](reference/m4.1-verification.md) (formal playtest still pending). Unreproduced: attack-move leaves units in the base standing when part of the army is engaged.
+- Fly: idle autosuspend observed 71 s to about 7 min after last activity; resume 193-463 ms; no relay errors in the logs. AppCDS mapping unverified.
+
+## 2026-11-04 — Relay scaling review
+
+- Reviewed the user's rendezvous-hashing proposal (docs only, no relay code changed). User decisions: multi-machine relay and reconnect go into M9 (option a, not a separate milestone); fly.io stays the host for now; design is cloud-agnostic. Railway evaluation stays in M5 Task 11 (Claude's recommendation after the user chose to stay on fly; hands-on deploy needs a Railway account and approval). Recommended routing (app redirect, static worker list, client RTT placement, relay-side drain) is Claude's proposal, not decided. Evidence and unverified items: [relay scaling](reference/relay-scaling.md).
+
+## 2026-11-04 — M5 Tasks 8–9
+
+- Lockstep benchmark passes; relay deployed to `wargrid-relay-jvm` (fra, one machine, suspend). Native GraalVM build failed 4 times and was dropped (user); native app destroyed (user approved). Cold p50 about 3.2 s, manual suspend resume about 0.5 s, warm 78 ms, memory about 100 MiB (peak 128). Task 9 gate review rulings and unverified items: [M5 verification](reference/m5-verification.md).
+
+## 2026-11-04 — M5 design and plan
+
+- User intent: the spike shows how hard multiplayer is, as the thin foundation M9 builds on (not throwaway). Target: user and two friends (all in Bavaria) vs three bots over the internet; lobby later. User is a backend developer; richer fly.io services are fine in deploy config, but routing, discovery and placement stay cloud-agnostic (user, 2026-11-04).
+- User decisions: approach A (dumb relay, clients stamp ticks) plus relay-owned membership, version check, desync report and tool, automated failure tests (after user recalled Generals online as unreliable; source shows P2P UDP with firewall probing and 42 "mismatch" fix commits in GeneralsGameCode `afc2a103f`); Kotlin + Ktor (CIO, required for GraalVM per ktor.io/docs/graalvm.html) with a GraalVM cold-start experiment; latency ≤ 250 ms p95 through fly `fra`; lockstep overhead 10% of a tick (0.55 ms p99 dev); exported builds in scope; friend match is a hard gate; implementation by Sonnet 5.5 medium with Opus preflights.
+- Done: `flyctl` v0.5.3 installed (Homebrew), `fly auth login --code` completed from the user's phone. Godot probe: plain `JSON.stringify` drops float precision (`0.30000000000000004` → `0.3`); `JSON.parse_string` returns ints as floats; both handled in the plan. One builder check on the design (macOS CI dropped, offline path, cross-OS desync diff, budgets) folded in.
+- Not done: no implementation, no tests run, no export templates installed, no fly app created or deployed. Unverified: export-template determinism vs editor binary, `--script`/`--headless` in release templates, Ktor WebSockets in a native image (all Task 1 or Task 9).
+
+## 2026-11-04 — M4.1 exit gate
+
+- Done: Tasks 4–9. Grok branch review (0 bugs) fixed marker kinds, idle enemy mode, O4 assertion, gated budget failure; `/ponytail-review` Ship. Pushed with approval; CI green, macOS traces matched, rendered movement rerun passed. User could not playtest today; window use for the rendered rerun was approved.
+- Not verified: rally marker, enemy line and pile labels were never viewed by a person; reactor-marker and O4 assertions were not seen red.
+- Deferred minors: BM7 lane pin, R5 other-command coverage.
+
+## 2026-11-03 — M4.1 Tasks 2–3 and scan-rule changes
+
+- Done: controller + vision (Task 2), scan at vision radius (Task 3), gate review of Task 3. Local suite 146 / 103,948 / 3 known red, exit 1; no CI, no rendered run, no benchmark rerun after the keep-target change.
+- User decisions: removed the radius drop after checking Zero Hour (`AIAttackState::update`) and OpenRA (`AttackMoveActivity`): neither drops by distance. `stop` delays re-acquire to the next phase tick (Zero Hour idle `resetNextMoodCheckTime`; OpenRA scan interval 3–8). Unreachable scan target is dropped (reviewer finding).
+- Mistake: first stall analysis came from design text only; user asked for source check, which changed the design. Review ran on the pre-change commit, so its stall advice was superseded.
+- Open: test gaps and `_chases` snapshot question in the resume record; ponytail review and substantive review still due at the exit gate.
+
+## 2026-11-03 — M4.1 design and plan
+
+- User: opponent felt passive because their units stood still while user raided before tick 5400. User priority: stay close to the real game; current map acceptable for M4.1.
+- Source (EA `0a05454`, root `INIZH.big` pinned hash): idle and attack-move scan at vision × `GuardOuterModifierHuman 2.2` / `GuardOuterModifierAI 1.333`; Ranger vision 100, Crusader 150. User chose retail values as-is, both sides; moods deferred to M8 ("as long as we add moods later").
+- User decisions: rally replaced by setting a new one (no clear); presentation mockups approved; approach A (one milestone, simulation first); design approved.
+- User cloned TheSuperHackers `GeneralsGameCode` into `../GeneralsGameCode` (head `afc2a103f`): cited scan functions differ only cosmetically from EA source. Deferred research: an instrumented build for S1–S3 runtime parity (macOS buildability unchecked).
+- Deferred to M6: compare retail map sizes with 48×32 before choosing the full-scale map.
+- Not done: nothing implemented, no tests run; `prompt.txt` (M4) moved to `docs/m4-prompt.txt`. Committed on `main` as `daa5575`.
+- User decided: Wargrid code is GPL-3.0-or-later ("I see nothing speaking against this"); `LICENSE` added, AGENTS porting rule, blueprint §12 and README updated (`dde91fa`, on `main`; AGENTS reworded per user: own code by default, source read for ideas, ports only as exception). Open: licence for original art/audio. User also cloned `../OpenRA` (GPL-3.0-or-later, head `9636b63eae`): read `OpenRA.Game/Network` before planning M5; bot modules are M8 reading. "Smarter bots" is hearsay, unverified.
+
+## 2026-11-03 — Performance open points and real-game verification
+
+- Rendered benchmark was broken since M2 (untyped `[]` to typed `set_state`); fixed with regression `test_rendered_probe_ticks`, suite then 96 cases / 101,306 checks / exit 0 (now 97 / 101,355 with later tests and the builder-speed change; see below). Corrected rerun completed but **fails the frame budget** (about 3 fps, p95 320/340 ms; backlog grows). Simulation cost fine. Headless probe shows script-side `_draw` is 3–5 ms, so cost is renderer-side; rendered probe confirmed the per-tile terrain loop (about 8,200 canvas commands) costs about 80 ms/frame vs about 2 ms for a one-polygon-plus-multiline variant. Fix applied (`WorldView._draw_terrain`); real benchmark rerun: ~120 fps, zero backlog, frame p95 19.6/19.5 ms vs 16.7 budget (marginal fail, tail likely tick frames, unprofiled). Builder speed now 1.2 (user directed speed from `Locomotor.ini` ÷25; infantry 0.8/tank 1.2 go into M4 definitions; legacy vehicle stays 3.0). Suite 96 cases / 101,351 checks / exit 0. Frame-tail follow-up: plumbing is ~2.3 ms/tick headless; tick frames spend ~13 ms waiting in render submission (vsync on) vs ~2 ms with vsync off in an earlier probe, so the p95 tail is likely vsync pacing; untested. Vsync-off rerun done (`--disable-vsync`): frame p95 3.6/5.1 ms, max 15.8 ms, zero backlog: rendered benchmark passes; the vsync-on tail was display pacing. Decided by user: benchmark scene disables vsync itself (done; header `vsync=off`; frame p95 4.1/6.5 ms, dense max 19.5 ms). Raised by user: target is a low-end device/browser (WebAssembly). Done: [performance ledger](reference/performance.md) (assumed 6× slowdown, derived budgets: plumbing and rendered frame currently exceed, sim passes with ~12% margin; per-milestone History rows) and M4 plan Task9a combat benchmark (150 v 150, three layouts, sim-only budgets, no implementation yet). Not done: CI trend logging, machine-independent counters, web export spike. No `AGENTS.md` change (a one-line ledger rule there is optional). See [M2 verification](reference/m2-verification.md).
+- M4 plan corrected: baseline/wall-time, watchdog is one 60 s suite budget (task7 gate ≤30 s), HP bars only selected/damaged, open decisions listed.
+- New [Zero Hour verification plan](reference/zero-hour-verification.md): level 0 found ground speeds 2.5–3.75× faster than range scale implies; level 1 observation protocol proposed; gate before M5 proposed. Needs user decisions: speed scale, rendering fix, level 1 session.
+- Item 2 (machine-independent counters): added `test_snapshot_size_ceiling` (open 79,481 / dense 80,345 nodes at the step-38 peak, busiest unit 322; mutation of the ceiling by 1 fails) and an engine draw-call print in the rendered benchmark (not yet run in a window). A* expansions not countable (built-in `AStarGrid2D`); canvas commands not observable headless. Plan Task9a adds `combat_work()` counter. [AGENTS.md](../AGENTS.md) updated: M4 reading list, performance ledger rule, rendered-benchmark etiquette, parity goal.
+- Doc consistency sweep: counts (now 97 cases / 101,355 checks), rendered-gate status, speeds, vsync, M4 prompt and design aligned; historical M3 text kept with forward pointers.
+- User approved the integration plan: branch `m4-prep` from `c441a7f` with three commits (benchmark/terrain fix, builder speed, docs), then push for CI, then fast-forward `main`, then fast-forward `m4-combat`. Each code commit passed the suite alone (97 cases / 101,310 then 101,355 checks). [CI run 41676948968](https://github.com/pdstuber/wargrid/actions/runs/41676948968) at `c11bf71`: Linux and Windows passed; the macOS job waited 15 minutes for a free runner and was cancelled with no steps run, so `compare-replays` was skipped. Substitute evidence, not CI: macOS traces generated locally on the same commit (97 cases / 101,359 checks incl. four trace-file checks, exit 0) matched the CI Linux and Windows traces, `REPLAYS MATCHED 1200` for both movement and economy. User approved fast-forwarding `main` on that basis; the macOS CI job was re-queued and remains unverified. Read git log/status and CI for current publication state. No M4 implementation. Code changes: `movement_benchmark.gd` (typed selection, vsync off, draw-call print), `world_view.gd` terrain, `economy_definitions.gd` builder speed, tests in `test_benchmark.gd` and `test_economy.gd`.
+
+## 2026-11-03 — Prep for M4 Tasks 4, 5, 7 (for a Sonnet/medium run)
+
+- User will run Sonnet 5.5 at medium effort on `prompt.txt`; asked for prep on the densest tasks. All four packages done, uncommitted on `m4-combat`:
+  - **Refactor** (`simulation.gd`, behavior-preserving): `_validate_target`, `_assign_move`, target float normalization for any `target` field. Suite unchanged at 97 cases / 101,355 checks; benchmark sim p95 1.498 / 1.529 ms; `/ponytail-review` removed one unreachable guard.
+  - **Envelope spike** (scratch, headless): [note](reference/m4-scenario-envelope.md) with timeline, army sizes, travel, 19-tick building-death stall, allocation cost. Main finding: production stops at 8 infantry / about 11 tanks unless units are moved; armies about 19 per side; attack-start range corrected to 9000..9800.
+  - **Plan**: new "Code anchors and pitfalls" section (11 items), Tasks 4, 5, 7 split into checkpoints with stop conditions and stronger-model review requests.
+  - **Test appendix**: [unrun red-test sketches](superpowers/plans/2026-11-03-m4-tests-4-5.md) for Tasks 4 and 5.
+- User decision: the building-death stall and allocation cost are documented only, not fixed; the executor stops and reports if they block a test or budget.
+- Not verified: the appendix tests (written before the API exists), and whether Sonnet at medium finishes. Nothing committed or pushed.
+
+## 2026-11-03 — M4 planning
+
+- User confirmed positive M2 playability and no M3 visual issues; corrected M4 playtest mention to M3. Reference notes updated; no M4 playtest or performance measurements inferred.
+
+- User explicitly approved M4 design. Updated design/plan/prompt status; no implementation kickoff or inherited-gate deferral inferred.
+
+- Added proposed design, source/config evidence and sequential Sol/Medium execution plan. No game-code changes or implementation kickoff.
+- Read hash-verified root INIZH.big and pinned official source; selected rifle burst/reload, tank, health/armor and barracks values. Geometry, direct-hit simplifications and runtime parity remain explicitly provisional/unverified.
+- Fresh Sol/Medium builder check resolved mixed armed selection and real match-duration assertions. Final scripted schedule/outcome must be measured and pinned during bounded task7 calibration.
+- User subsequently authorized M4 branch and Sol prompt preparation: created `m4-combat` from local `main` at `c441a7f`, preserving uncommitted planning files; replaced root `prompt.txt` with M4 handoff. Historical M3 prompt remains `docs/m3-prompt.txt`. No implementation kickoff.
+- Existing runtime test counts remain historical; no game tests or visible checks run for planning/preparation. No commit/push/PR/merge.
+
+## 2026-11-03 — M3 playtest and wrap-up
+
+- Implementation `303006b` already published on `m3-base-supplies`. Verified [M3 matrix](https://github.com/pdstuber/wargrid/actions/runs/41605911340): Linux/macOS/Windows and compare-replays successful at that exact head.
+- Default launcher intentionally opens M2; supplied explicit M3 base-scene command. User then reported “test was looking good”; detailed checklist coverage and rendered measurements were not supplied.
+- User requested documentation consistency and local merge into `main`. Updated current status, preserved historical evidence and fast-forwarded `main` through wrap-up commit `17f2f12`. No production changes or new implementation review needed; previous substantive review and Ponytail pass remain applicable.
+- Post-merge headless verification passed: 95 cases / 101,305 checks / zero failures / exit 0; Python 6 tests / exit 0. Sandbox import needed a retry with macOS settings access; no code fix. Docs: 103 local links, zero missing.
+- Publishing `main` still needs approval. No M4, PR, screenshots or rendered benchmark.
+
+## 2026-11-01 — M0 local foundation
+
+- [Execution plan](superpowers/plans/2026-11-01-m0-foundation.md) local checks complete; remote gate pending.
+- [Verification record](reference/m0-verification.md) contains counts, failure probes, source provenance, review result and limits.
+- Sole completed substantive review found no production defects; final Ponytail pass found no cuts. Grok attempt stalled, then fresh-context fallback completed.
+- No engine upgrade, visible window, retail-data access, commit, push, PR or M1 work.
+
+## 2026-11-01 — Session commands
+
+- Added `.claude/commands/kickoff.md` and `.claude/commands/wrapup.md`, delegating to agent-neutral docs.
+- Replaced Last Hearth paper-run/ruleset steps with Wargrid verification and document ownership. Existing task instructions override a redundant kickoff question.
+- No checker script, game behavior or Git action added.
+
+## 2026-11-01 — Wrap-up trial
+
+- Fresh headless wrapper run: 11 cases / 199 checks / 0 failures, exit 0; final completion marker present. Old test agent retained restrictive sandbox and failed during import; fresh agent passed with current permissions. No game changes needed.
+- Fixed stale planning-only status in AGENTS by linking README; blueprint local checkboxes now match evidence. Remote CI checkbox remains open. No design decision changed.
+- Checked local documentation links/paths and handoff headings. Existing implementation reviews retained; no duplicate review.
+- Proposed first commit includes initial user-authored planning/reference files, M0 implementation and session commands. No staging, branch creation or commit before approval. `.godot` cache ignored; scratch evidence stays outside repo. No active Wargrid background process found.
+- Process deviations retained: grouped acceptance red/green cycle; stalled Grok attempt replaced by sole completed fresh-context review. Optional coverage gaps stay deferred.
+
+## 2026-11-01 — First-commit approval
+
+- User explicitly approved branch `m0-foundation` and first commit `Initialize Wargrid M0 foundation and session workflow`, covering all 26 authored files.
+- Approval includes planning/reference documentation, M0 implementation/tooling/CI and session workflow. Cache and temporary evidence excluded.
+- No push, PR or merge authorized. Next gate is remote CI after separate push approval.
+
+## 2026-11-01 — M0 coverage follow-up
+
+- C4 explicitly checks normalized float types on both axes before/after execution. C10 covers tick/player/sequence canonical queue order without weakening accepted sequence rules.
+- Local suite: 11 cases / 209 checks, exit 0. Five independent scratch regressions each fail behavior assertions; production untouched.
+- Corrected historical review assumption: existing deep Dictionary comparisons also detect removed float conversion on this build; new explicit checks improve diagnostic precision.
+- User provided Actions log; GitHub CLI independently confirmed successful run for `20739d6`. Original remote gate passed, updated tests still local.
+- No new commit, push, PR, merge or M1 work authorized.
+
+- Coverage follow-up review complete: no findings; final Ponytail pass found no cuts. Grok timed out; fresh-context fallback was sole completed substantive review.
+
+## 2026-11-01 — Group coverage and local integration
+
+- Grok whole-branch review completed without defects; coverage limits prompted public-API tests for successful multi-entity orders and exact entity-ID snapshot order.
+- C1/C12 additions pass: 12 cases / 212 checks, exit 0. Scratch first-member-only and reverse-ID mutations fail behavioral checks, exit 1. Production unchanged.
+- User authorized pending M0 test/documentation commit and local merge into `main`; no push. Neither local nor remote `main` exists, so initialize local `main` at original M0 commit before fast-forwarding reviewed follow-up.
+- Forced internal insertion reordering is unreachable through current API; no test-only mutation hooks added. Earlier Grok attempts were stopped too soon; whole-branch review eventually completed by waiting.
+
+- Focused Grok follow-up review completed with no defects; final Ponytail pass found no cuts. Integration verification runs on local `main`; read Git log/status for exact commit/branch state.
+
+## 2026-11-01 — M1 planning
+
+- User requested an execution plan suitable for Sol at Medium; no implementation request yet.
+- Inspected production kernel, all 12 existing cases, runner, scene, wrappers and CI. Fresh baseline: 12 cases / 212 checks / exit 0 via test subagent.
+- Added bounded static-grid movement, projection/view/input contracts, intentional M0 test migrations, headless scene cases and async-runner failure probes. Prototype choices remain labeled; no parity claims.
+- Updated current prompt, README, AGENTS and blueprint links. No game code, visible launch, commit or push.
+
+## 2026-11-01 — M1 planning wrap-up
+
+- Documentation-only scope: M1 plan plus AGENTS, README, blueprint, prompt and this handoff. No game, test, wrapper or engine changes; no game test rerun required.
+- Checked 38 local Markdown links/paths, four kickoff handoff headings and diff whitespace. Proposed plan paths for future implementation are not existing-file claims.
+- M0 remains implemented; M1 remains proposed, with implementation awaiting explicit kickoff. Existing local test evidence and remote/visual/reference limits remain unchanged.
+- Proposed branch `m1-vehicle-plan`, commit `Plan M1 vehicle slice and handoff`; no staging, branch creation, commit or push before approval. No design decisions changed during wrap-up.
+
+## 2026-11-01 — M1 planning commit approval
+
+- User explicitly approved branch `m1-vehicle-plan` and six-file documentation commit `Plan M1 vehicle slice and handoff`.
+- No push, PR, merge or M1 implementation authorized.
+
+## 2026-11-01 — Commit reference and remote-state check
+
+- Verified `20739d6` is original M0, `7d67481` is M0 coverage follow-up, and `1a3e316` is M1 planning. Historical baseline hashes remain correct; no game/test/tool/CI changes between the latter two.
+- GitHub branch API confirms `main` at `7d67481`, `m1-vehicle-plan` at `1a3e316`; default branch is `main`. Branch publication is observed state, not an inferred approval history.
+- [M0 follow-up CI](https://github.com/pdstuber/wargrid/actions/runs/41299222791) and [M1 planning CI](https://github.com/pdstuber/wargrid/actions/runs/41301269564) both completed successfully; fetched logs show 12 cases / 212 checks / 0 failures and `TESTS PASSED 212`.
+- Earlier dated pending-CI/approval notes describe their historical checkpoints. Current handoff supersedes them. `prompt.txt` contains no commit hashes and needs no correction.
+
+## 2026-11-01 — Final documentation wrap-up
+
+- Verified published `m1-vehicle-plan` at `3c0f150`, successful remote CI and GitHub default `main`. Publication observed, not performed during wrap-up; M1 branch remains unmerged.
+- Corrected stale CI summaries in README, blueprint and M0 evidence; refreshed current handoff. No design or implementation change. Historical commit baselines retained.
+- Documentation-only checks: local links/paths, kickoff headings, diff whitespace and status consistency. No game rerun, visible check or implementation review required. No stray untracked files or active game/test processes found.
+- Proposed commit on `m1-vehicle-plan`: `Refresh wrap-up and verified CI summaries`. Commit awaits approval; no push, PR or merge included. Tomorrow: review M1 plan on this branch and choose whether to start implementation.
+
+## 2026-11-01 — M1 implementation
+
+- Followed adopted vehicle plan in order: projection/navigation red/green, movement and named M0 migrations, view picking, scene/input/camera. Pulled async runner setup forward only to enable scene red tests; recorded in session ledger.
+- Red evidence: helper 13 failures; movement 39; view picking 3; scene skeleton 24. Diagnosed wrong arrow constants with engine-key assertions and double-transformed headless mouse injection; fixed config/injector, preserved production coordinate conversion and tolerances.
+- `sh tools/run_tests.sh`: 32 cases / 1089 checks / 0 failures, exit 0, final marker. Outside-root and fresh-cache copy match. Pinned-engine headless smoke exit 0; all eight runner failure probes exit 1, including actual watchdog timeout.
+- Existing test agents kept old sandbox across allow-all switch; fresh agent picked up current permissions. No project workaround needed.
+- Batched visible check authorized. Game launched without diagnostics; Computer Use denied Godot access. User screenshot and second recording confirm static scene/HUD plus selection, moving targets, arrival and camera pan. User confirms resize/zoom and ignored blocked/outside clicks. Basic visible smoke covered; HUD error text/post-transform re-selection explicitly checked headlessly, not separately captured in video. No commit, push, PR, merge, engine upgrade or sibling edits. Sole Grok review complete; test gaps closed and mutation-verified. Ponytail pass found no cuts.
+
+## 2026-11-01 — M1 final handoff
+
+- Final exact checkout, outside-root and fresh-cache suites each pass: 32 cases / 1089 checks / 0 failures, exit 0, `TESTS PASSED 1089`. Headless smoke exit 0. Eight runner probes exit 1.
+- Three review regressions each pass old check and fail tightened check; production unchanged after review. Grok completed substantive report; capture-shell readonly-variable error means its exit code unknown, not an unfinished review. No duplicate substantive review. Final Ponytail lean pass: no cuts.
+- Basic visible smoke supported by second user recording plus reports: selection, movement around obstacle, retargeting, arrival, pan, resize/zoom and ignored blocked/outside targets. HUD rejection text/post-transform re-selection established automatically, not separately recorded visually. No exhaustive feel/performance/reference claim.
+- README, movement/verification notes and plan checkboxes reflect local evidence. No commit, push, PR or merge; M1 remote CI pending approved publication. Stop at M1.
+
+## 2026-11-01 — M1 commit approval
+
+- User explicitly authorized committing everything currently in repo, including pre-existing documentation changes and reviewed M1 implementation/tests/evidence. No push, PR or merge included. Read Git log/status for resulting commit.
+
+
+## 2026-11-02 — recovery and M3 planning
+
+- Reconciled README, AGENTS, blueprint, M2 plan, reference status and root prompt against actual unfinished checkout. Game code untouched. Fresh delegated Godot result: 54 cases / 95,914 checks / 42 failures / exit1; Python comparator6 tests/exit0. Test subagent interruption recovered; original usage-limit stop unverified.
+- User chose Zero Hour research first, then source-informed playable M3 slice; approved design for detailed planning. Read pinned GeneralsMD source and hash-verified root INIZH.big selected configuration. Original archives/source unchanged; no EA implementation/assets added. Research limits and explicit fixes recorded in M3 reference.
+- Added M3 design, detailed sequential Sol/Medium execution plan, source/config record and separate docs/m3-prompt.txt. One fresh design builder check found no consequential gaps; plan self-review mapped scope, signatures, tests and lifecycle boundaries. Planning only; M2 gates precede M3 execution.
+- User authorized future local M2 completion commits, local main merge and creation of m3-base-supplies carrying full repo/preparation documents. Root prompt includes exact handoff and installs M3 root prompt only after branch switch; no push/PR or M3 implementation during that run. No Git action performed here.
+- Documentation verification delegated: diff whitespace and local Markdown link targets checked; final result recorded in response. No game rerun after documentation-only changes, no rendered checks, no M2 implementation review claimed.
+- Informal M4.1 playtest notes from the M5 friend match (user, 2026-11-04) now live in [M4.1 verification](reference/m4.1-verification.md); user later declared the playtest done (2026-11-04); findings open.
