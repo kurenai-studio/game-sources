@@ -1,0 +1,2 @@
+# Ludum-Dare-47
+My solo entry to the Ludum Dare 47 game jam. Made in just over two days, this is a minimalist incremental game where time resets after the world ends after only 90 seconds. Build up your money each loop by buying assets, farmhands to help automate them, and upgrades to make everything a bit nicer. Then, exchange crystals for powerful permamnet upgrades, and try to get enough to build a rocket and escape armageddon. It is an art-light design-heavy game with too much to do in not enough time, so manage your time carefully.
