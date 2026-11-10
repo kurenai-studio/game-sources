@@ -1,0 +1,53 @@
+; Engine configuration file, Godot's equivalent of a top-level CMakeCache.txt
+; or a `[project]` section in a config file: engine-wide settings live here,
+; game logic does not. Normally edited through the editor UI rather than by
+; hand.
+
+config_version=5
+
+[application]
+
+config/name="trampoline"
+config/description="Un jeu pour faire rebondir les mots"
+run/main_scene="res://scenes/main.tscn"
+; Android's back button opens "Quitter la partie" instead of killing the
+; app (see scripts/quit_game_button.gd).
+config/quit_on_go_back=false
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://assets/icon/desktop_icon.png"
+; The image shown while the game loads: TRAMPOLINE's tiles bouncing off a
+; trampoline (drawn by tools/build_splash.gd), on the felt's color (see
+; doc/ART_DIRECTION.md), scaled to fit the screen keeping its shape.
+boot_splash/bg_color=Color(0.149, 0.157, 0.165, 1)
+boot_splash/image="res://assets/splash.png"
+boot_splash/stretch_mode=1
+boot_splash/use_filter=true
+
+[display]
+
+; A portrait base resolution (roughly a phone's own aspect ratio), since
+; the game is designed portrait-first (see main.tscn's vertical layout
+; stack). `stretch/mode="canvas_items"` scales this logical resolution up
+; to match a real screen's actual pixel density (so tiles/buttons stay a
+; sensible physical size on a high-DPI phone) while `stretch/aspect=
+; "expand"` — rather than "keep", which would letterbox with black bars —
+; hands the extra width/height on a differently-shaped screen (a wide PC
+; window, say) to the layout itself, so main.tscn's containers actually
+; reflow into that space instead of just being scaled uniformly.
+window/size/viewport_width=480
+window/size/viewport_height=854
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+; Portrait on phones. Godot 4 wants the number here, not a word
+; (DisplayServer.ScreenOrientation: 0 landscape, 1 portrait) — the old
+; Godot 3 value "portrait" silently meant landscape.
+window/handheld/orientation=1
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+; Phones decode ETC2/ASTC compressed textures, not the desktop S3TC/BPTC
+; formats: also import every texture that way, or the Android export
+; refuses to run (see `nix build .#android` in flake.nix).
+textures/vram_compression/import_etc2_astc=true

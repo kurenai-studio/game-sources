@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/hand_view.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/hand_row.gd" id="2"]
+
+[node name="PaletteView" type="MarginContainer"]
+script=ExtResource("1")
+
+[node name="Row" type="GridContainer" parent="."]
+layout_mode=2
+columns=4
+script=ExtResource("2")

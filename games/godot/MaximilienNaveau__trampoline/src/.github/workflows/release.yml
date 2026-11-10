@@ -1,0 +1,198 @@
+name: Release
+
+# A `v*` tag triggers a real, public release: a GitHub Release, a gh-pages
+# deploy of the Web build, and an update of the F-Droid repo (magamajo).
+# Unity used this exact same pattern (last tag: v3.2.0) but is retired and
+# won't be released again, so the next tag is unambiguously this (Godot)
+# build. `workflow_dispatch` runs everything EXCEPT the public-facing steps
+# (they check `startsWith(github.ref, 'refs/tags/')`), so this can be
+# dry-run freely — the APK signing included — before trusting a real tag.
+#
+# The builds come from ci.yml (the flake's `nix flake check`), so a release
+# is built and tested exactly like every push.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
+env:
+  # SHA-256 of the certificate that signed the APKs F-Droid already serves
+  # (3.1.3 and 3.2.0, see magamajo's fdroid/repo/index-v1.json). An APK
+  # signed with any other key can't update those installs, so the release
+  # stops if the signed APK doesn't match.
+  FDROID_SIGNER_SHA256: 89ce10f08ba6e5a4c51adb3e1477c530b07a733b6b68073d58c78f5ef88f3402
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/ci.yml
+    # Hands ci.yml the CACHIX_AUTH_TOKEN secret (a called workflow gets none).
+    secrets: inherit
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      # Read-only here: this job builds nothing worth caching.
+      - name: Use the baxter Cachix cache
+        uses: cachix/cachix-action@v17
+        with:
+          name: baxter
+
+      # The tag is the version users see; the preset's version/name is the
+      # one inside the APK (and F-Droid's). They must agree.
+      - name: Check the tag matches the version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          preset_version=$(sed -n 's/^version\/name="\(.*\)"$/\1/p' export_presets.cfg)
+          if [ "v$preset_version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME but export_presets.cfg says $preset_version"
+            exit 1
+          fi
+
+      # Fails early, before anything is published, if the token the last
+      # step needs has expired or lost access to magamajo (it can't check
+      # the dispatch permission itself without dispatching).
+      - name: Check the F-Droid trigger token
+        env:
+          FDROID_TRIGGER_TOKEN: ${{ secrets.FDROID_TRIGGER_TOKEN }}
+        run: |
+          if [ -z "$FDROID_TRIGGER_TOKEN" ]; then
+            echo "::error::the FDROID_TRIGGER_TOKEN secret is missing"
+            exit 1
+          fi
+          status=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $FDROID_TRIGGER_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/MaximilienNaveau/magamajo)
+          if [ "$status" != 200 ]; then
+            echo "::error::FDROID_TRIGGER_TOKEN is refused by GitHub (HTTP $status): expired or revoked? Renew it."
+            exit 1
+          fi
+          echo "FDROID_TRIGGER_TOKEN works and can see magamajo."
+
+      # The release's text is the version's changelog, in F-Droid's own
+      # layout (fastlane/metadata/android/, named by the APK's versionCode
+      # from export_presets.cfg): f-droid.org shows that file as "what's
+      # new", magamajo shows the GitHub Release's text — the same words. A
+      # tag without one stops here, before publishing.
+      - name: Find the release notes
+        id: notes
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          code=$(sed -n 's/^version\/code=//p' export_presets.cfg)
+          notes="fastlane/metadata/android/fr-FR/changelogs/$code.txt"
+          echo "path=$notes" >> "$GITHUB_OUTPUT"
+          if [ ! -s "$notes" ]; then
+            echo "::error::$notes is missing: write the release notes first"
+            exit 1
+          fi
+          if [ "$(wc -m < "$notes")" -gt 500 ]; then
+            echo "::warning::$notes is over 500 characters: F-Droid cuts it"
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      # The APK from ci.yml is signed with the debug key (the Nix build
+      # never sees the real one: its store is pushed to a public cache).
+      # Re-signed here with the release key, the same one as the Unity
+      # builds F-Droid serves, from the repo's secrets.
+      - name: Sign the APK with the release key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          ANDROID_KEY_ALIAS_NAME: ${{ secrets.ANDROID_KEY_ALIAS_NAME }}
+          ANDROID_KEY_ALIAS_PASS: ${{ secrets.ANDROID_KEY_ALIAS_PASS }}
+        run: |
+          set -e
+          for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASS ANDROID_KEY_ALIAS_NAME ANDROID_KEY_ALIAS_PASS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::the $name secret is missing"
+              exit 1
+            fi
+          done
+          keystore="$RUNNER_TEMP/release.keystore"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$keystore"
+          nix run .#apksigner -- sign \
+            --ks "$keystore" --ks-pass env:ANDROID_KEYSTORE_PASS \
+            --ks-key-alias "$ANDROID_KEY_ALIAS_NAME" --key-pass env:ANDROID_KEY_ALIAS_PASS \
+            --out artifacts/android-build/signed.apk artifacts/android-build/trampoline.apk
+          rm -f "$keystore"
+          signer=$(nix run .#apksigner -- verify --print-certs artifacts/android-build/signed.apk \
+            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          echo "signed by $signer"
+          if [ "$signer" != "$FDROID_SIGNER_SHA256" ]; then
+            echo "::error::the APK is signed by $signer, not by F-Droid's key $FDROID_SIGNER_SHA256"
+            exit 1
+          fi
+
+      - name: Zip per-platform builds
+        run: |
+          set -e
+          cd artifacts
+          chmod +x linux-build/trampoline.x86_64
+          (cd linux-build && zip -r "../trampoline-${{ github.ref_name }}-linux.zip" .)
+          (cd windows-build && zip -r "../trampoline-${{ github.ref_name }}-windows.zip" .)
+          (cd web-build && zip -r "../trampoline-${{ github.ref_name }}-web.zip" .)
+          cp macos-build/trampoline.zip "trampoline-${{ github.ref_name }}-macos.zip"
+          # The only .apk of the release: F-Droid takes exactly one. (The
+          # signing leftovers stay in android-build/, which isn't uploaded:
+          # only artifacts/trampoline-* is.)
+          cp android-build/signed.apk "trampoline-${{ github.ref_name }}-android.apk"
+
+      # A dry run (workflow_dispatch) keeps its result as a private workflow
+      # artifact instead, to inspect without publishing anything.
+      - name: Upload the release files (dry run)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-files
+          path: artifacts/trampoline-*
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: artifacts/trampoline-*
+          body_path: ${{ steps.notes.outputs.path }}
+
+      - name: Deploy Web build to GitHub Pages
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: artifacts/web-build
+          # gh-pages keeps one commit: the site as it is now. Each Web build
+          # is ~45 MB, and keeping the old ones made gh-pages 80% of the
+          # repository (every clone downloaded them). The builds of every
+          # version stay on their GitHub Release.
+          single-commit: true
+
+      # magamajo's fdroid.yml listens for this event: it fetches the APK of
+      # the new GitHub Release and publishes it in the F-Droid repo.
+      # FDROID_TRIGGER_TOKEN: a token allowed to dispatch on magamajo
+      # (fine-grained: "Contents: read and write" on that repo).
+      - name: Trigger the F-Droid repo update
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          FDROID_TRIGGER_TOKEN: ${{ secrets.FDROID_TRIGGER_TOKEN }}
+        run: |
+          curl --fail-with-body -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $FDROID_TRIGGER_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/MaximilienNaveau/magamajo/dispatches \
+            -d "{\"event_type\":\"new-release\",\"client_payload\":{\"tag\":\"$GITHUB_REF_NAME\"}}"

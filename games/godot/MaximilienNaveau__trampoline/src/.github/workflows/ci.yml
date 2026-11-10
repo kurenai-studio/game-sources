@@ -1,0 +1,81 @@
+name: CI
+
+# Everything is built by the repository's flake, the same commands as
+# locally: `nix flake check -L` runs formatting, lint, the audio pipeline
+# (tools/audio/), the unit tests on Linux, and every export (Linux,
+# Windows, macOS, Web, Android). The builds are then uploaded as workflow
+# artifacts. release.yml calls this workflow and publishes those artifacts.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_call:
+
+jobs:
+  check:
+    name: nix flake check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      # Pulls from the baxter cache, and pushes what this job builds to it
+      # (only when the CACHIX_AUTH_TOKEN secret is there: not on forks' PRs).
+      # The Android SDK is never pushed: it's unfree and Google's licence
+      # forbids redistributing it, and the cache is public.
+      - name: Use the baxter Cachix cache
+        uses: cachix/cachix-action@v17
+        with:
+          name: baxter
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          pushFilter: '-(androidsdk|androidsdk-tools|android-sdk-[^/]*|androidenv-android-sdk-license)$'
+
+      - name: Check and build everything
+        run: nix flake check -L --keep-going
+
+      # Already built by the check above: these only copy them out of the
+      # Nix store (upload-artifact doesn't follow the result symlinks).
+      - name: Collect the builds
+        run: |
+          set -e
+          for platform in linux windows macos web android; do
+            mkdir -p "build/$platform"
+            cp -rL --no-preserve=mode "$(nix build ".#$platform" --no-link --print-out-paths)/." "build/$platform/"
+          done
+          chmod +x build/linux/trampoline.x86_64
+
+      - name: Upload Linux build
+        uses: actions/upload-artifact@v6
+        with:
+          name: linux-build
+          path: build/linux
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-build
+          path: build/windows
+
+      - name: Upload macOS build
+        uses: actions/upload-artifact@v6
+        with:
+          name: macos-build
+          path: build/macos
+
+      - name: Upload Web build
+        uses: actions/upload-artifact@v6
+        with:
+          name: web-build
+          path: build/web
+
+      # Signed with the project's debug key (keys/): fine to
+      # install by hand, not for a store (see doc/TODO.md, F-Droid).
+      - name: Upload Android build
+        uses: actions/upload-artifact@v6
+        with:
+          name: android-build
+          path: build/android/trampoline.apk

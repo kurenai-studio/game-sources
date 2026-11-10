@@ -1,0 +1,19 @@
+# Godot 4+ import/editor cache, regenerated automatically on open — the
+# Godot equivalent of a CMake build/ directory, never hand-edited.
+.godot/
+
+# Exported games (see export_presets.cfg) and `nix build` results.
+build/
+result
+
+# Python's bytecode cache, left by the audio generators in tools/audio/.
+__pycache__/
+
+# Music and sound effects are built by `nix build .#audio` from
+# tools/audio/ (`nix run .#audio` copies them here for the editor). Only
+# Godot's .import files for the ones the game uses are committed.
+assets/audio/**/*.ogg
+assets/audio/**/*.wav
+
+# PDFs compiled from doc/*.typ (typst compile doc/<name>.typ).
+doc/*.pdf

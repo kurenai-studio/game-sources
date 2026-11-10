@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="140" viewBox="0 0 120 70">
+  <defs>
+    <linearGradient id="satin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f39a60"/>
+      <stop offset="0.5" stop-color="#e4733a"/>
+      <stop offset="1" stop-color="#b8551f"/>
+    </linearGradient>
+    <linearGradient id="inner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8551f"/>
+      <stop offset="1" stop-color="#8f3f15"/>
+    </linearGradient>
+  </defs>
+  <!-- tails, hanging down and outwards, with a notched end -->
+  <path d="M56 34 L36 64 L42 62 L44 68 L62 38 Z" fill="url(#satin)" stroke="#8f3f15" stroke-width="0.8"/>
+  <path d="M64 34 L84 64 L78 62 L76 68 L58 38 Z" fill="url(#satin)" stroke="#8f3f15" stroke-width="0.8"/>
+  <!-- loops: outer satin, with the darker inside of the fold showing -->
+  <path d="M58 33 C44 14 18 10 14 22 C10 34 30 44 58 37 Z" fill="url(#satin)" stroke="#8f3f15" stroke-width="0.8"/>
+  <path d="M55 33 C44 22 27 20 24 26 C22 31 36 36 55 35 Z" fill="url(#inner)" opacity="0.8"/>
+  <path d="M62 33 C76 14 102 10 106 22 C110 34 90 44 62 37 Z" fill="url(#satin)" stroke="#8f3f15" stroke-width="0.8"/>
+  <path d="M65 33 C76 22 93 20 96 26 C98 31 84 36 65 35 Z" fill="url(#inner)" opacity="0.8"/>
+  <!-- knot -->
+  <rect x="53" y="27" width="14" height="15" rx="4" fill="url(#satin)" stroke="#8f3f15" stroke-width="0.8"/>
+  <path d="M56 30 Q60 28 64 30" stroke="#f8b88a" stroke-width="1.2" fill="none"/>
+</svg>

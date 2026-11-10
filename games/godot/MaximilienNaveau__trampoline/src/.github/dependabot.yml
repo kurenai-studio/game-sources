@@ -1,0 +1,13 @@
+version: 2
+updates:
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+      interval: "weekly"
+# flake.lock: nixpkgs (Godot, its export templates, the Android
+# SDK, the audio tools) and flake-utils. Each update's PR runs the full
+# `nix flake check` in CI before it can be merged.
+- package-ecosystem: "nix"
+  directory: "/"
+  schedule:
+      interval: "weekly"
