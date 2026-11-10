@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"arquimago"
+display_name = "Arquimago"
+kind = 18
+icon = "S_Buff10"
+description = "Forma arcana por 20s. Carga Arcana infinita, todos cooldowns -50%, teleporte livre (sem custo/CD). Custa 100 Carga."
+color = Color(1.0, 0.8, 1.0, 1.0)
+damage_mult = 0.0
+cost = 100.0
+cooldown = 180.0
+duration = 20.0
+buff_stat = "infinite_arcane"
+buff_amount = 1.0
+buff_stat_2 = "cdr"
+buff_amount_2 = 0.5
+sound = &"transform"

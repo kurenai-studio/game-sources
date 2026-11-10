@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+elemental_type = 1
+id = &"wogol"
+display_name = "Wogol"
+sprite = "wogol"
+behavior = 3
+max_hp = 30.0
+damage = 8.0
+move_speed = 90.0
+xp = 12
+min_depth = 4
+spawn_weight = 1.2
+habitats = PackedStringArray("dungeon", "floresta")

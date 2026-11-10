@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"corte_do_destino"
+display_name = "Corte do Destino"
+kind = 4
+icon = "S_Shadow04"
+description = "Ataque que corta o destino: crítico garantido, ignora esquiva, marca alvo para morte (executa se <20% vida). Custa 40 Mana."
+color = Color(0.6, 0.1, 0.7, 1.0)
+damage_mult = 2.5
+cost = 40.0
+cooldown = 20.0
+reach = 60.0
+projectile_speed = 600.0
+sound = &"destiny_cut"

@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_2lv3h"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_re4up"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_gk3bj"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_ex3bo"]
+
+[sub_resource type="Resource" id="Resource_2lv3h"]
+script = ExtResource("1_2lv3h")
+gold = 125
+item_base = &"orb"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_re4up"]
+script = ExtResource("4_ex3bo")
+type = 3
+target = &"elfo_floresta"
+text = "Viaje às terras dos Elfos da Floresta"
+
+[sub_resource type="Resource" id="Resource_gk3bj"]
+script = ExtResource("4_ex3bo")
+type = 3
+target = &"drow"
+text = "Viaje às terras dos Drow"
+
+[sub_resource type="Resource" id="Resource_ex3bo"]
+script = ExtResource("3_gk3bj")
+description = "Visite as duas capitais e ouça cada lado da rusga. O ódio deles tem uma versão — e ela não combina."
+objectives = Array[ExtResource("4_ex3bo")]([SubResource("Resource_re4up"), SubResource("Resource_gk3bj")])
+
+[sub_resource type="Resource" id="Resource_7ok5o"]
+script = ExtResource("4_ex3bo")
+type = 1
+target = &"fantasma"
+count = 5
+text = "sombras que sussurram separação"
+
+[sub_resource type="Resource" id="Resource_kp304"]
+script = ExtResource("3_gk3bj")
+description = "Entre as duas capitas, sombras que sussurram separação se alimentam da discórdia — criaturas que só existem enquanto os dois lados acreditam na briga. Afaste-as."
+objectives = Array[ExtResource("4_ex3bo")]([SubResource("Resource_7ok5o")])
+
+[sub_resource type="Resource" id="Resource_2n21f"]
+script = ExtResource("4_ex3bo")
+type = 0
+target = &"any:capital_*_lider"
+text = "Traga a prova aos dois líderes"
+
+[sub_resource type="Resource" id="Resource_ippmk"]
+script = ExtResource("4_ex3bo")
+type = 0
+target = &"any:capital_*_lider"
+text = "Ouça a outra versão da mesma memória"
+
+[sub_resource type="Resource" id="Resource_nhah6"]
+script = ExtResource("3_gk3bj")
+description = "Drow e elfos da floresta ERAM a mesma raça. O Véu separou luz e sombra como raças distintas. Primos que esqueceram o sobrenome."
+objectives = Array[ExtResource("4_ex3bo")]([SubResource("Resource_2n21f"), SubResource("Resource_ippmk")])
+
+[resource]
+script = ExtResource("2_re4up")
+id = &"ato2_2"
+title = "A Canção que Não Termina"
+summary = "Elfos da floresta e drow odeiam-se há séculos — mas as Chamas da Raiz e do Pântano, acesas juntas, soltam uma fumaça que canta uma canção que ambos juram conhecer."
+act = 2
+quest_level = 9
+stages = Array[ExtResource("3_gk3bj")]([SubResource("Resource_ex3bo"), SubResource("Resource_kp304"), SubResource("Resource_nhah6")])
+rewards = SubResource("Resource_2lv3h")
+next = &"ato2_3"

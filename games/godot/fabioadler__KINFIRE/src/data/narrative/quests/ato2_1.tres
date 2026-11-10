@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_pd1tk"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_7o71c"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_1klw6"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_roof0"]
+
+[sub_resource type="Resource" id="Resource_pd1tk"]
+script = ExtResource("1_pd1tk")
+gold = 110
+item_base = &"amulet"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_7o71c"]
+script = ExtResource("4_roof0")
+type = 3
+target = &"humano"
+text = "Viaje às terras dos Humanos"
+
+[sub_resource type="Resource" id="Resource_1klw6"]
+script = ExtResource("4_roof0")
+type = 3
+target = &"alto_elfo"
+text = "Viaje às terras dos Altos Elfos"
+
+[sub_resource type="Resource" id="Resource_roof0"]
+script = ExtResource("3_1klw6")
+description = "Visite as duas capitais e ouça cada lado da rusga. O ódio deles tem uma versão — e ela não combina."
+objectives = Array[ExtResource("4_roof0")]([SubResource("Resource_7o71c"), SubResource("Resource_1klw6")])
+
+[sub_resource type="Resource" id="Resource_dy0f5"]
+script = ExtResource("4_roof0")
+type = 1
+target = &"arqueiro_bandido"
+count = 5
+text = "bandidos que lucram com a fronteira"
+
+[sub_resource type="Resource" id="Resource_564eh"]
+script = ExtResource("3_1klw6")
+description = "Entre as duas capitas, bandidos que lucram com a fronteira se alimentam da discórdia — criaturas que só existem enquanto os dois lados acreditam na briga. Afaste-as."
+objectives = Array[ExtResource("4_roof0")]([SubResource("Resource_dy0f5")])
+
+[sub_resource type="Resource" id="Resource_06pgm"]
+script = ExtResource("4_roof0")
+type = 0
+target = &"any:capital_*_lider"
+text = "Traga a prova aos dois líderes"
+
+[sub_resource type="Resource" id="Resource_cnw2k"]
+script = ExtResource("4_roof0")
+type = 0
+target = &"any:capital_*_lider"
+text = "Ouça a outra versão da mesma memória"
+
+[sub_resource type="Resource" id="Resource_j1nli"]
+script = ExtResource("3_1klw6")
+description = "O tratado foi assinado com o sangue de AMBOS. O Véu fez cada lado ver só o próprio sangue. O ódio era auto-infligido."
+objectives = Array[ExtResource("4_roof0")]([SubResource("Resource_06pgm"), SubResource("Resource_cnw2k")])
+
+[resource]
+script = ExtResource("2_7o71c")
+id = &"ato2_1"
+title = "O Espelho Quebrado"
+summary = "O Espelho de Miragem guarda a memória real do tratado entre humanos e alto-elfos. Cada lado jura que o outro assinou com sangue traidor — o espelho diz o contrário."
+act = 2
+quest_level = 8
+prerequisites = Array[StringName]([&"ato1_7"])
+stages = Array[ExtResource("3_1klw6")]([SubResource("Resource_roof0"), SubResource("Resource_564eh"), SubResource("Resource_j1nli")])
+rewards = SubResource("Resource_pd1tk")
+next = &"ato2_2"

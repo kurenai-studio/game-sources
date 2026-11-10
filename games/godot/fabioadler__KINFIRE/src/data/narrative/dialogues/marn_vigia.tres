@@ -1,0 +1,140 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=27 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="C_cumprimentar"]
+script = ExtResource("3_choice")
+text = "(Cumprimentar)"
+condition = "!flag marn_apresentado"
+next_id = &"apresentacao"
+effects = "flag marn_apresentado"
+
+[sub_resource type="Resource" id="C_falar_de_novo"]
+script = ExtResource("3_choice")
+text = "(Falar de novo)"
+condition = "flag marn_apresentado"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="Node_inicio"]
+script = ExtResource("2_node")
+id = &"inicio"
+pages = PackedStringArray("Marn apoia a lanterna no poste quando você chega. A chama não treme — ele segura firme demais.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_cumprimentar"), SubResource("C_falar_de_novo")])
+
+[sub_resource type="Resource" id="C_continuar"]
+script = ExtResource("3_choice")
+text = "(Continuar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="Node_apresentacao"]
+script = ExtResource("2_node")
+id = &"apresentacao"
+pages = PackedStringArray("Marn. Vigio o que sobrou deste acampamento — e o que sobrou das pessoas.", "Pergunte o que quiser. Pergunta errada não mata. Fora daqui, talvez.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_continuar")])
+
+[sub_resource type="Resource" id="C_p_lugar"]
+script = ExtResource("3_choice")
+text = "O que é este lugar?"
+next_id = &"lugar"
+effects = "ignorancia -1"
+
+[sub_resource type="Resource" id="C_p_territorios"]
+script = ExtResource("3_choice")
+text = "O que são 'territórios'?"
+condition = "ignorancia > 5"
+next_id = &"territorios"
+effects = "ignorancia -1"
+
+[sub_resource type="Resource" id="C_p_patrulha"]
+script = ExtResource("3_choice")
+text = "Como andam as rotas de patrulha?"
+condition = "ignorancia <= 5"
+next_id = &"patrulha"
+
+[sub_resource type="Resource" id="C_p_promessa"]
+script = ExtResource("3_choice")
+text = "O acampamento está seguro comigo."
+condition = "!flag marn_promessa"
+next_id = &"promessa"
+effects = "flag marn_promessa
+rep humano +1"
+
+[sub_resource type="Resource" id="C_p_partir"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_menu"]
+script = ExtResource("2_node")
+id = &"menu"
+pages = PackedStringArray("O que quer saber, forasteiro?")
+choices = Array[ExtResource("3_choice")]([SubResource("C_p_lugar"), SubResource("C_p_territorios"), SubResource("C_p_patrulha"), SubResource("C_p_promessa"), SubResource("C_p_partir")])
+
+[sub_resource type="Resource" id="C_voltar_lugar"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_lugar"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_lugar"]
+script = ExtResource("2_node")
+id = &"lugar"
+pages = PackedStringArray("O que sobrou do primeiro acampamento da Guilda depois que o Véu engoliu a estrada.", "A fogueira guarda quem acende. O resto... o mundo guarda.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_lugar"), SubResource("C_partir_lugar")])
+
+[sub_resource type="Resource" id="C_voltar_terr"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_terr"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_territorios"]
+script = ExtResource("2_node")
+id = &"territorios"
+pages = PackedStringArray("Territó— ...como você não sabe o que é um território? De onde você veio, de trás de um espelho?", "Cada raça tem o seu: capital, chama, lei. Quatorze pedaços de mundo que não se falam.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_terr"), SubResource("C_partir_terr")])
+
+[sub_resource type="Resource" id="C_voltar_patr"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_patr"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_patrulha"]
+script = ExtResource("2_node")
+id = &"patrulha"
+pages = PackedStringArray("Ostreia no flanco leste, lobos descendo do norte. Nada que uma boa lanterna não resolva.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_patr"), SubResource("C_partir_patr")])
+
+[sub_resource type="Resource" id="C_voltar_prom"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_prom"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_promessa"]
+script = ExtResource("2_node")
+id = &"promessa"
+pages = PackedStringArray("Promessa de cinza... que seja. Enquanto a fogueira estiver acesa, os seus já contam como nossos.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_prom"), SubResource("C_partir_prom")])
+
+[resource]
+script = ExtResource("1_script")
+id = &"marn_vigia"
+display_name = "Marn"
+portrait = "knight_m"
+start_id = &"inicio"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_inicio"), SubResource("Node_apresentacao"), SubResource("Node_menu"), SubResource("Node_lugar"), SubResource("Node_territorios"), SubResource("Node_patrulha"), SubResource("Node_promessa")])

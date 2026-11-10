@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_qt7p1"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_mwwbo"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_52vgr"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_jwcte"]
+
+[sub_resource type="Resource" id="Resource_qt7p1"]
+script = ExtResource("1_qt7p1")
+gold = 140
+item_base = &"helm"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_mwwbo"]
+script = ExtResource("4_jwcte")
+type = 3
+target = &"anao_montanha"
+text = "Viaje às terras dos Anões da Montanha"
+
+[sub_resource type="Resource" id="Resource_52vgr"]
+script = ExtResource("4_jwcte")
+type = 3
+target = &"anao_colinas"
+text = "Viaje às terras dos Anões das Colinas"
+
+[sub_resource type="Resource" id="Resource_jwcte"]
+script = ExtResource("3_52vgr")
+description = "Visite as duas capitais e ouça cada lado da rusga. O ódio deles tem uma versão — e ela não combina."
+objectives = Array[ExtResource("4_jwcte")]([SubResource("Resource_mwwbo"), SubResource("Resource_52vgr")])
+
+[sub_resource type="Resource" id="Resource_smm2n"]
+script = ExtResource("4_jwcte")
+type = 1
+target = &"anao_saqueador"
+count = 5
+text = "saqueadores que roubam o minério comum"
+
+[sub_resource type="Resource" id="Resource_2pysh"]
+script = ExtResource("3_52vgr")
+description = "Entre as duas capitas, saqueadores que roubam o minério comum se alimentam da discórdia — criaturas que só existem enquanto os dois lados acreditam na briga. Afaste-as."
+objectives = Array[ExtResource("4_jwcte")]([SubResource("Resource_smm2n")])
+
+[sub_resource type="Resource" id="Resource_idbm3"]
+script = ExtResource("4_jwcte")
+type = 0
+target = &"any:capital_*_lider"
+text = "Traga a prova aos dois líderes"
+
+[sub_resource type="Resource" id="Resource_q2ta1"]
+script = ExtResource("4_jwcte")
+type = 0
+target = &"any:capital_*_lider"
+text = "Ouça a outra versão da mesma memória"
+
+[sub_resource type="Resource" id="Resource_x5axd"]
+script = ExtResource("3_52vgr")
+description = "Anões não são duas raças. São dois clãs da mesma família que o Véu fez esquecer o sobrenome compartilhado."
+objectives = Array[ExtResource("4_jwcte")]([SubResource("Resource_idbm3"), SubResource("Resource_q2ta1")])
+
+[resource]
+script = ExtResource("2_mwwbo")
+id = &"ato2_3"
+title = "O Martelo e a Bigorna"
+summary = "O Martelo que Não Esfria exige minério das DUAS capitais anãs — montanha e colinas. Os ferreiros de um lado não falam com os do outro. O som da forja vai curar a surdez."
+act = 2
+quest_level = 10
+stages = Array[ExtResource("3_52vgr")]([SubResource("Resource_jwcte"), SubResource("Resource_2pysh"), SubResource("Resource_x5axd")])
+rewards = SubResource("Resource_qt7p1")
+next = &"ato2_4"

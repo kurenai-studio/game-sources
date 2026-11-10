@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_iqh7h"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_rxjow"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_5x7bd"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_fmux3"]
+
+[sub_resource type="Resource" id="Resource_iqh7h"]
+script = ExtResource("1_iqh7h")
+gold = 130
+item_base = &"orb"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_rxjow"]
+script = ExtResource("4_fmux3")
+type = 0
+target = &"any:capital_*_lider"
+text = "Confronte o líder"
+
+[sub_resource type="Resource" id="Resource_5x7bd"]
+script = ExtResource("3_5x7bd")
+description = "Confronte o líder com a carta, a mina e os rastros. Ele jura que tudo era verdade — e acredita nisso."
+objectives = Array[ExtResource("4_fmux3")]([SubResource("Resource_rxjow")])
+
+[sub_resource type="Resource" id="Resource_fmux3"]
+script = ExtResource("4_fmux3")
+type = 1
+target = &"anjo_caido"
+text = "a forma que cai do Véu"
+
+[sub_resource type="Resource" id="Resource_ohbfl"]
+script = ExtResource("3_5x7bd")
+description = "Se a mentira tem forma, a verdade também tem. Uma forma alada cai do Véu para calar a conversa."
+objectives = Array[ExtResource("4_fmux3")]([SubResource("Resource_fmux3")])
+
+[resource]
+script = ExtResource("2_rxjow")
+id = &"ato1_6"
+title = "A Primeira Mentira"
+summary = "Confrontar o líder. Ele não sabe que mentiu — o Véu fez ele acreditar. A verdade não foi escondida: foi substituída."
+quest_level = 6
+stages = Array[ExtResource("3_5x7bd")]([SubResource("Resource_5x7bd"), SubResource("Resource_ohbfl")])
+rewards = SubResource("Resource_iqh7h")
+next = &"ato1_7"

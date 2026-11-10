@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"humano"
+display_name = "Humano"
+description = "Adaptáveis e ambiciosos, os humanos prosperam em qualquer caminho que escolham."
+sprite_m = "knight_m"
+sprite_f = "knight_f"
+ability_bonus = {
+"str": 1,
+"dex": 1,
+"con": 1,
+"int": 1,
+"wis": 1,
+"cha": 1
+}
+trait_name = "Ambição"
+trait_description = "+10% de experiência e +10% de ouro encontrado."
+xp_bonus = 0.1
+gold_find = 0.1

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"forma_de_urso"
+display_name = "Forma de Urso"
+kind = 12
+icon = "I_SolidShell"
+description = "Vira um urso: +100 armadura, +25% dano por 20s."
+unlock_level = 4
+color = Color(0.8, 0.6, 0.4, 1.0)
+cost = 20.0
+cooldown = 25.0
+summon_sprite = "ogre"
+buff_stat = "armor"
+buff_amount = 100.0
+buff_stat_2 = "damage"
+buff_amount_2 = 0.25
+duration = 20.0
+sound = &"hit_heavy"

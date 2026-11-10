@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bola_caos"
+display_name = "Bola do Caos"
+kind = 4
+icon = "S_Magic07"
+description = "Lança bola arcana instável. Ricocheteia até 5 inimigos. Dano base 1.2x, +20% por salto. Perfura. Custa 25 Carga Arcana."
+color = Color(0.8, 0.4, 1.0, 1.0)
+damage_mult = 1.2
+cost = 25.0
+cooldown = 10.0
+reach = 80.0
+projectile_speed = 400.0
+pierce = 5
+sound = &"arcane_shot"

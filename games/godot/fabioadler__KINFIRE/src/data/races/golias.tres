@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"golias"
+display_name = "Golias"
+description = "Gigantes das montanhas, montanhas de músculos."
+sprite_m = "ogre"
+sprite_f = "ogre"
+ability_bonus = {
+"str": 2,
+"con": 2,
+"int": -1
+}
+trait_name = "Montanha de Músculos"
+trait_description = "Inventário 30% maior. Armas de duas mãos 10% mais rápidas."
+extra_inventory_cols = 3
+two_hand_speed = 0.1
+body_scale = 0.62
+bonus_hp = 20
+move_speed_mult = 0.95
+tint = Color(0.82, 0.9, 1.0, 1.0)

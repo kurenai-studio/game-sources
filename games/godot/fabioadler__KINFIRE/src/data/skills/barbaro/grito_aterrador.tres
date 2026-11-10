@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"grito_aterrador"
+display_name = "Grito Aterrador"
+kind = 2
+icon = "S_Buff12"
+description = "Inimigos próximos fogem de medo por 3s. Gera 25 de Fúria."
+unlock_level = 4
+color = Color(1.0, 0.3, 0.2, 1.0)
+damage_mult = 0.0
+cooldown = 15.0
+radius = 95.0
+fear = 3.0
+generate = 25.0
+sound = &"levelup"

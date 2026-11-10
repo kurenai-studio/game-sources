@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"vo_dragao"
+display_name = "Vôo do Dragão"
+kind = 8
+icon = "S_Fire03"
+description = "Salta e cai como meteoro: área 10m, 4x dano, onda de choque atordoa 3s. Custa 60 Chi."
+color = Color(1.0, 0.5, 0.1, 1.0)
+damage_mult = 4.0
+cost = 60.0
+cooldown = 25.0
+radius = 100.0
+stun = 3.0
+sound = &"meteor"

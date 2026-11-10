@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"portal_infernal"
+display_name = "Portal Infernal"
+kind = 7
+icon = "S_Fire08"
+description = "Abre um portal que despeja fogo infernal."
+unlock_level = 9
+color = Color(1.0, 0.45, 0.1, 1.0)
+element = "fire"
+damage_mult = 1.4
+cost = 25.0
+cooldown = 10.0
+radius = 80.0
+hits = 14
+duration = 1.8
+reach = 220.0
+sound = &"explode"

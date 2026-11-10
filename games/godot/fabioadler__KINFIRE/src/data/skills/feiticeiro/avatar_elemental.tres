@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"avatar_elemental"
+display_name = "Avatar Elemental"
+kind = 18
+icon = "S_Buff10"
+description = "Forma elemental por 20s. Imune a fogo/gelo/raio. Skills elementais +50% dano, custo 0 Mana. Custa 100 Mana."
+color = Color(0.9, 0.9, 1.0, 1.0)
+damage_mult = 0.0
+cost = 100.0
+cooldown = 180.0
+duration = 20.0
+buff_stat = "elemental_avatar"
+buff_amount = 1.0
+buff_stat_2 = "mana_free"
+buff_amount_2 = 1.0
+sound = &"transform"

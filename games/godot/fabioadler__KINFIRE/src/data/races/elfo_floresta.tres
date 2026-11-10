@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"elfo_floresta"
+display_name = "Elfo da Floresta"
+description = "Rápidos e silenciosos, movem-se pela mata como o vento."
+sprite_m = "elf_m"
+sprite_f = "elf_f"
+ability_bonus = {
+"dex": 2,
+"con": 1
+}
+trait_name = "Passos Leves"
+trait_description = "+10% de velocidade de movimento. Esquiva automaticamente o primeiro golpe a cada 10 segundos."
+move_speed_mult = 1.1
+auto_dodge_interval = 10.0
+tint = Color(0.88, 1.0, 0.85, 1.0)

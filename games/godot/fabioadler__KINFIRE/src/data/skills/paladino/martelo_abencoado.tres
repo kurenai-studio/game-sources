@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"martelo_abencoado"
+display_name = "Martelo Abençoado"
+kind = 1
+icon = "S_Light01"
+description = "Arremessa um martelo sagrado que atravessa inimigos."
+color = Color(1.0, 0.95, 0.55, 1.0)
+element = "holy"
+damage_mult = 2.0
+cost = 20.0
+projectile_sprite = "weapon_hammer"
+projectile_speed = 230.0
+pierce = 4
+reach = 260.0
+sound = &"magic"

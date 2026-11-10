@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"aranha_gigante"
+display_name = "Aranha Gigante"
+sprite = "k:122"
+behavior = 2
+max_hp = 26.0
+damage = 7.0
+move_speed = 85.0
+xp = 10
+element = "poison"
+spawn_weight = 2.0
+habitats = PackedStringArray("floresta", "pantano", "dungeon")

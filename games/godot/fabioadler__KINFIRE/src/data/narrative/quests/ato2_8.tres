@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_ufm1g"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_d35ok"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_cq4x7"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_ldtr1"]
+
+[sub_resource type="Resource" id="Resource_ufm1g"]
+script = ExtResource("1_ufm1g")
+gold = 260
+item_base = &"plate"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_d35ok"]
+script = ExtResource("4_ldtr1")
+type = 0
+target = &"any:capital_*_lider"
+text = "Convoque os líderes para o concílio"
+
+[sub_resource type="Resource" id="Resource_cq4x7"]
+script = ExtResource("4_ldtr1")
+type = 0
+target = &"any:capital_*_lider"
+text = "Convoque mais um líder"
+
+[sub_resource type="Resource" id="Resource_ldtr1"]
+script = ExtResource("4_ldtr1")
+type = 0
+target = &"any:capital_*_lider"
+text = "Convoque mais um líder"
+
+[sub_resource type="Resource" id="Resource_q3v1h"]
+script = ExtResource("3_cq4x7")
+description = "O concílio precisa de testemunhas de todos os cantos do mundo. Chame os líderes que ainda não viram a prova com os próprios olhos."
+objectives = Array[ExtResource("4_ldtr1")]([SubResource("Resource_d35ok"), SubResource("Resource_cq4x7"), SubResource("Resource_ldtr1")])
+
+[sub_resource type="Resource" id="Resource_nb861"]
+script = ExtResource("4_ldtr1")
+type = 0
+target = &"cinzento_acampamento"
+text = "Testemunhe a revelação com o Cinzento"
+
+[sub_resource type="Resource" id="Resource_bwlpk"]
+script = ExtResource("3_cq4x7")
+description = "No Vale do Centro, o Cinzento ergue o Espelho de Miragem diante de todos. As memórias atravessam as fronteiras — e cada líder chora o ódio de outro como se fosse seu."
+objectives = Array[ExtResource("4_ldtr1")]([SubResource("Resource_nb861")])
+
+[resource]
+script = ExtResource("2_d35ok")
+id = &"ato2_8"
+title = "O Concílio Reunido"
+summary = "Sete líderes e você, no Vale do Centro. O Cinzento revela: a guerra não existe — existe apenas o Véu. Os líderes veem as memórias uns dos outros."
+act = 2
+quest_level = 15
+prerequisites = Array[StringName]([&"ato2_7"])
+stages = Array[ExtResource("3_cq4x7")]([SubResource("Resource_q3v1h"), SubResource("Resource_bwlpk")])
+rewards = SubResource("Resource_ufm1g")
+next = &"ato3_1"

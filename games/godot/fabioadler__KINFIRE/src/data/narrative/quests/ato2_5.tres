@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_fw7b8"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_gdy46"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_0yevt"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_3vdvc"]
+
+[sub_resource type="Resource" id="Resource_fw7b8"]
+script = ExtResource("1_fw7b8")
+gold = 170
+item_base = &"amulet"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_gdy46"]
+script = ExtResource("4_3vdvc")
+type = 3
+target = &"meio_orc"
+text = "Viaje às terras dos Meio-Orcs"
+
+[sub_resource type="Resource" id="Resource_0yevt"]
+script = ExtResource("4_3vdvc")
+type = 3
+target = &"tiefling"
+text = "Viaje às terras dos Tieflings"
+
+[sub_resource type="Resource" id="Resource_3vdvc"]
+script = ExtResource("3_0yevt")
+description = "Visite as duas capitais e ouça cada lado da rusga. O ódio deles tem uma versão — e ela não combina."
+objectives = Array[ExtResource("4_3vdvc")]([SubResource("Resource_gdy46"), SubResource("Resource_0yevt")])
+
+[sub_resource type="Resource" id="Resource_756vk"]
+script = ExtResource("4_3vdvc")
+type = 1
+target = &"orc_mascarado"
+count = 5
+text = "mascarados que pregam o rótulo de maldito"
+
+[sub_resource type="Resource" id="Resource_68ywm"]
+script = ExtResource("3_0yevt")
+description = "Entre as duas capitas, mascarados que pregam o rótulo de maldito se alimentam da discórdia — criaturas que só existem enquanto os dois lados acreditam na briga. Afaste-as."
+objectives = Array[ExtResource("4_3vdvc")]([SubResource("Resource_756vk")])
+
+[sub_resource type="Resource" id="Resource_sptkf"]
+script = ExtResource("4_3vdvc")
+type = 0
+target = &"any:capital_*_lider"
+text = "Traga a prova aos dois líderes"
+
+[sub_resource type="Resource" id="Resource_wj4xo"]
+script = ExtResource("4_3vdvc")
+type = 0
+target = &"any:capital_*_lider"
+text = "Ouça a outra versão da mesma memória"
+
+[sub_resource type="Resource" id="Resource_7n2cm"]
+script = ExtResource("3_0yevt")
+description = "Tieflings e meio-orcs SÃO primos. Ambos nasceram de sangue de fora que o Véu rotulou de maldito. A diferença é só quem contou a história primeiro."
+objectives = Array[ExtResource("4_3vdvc")]([SubResource("Resource_sptkf"), SubResource("Resource_wj4xo")])
+
+[resource]
+script = ExtResource("2_gdy46")
+id = &"ato2_5"
+title = "A Cicatriz Compartilhada"
+summary = "Meio-orcs e tieflings trocam as histórias de suas piores cicatrizes. O Véu não consegue mentir sobre dor verdadeira — e as cicatrizes combinam demais."
+act = 2
+quest_level = 12
+stages = Array[ExtResource("3_0yevt")]([SubResource("Resource_3vdvc"), SubResource("Resource_68ywm"), SubResource("Resource_7n2cm")])
+rewards = SubResource("Resource_fw7b8")
+next = &"ato2_6"

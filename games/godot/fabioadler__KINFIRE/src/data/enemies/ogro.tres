@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"ogro"
+display_name = "Grolmak, o Ogro"
+sprite = "ogre"
+behavior = 4
+max_hp = 700.0
+damage = 22.0
+move_speed = 50.0
+xp = 400
+armor = 20.0
+attack_range = 26.0
+attack_cooldown = 1.6
+scale = 1.6
+spawn_weight = 0.0
+min_depth = 99
+aggro_range = 260.0
+projectile_color = Color(1.0, 0.5, 0.2, 1.0)
+boss_order = 1
+world_boss = true
+habitats = PackedStringArray("planicie", "floresta", "tundra")

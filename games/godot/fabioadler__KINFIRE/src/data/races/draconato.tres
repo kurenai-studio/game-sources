@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"draconato"
+display_name = "Draconato"
+description = "Descendentes de dragões, orgulhosos e com fogo na garganta."
+sprite_m = "lizard_m"
+sprite_f = "lizard_f"
+ability_bonus = {
+"str": 2,
+"int": 1
+}
+trait_name = "Ancestralidade Dracônica"
+trait_description = "Sopro de fogo em cone (tecla R, recarga 15s) que ignora armadura. Imune a fogo."
+breath_element = "fire"
+fire_resist = 1.0

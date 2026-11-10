@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"furia_selvagem"
+display_name = "Fúria Selvagem"
+kind = 16
+icon = "S_Buff05"
+description = "Aliados em 15m ganham +40% vel. ataque, +25% dano, acertos causam sangramento (5% vida/s) por 10s. Custa 40 Mana."
+color = Color(0.8, 0.6, 0.3, 1.0)
+damage_mult = 0.0
+cost = 40.0
+cooldown = 35.0
+duration = 10.0
+radius = 150.0
+buff_stat = "attack_speed"
+buff_amount = 0.4
+buff_stat_2 = "damage_pct"
+buff_amount_2 = 0.25
+buff_stat_3 = "bleed_chance"
+buff_amount_3 = 1.0
+sound = &"primal_roar"

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"maldicao_da_agonia"
+display_name = "Maldição da Agonia"
+kind = 3
+icon = "S_Poison07"
+description = "Amaldiçoa e deixa lentos os inimigos; explodem ao morrer."
+unlock_level = 6
+color = Color(0.7, 0.3, 0.9, 1.0)
+element = "shadow"
+damage_mult = 1.0
+cost = 10.0
+cooldown = 6.0
+radius = 60.0
+delay = 0.2
+reach = 220.0
+curse = true
+slow = 0.4
+duration = 6.0
+sound = &"magic"

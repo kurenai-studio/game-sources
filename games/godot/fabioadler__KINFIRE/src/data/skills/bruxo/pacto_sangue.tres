@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"pacto_sangue"
+display_name = "Pacto de Sangue"
+kind = 17
+icon = "S_Shadow03"
+description = "Sacrifica 20% vida atual. 10s: skills usam vida (não Pacto), +50% dano sombra, roubo 30%. Custa 30 Pacto."
+color = Color(0.8, 0.1, 0.3, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 45.0
+duration = 10.0
+buff_stat = "blood_pact"
+buff_amount = 1.0
+buff_stat_2 = "lifesteal"
+buff_amount_2 = 0.3
+sound = &"blood_ritual"

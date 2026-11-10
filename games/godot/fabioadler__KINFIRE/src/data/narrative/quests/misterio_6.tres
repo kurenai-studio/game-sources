@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_ogc7q"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_utrfv"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_0twot"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_mnwbt"]
+
+[sub_resource type="Resource" id="Resource_havm7"]
+script = ExtResource("1_ogc7q")
+gold = 300
+item_base = &"orb"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_st8wl"]
+script = ExtResource("4_mnwbt")
+type = 1
+target = &"cavaleiro_renegado"
+count = 5
+text = "projeções dos seus próprios juramentos"
+
+[sub_resource type="Resource" id="Resource_ybtt3"]
+script = ExtResource("4_mnwbt")
+type = 1
+target = &"fantasma"
+count = 5
+text = "projeções das suas próprias perdas"
+
+[sub_resource type="Resource" id="Resource_3qbur"]
+script = ExtResource("3_0twot")
+description = "A torre não tem portas porque não precisa: ela se abre para quem tem medo suficiente. Aceite o convite."
+objectives = Array[ExtResource("4_mnwbt")]([SubResource("Resource_st8wl"), SubResource("Resource_ybtt3")])
+
+[sub_resource type="Resource" id="Resource_qsr6l"]
+script = ExtResource("4_mnwbt")
+type = 0
+target = &"cinzento_acampamento"
+text = "Mostre a carta ao Cinzento"
+
+[sub_resource type="Resource" id="Resource_8kqlb"]
+script = ExtResource("3_0twot")
+description = "No topo, uma mesa com sete cadeiras vazias — e uma carta com o seu nome que ninguém escreveu. O Cinzento precisa ver isso."
+objectives = Array[ExtResource("4_mnwbt")]([SubResource("Resource_qsr6l")])
+
+[resource]
+script = ExtResource("2_utrfv")
+id = &"misterio_6"
+title = "A Torre sem Portas"
+summary = "Rumores de uma torre que aparece e some na borda dos territórios. Quem entra combate projeções dos SEUS medos — os Sete Sussurros conhecem você, jogador. Não o personagem."
+act = 2
+quest_level = 16
+chain = &"misterio"
+prerequisites = Array[StringName]([&"ato2_1"])
+stages = Array[ExtResource("3_0twot")]([SubResource("Resource_3qbur"), SubResource("Resource_8kqlb")])
+rewards = SubResource("Resource_havm7")

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"armadilha_explosiva"
+display_name = "Armadilha Explosiva"
+kind = 3
+icon = "S_Bow07"
+description = "Arma uma armadilha que explode após 1s."
+unlock_level = 4
+color = Color(1.0, 0.55, 0.2, 1.0)
+element = "fire"
+damage_mult = 3.6
+cost = 25.0
+cooldown = 6.0
+radius = 52.0
+delay = 1.0
+reach = 200.0
+sound = &"explode"

@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"intervencao_divina"
+display_name = "Intervenção Divina"
+kind = 17
+icon = "S_Holy05"
+description = "Impede a morte de aliados em 10m por 5s. Ao ativar, cura 50% da vida máxima. Custa 60 Fé."
+color = Color(1.0, 1.0, 0.7, 1.0)
+damage_mult = 0.0
+cost = 60.0
+cooldown = 120.0
+duration = 5.0
+radius = 100.0
+buff_stat = "death_prevention"
+buff_amount = 1.0
+buff_stat_2 = "heal_on_trigger"
+buff_amount_2 = 0.5
+sound = &"divine_intervention"

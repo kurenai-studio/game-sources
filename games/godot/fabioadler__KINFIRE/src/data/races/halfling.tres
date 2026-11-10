@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"halfling"
+display_name = "Halfling"
+description = "Pequenos, ágeis e absurdamente sortudos — o perigo parece desviar deles."
+sprite_m = "knight_m"
+sprite_f = "knight_f"
+ability_bonus = {
+"dex": 2
+}
+trait_name = "Sorte Grande"
+trait_description = "5% de chance de um crítico causar dano dobrado. Corpo menor: mais fácil desviar de projéteis."
+double_crit_chance = 0.05
+body_scale = 0.78
+crit_chance_bonus = 0.02
+tint = Color(1.0, 0.95, 0.85, 1.0)

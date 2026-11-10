@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="GuildData"]
+
+script = SubResource("1")
+
+class_name = "GuildData"
+id = &"aventureiros"
+display_name = "Guilda dos Aventureiros"
+tipo = 0
+mestre_npc = &"mestre_aventureiros"
+descricao = "Para aqueles que buscam glória e fortuna. Contratos de combate, coleta e exploração."
+requisito_nivel = 1
+requisito_ouro = 0
+requisito_reputacao = -1
+beneficios = {}
+ranks = []
+
+[sub_resource type="GDScript" id="1"]
+script/source = "extends Resource
+class_name GuildData
+
+enum Type { AVENTUREIROS, MERCADORES, ARTESAOS, SOMBRAS }
+
+@export var id: StringName
+@export var display_name: String
+@export var tipo: Type
+@export var mestre_npc: StringName
+@export var descricao: String
+@export var requisito_nivel: int = 1
+@export var requisito_ouro: int = 0
+@export var requisito_reputacao: int = -1
+@export var beneficios: Dictionary = {}
+@export var ranks: Array[RankData] = []
+
+func _init() -> void:
+	resource_name = \"GuildData\"
+"

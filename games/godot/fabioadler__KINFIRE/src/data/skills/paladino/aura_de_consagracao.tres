@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"aura_de_consagracao"
+display_name = "Aura de Consagração"
+kind = 2
+icon = "S_Holy07"
+description = "Santifica o chão ao seu redor por 5s."
+unlock_level = 2
+color = Color(1.0, 0.85, 0.3, 1.0)
+element = "holy"
+damage_mult = 0.5
+cost = 25.0
+cooldown = 10.0
+radius = 65.0
+hits = 10
+duration = 5.0
+sound = &"magic"

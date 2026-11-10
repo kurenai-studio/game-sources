@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/mago/missil_arcano.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/mago/raio_arcano.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/mago/teleporte.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/mago/dobra_temporal.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/mago/orbe_desintegrador.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/mago/singularidade.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"mago"
+display_name = "Mago"
+role = "Mestre do espaço-tempo"
+icon = "S_Magic01"
+description = "Estudioso arcano. Gera Carga Arcana com o ataque básico e a gasta em magias enormes. Teleporte e controle do tempo."
+hit_die = 6
+base_hp = 34
+primary_ability = "int"
+recommended = PackedStringArray("int", "con", "dex")
+base_armor = 4
+resource_label = "Carga Arcana"
+resource_color = Color(0.7, 0.4, 1.0, 1.0)
+resource_max = 100.0
+resource_regen = 0.0
+allowed_weapons = PackedStringArray("staff")
+allowed_offhands = PackedStringArray("orb", "book")
+starting_weapon = &"staff"
+starting_offhand = &"book"
+resource_decays = true
+base_status = {"forca": 6, "agilidade": 8, "mente": 16, "vitalidade": 8}
+status_growth = {"forca": 0, "agilidade": 0, "mente": 1, "vitalidade": 0}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

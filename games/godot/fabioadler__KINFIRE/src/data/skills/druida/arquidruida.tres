@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"arquidruida"
+display_name = "Arquidruida"
+kind = 18
+icon = "S_Buff10"
+description = "Forma de Arquidruida por 20s. Todas formas ativas simultaneamente, Mana infinito, todos cooldowns -50%. Custa 100 Mana."
+color = Color(0.7, 1.0, 0.7, 1.0)
+damage_mult = 0.0
+cost = 100.0
+cooldown = 180.0
+duration = 20.0
+buff_stat = "all_forms"
+buff_amount = 1.0
+buff_stat_2 = "infinite_mana"
+buff_amount_2 = 1.0
+buff_stat_3 = "cdr"
+buff_amount_3 = 0.5
+sound = &"transform"

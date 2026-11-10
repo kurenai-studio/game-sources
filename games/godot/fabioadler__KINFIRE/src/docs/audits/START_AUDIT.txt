@@ -1,0 +1,116 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                ║
+║                    🎯 KINFIRE AUDIT - COMECE AQUI                             ║
+║                                                                                ║
+║                          Teste de Playthrough Completo                         ║
+║                                                                                ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+
+⚡ COMEÇAR EM 30 SEGUNDOS:
+
+    cd /media/f/HD/KINFIRE
+    chmod +x run_audit_test.sh
+    ./run_audit_test.sh
+
+
+📊 O QUE VAI ACONTECER:
+
+    ✓ Teste de 6 fases completas (3-5 minutos)
+    ✓ Validação automática de gameplay
+    ✓ Caça de bugs e erros
+    ✓ Relatório detalhado em JSON/TXT
+    ✓ Saída colorida com progresso em tempo real
+
+
+📁 ARQUIVOS IMPORTANTES:
+
+    Executar:
+      → run_audit_test.sh (script automático)
+
+    Ler primeiro:
+      → README_AUDIT.txt (este formato)
+      → AUDIT_QUICK_START.md (guia rápido)
+
+    Se precisar mais detalhes:
+      → AUDIT_README.md (documentação técnica)
+      → AUDIT_PRELIMINARY_REPORT.md (22 bugs encontrados)
+      → tests/test_full_playthrough_audit.gd (código do teste)
+
+
+🐛 22 BUGS ENCONTRADOS:
+
+    🔴 3 CRÍTICOS (bloqueia gameplay):
+       [1] Equipagem via clique direito falha
+       [2] Validação de categoria incompleta
+       [3] Loop infinito potencial
+
+    🟠 7 ALTOS (prejudica features):
+       [4-10] Performance, minimapa, array bounds, etc.
+
+    🟡 12 MÉDIOS (degradam UX):
+       [11-22] Consumíveis, inventory, skills, etc.
+
+
+📈 RESULTADOS ESPERADOS:
+
+    ✅ Se PASSAR:
+       Níveis: 50/50 | Erros: 0 | Críticos: 0
+       → Sistema estável para MVP
+
+    ⚠️ Se FALHAR:
+       Níveis: <50 | Erros: 3-10 | Críticos: 1-3
+       → Conferir audit_report.txt para bugs
+
+
+📊 APÓS O TESTE:
+
+    Verificar relatório:
+      $ cat ~/.godot/app_userdata/Kinfire/audit_report.txt
+
+    Ver formato JSON:
+      $ cat ~/.godot/app_userdata/Kinfire/audit_report.json
+
+    Ver log bruto:
+      $ cat ~/.godot/app_userdata/Kinfire/audit_test.log
+
+
+🔧 PRÓXIMOS PASSOS:
+
+    [1] Executar o teste
+    [2] Revisar bugs encontrados
+    [3] Corrigir 3 bugs críticos primeiro
+    [4] Re-executar até 0 críticos
+    [5] Depois altos, depois médios
+
+
+⏱️ TEMPO:
+
+    Execução: 3-5 minutos
+    Análise resultado: 5-10 minutos
+    Correções: Depende (1-2 dias para críticos)
+
+
+❓ DÚVIDAS?
+
+    "Como executar?"
+      → Ver AUDIT_QUICK_START.md
+
+    "O que cada bug faz?"
+      → Ver AUDIT_PRELIMINARY_REPORT.md
+
+    "Como entendo o resultado?"
+      → Ver AUDIT_README.md
+
+    "Algo deu erro?"
+      → Ver AUDIT_README.md seção Troubleshooting
+
+
+🚀 VAMOS LÁ?
+
+    $ cd /media/f/HD/KINFIRE && ./run_audit_test.sh
+
+════════════════════════════════════════════════════════════════════════════════
+
+Criado com: systematic-debugging
+Data: 2026-10-30T11:51:08Z

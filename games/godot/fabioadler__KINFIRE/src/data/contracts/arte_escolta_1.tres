@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ContractData"]
+
+script = SubResource("1")
+
+class_name = "ContractData"
+id = &"arte_escolta_1"
+guilda_id = &"artesaos"
+tipo = 2
+titulo = "Escolta o Ferreiro até a Forja"
+descricao = "Proteja o Mestre Ferreiro na jornada até a Forja da Montanha (zona perigosa)."
+requisito_nivel = 10
+requisito_reputacao = 1
+recompensas = {"ouro": 200, "xp": 100}
+
+[sub_resource type="GDScript" id="1"]
+script/source = "extends Resource
+class_name ContractData
+
+enum Tipo { COMBATE, COLETA, ESCOLTA, INVESTIGACAO }
+
+@export var id: StringName
+@export var guilda_id: StringName
+@export var tipo: Tipo
+@export var titulo: String
+@export var descricao: String
+@export var requisito_nivel: int = 1
+@export var requisito_reputacao: int = -1
+@export var recompensas: Dictionary = {}
+
+func _init() -> void:
+	resource_name = \"ContractData\"
+"

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/aldeano/golpe_de_lenhador.tres" id="2_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"aldeao"
+display_name = "Aldeão"
+role = "Aldeão comum"
+icon = "S_Sword01"
+description = "Ferreiro, tecelão, filho, irmão. Nada de especial — até hoje."
+hit_die = 8
+base_hp = 30
+primary_ability = "str"
+recommended = PackedStringArray("str", "con")
+base_armor = 8
+resource_label = "Fôlego"
+resource_color = Color(0.7, 0.75, 0.6, 1)
+resource_max = 50.0
+resource_regen = 5.0
+allowed_weapons = PackedStringArray("sword")
+starting_weapon = &"wood_sword"
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk")])

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+elemental_type = 2
+id = &"azkhar"
+display_name = "Azkhar, Senhor das Brasas"
+sprite = "big_demon"
+behavior = 4
+max_hp = 1100.0
+damage = 30.0
+move_speed = 55.0
+xp = 700
+element = "fire"
+armor = 30.0
+attack_range = 26.0
+attack_cooldown = 1.4
+scale = 1.6
+spawn_weight = 0.0
+min_depth = 99
+aggro_range = 260.0
+projectile_color = Color(1.0, 0.3, 0.1, 1.0)
+boss_order = 3
+world_boss = true
+habitats = PackedStringArray("vulcanico", "deserto")

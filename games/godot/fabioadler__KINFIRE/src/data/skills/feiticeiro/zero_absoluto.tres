@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"zero_absoluto"
+display_name = "Zero Absoluto"
+kind = 8
+icon = "S_Ice03"
+description = "Explosão de gelo em 12m. Dano 3x gelo, congela 4s, -50% velocidade. Inimigos congelados: +100% crit. Custa 60 Mana."
+color = Color(0.4, 0.8, 1.0, 1.0)
+damage_mult = 3.0
+cost = 60.0
+cooldown = 30.0
+radius = 120.0
+duration = 1.0
+element = "ice"
+sound = &"ice_explosion"

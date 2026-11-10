@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"anao_saqueador"
+display_name = "Anão Saqueador"
+sprite = "dwarf_m"
+behavior = 2
+max_hp = 50.0
+damage = 10.0
+move_speed = 62.0
+xp = 15
+armor = 10.0
+min_depth = 2
+spawn_weight = 1.3
+tint = Color(0.8, 0.65, 0.55, 1.0)
+habitats = PackedStringArray("deserto", "tundra")

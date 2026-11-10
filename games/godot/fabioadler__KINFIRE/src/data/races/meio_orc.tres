@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"meio_orc"
+display_name = "Meio-Orc"
+description = "Herdeiros da força brutal dos orcs, temidos em qualquer campo de batalha."
+sprite_m = "orc_warrior"
+sprite_f = "masked_orc"
+ability_bonus = {
+"str": 2,
+"con": 1
+}
+trait_name = "Fúria Implacável"
+trait_description = "Ao receber um golpe fatal, fica com 1 de vida e invulnerável por 3s (recarga: 2 minutos)."
+cheat_death_cooldown = 120.0
+bonus_hp = 15

@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_8cc46"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_0vuvx"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_fn143"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_xusdw"]
+
+[sub_resource type="Resource" id="Resource_nrp5p"]
+script = ExtResource("1_8cc46")
+gold = 400
+item_base = &"orb"
+item_rarity = 3
+
+[sub_resource type="Resource" id="Resource_263yj"]
+script = ExtResource("4_xusdw")
+type = 1
+target = &"morcego"
+count = 6
+text = "morcegos que rasgam o vento em pedaços"
+
+[sub_resource type="Resource" id="Resource_dkc5s"]
+script = ExtResource("4_xusdw")
+type = 1
+target = &"chort"
+count = 3
+text = "demasiões que roubam o sopro"
+
+[sub_resource type="Resource" id="Resource_gdjm3"]
+script = ExtResource("3_fn143")
+description = "O vento parou há 1.133 anos — e ninguém percebeu, porque ninguém mais solta pipas. Suba onde o ar ainda lembra de se mover."
+objectives = Array[ExtResource("4_xusdw")]([SubResource("Resource_263yj"), SubResource("Resource_dkc5s")])
+
+[sub_resource type="Resource" id="Resource_vinau"]
+script = ExtResource("4_xusdw")
+type = 0
+target = &"any:capital_*_lider"
+text = "Relate o que a Chama de Vento mostrou a um líder"
+
+[sub_resource type="Resource" id="Resource_wa5xp"]
+script = ExtResource("3_fn143")
+description = "A Pena toca a cinza — e a cinza levanta voo: milhares de pássaros de luz subindo em espiral. A Chama do Vento acende prateada como gargalhada. Conta ao mundo que o vento voltou."
+objectives = Array[ExtResource("4_xusdw")]([SubResource("Resource_vinau")])
+
+[resource]
+script = ExtResource("2_0vuvx")
+id = &"ato3_6"
+title = "O Vento que Volta"
+summary = "Cume dos Ventos: religar a Chama é soprar a cinza da Kinfire com a Pena. A cinza vira pássaros de luz."
+act = 3
+quest_level = 21
+stages = Array[ExtResource("3_fn143")]([SubResource("Resource_gdjm3"), SubResource("Resource_wa5xp")])
+rewards = SubResource("Resource_nrp5p")
+next = &"ato3_7"

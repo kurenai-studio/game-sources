@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/ladino/apunhalar.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/ladino/leque_de_laminas.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/ladino/passo_sombrio.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/ladino/frasco_venenoso.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/ladino/bomba_de_fumaca.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/ladino/chuva_de_facas.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"ladino"
+display_name = "Ladino"
+role = "Corpo a corpo rápido"
+icon = "S_Dagger02"
+description = "Assassino de alvo único: combos, críticos, venenos e esquivas. A Energia recarrega muito rápido após 2s sem gastar."
+hit_die = 8
+base_hp = 48
+primary_ability = "dex"
+recommended = PackedStringArray("dex", "con", "cha")
+base_armor = 8
+resource_label = "Energia"
+resource_color = Color(0.95, 0.85, 0.2, 1.0)
+resource_max = 100.0
+resource_regen = 8.0
+allowed_weapons = PackedStringArray("dagger", "sword", "bow")
+allowed_offhands = PackedStringArray()
+starting_weapon = &"dagger"
+starting_offhand = &""
+burst_regen_after_idle = 4.0
+base_status = {"forca": 8, "agilidade": 16, "mente": 8, "vitalidade": 8}
+status_growth = {"forca": 0, "agilidade": 1, "mente": 0, "vitalidade": 0}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

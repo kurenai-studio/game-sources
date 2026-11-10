@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="Choice_veu"]
+script = ExtResource("3_choice")
+text = "Você viu o que Maldrach fez?"
+next_id = &"maldrach_hint"
+effects = "guardiao_knowledge +1"
+
+[sub_resource type="Resource" id="Choice_prox"]
+script = ExtResource("3_choice")
+text = "Próxima chama?"
+next_id = &"goodbye"
+
+[sub_resource type="Resource" id="Node_intro"]
+script = ExtResource("2_node")
+id = &"intro"
+pages = PackedStringArray("A pedra não mente, {heroi}. Todos nós vimos o que Maldrach fez.", "Eu sou Theron. Guardião da Caverna Cristal. Guardião de ecos que não podem ser apagados.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_veu"), SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_maldrach_hint"]
+script = ExtResource("2_node")
+id = &"maldrach_hint"
+pages = PackedStringArray("Ele se tornou vazio por ter comido sua própria mentira. E quando algo se torna ausência total, cria o Véu — a ferramenta para apagar tudo.", "Mas a pedra ressoou com a verdade. E os ecos nunca morrem.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_fragment"]
+script = ExtResource("2_node")
+id = &"fragment"
+pages = PackedStringArray("Este Fragmento é o eco de uma Chama que nunca morre. Ressoará em suas mãos como ressoou nas nossas.")
+choices = Array[ExtResource("3_choice")]([])
+
+[sub_resource type="Resource" id="Node_goodbye"]
+script = ExtResource("2_node")
+id = &"goodbye"
+pages = PackedStringArray("Três guardiões restam. O fim aproxima.")
+choices = Array[ExtResource("3_choice")]([])
+
+[resource]
+script = ExtResource("1_script")
+id = &"theron_pedra_ressoante"
+display_name = "Theron"
+portrait = "paladin_m"
+start_id = &"intro"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_intro"), SubResource("Node_maldrach_hint"), SubResource("Node_fragment"), SubResource("Node_goodbye")])

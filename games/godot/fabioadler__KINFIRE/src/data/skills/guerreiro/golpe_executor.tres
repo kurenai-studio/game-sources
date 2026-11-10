@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"golpe_executor"
+display_name = "Golpe do Executor"
+kind = 0
+icon = "S_Sword16"
+description = "Um golpe devastador em um único arco."
+unlock_level = 9
+color = Color(1.0, 0.3, 0.2, 1.0)
+damage_mult = 5.0
+cost = 50.0
+cooldown = 6.0
+reach = 34.0
+arc_degrees = 60.0
+knockback = 200.0
+sound = &"hit_heavy"

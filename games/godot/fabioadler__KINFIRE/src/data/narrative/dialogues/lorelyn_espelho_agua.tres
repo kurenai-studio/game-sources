@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="Choice_veu"]
+script = ExtResource("3_choice")
+text = "O que é o Véu?"
+next_id = &"veu_hint"
+effects = "guardiao_knowledge +1"
+
+[sub_resource type="Resource" id="Choice_prox"]
+script = ExtResource("3_choice")
+text = "Próxima chama?"
+next_id = &"goodbye"
+
+[sub_resource type="Resource" id="Node_intro"]
+script = ExtResource("2_node")
+id = &"intro"
+pages = PackedStringArray("As águas refletem tudo, menos o que o Véu reescreve.", "Eu sou Lorelyn. Guardiã das Águas Cristalinas. E eu lembro de tudo que a mentira tenta apagar.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_veu"), SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_veu_hint"]
+script = ExtResource("2_node")
+id = &"veu_hint"
+pages = PackedStringArray("O Véu é a ferramenta da Ausência. Reescreve mapas, apaga histórias, faz as pessoas esquecerem de si mesmas.", "Mas água tem memória. E enquanto as águas cristalinas correrem, a verdade não morre.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_fragment"]
+script = ExtResource("2_node")
+id = &"fragment"
+pages = PackedStringArray("Meu Fragmento reflete a Verdade que ninguém quer ver. Leve-o. Use-o.")
+choices = Array[ExtResource("3_choice")]([])
+
+[sub_resource type="Resource" id="Node_goodbye"]
+script = ExtResource("2_node")
+id = &"goodbye"
+pages = PackedStringArray("Quatro guardiões restam. Você não está sozinho.")
+choices = Array[ExtResource("3_choice")]([])
+
+[resource]
+script = ExtResource("1_script")
+id = &"lorelyn_espelho_agua"
+display_name = "Lorelyn"
+portrait = "cleric_f"
+start_id = &"intro"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_intro"), SubResource("Node_veu_hint"), SubResource("Node_fragment"), SubResource("Node_goodbye")])

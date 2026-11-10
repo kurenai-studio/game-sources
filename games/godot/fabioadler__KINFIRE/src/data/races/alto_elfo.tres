@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"alto_elfo"
+display_name = "Alto Elfo"
+description = "Herdeiros de reinos ancestrais, os altos elfos têm a magia correndo nas veias."
+sprite_m = "elf_m"
+sprite_f = "elf_f"
+ability_bonus = {
+"int": 2,
+"dex": 1
+}
+trait_name = "Sangue Arcano"
+trait_description = "+15% de recurso máximo e 20% de resistência a dano mágico."
+resource_max_mult = 1.15
+magic_resist = 0.2
+tint = Color(0.85, 0.92, 1.0, 1.0)

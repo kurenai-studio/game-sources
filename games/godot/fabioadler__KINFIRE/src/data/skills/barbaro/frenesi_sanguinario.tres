@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"frenesi_sanguinario"
+display_name = "Frenesi Sanguinário"
+kind = 17
+icon = "S_Buff05"
+description = "Entra em frenesi por 10s: velocidade de ataque +40%, acertos causam sangramento (5% vida/s), cura 5% do dano. Custa 50 Fúria."
+color = Color(1.0, 0.2, 0.2, 1.0)
+damage_mult = 0.0
+cost = 50.0
+cooldown = 30.0
+duration = 10.0
+buff_stat = "attack_speed"
+buff_amount = 0.4
+buff_stat_2 = "lifesteal"
+buff_amount_2 = 0.05
+sound = &"buff"

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"avatar_da_luz"
+display_name = "Avatar da Luz"
+kind = 18
+icon = "S_Buff10"
+description = "Transforma em Avatar da Luz por 20s. Imune a medo/controle. Aura 10m: cura aliados 10% vida/s. Custa 60 Fé."
+color = Color(1.0, 1.0, 0.7, 1.0)
+damage_mult = 0.0
+cost = 60.0
+cooldown = 120.0
+duration = 20.0
+radius = 100.0
+buff_stat = "heal_pct"
+buff_amount = 0.1
+sound = &"transform"

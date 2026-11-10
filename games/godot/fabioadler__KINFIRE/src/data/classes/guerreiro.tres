@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/guerreiro/golpe_largo.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/guerreiro/golpe_de_escudo.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/guerreiro/investida.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/guerreiro/postura_defensiva.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/guerreiro/redemoinho_de_aco.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/guerreiro/golpe_executor.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"guerreiro"
+display_name = "Guerreiro"
+role = "Corpo a corpo tático"
+icon = "S_Sword01"
+description = "Mestre de armas e escudos. Gasta Vigor em golpes táticos; o Vigor regenera ao atacar. Pode bloquear golpes com escudo."
+hit_die = 10
+base_hp = 70
+primary_ability = "str"
+recommended = PackedStringArray("str", "con", "dex")
+base_armor = 16
+resource_label = "Vigor"
+resource_color = Color(0.95, 0.65, 0.2, 1.0)
+resource_max = 100.0
+resource_regen = 4.0
+allowed_weapons = PackedStringArray("sword", "axe", "mace", "spear")
+allowed_offhands = PackedStringArray("shield")
+starting_weapon = &"sword"
+starting_offhand = &"shield_round"
+block_chance = 0.15
+base_status = {"forca": 14, "agilidade": 10, "mente": 8, "vitalidade": 12}
+status_growth = {"forca": 1, "agilidade": 0, "mente": 0, "vitalidade": 1}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

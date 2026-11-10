@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"arqueiro_bandido"
+display_name = "Arqueiro Bandido"
+sprite = "elf_m"
+behavior = 1
+max_hp = 26.0
+damage = 8.0
+move_speed = 55.0
+xp = 12
+attack_range = 160.0
+attack_cooldown = 1.6
+spawn_weight = 2.0
+tint = Color(0.75, 0.6, 0.5, 1.0)
+projectile_color = Color(0.95, 0.9, 0.7, 1.0)
+habitats = PackedStringArray("planicie", "deserto", "floresta")

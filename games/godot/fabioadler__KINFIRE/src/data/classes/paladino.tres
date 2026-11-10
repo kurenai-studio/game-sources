@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/paladino/golpe_justo.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/paladino/martelo_abencoado.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/paladino/aura_de_consagracao.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/paladino/cura_divina.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/paladino/escudo_da_fe.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/paladino/punho_dos_ceus.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"paladino"
+display_name = "Paladino"
+role = "Tanque ofensivo"
+icon = "S_Holy01"
+description = "Cruzado sagrado de armadura pesada. Gera Fé ao acertar e ao bloquear. Auras que queimam inimigos, dano sagrado."
+hit_die = 10
+base_hp = 66
+primary_ability = "str"
+recommended = PackedStringArray("str", "cha", "con")
+base_armor = 18
+resource_label = "Fé"
+resource_color = Color(1.0, 0.82, 0.3, 1.0)
+resource_max = 100.0
+resource_regen = 3.0
+allowed_weapons = PackedStringArray("sword", "mace")
+allowed_offhands = PackedStringArray("shield")
+starting_weapon = &"mace"
+starting_offhand = &"shield_kite"
+block_chance = 0.2
+gain_on_block = 10.0
+base_status = {"forca": 13, "agilidade": 8, "mente": 12, "vitalidade": 13}
+status_growth = {"forca": 1, "agilidade": 0, "mente": 1, "vitalidade": 1}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

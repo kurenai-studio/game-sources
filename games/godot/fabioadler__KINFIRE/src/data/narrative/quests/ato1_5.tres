@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_abw1i"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_4hyog"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_3yohg"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_p5i2k"]
+
+[sub_resource type="Resource" id="Resource_abw1i"]
+script = ExtResource("1_abw1i")
+gold = 100
+item_base = &"helm"
+
+[sub_resource type="Resource" id="Resource_4hyog"]
+script = ExtResource("4_p5i2k")
+type = 1
+target = &"esqueleto"
+count = 6
+text = "esqueletos na mina sem mapa"
+
+[sub_resource type="Resource" id="Resource_3yohg"]
+script = ExtResource("3_3yohg")
+description = "A mina que não está no mapa tem uma entrada atrás da pedra mentirosa. Desça e silencie os ossos que cantam."
+objectives = Array[ExtResource("4_p5i2k")]([SubResource("Resource_4hyog")])
+
+[sub_resource type="Resource" id="Resource_p5i2k"]
+script = ExtResource("4_p5i2k")
+type = 0
+target = &"any:capital_*_lider"
+text = "Conte a mina ao líder"
+
+[sub_resource type="Resource" id="Resource_pmtq0"]
+script = ExtResource("3_3yohg")
+description = "O ferro chorado forja perguntas: quem apagou a mina do mapa? Conte ao líder o que a pedra escondia."
+objectives = Array[ExtResource("4_p5i2k")]([SubResource("Resource_p5i2k")])
+
+[resource]
+script = ExtResource("2_4hyog")
+id = &"ato1_5"
+title = "O Ferreiro que Chorava Ferro"
+summary = "Armas sussurram à noite. O minério de uma mina inteira não está no mapa. A mina canta — e ninguém quer ouvir."
+quest_level = 5
+stages = Array[ExtResource("3_3yohg")]([SubResource("Resource_3yohg"), SubResource("Resource_pmtq0")])
+rewards = SubResource("Resource_abw1i")
+next = &"ato1_6"

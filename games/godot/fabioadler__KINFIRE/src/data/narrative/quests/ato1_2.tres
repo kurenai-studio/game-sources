@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_tejig"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_2lh5h"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_4byvo"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_ldvtt"]
+
+[sub_resource type="Resource" id="Resource_tejig"]
+script = ExtResource("1_tejig")
+gold = 45
+item_base = &"sword"
+
+[sub_resource type="Resource" id="Resource_2lh5h"]
+script = ExtResource("4_ldvtt")
+type = 0
+target = &"any:capital_*_lider"
+text = "Pergunte ao líder sobre a missão em branco"
+
+[sub_resource type="Resource" id="Resource_4byvo"]
+script = ExtResource("3_4byvo")
+description = "Um pergaminho em branco está pregado no tabuleiro, como se alguém tivesse apagado o texto. Pergunte ao líder."
+objectives = Array[ExtResource("4_ldvtt")]([SubResource("Resource_2lh5h")])
+
+[sub_resource type="Resource" id="Resource_ldvtt"]
+script = ExtResource("4_ldvtt")
+type = 0
+target = &"any:_comum"
+text = "Pergunte a um plebeu sobre o tabuleiro"
+
+[sub_resource type="Resource" id="Resource_xq8jr"]
+script = ExtResource("4_ldvtt")
+type = 1
+target = &"goblin"
+count = 5
+text = "goblins nas bordas do território"
+
+[sub_resource type="Resource" id="Resource_l8ybg"]
+script = ExtResource("3_4byvo")
+description = "Os plebeus evitam o tabuleiro. Algo ronda as bordas do território sempre que alguém lê o papel vazio."
+objectives = Array[ExtResource("4_ldvtt")]([SubResource("Resource_ldvtt"), SubResource("Resource_xq8jr")])
+
+[sub_resource type="Resource" id="Resource_rbbti"]
+script = ExtResource("4_ldvtt")
+type = 0
+target = &"cinzento_acampamento"
+text = "Reporte ao Cinzento"
+
+[sub_resource type="Resource" id="Resource_rg56l"]
+script = ExtResource("3_4byvo")
+description = "Cinzento: 'A verdade não foi escondida. Foi substituída.' Volte a ele."
+objectives = Array[ExtResource("4_ldvtt")]([SubResource("Resource_rbbti")])
+
+[resource]
+script = ExtResource("2_2lh5h")
+id = &"ato1_2"
+title = "A Missão que Não Existe"
+summary = "O tabuleiro da capital tem uma missão em branco. A quest é perguntar por que a quest está em branco."
+quest_level = 2
+stages = Array[ExtResource("3_4byvo")]([SubResource("Resource_4byvo"), SubResource("Resource_l8ybg"), SubResource("Resource_rg56l")])
+rewards = SubResource("Resource_tejig")
+next = &"ato1_3"

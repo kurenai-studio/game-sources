@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_8r0vr"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_oqo1r"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_ahppv"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_6xss5"]
+
+[sub_resource type="Resource" id="Resource_8r0vr"]
+script = ExtResource("1_8r0vr")
+gold = 200
+item_base = &"ring"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_oqo1r"]
+script = ExtResource("4_6xss5")
+type = 3
+target = &"tabaxi"
+text = "Viaje às terras dos Tabaxi"
+
+[sub_resource type="Resource" id="Resource_ahppv"]
+script = ExtResource("4_6xss5")
+type = 3
+target = &"golias"
+text = "Viaje às terras dos Golias"
+
+[sub_resource type="Resource" id="Resource_6xss5"]
+script = ExtResource("3_ahppv")
+description = "Visite as duas capitais e ouça cada lado da rusga. O ódio deles tem uma versão — e ela não combina."
+objectives = Array[ExtResource("4_6xss5")]([SubResource("Resource_oqo1r"), SubResource("Resource_ahppv")])
+
+[sub_resource type="Resource" id="Resource_tsaws"]
+script = ExtResource("4_6xss5")
+type = 1
+target = &"aranha_gigante"
+count = 6
+text = "aranhas que tecem o esquecimento entre as árvores"
+
+[sub_resource type="Resource" id="Resource_t1bxf"]
+script = ExtResource("3_ahppv")
+description = "Entre as duas capitas, aranhas que tecem o esquecimento entre as árvores se alimentam da discórdia — criaturas que só existem enquanto os dois lados acreditam na briga. Afaste-as."
+objectives = Array[ExtResource("4_6xss5")]([SubResource("Resource_tsaws")])
+
+[sub_resource type="Resource" id="Resource_vplrd"]
+script = ExtResource("4_6xss5")
+type = 0
+target = &"any:capital_*_lider"
+text = "Traga a prova aos dois líderes"
+
+[sub_resource type="Resource" id="Resource_o6rdv"]
+script = ExtResource("4_6xss5")
+type = 0
+target = &"any:capital_*_lider"
+text = "Ouça a outra versão da mesma memória"
+
+[sub_resource type="Resource" id="Resource_ukbrx"]
+script = ExtResource("3_ahppv")
+description = "Os golias plantaram as árvores ancestrais dos tabaxi. O Véu fez os tabaxi esquecer quem cuidava da floresta."
+objectives = Array[ExtResource("4_6xss5")]([SubResource("Resource_vplrd"), SubResource("Resource_o6rdv")])
+
+[resource]
+script = ExtResource("2_oqo1r")
+id = &"ato2_7"
+title = "A Raiz que Aguenta"
+summary = "O Coração de Carvalho precisa subir do vale à montanha sem tocar o chão. Golias carrega; tabaxi guia. A floresta ancestral não pode cair agora."
+act = 2
+quest_level = 14
+stages = Array[ExtResource("3_ahppv")]([SubResource("Resource_6xss5"), SubResource("Resource_t1bxf"), SubResource("Resource_ukbrx")])
+rewards = SubResource("Resource_8r0vr")
+next = &"ato2_8"

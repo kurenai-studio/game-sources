@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"brado_de_guerra"
+display_name = "Brado de Guerra"
+kind = 16
+icon = "S_Buff02"
+description = "Grito de guerra em área de 8m: aliados ganham +3 Força e +15% Vel. Ataque por 8s. Custa 30 Vigor."
+color = Color(1.0, 0.7, 0.3, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 20.0
+radius = 80.0
+duration = 8.0
+buff_stat = "strength"
+buff_amount = 3
+buff_stat_2 = "attack_speed"
+buff_amount_2 = 0.15
+sound = &"war_cry"

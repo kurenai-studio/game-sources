@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"espada_e_escudo"
+display_name = "Espada e Escudo"
+kind = 17
+icon = "S_Shield02"
+description = "Assume postura combinada por 10s: +15% chance de bloqueio, bloquear gera 15 Vigor. Gasta 20 Vigor."
+color = Color(0.8, 1.0, 0.9, 1.0)
+damage_mult = 0.0
+cost = 20.0
+cooldown = 15.0
+duration = 10.0
+buff_stat = "block_chance"
+buff_amount = 0.15
+sound = &"buff"

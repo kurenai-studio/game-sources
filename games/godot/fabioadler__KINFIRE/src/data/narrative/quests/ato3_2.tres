@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_vjj0y"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_bt7xg"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_3i856"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_ccmru"]
+
+[sub_resource type="Resource" id="Resource_bcl0o"]
+script = ExtResource("1_vjj0y")
+gold = 320
+item_base = &"boots"
+item_rarity = 3
+
+[sub_resource type="Resource" id="Resource_ffecm"]
+script = ExtResource("4_ccmru")
+type = 1
+target = &"escorpiao"
+count = 6
+text = "escorpiões que guardam as dunas falsas"
+
+[sub_resource type="Resource" id="Resource_ey2y2"]
+script = ExtResource("4_ccmru")
+type = 1
+target = &"chort"
+count = 3
+text = "eco-demás que repetem a memória errada"
+
+[sub_resource type="Resource" id="Resource_yx3vy"]
+script = ExtResource("3_3i856")
+description = "Cada duna mostra uma versão do mesmo dia. Em todas, você trai alguém. A verdade é a versão em que dói — as outras foram escritas para serem agradáveis."
+objectives = Array[ExtResource("4_ccmru")]([SubResource("Resource_ffecm"), SubResource("Resource_ey2y2")])
+
+[sub_resource type="Resource" id="Resource_lxpud"]
+script = ExtResource("4_ccmru")
+type = 0
+target = &"any:capital_*_lider"
+text = "Relate o que a Chama de Areia mostrou a um líder"
+
+[sub_resource type="Resource" id="Resource_c8pis"]
+script = ExtResource("3_3i856")
+description = "A memória verdadeira arde: você não era o herói daquele dia — era a testemunha que fugiu. A Chama da Areia acende dourada como sol de meio-dia. Alguém precisa saber que fugir também deixa marca."
+objectives = Array[ExtResource("4_ccmru")]([SubResource("Resource_lxpud")])
+
+[resource]
+script = ExtResource("2_bt7xg")
+id = &"ato3_2"
+title = "O Espelho que Mostra o Futuro"
+summary = "Dunas do Tempo: sete versões falsas da mesma memória. Escolher a verdadeira é escolher a que dói mais."
+act = 3
+quest_level = 17
+stages = Array[ExtResource("3_3i856")]([SubResource("Resource_yx3vy"), SubResource("Resource_c8pis")])
+rewards = SubResource("Resource_bcl0o")
+next = &"ato3_3"

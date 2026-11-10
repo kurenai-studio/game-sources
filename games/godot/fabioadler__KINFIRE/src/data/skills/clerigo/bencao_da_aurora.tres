@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bencao_da_aurora"
+display_name = "Bênção da Aurora"
+kind = 16
+icon = "S_Holy03"
+description = "Aura de cura 15m por 15s. Aliados regeneram 5% vida/s e ganham +15% a todas resistências. Custa 30 Fé."
+color = Color(1.0, 0.95, 0.6, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 25.0
+duration = 15.0
+radius = 150.0
+buff_stat = "regen_pct"
+buff_amount = 0.05
+buff_stat_2 = "resistance_all"
+buff_amount_2 = 0.15
+sound = &"holy"

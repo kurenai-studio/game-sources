@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_upu6p"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_rr14i"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_q6627"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_1c46k"]
+
+[sub_resource type="Resource" id="Resource_ghjnr"]
+script = ExtResource("1_upu6p")
+gold = 150
+item_base = &"ring"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_hf6qp"]
+script = ExtResource("4_1c46k")
+type = 0
+target = &"any:capital_*_comum0"
+text = "Ouça a queixa do cartógrafo"
+
+[sub_resource type="Resource" id="Resource_5ngsj"]
+script = ExtResource("4_1c46k")
+type = 3
+target = &"gnomo"
+text = "Siga o mapa até Engrenagem"
+
+[sub_resource type="Resource" id="Resource_6tyu0"]
+script = ExtResource("4_1c46k")
+type = 3
+target = &"tabaxi"
+text = "E até as terras erradas de Tabaxi"
+
+[sub_resource type="Resource" id="Resource_6m67e"]
+script = ExtResource("3_q6627")
+description = "Compre o mapa errado do cartógrafo. Depois percorra as estradas que ele jura terem se movido — e veja com os próprios olhos."
+objectives = Array[ExtResource("4_1c46k")]([SubResource("Resource_hf6qp"), SubResource("Resource_5ngsj"), SubResource("Resource_6tyu0")])
+
+[sub_resource type="Resource" id="Resource_rc7dg"]
+script = ExtResource("4_1c46k")
+type = 1
+target = &"chort"
+count = 3
+text = "as mãos que reescrevem os mapas"
+
+[sub_resource type="Resource" id="Resource_1rk8l"]
+script = ExtResource("3_q6627")
+description = "À noite, algo riscava as estradas e redesenhava os rios. O Véu não apenas mente sobre o passado — reescreve a geografia de amanhã."
+objectives = Array[ExtResource("4_1c46k")]([SubResource("Resource_rc7dg")])
+
+[resource]
+script = ExtResource("2_rr14i")
+id = &"misterio_1"
+title = "O Sussurro nos Mapas"
+summary = "Um cartógrafo de Porto Franco vende um mapa errado por 1 ouro — jura que os mapas mudam sozinhos à noite. Se ele tem razão, o mundo não é fixo: é reescrito todo dia."
+act = 2
+quest_level = 9
+chain = &"misterio"
+prerequisites = Array[StringName]([&"ato1_7"])
+stages = Array[ExtResource("3_q6627")]([SubResource("Resource_6m67e"), SubResource("Resource_1rk8l")])
+rewards = SubResource("Resource_ghjnr")

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"estilo_bebado"
+display_name = "Estilo Bêbado"
+kind = 17
+icon = "S_Buff07"
+description = "Movimentos imprevisíveis por 10s: +50% chance de esquiva, contra-ataca automaticamente ao esquivar. Custa 30 Chi."
+color = Color(0.8, 0.6, 0.9, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 25.0
+duration = 10.0
+buff_stat = "dodge_chance"
+buff_amount = 0.5
+buff_stat_2 = "counter_attack"
+buff_amount_2 = 1.0
+sound = &"drunken_style"

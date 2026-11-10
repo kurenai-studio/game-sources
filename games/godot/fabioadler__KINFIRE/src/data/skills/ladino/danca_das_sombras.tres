@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"danca_das_sombras"
+display_name = "Dança das Sombras"
+kind = 17
+icon = "S_Shadow02"
+description = "Entra nas sombras por 4s: invisível, ignora colisão. Próximo ataque: crítico garantido, ignora 100% armadura. Custa 30 Energia."
+color = Color(0.4, 0.2, 0.5, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 20.0
+duration = 4.0
+buff_stat = "invisibility"
+buff_amount = 1.0
+sound = &"shadow_step"

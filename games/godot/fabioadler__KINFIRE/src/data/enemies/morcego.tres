@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"morcego"
+display_name = "Morcego Vampírico"
+sprite = "k:120"
+behavior = 3
+max_hp = 10.0
+damage = 3.0
+move_speed = 100.0
+xp = 4
+spawn_weight = 2.0
+habitats = PackedStringArray("floresta", "pantano", "corrompido", "dungeon")

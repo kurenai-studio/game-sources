@@ -1,0 +1,93 @@
+[gd_resource type="Resource" script_class="QuestData" load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="1_qdata"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="2_qstage"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="3_qobj"]
+
+[sub_resource type="Resource" id="Obj_move"]
+script = ExtResource("3_qobj")
+type = 2
+target = &"tut_move"
+text = "Dê os primeiros passos (WASD ou clique no chão)"
+
+[sub_resource type="Resource" id="Stage_move"]
+script = ExtResource("2_qstage")
+description = "As pernas primeiro. Tudo o mais vem andando atrás. Este lugar já foi casa — levante-se e caminhe."
+objectives = Array[ExtResource("3_qobj")]([SubResource("Obj_move")])
+
+[sub_resource type="Resource" id="Obj_attack"]
+script = ExtResource("3_qobj")
+type = 2
+target = &"tut_attack"
+text = "Ataque o espantalho de treino (clique esquerdo nele)"
+
+[sub_resource type="Resource" id="Stage_attack"]
+script = ExtResource("2_qstage")
+description = "Madeira não revida. A madeira é mais honesta que a maioria do que você vai enfrentar. Treine no espantalho."
+objectives = Array[ExtResource("3_qobj")]([SubResource("Obj_attack")])
+
+[sub_resource type="Resource" id="Obj_collect"]
+script = ExtResource("3_qobj")
+type = 2
+target = &"tut_collect"
+text = "Apanhe a espada caída junto ao espantalho"
+
+[sub_resource type="Resource" id="Stage_collect"]
+script = ExtResource("2_qstage")
+description = "Ferro de verdade para mãos de verdade. Apanhe a espada que a madeira deixou cair."
+objectives = Array[ExtResource("3_qobj")]([SubResource("Obj_collect")])
+
+[sub_resource type="Resource" id="Obj_equip"]
+script = ExtResource("3_qobj")
+type = 2
+target = &"tut_equip"
+text = "Equipe a espada (I → arraste até o slot de arma, ou Shift + clique nela)"
+
+[sub_resource type="Resource" id="Stage_equip"]
+script = ExtResource("2_qstage")
+description = "Uma arma na mão vale mais que dez promessas no bolso. Vista-a."
+objectives = Array[ExtResource("3_qobj")]([SubResource("Obj_equip")])
+
+[sub_resource type="Resource" id="Obj_potion"]
+script = ExtResource("3_qobj")
+type = 2
+target = &"tut_potion"
+text = "Use a Cura Simples (Q)"
+
+[sub_resource type="Resource" id="Stage_potion"]
+script = ExtResource("2_qstage")
+description = "Você vai se machucar. Todos se machucam. Aprenda a carregar a cura."
+objectives = Array[ExtResource("3_qobj")]([SubResource("Obj_potion")])
+
+[sub_resource type="Resource" id="Obj_campfire"]
+script = ExtResource("3_qobj")
+type = 2
+target = &"tut_campfire"
+text = "Acenda a fogueira da vila (E para interagir)"
+
+[sub_resource type="Resource" id="Stage_campfire"]
+script = ExtResource("2_qstage")
+description = "Fogo é memória que aquece as mãos. Acenda a fogueira — e o sonho vai guardar você."
+objectives = Array[ExtResource("3_qobj")]([SubResource("Obj_campfire")])
+
+[sub_resource type="Resource" id="Obj_espelho"]
+script = ExtResource("3_qobj")
+type = 2
+target = &"tut_espelho"
+text = "Lute além do portão, alcance o nível 1 e olhe-se no espelho de casa"
+
+[sub_resource type="Resource" id="Stage_espelho"]
+script = ExtResource("2_qstage")
+description = "A névoa guardava o que você ainda não podia enfrentar. Lobos de sombra adiante — lute, cresça. Quando o reflexo voltar, o espelho de casa espera."
+objectives = Array[ExtResource("3_qobj")]([SubResource("Obj_espelho")])
+
+[resource]
+script = ExtResource("1_qdata")
+id = &"prologo_tutorial"
+title = "Primeiros Passos na Névoa"
+summary = "A sombra que guia não explica — indica. Siga cada gesto dela: ande, treine, vista o ferro, aprenda a curar e acenda o fogo. Depois, o espelho."
+act = 1
+quest_level = 1
+chain = &"main"
+start_flag = &"tut_inicio"
+stages = Array[ExtResource("2_qstage")]([SubResource("Stage_move"), SubResource("Stage_attack"), SubResource("Stage_collect"), SubResource("Stage_equip"), SubResource("Stage_potion"), SubResource("Stage_campfire"), SubResource("Stage_espelho")])

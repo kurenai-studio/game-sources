@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_xuvlm"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_11h07"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_67pm6"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_xbiu3"]
+
+[sub_resource type="Resource" id="Resource_3fe77"]
+script = ExtResource("1_xuvlm")
+gold = 600
+item_base = &"sword"
+item_rarity = 3
+
+[sub_resource type="Resource" id="Resource_uon8f"]
+script = ExtResource("4_xbiu3")
+type = 1
+target = &"azkhar"
+text = "Maldrach, a Ausência que Anda"
+
+[sub_resource type="Resource" id="Resource_dp8yl"]
+script = ExtResource("3_67pm6")
+description = "As sete Chamas religadas queimam em fila rumo à Fenda. No caminho, a maior das ausências anda: Maldrach, o primeiro a esquecer como amar, feito monstro pela própria obra."
+objectives = Array[ExtResource("4_xbiu3")]([SubResource("Resource_uon8f")])
+
+[sub_resource type="Resource" id="Resource_7pti0"]
+script = ExtResource("4_xbiu3")
+type = 0
+target = &"cinzento_acampamento"
+text = "Enfrente a Escolha Real com o Cinzento"
+
+[sub_resource type="Resource" id="Resource_qvuxu"]
+script = ExtResource("3_67pm6")
+description = "Dentro da Fenda, a Primeira Chama espera — e o Cinzento espera com ela. Ele sabia o nome de vocês desde antes de vocês existirem. A escolha é sua: selar o mundo ou libertá-lo."
+objectives = Array[ExtResource("4_xbiu3")]([SubResource("Resource_7pti0")])
+
+[resource]
+script = ExtResource("2_11h07")
+id = &"ato3_8"
+title = "O Fogo dos Laços"
+summary = "Vale do Centro → Dentro da Fenda: as Sete Chamas religadas apontam para o oitavo fogo — a Kinfire. A Escolha Real: sem os 8 Fragmentos da Verdade, apenas o Final Cinzento; com todos, o Final Dourado se abre. Você será avisado."
+act = 3
+quest_level = 23
+prerequisites = Array[StringName]([&"ato3_7"])
+stages = Array[ExtResource("3_67pm6")]([SubResource("Resource_dp8yl"), SubResource("Resource_qvuxu")])
+rewards = SubResource("Resource_3fe77")

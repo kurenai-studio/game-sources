@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_v6hpn"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_hiot4"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_qdg4r"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_vsmtu"]
+
+[sub_resource type="Resource" id="Resource_85l38"]
+script = ExtResource("1_v6hpn")
+gold = 300
+item_base = &"sword"
+item_rarity = 3
+
+[sub_resource type="Resource" id="Resource_25yx3"]
+script = ExtResource("4_vsmtu")
+type = 1
+target = &"putrefato"
+count = 4
+text = "abominações que apodrecem as Raízes do Mundo"
+
+[sub_resource type="Resource" id="Resource_rkcum"]
+script = ExtResource("4_vsmtu")
+type = 1
+target = &"aranha_gigante"
+count = 5
+text = "tecelãs do esquecimento entre as raízes"
+
+[sub_resource type="Resource" id="Resource_sr6bo"]
+script = ExtResource("3_qdg4r")
+description = "A corrupção tem guardiões. Pode a memória de uma floresta inteira apagar quem a guardava? Limpe o caminho até o coração que ainda bate na terra."
+objectives = Array[ExtResource("4_vsmtu")]([SubResource("Resource_25yx3"), SubResource("Resource_rkcum")])
+
+[sub_resource type="Resource" id="Resource_g385v"]
+script = ExtResource("4_vsmtu")
+type = 0
+target = &"any:capital_*_lider"
+text = "Relate o que a Chama de Raiz mostrou a um líder"
+
+[sub_resource type="Resource" id="Resource_6vqwb"]
+script = ExtResource("3_qdg4r")
+description = "Sylvaris ajoelha — não de derrota, mas de lembrança. 'Eu regava as flores com as mãos', ela diz, e a Chama da Raiz acende verde como primeira chuva. Conte a alguém que ainda chore."
+objectives = Array[ExtResource("4_vsmtu")]([SubResource("Resource_g385v")])
+
+[resource]
+script = ExtResource("2_hiot4")
+id = &"ato3_1"
+title = "O Coração que Bate na Terra"
+summary = "Raízes do Mundo: a Chama da Raiz apagou e Sylvaris, a Guardiã, virou demônio por Esquecimento. Derrotá-la não é matar — é deixá-la lembrar quem era."
+act = 3
+quest_level = 16
+prerequisites = Array[StringName]([&"ato2_8"])
+stages = Array[ExtResource("3_qdg4r")]([SubResource("Resource_sr6bo"), SubResource("Resource_6vqwb")])
+rewards = SubResource("Resource_85l38")
+next = &"ato3_2"

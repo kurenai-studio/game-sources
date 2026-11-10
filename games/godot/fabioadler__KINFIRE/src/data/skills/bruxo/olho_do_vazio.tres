@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"olho_do_vazio"
+display_name = "Olho do Vazio"
+kind = 17
+icon = "S_Shadow04"
+description = "Olho do vazio por 15s: vê invisíveis, +30% alcance, crítico = executa se alvo <20% vida. Custa 40 Pacto."
+color = Color(0.5, 0.1, 0.6, 1.0)
+damage_mult = 0.0
+cost = 40.0
+cooldown = 40.0
+duration = 15.0
+buff_stat = "void_sight"
+buff_amount = 1.0
+buff_stat_2 = "reach"
+buff_amount_2 = 0.3
+sound = &"void_gaze"

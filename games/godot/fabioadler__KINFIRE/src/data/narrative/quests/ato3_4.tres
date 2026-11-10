@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_kd0x6"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_iqlct"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_yddpq"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_bubrq"]
+
+[sub_resource type="Resource" id="Resource_pk0ou"]
+script = ExtResource("1_kd0x6")
+gold = 360
+item_base = &"amulet"
+item_rarity = 3
+
+[sub_resource type="Resource" id="Resource_rrvy3"]
+script = ExtResource("4_bubrq")
+type = 1
+target = &"lodo"
+count = 5
+text = "lodos que afundam o pedido de desculpas"
+
+[sub_resource type="Resource" id="Resource_8ne6l"]
+script = ExtResource("4_bubrq")
+type = 1
+target = &"lesma_acida"
+count = 4
+text = "lesmas que corroem a ponte até Vaelora"
+
+[sub_resource type="Resource" id="Resource_eis0n"]
+script = ExtResource("3_yddpq")
+description = "O pântano afunda palavras mais rápido que corpos. Abra caminho — não para lutar, mas para chegar até ela com a voz limpa."
+objectives = Array[ExtResource("4_bubrq")]([SubResource("Resource_rrvy3"), SubResource("Resource_8ne6l")])
+
+[sub_resource type="Resource" id="Resource_refpy"]
+script = ExtResource("4_bubrq")
+type = 0
+target = &"any:capital_*_lider"
+text = "Relate o que a Chama de Pântano mostrou a um líder"
+
+[sub_resource type="Resource" id="Resource_c076w"]
+script = ExtResource("3_yddpq")
+description = "Vaelora chora quando você não a acusa. A Chama do Pântano acende violeta como aurora sobre água parada. O perdão de quem não sabia é a regra de todas as outras Chamas."
+objectives = Array[ExtResource("4_bubrq")]([SubResource("Resource_refpy")])
+
+[resource]
+script = ExtResource("2_iqlct")
+id = &"ato3_4"
+title = "A Lágrima que Curou o Pântano"
+summary = "Útero da Mãe: perdoar Vaelora. Ela entregou a relíquia sob o Véu — e não sabia. Não há combate. Há conversa — a mais difícil do mundo."
+act = 3
+quest_level = 19
+stages = Array[ExtResource("3_yddpq")]([SubResource("Resource_eis0n"), SubResource("Resource_c076w")])
+rewards = SubResource("Resource_pk0ou")
+next = &"ato3_5"

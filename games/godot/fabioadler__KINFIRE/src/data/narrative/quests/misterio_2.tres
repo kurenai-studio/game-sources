@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_3bmag"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_bugwe"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_o8nbc"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_jpguk"]
+
+[sub_resource type="Resource" id="Resource_5xrr1"]
+script = ExtResource("1_3bmag")
+gold = 170
+item_base = &"amulet"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_ibk2c"]
+script = ExtResource("4_jpguk")
+type = 0
+target = &"any:capital_*_lider"
+text = "Convença o líder a abrir a galeria"
+
+[sub_resource type="Resource" id="Resource_6warp"]
+script = ExtResource("3_o8nbc")
+description = "Peça ao líder acesso à galeria. Sete molduras douradas, sete vazios — e nenhuma assinatura de quem raspou."
+objectives = Array[ExtResource("4_jpguk")]([SubResource("Resource_ibk2c")])
+
+[sub_resource type="Resource" id="Resource_wt5n0"]
+script = ExtResource("4_jpguk")
+type = 1
+target = &"fantasma"
+count = 5
+text = "raspadores que ainda cumprem ordens antigas"
+
+[sub_resource type="Resource" id="Resource_f7pmo"]
+script = ExtResource("3_o8nbc")
+description = "Os rostos eram os Sete Guardiões originais das Chamas. O Véu não começou a queda — alguém preparou o terreno. A limpeza continua: apague os apagadores."
+objectives = Array[ExtResource("4_jpguk")]([SubResource("Resource_wt5n0")])
+
+[resource]
+script = ExtResource("2_bugwe")
+id = &"misterio_2"
+title = "Os Retratos Apagados"
+summary = "Na galeria da Guilda, sete retratos com os rostos raspados. Não foram apagados depois da Queda — foram raspados ANTES de o Véu cair. Alguém sabia o que vinha."
+act = 2
+quest_level = 10
+chain = &"misterio"
+prerequisites = Array[StringName]([&"ato1_2"])
+stages = Array[ExtResource("3_o8nbc")]([SubResource("Resource_6warp"), SubResource("Resource_f7pmo")])
+rewards = SubResource("Resource_5xrr1")

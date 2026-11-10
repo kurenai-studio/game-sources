@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"canto_sereia"
+display_name = "Canto da Sereia"
+kind = 16
+icon = "S_Magic04"
+description = "Encanta inimigos em 10m por 5s: eles atacam uns aos outros. Aliados imunes. Custa 30 Inspiração."
+color = Color(0.6, 0.8, 1.0, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 25.0
+duration = 5.0
+radius = 100.0
+buff_stat = "charm"
+buff_amount = 1.0
+sound = &"charm"

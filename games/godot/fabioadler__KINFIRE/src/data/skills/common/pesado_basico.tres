@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"pesado_basico"
+display_name = "Golpe Pesado"
+description = "Um golpe lento mas devastador. Canaliza toda a força num único impacto."
+kind = 0
+icon = "S_Sword02"
+color = Color(1, 0.5, 0.2, 1)
+element = "physical"
+unlock_level = 1
+damage_mult = 2.0
+cost = 0.0
+cooldown = 1.5
+reach = 40.0
+arc_degrees = 140.0
+knockback = 120.0
+stun = 0.5
+sound = &"swing2"

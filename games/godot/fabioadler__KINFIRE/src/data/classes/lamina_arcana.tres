@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/lamina_arcana/corte_arcano.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/lamina_arcana/lamina_flamejante.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/lamina_arcana/passo_nebuloso.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/lamina_arcana/lamina_gelida.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/lamina_arcana/golpe_tempestuoso.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/lamina_arcana/danca_das_laminas.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"lamina_arcana"
+display_name = "Lâmina Arcana"
+role = "Corpo a corpo mágico"
+icon = "S_Sword18"
+description = "Infunde a arma com elementos. Golpes reduzem a recarga das magias; magias encantam a lâmina."
+hit_die = 10
+base_hp = 58
+primary_ability = "int"
+recommended = PackedStringArray("int", "str", "con")
+base_armor = 12
+resource_label = "Fluxo"
+resource_color = Color(0.3, 0.6, 1.0, 1.0)
+resource_max = 100.0
+resource_regen = 8.0
+allowed_weapons = PackedStringArray("sword", "dagger", "spear")
+allowed_offhands = PackedStringArray("orb")
+starting_weapon = &"sword"
+starting_offhand = &""
+melee_cdr_on_hit = 0.5
+spell_imbue_bonus = 0.3
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

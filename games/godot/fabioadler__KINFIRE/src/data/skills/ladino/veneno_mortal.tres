@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"veneno_mortal"
+display_name = "Veneno Mortal"
+kind = 17
+icon = "S_Poison01"
+description = "Envenena arma por 10s. Próximos 5 acertos: 10% vida/s por 6s, -20% cura recebida. Custa 25 Energia."
+color = Color(0.3, 0.8, 0.3, 1.0)
+damage_mult = 0.0
+cost = 25.0
+cooldown = 25.0
+duration = 10.0
+buff_stat = "poison_charges"
+buff_amount = 5
+buff_stat_2 = "poison_potency"
+buff_amount_2 = 2.0
+sound = &"buff"
