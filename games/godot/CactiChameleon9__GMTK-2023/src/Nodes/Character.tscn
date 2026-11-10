@@ -1,0 +1,39 @@
+[gd_scene load_steps=8 format=3 uid="uid://cqq1jkvlj40eq"]
+
+[ext_resource type="Texture2D" uid="uid://b7dip4x18f5h2" path="res://Assets/Apple.svg" id="1_l1exi"]
+[ext_resource type="Script" path="res://Nodes/Character.gd" id="1_nca3p"]
+[ext_resource type="Texture2D" uid="uid://cve2uvf85obbb" path="res://Assets/Shadow.svg" id="2_qjkah"]
+[ext_resource type="Texture2D" uid="uid://bsi2qh0mfbqb0" path="res://Assets/AppleDead.svg" id="2_uftwg"]
+[ext_resource type="Texture2D" uid="uid://crrndlspiy4pv" path="res://Assets/AppleHurt.svg" id="3_a1fvu"]
+[ext_resource type="AudioStream" uid="uid://cl05qhxfsarhy" path="res://Assets/Dash.wav" id="6_bkb3r"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_3skis"]
+radius = 44.0
+height = 102.0
+
+[node name="Character" type="CharacterBody2D"]
+position = Vector2(413, 335)
+motion_mode = 1
+script = ExtResource("1_nca3p")
+normal_sprite = ExtResource("1_l1exi")
+hurt_sprite = ExtResource("3_a1fvu")
+dead_sprite = ExtResource("2_uftwg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-1.75, -0.25)
+rotation = 1.5708
+shape = SubResource("CapsuleShape2D_3skis")
+
+[node name="Shadow" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.580392)
+position = Vector2(-1.75, 40.75)
+texture = ExtResource("2_qjkah")
+
+[node name="Apple" type="Sprite2D" parent="."]
+position = Vector2(-2.75, -31.25)
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("1_l1exi")
+
+[node name="DashAudioPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6_bkb3r")
+volume_db = -6.656

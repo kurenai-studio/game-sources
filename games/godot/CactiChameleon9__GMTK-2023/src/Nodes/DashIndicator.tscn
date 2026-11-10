@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3 uid="uid://5d4s1fhmn6bw"]
+
+[ext_resource type="Script" path="res://Nodes/DashIndicator.gd" id="1_434y3"]
+[ext_resource type="Texture2D" uid="uid://cwikd1fq6tjwb" path="res://Assets/UI/Dash.svg" id="2_nudw3"]
+
+[node name="DashIndicatorContainer" type="Control"]
+layout_mode = 3
+anchor_right = 0.116406
+anchor_bottom = 0.0986111
+script = ExtResource("1_434y3")
+metadata/_edit_use_anchors_ = true
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_nudw3")
+expand_mode = 2
+stretch_mode = 5
+
+[node name="FadeShapeControl" type="HSplitContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = 90
+dragger_visibility = 2
+
+[node name="GreyFade" type="ColorRect" parent="FadeShapeControl"]
+layout_mode = 2
+color = Color(0.52549, 0.52549, 0.52549, 0.698039)
+
+[node name="EmptyControl" type="Control" parent="FadeShapeControl"]
+layout_mode = 2
