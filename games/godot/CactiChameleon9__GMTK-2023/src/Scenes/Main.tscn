@@ -1,0 +1,150 @@
+[gd_scene load_steps=13 format=3 uid="uid://bilolno4nrch4"]
+
+[ext_resource type="Script" path="res://Scenes/Main.gd" id="1_b8l74"]
+[ext_resource type="PackedScene" uid="uid://cqq1jkvlj40eq" path="res://Nodes/Character.tscn" id="1_hskob"]
+[ext_resource type="TileSet" uid="uid://w3saur1cuur7" path="res://Assets/Scenary/Scenary.tres" id="2_efpxg"]
+[ext_resource type="Script" path="res://Nodes/LivesHBox.gd" id="4_rq326"]
+[ext_resource type="Texture2D" uid="uid://domb3k8lrj1ue" path="res://Assets/UI/Heart.svg" id="4_v55nr"]
+[ext_resource type="PackedScene" uid="uid://5d4s1fhmn6bw" path="res://Nodes/DashIndicator.tscn" id="6_y3pdk"]
+[ext_resource type="AudioStream" uid="uid://b4qj8w0ncxaug" path="res://Assets/Mega Hyper Ultrastorm.mp3" id="7_hsyek"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ejdx6"]
+size = Vector2(128, 1008)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_7wbdx"]
+size = Vector2(2048, 128)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mgjsq"]
+size = Vector2(2048, 1264)
+
+[sub_resource type="Theme" id="Theme_7evl2"]
+default_font_size = 30
+
+[sub_resource type="Curve2D" id="Curve2D_gfwft"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, -320, -208, 0, 0, 0, 0, 1600, -208, 0, 0, 0, 0, 1600, 928, 0, 0, 0, 0, -320, 928, 0, 0, 0, 0, -320, -208)
+}
+point_count = 5
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_b8l74")
+metadata/_edit_horizontal_guides_ = []
+
+[node name="ScenaryTileMap" type="TileMap" parent="."]
+modulate = Color(1, 1, 1, 0.403922)
+tile_set = ExtResource("2_efpxg")
+format = 2
+layer_0/tile_data = PackedInt32Array(-196612, 1, 0, 65558, 1, 0, -589801, 1, 0, 786468, 1, 0, 1769540, 1, 0, 2097140, 4, 0, 3211252, 4, 0, 2949140, 4, 0, -458717, 4, 0, 852023, 4, 0, 3276857, 4, 0, 3145793, 4, 0, 2359363, 4, 0, 524358, 4, 0, 1638476, 4, 0, -65442, 4, 0, -524301, 5, 0, 983029, 5, 0, 2424822, 5, 0, -655348, 5, 0, 2621505, 5, 0, 3539032, 5, 0, 1900637, 5, 0, -589835, 6, 0, 1966073, 6, 0, 851963, 6, 0, 3866619, 6, 0, 1114113, 6, 0, 3014678, 6, 0, -131033, 6, 0, 196647, 6, 0, 3735593, 6, 0, 3145777, 6, 0, -524227, 6, 0, 3866685, 6, 0, 80, 6, 0, 2097234, 6, 0, -327595, 6, 0, 3145815, 6, 0, -262056, 6, 0, 1179739, 6, 0, 851960, 7, 0, 1703930, 7, 0, 917519, 7, 0, 3538966, 7, 0, 3080226, 7, 0, 2752550, 7, 0, 3735628, 7, 0, 2752503, 8, 0, 2490366, 8, 0, 720899, 12, 0, 1507331, 8, 0, 1245189, 8, 0, 1048582, 8, 0, 3211275, 8, 0, 655393, 8, 0, 3473444, 8, 0, 65573, 8, 0, 917547, 8, 0, 720950, 8, 0, 1179718, 8, 0, 2293832, 8, 0, 2687064, 8, 0, 3670108, 8, 0, 3473503, 8, 0, 2359392, 8, 0, 3145727, 9, 0, -851962, 9, 0, 1376272, 9, 0, 3407900, 9, 0, -655308, 9, 0, 393294, 9, 0, 2424910, 9, 0, 786419, 12, 0, 458755, 12, 0, 655411, 12, 0, 2555913, 4, 0, 2949129, 5, 0, 1769483, 6, 0, 2424870, 6, 0, 1769526, 6, 0, 2162713, 4, 0, 2228277, 4, 0, 1966116, 1, 0)
+
+[node name="Walls" type="StaticBody2D" parent="."]
+metadata/_edit_lock_ = true
+
+[node name="CollisionShape1" type="CollisionShape2D" parent="Walls"]
+position = Vector2(1600, 360)
+shape = SubResource("RectangleShape2D_ejdx6")
+metadata/_edit_lock_ = true
+
+[node name="CollisionShape2" type="CollisionShape2D" parent="Walls"]
+position = Vector2(-320, 360)
+shape = SubResource("RectangleShape2D_ejdx6")
+metadata/_edit_lock_ = true
+
+[node name="CollisionShape3" type="CollisionShape2D" parent="Walls"]
+position = Vector2(640, -208)
+shape = SubResource("RectangleShape2D_7wbdx")
+metadata/_edit_lock_ = true
+
+[node name="CollisionShape4" type="CollisionShape2D" parent="Walls"]
+position = Vector2(640, 928)
+shape = SubResource("RectangleShape2D_7wbdx")
+metadata/_edit_lock_ = true
+
+[node name="SnakeDetector" type="Area2D" parent="."]
+monitorable = false
+metadata/_edit_lock_ = true
+
+[node name="CollisionShape" type="CollisionShape2D" parent="SnakeDetector"]
+position = Vector2(640, 360)
+shape = SubResource("RectangleShape2D_mgjsq")
+debug_color = Color(0.788235, 0.341176, 0.670588, 0.419608)
+metadata/_edit_lock_ = true
+
+[node name="Character" parent="." instance=ExtResource("1_hskob")]
+position = Vector2(640, 360)
+
+[node name="Camera" type="Camera2D" parent="Character"]
+unique_name_in_owner = true
+limit_left = -256
+limit_top = -144
+limit_right = 1536
+limit_bottom = 864
+limit_smoothed = true
+position_smoothing_enabled = true
+position_smoothing_speed = 1.2
+metadata/_edit_lock_ = true
+
+[node name="UICanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" type="Control" parent="UICanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_7evl2")
+metadata/_edit_lock_ = true
+
+[node name="TimeLabel" type="Label" parent="UICanvasLayer/UI"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_bottom = 23.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.733333, 0.733333, 0.733333, 1)
+theme_override_font_sizes/font_size = 50
+
+[node name="LivesHBox" type="HBoxContainer" parent="UICanvasLayer/UI"]
+layout_mode = 0
+offset_right = 332.0
+offset_bottom = 64.0
+script = ExtResource("4_rq326")
+
+[node name="ExampleHeart" type="TextureRect" parent="UICanvasLayer/UI/LivesHBox"]
+layout_mode = 2
+size_flags_vertical = 5
+texture = ExtResource("4_v55nr")
+expand_mode = 2
+stretch_mode = 4
+
+[node name="DashIndicator" parent="UICanvasLayer/UI" instance=ExtResource("6_y3pdk")]
+layout_mode = 1
+anchor_left = 0.460938
+anchor_top = 0.902778
+anchor_right = 0.539062
+anchor_bottom = 0.972222
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="SnakeSpawner" type="Path2D" parent="."]
+unique_name_in_owner = true
+curve = SubResource("Curve2D_gfwft")
+
+[node name="SpawnPosition" type="PathFollow2D" parent="SnakeSpawner"]
+position = Vector2(182.121, 928)
+rotation = 3.14159
+progress = 4473.88
+
+[node name="BackgroundMusicPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("7_hsyek")
+autoplay = true
+
+[connection signal="area_exited" from="SnakeDetector" to="." method="_on_snake_detector_body_exited"]
+[connection signal="dashed" from="Character" to="UICanvasLayer/UI/DashIndicator" method="_dashed"]
+[connection signal="death" from="Character" to="." method="_character_death" flags=6]
+[connection signal="death" from="Character" to="UICanvasLayer/UI/DashIndicator" method="_disable_indicator"]
+[connection signal="live_changed" from="Character" to="UICanvasLayer/UI/LivesHBox" method="_lives_updated"]
+[connection signal="can_dash" from="UICanvasLayer/UI/DashIndicator" to="Character" method="_enable_dash"]
