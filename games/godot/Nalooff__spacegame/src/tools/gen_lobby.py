@@ -1,0 +1,127 @@
+"""Generates scenes/lobby_browser.tscn (host form + list of open lobbies) and scenes/lobby.tscn (pre-game room).
+Run: python3 tools/gen_lobby.py"""
+import sys, os
+sys.path.insert(0, os.path.dirname(__file__))
+from tscn import *
+OUT = os.path.join(os.path.dirname(__file__), "..", "scenes")
+def write(name, scene): open(os.path.join(OUT, name), "w").write(scene.dump()); print("wrote", name)
+
+def title(text, name, size=28): return N(name, "Label", {"layout_mode": 2, "text": s(text), "theme_override_font_sizes/font_size": size})
+def heading(text, name): return N(name, "Label", {"layout_mode": 2, "text": s(text), "theme_override_font_sizes/font_size": 20, "modulate": "Color(0.62, 0.8, 1, 1)"})
+def column(name, kids, expand=True, min_w=0):
+    p = {"layout_mode": 2, "theme_override_constants/separation": 8}
+    if expand: p["size_flags_horizontal"] = 3
+    if min_w: p["custom_minimum_size"] = f"Vector2({min_w}, 0)"
+    return N(name, "VBoxContainer", p, kids)
+def tree(name, cols):
+    return N(name, "Tree", {"layout_mode": 2, "size_flags_vertical": 3, "columns": cols, "column_titles_visible": "true", "hide_root": "true", "select_mode": 0}, unique=True)
+def margin(name, kids):
+    return N(name, "MarginContainer", {**full_rect(), "theme_override_constants/margin_left": 30, "theme_override_constants/margin_top": 30,
+             "theme_override_constants/margin_right": 30, "theme_override_constants/margin_bottom": 30}, kids)
+bg = lambda: N("BackgroundColor", "ColorRect", {**full_rect(), "color": "Color(0.03, 0.04, 0.07, 1)"})
+
+# =============================================================== lobby browser
+def browser():
+    name_edit = line("PilotNameEdit", "Pilot")
+    lobby_name = line("LobbyNameEdit", "", placeholder_text=s("My lobby"))
+    visibility = N("VisibilityPicker", "OptionButton", {"layout_mode": 2, "item_count": 2, "selected": 0,
+                   "popup/item_0/text": s("Public (anyone can join)"), "popup/item_0/id": 0,
+                   "popup/item_1/text": s("Private (password)"), "popup/item_1/id": 1}, unique=True)
+    password = line("PasswordEdit", "", secret="true", placeholder_text=s("Password"))
+    password_row = N("PasswordRow", "HBoxContainer", {"layout_mode": 2, "visible": "false"}, [label("Password", "PasswordLabel"), password], unique=True)
+    create = button("Create lobby", "CreateLobbyButton", custom_minimum_size="Vector2(0, 48)")
+    host_col = column("HostColumn", [title("PLAY", "PlayTitleLabel"), hbox("PilotNameRow", [label("Pilot name", "PilotNameLabel"), name_edit]),
+        sep("HostSeparator"), heading("HOST A LOBBY", "HostHeading"), label("Lobby name", "LobbyNameLabel"), lobby_name, visibility, password_row, create,
+        label("", "HostStatusLabel", unique=True, wrap=True)], expand=False, min_w=380)
+    lobby_tree = tree("LobbyTree", 3)
+    refresh = button("Refresh", "RefreshButton")
+    join = button("Join selected lobby", "JoinLobbyButton", unique=True, disabled="true")
+    back = button("Back to menu", "BackButton")
+    browse_col = column("BrowseColumn", [heading("OPEN LOBBIES  (lock = private)", "BrowseHeading"), lobby_tree,
+        label("Looking for lobbies on your network...", "BrowseStatusLabel", unique=True, wrap=True),
+        hbox("BrowseButtonsRow", [refresh, join, back])])
+    pw_edit = line("JoinPasswordEdit", "", secret="true", placeholder_text=s("Password"))
+    dialog = N("PasswordDialog", "ConfirmationDialog", {"title": s("Private lobby"), "ok_button_text": s("Join"), "size": "Vector2i(360, 140)"},
+        [N("PasswordDialogColumn", "VBoxContainer", {"offset_left": 8.0, "offset_top": 8.0, "offset_right": 352.0, "offset_bottom": 91.0},
+           [label("This lobby needs a password:", "PasswordPromptLabel"), pw_edit])], unique=True)
+    root = N("LobbyBrowser", "Control", {**full_rect()}, [bg(), margin("BrowserMargin", [N("BrowserColumns", "HBoxContainer", {"layout_mode": 2, "theme_override_constants/separation": 30}, [host_col, browse_col])]), dialog],
+             script='ExtResource("1_s")')
+    sc = Scene(root); sc.ext_res("1_s", "Script", "res://scripts/ui/lobby_browser.gd")
+    C = sc.connect
+    C("text_changed", name_edit, "_on_pilot_name_changed")
+    C("item_selected", visibility, "_on_visibility_selected")
+    C("pressed", create, "_on_create_pressed")
+    C("pressed", refresh, "_on_refresh_pressed"); C("pressed", join, "_on_join_pressed"); C("pressed", back, "_on_back_pressed")
+    C("item_selected", lobby_tree, "_on_lobby_selected"); C("item_activated", lobby_tree, "_on_join_pressed")
+    C("confirmed", dialog, "_on_password_confirmed")
+    write("lobby_browser.tscn", sc)
+
+# =============================================================== pre-game room
+def room():
+    timer = N("TimerLabel", "Label", {"layout_mode": 2, "horizontal_alignment": 2, "size_flags_horizontal": 3, "theme_override_font_sizes/font_size": 28}, unique=True)
+    header = hbox("HeaderRow", [N("LobbyTitleLabel", "Label", {"layout_mode": 2, "theme_override_font_sizes/font_size": 28}, unique=True), timer])
+    ship_list = N("ShipList", "ItemList", {"layout_mode": 2, "size_flags_vertical": 3}, unique=True)
+    lock = button("Lock in ship", "LockButton", unique=True, custom_minimum_size="Vector2(0, 48)", disabled="true")
+    my_seat = button("Choose my bridge (commander module)...", "MySeatButton", unique=True, visible="false",
+                     tooltip_text=s("Big ships have several commander modules; each one only controls what it is linked to"))
+    team = N("TeamPicker", "OptionButton", {"layout_mode": 2, "tooltip_text": s("Players of the same team are friendly on the radar; everyone else is an enemy")}, unique=True)
+    ship_col = column("ShipColumn", [heading("1. CHOOSE YOUR SHIP", "ShipHeading"), ship_list,
+        label("Team (same team = friendly on the radar)", "TeamLabel", wrap=True), team,
+        label("Pick a ship, then lock in so friends can join it as crew.", "ShipInfoLabel", unique=True, wrap=True), lock, my_seat])
+    players = tree("PlayerTree", 4)
+    join_crew = button("Choose a seat on the selected ship...", "JoinCrewButton", unique=True, disabled="true")
+    leave_crew = button("Leave crew", "LeaveCrewButton", unique=True, visible="false")
+    crew_col = column("CrewColumn", [heading("2. PLAYERS  (or join a friend's crew)", "PlayersHeading"), players,
+        label("Crew members man the turrets of the pilot's ship. Seats are set by the ship's Commander module.", "CrewHintLabel", wrap=True, modulate="Color(1, 1, 1, 0.6)"),
+        hbox("CrewButtonsRow", [join_crew, leave_crew])])
+    start = button("START GAME", "StartButton", unique=True, custom_minimum_size="Vector2(220, 48)", visible="false")
+    leave = button("Leave lobby", "LeaveLobbyButton", custom_minimum_size="Vector2(160, 48)")
+    join_game = button("JOIN THE GAME", "JoinGameButton", unique=True, custom_minimum_size="Vector2(220, 48)", visible="false")
+    late = N("LateJoinCheck", "CheckBox", {"layout_mode": 2, "text": s("Allow players to join while the game runs"), "visible": "false"}, unique=True)
+    footer = hbox("FooterRow", [label("", "StatusLabel", unique=True, wrap=True, size_flags_horizontal=3), late, join_game, start, leave])
+    root = N("LobbyRoom", "Control", {**full_rect()}, [bg(), margin("RoomMargin", [N("RoomColumn", "VBoxContainer", {"layout_mode": 2, "theme_override_constants/separation": 14},
+        [header, sep("HeaderSeparator"), N("RoomColumns", "HBoxContainer", {"layout_mode": 2, "size_flags_vertical": 3, "theme_override_constants/separation": 30}, [ship_col, crew_col]), footer])])],
+             script='ExtResource("1_s")')
+    sc = Scene(root); sc.ext_res("1_s", "Script", "res://scripts/ui/lobby.gd")
+    C = sc.connect
+    C("item_selected", ship_list, "_on_ship_selected"); C("pressed", lock, "_on_lock_pressed"); C("pressed", my_seat, "_on_my_seat_pressed"); C("item_selected", team, "_on_team_selected")
+    C("item_selected", players, "_on_player_selected"); C("nothing_selected", players, "_on_player_deselected")
+    C("pressed", join_crew, "_on_join_crew_pressed"); C("pressed", leave_crew, "_on_leave_crew_pressed")
+    C("pressed", join_game, "_on_join_game_pressed"); C("toggled", late, "_on_late_join_toggled"); C("pressed", start, "_on_start_pressed"); C("pressed", leave, "_on_leave_pressed")
+    write("lobby.tscn", sc)
+
+# =============================================================== seat picker (overlay opened from the room)
+def seat_picker():
+    """Preview of a captain's ship with a floating 'taken/capacity' button over every Commander module."""
+    markers = N("SeatMarkers", "Control", {**full_rect(), "mouse_filter": 2}, unique=True)
+    hull = N("PreviewHull", "Node3D", {}, unique=True, script='ExtResource("2_hull")')
+    hull.props["shader"] = 'ExtResource("3_sh")'
+    cam = N("PreviewCamera", "Camera3D", {"current": "true", "fov": 40.0}, unique=True)
+    light = N("PreviewLight", "DirectionalLight3D", {"transform": "Transform3D(0.8, -0.3, 0.5, 0, 0.85, 0.53, -0.59, -0.42, 0.68, 0, 3, 0)"})
+    env = N("PreviewEnvironment", "WorldEnvironment", {"environment": 'SubResource("Env_preview")'})
+    world = N("PreviewWorld", "Node3D", {}, [env, light, cam, hull])
+    viewport = N("PreviewViewport", "SubViewport", {"own_world_3d": "true", "transparent_bg": "false", "handle_input_locally": "false",
+                 "size": "Vector2i(900, 520)", "render_target_update_mode": 4}, [world], unique=True)
+    container = N("PreviewContainer", "SubViewportContainer", {"layout_mode": 2, "size_flags_vertical": 3, "size_flags_horizontal": 3,
+                  "custom_minimum_size": "Vector2(700, 420)", "stretch": "true"}, [viewport, markers], unique=True)
+    title_l = N("SeatTitleLabel", "Label", {"layout_mode": 2, "text": s("Choose your seat"), "theme_override_font_sizes/font_size": 24}, unique=True)
+    hint = label("Click a Commander module. The number shows seats taken / seats available. Drag to rotate, wheel to zoom.", "SeatHintLabel", wrap=True, modulate="Color(1, 1, 1, 0.65)")
+    cancel = button("Cancel", "SeatCancelButton", custom_minimum_size="Vector2(160, 40)")
+    panel = N("SeatPanel", "PanelContainer", {"layout_mode": 1, "anchors_preset": 8, "anchor_left": 0.5, "anchor_top": 0.5, "anchor_right": 0.5, "anchor_bottom": 0.5,
+              "offset_left": -470.0, "offset_top": -330.0, "offset_right": 470.0, "offset_bottom": 330.0, "grow_horizontal": 2, "grow_vertical": 2},
+        [N("SeatMargin", "MarginContainer", {"layout_mode": 2, "theme_override_constants/margin_left": 16, "theme_override_constants/margin_top": 16,
+           "theme_override_constants/margin_right": 16, "theme_override_constants/margin_bottom": 16},
+          [N("SeatColumn", "VBoxContainer", {"layout_mode": 2, "theme_override_constants/separation": 10}, [title_l, container, hint, cancel])])])
+    dim = N("SeatDim", "ColorRect", {**full_rect(), "color": "Color(0, 0, 0, 0.7)"})
+    root = N("SeatPicker", "Control", {**full_rect()}, [dim, panel], script='ExtResource("1_s")')
+    sc = Scene(root)
+    sc.ext_res("1_s", "Script", "res://scripts/ui/seat_picker.gd")
+    sc.ext_res("2_hull", "Script", "res://scripts/ship/hull_renderer.gd")
+    sc.ext_res("3_sh", "Shader", "res://shaders/hull.gdshader")
+    sc.sub("Sky_preview", "ProceduralSkyMaterial")
+    sc.sub("Sky2_preview", "Sky", sky_material='SubResource("Sky_preview")')
+    sc.sub("Env_preview", "Environment", background_mode=2, sky='SubResource("Sky2_preview")', ambient_light_source=3, ambient_light_color="Color(0.5, 0.55, 0.7, 1)")
+    sc.connect("pressed", cancel, "_on_cancel_pressed")
+    write("seat_picker.tscn", sc)
+
+browser(); room(); seat_picker()
