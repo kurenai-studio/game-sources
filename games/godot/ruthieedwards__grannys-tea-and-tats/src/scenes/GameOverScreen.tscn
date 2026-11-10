@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://b5klligrq7trk"]
+
+[ext_resource type="Script" uid="uid://bde3hif1ek6ye" path="res://scripts/gameoverscreen.gd" id="1_wojlb"]
+[ext_resource type="Texture2D" uid="uid://bwjrwggequ6ls" path="res://assets/images/bg_title.png" id="2_jb1p3"]
+
+[node name="GameOverScreen" type="Control" unique_id=458152601]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_wojlb")
+main_game_scene = "uid://bidrg8qr8l7n3"
+metadata/_edit_vertical_guides_ = [656.0]
+
+[node name="BG" type="TextureRect" parent="." unique_id=562153979]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+scale = Vector2(0.66, 0.66)
+texture = ExtResource("2_jb1p3")
+
+[node name="GameOverText" type="Label" parent="." unique_id=35427407]
+layout_mode = 0
+offset_left = 573.0
+offset_top = 154.0
+offset_right = 737.0
+offset_bottom = 195.0
+theme_override_font_sizes/font_size = 32
+text = "THE END!"
+horizontal_alignment = 1
+
+[node name="FinalScoreLabel" type="Label" parent="." unique_id=458416651]
+layout_mode = 0
+offset_left = 418.0
+offset_top = 252.0
+offset_right = 897.0
+offset_bottom = 314.0
+theme_override_font_sizes/font_size = 48
+text = "Your overall score: 100%"
+horizontal_alignment = 1
+
+[node name="ReplayButton" type="Button" parent="." unique_id=1058598359]
+layout_mode = 0
+offset_left = 553.0
+offset_top = 565.0
+offset_right = 751.0
+offset_bottom = 633.0
+text = "Play Again"

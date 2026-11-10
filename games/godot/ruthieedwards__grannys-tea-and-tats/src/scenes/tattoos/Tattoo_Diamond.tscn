@@ -1,0 +1,110 @@
+[gd_scene format=3 uid="uid://o7afd6sa7rm4"]
+
+[ext_resource type="Texture2D" uid="uid://ff0mnc8wd1e1" path="res://assets/images/bg2.png" id="1_3c5xq"]
+[ext_resource type="Texture2D" uid="uid://b8r55jhouc623" path="res://assets/images/bodyparts/arm1.png" id="2_3c5xq"]
+[ext_resource type="Texture2D" uid="uid://buvstbcyj27o6" path="res://assets/images/tattoos/tattoo_diamond.png" id="3_14616"]
+
+[sub_resource type="Curve2D" id="Curve2D_svan6"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 589.00006, 347.00006, 0, 0, 0, 0, 602.00006, 405.0001, 0, 0, 0, 0, 773.0001, 459.0001, 0, 0, 0, 0, 789.0001, 287.00006, 0, 0, 0, 0, 724.00006, 250.00005, 0, 0, 0, 0, 586.00006, 329.00006)
+}
+point_count = 6
+
+[sub_resource type="Curve2D" id="Curve2D_3c5xq"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 587.00006, 332.00006, 0, 0, 0, 0, 652.00006, 373.00006, 0, 0, 0, 0, 651.00006, 296.00006, 0, 0, 0, 0, 726.00006, 324.00006, 0, 0, 0, 0, 722.00006, 251.00005)
+}
+point_count = 5
+
+[sub_resource type="Curve2D" id="Curve2D_gd4v2"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 605.00006, 403.0001, 0, 0, 0, 0, 651.00006, 374.00006, 0, 0, 0, 0, 772.0001, 456.0001, 0, 0, 0, 0, 725.00006, 327.00006, 0, 0, 0, 0, 786.0001, 287.00006)
+}
+point_count = 5
+
+[sub_resource type="Curve2D" id="Curve2D_6ggdn"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 654.00006, 373.00006, 0, 0, 0, 0, 725.00006, 326.00006)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_o0kyv"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 558.00006, 385.0001, 0, 0, 0, 0, 532.00006, 386.0001, 0, 0, 0, 0, 516.00006, 389.0001, 0, 0, 0, 0, 499.00006, 388.0001)
+}
+point_count = 4
+
+[sub_resource type="Curve2D" id="Curve2D_fkndy"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 567.00006, 310.00006, 0, 0, 0, 0, 534.00006, 296.00006)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_w8fw3"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 640.00006, 258.00006, 0, 0, 0, 0, 603.00006, 202.00005)
+}
+point_count = 2
+
+[sub_resource type="Curve2D" id="Curve2D_m56ia"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 720.00006, 225.00005, 0, 0, 0, 0, 720.00006, 213.00005, 0, 0, 0, 0, 722.00006, 186.00003)
+}
+point_count = 3
+
+[sub_resource type="Curve2D" id="Curve2D_1u2dt"]
+_data = {
+"points": PackedVector2Array(0, 0, 0, 0, 779.0001, 250.00005, 0, 0, 0, 0, 792.0001, 219.00005, 0, 0, 0, 0, 807.0001, 188.00003)
+}
+point_count = 3
+
+[node name="Tattoo" type="Node2D" unique_id=1687928336]
+
+[node name="BG" type="Sprite2D" parent="." unique_id=693553378]
+scale = Vector2(0.666, 0.666)
+texture = ExtResource("1_3c5xq")
+centered = false
+
+[node name="Body Part" type="Sprite2D" parent="." unique_id=689559469]
+scale = Vector2(0.666, 0.666)
+texture = ExtResource("2_3c5xq")
+centered = false
+
+[node name="TargetGroup" type="Node2D" parent="." unique_id=1639315888]
+position = Vector2(0, -1.5258789e-05)
+scale = Vector2(0.99999994, 0.9999999)
+
+[node name="Path2D" type="Path2D" parent="TargetGroup" unique_id=675850913]
+curve = SubResource("Curve2D_svan6")
+
+[node name="Path2D2" type="Path2D" parent="TargetGroup" unique_id=1854741865]
+curve = SubResource("Curve2D_3c5xq")
+
+[node name="Path2D3" type="Path2D" parent="TargetGroup" unique_id=1913112945]
+curve = SubResource("Curve2D_gd4v2")
+
+[node name="Path2D4" type="Path2D" parent="TargetGroup" unique_id=536758835]
+curve = SubResource("Curve2D_6ggdn")
+
+[node name="Path2D5" type="Path2D" parent="TargetGroup" unique_id=1594471036]
+curve = SubResource("Curve2D_o0kyv")
+
+[node name="Path2D6" type="Path2D" parent="TargetGroup" unique_id=1043262167]
+curve = SubResource("Curve2D_fkndy")
+
+[node name="Path2D7" type="Path2D" parent="TargetGroup" unique_id=621712487]
+curve = SubResource("Curve2D_w8fw3")
+
+[node name="Path2D8" type="Path2D" parent="TargetGroup" unique_id=1033057906]
+curve = SubResource("Curve2D_m56ia")
+
+[node name="Path2D9" type="Path2D" parent="TargetGroup" unique_id=38450029]
+curve = SubResource("Curve2D_1u2dt")
+
+[node name="Tattoo sketch" type="Sprite2D" parent="." unique_id=2039408506]
+modulate = Color(0.55083334, 0.45, 1, 0.31764707)
+self_modulate = Color(1, 0, 1, 1)
+position = Vector2(398.225, 100)
+scale = Vector2(0.67407405, 0.6731481)
+texture = ExtResource("3_14616")
+centered = false

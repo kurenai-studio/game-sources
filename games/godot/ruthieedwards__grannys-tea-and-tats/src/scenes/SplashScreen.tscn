@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://bv6tnwbka56p8"]
+
+[ext_resource type="Script" uid="uid://dvpk17jjfvlkd" path="res://scripts/splashscreen.gd" id="1_wxot6"]
+[ext_resource type="Texture2D" uid="uid://bwjrwggequ6ls" path="res://assets/images/bg_title.png" id="2_rc2kg"]
+[ext_resource type="Texture2D" uid="uid://bu806t3yjf07f" path="res://assets/images/title.png" id="3_m7gka"]
+
+[node name="SplashScreen" type="Control" unique_id=458152601]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_wxot6")
+main_game_scene = "uid://bidrg8qr8l7n3"
+metadata/_edit_vertical_guides_ = [642.0]
+
+[node name="Bg" type="TextureRect" parent="." unique_id=1357098456]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+scale = Vector2(0.66, 0.66)
+texture = ExtResource("2_rc2kg")
+
+[node name="Title" type="TextureRect" parent="." unique_id=562153979]
+layout_mode = 0
+offset_left = 215.0
+offset_top = 110.0
+offset_right = 1927.0
+offset_bottom = 434.0
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("3_m7gka")
+
+[node name="PlayButton" type="Button" parent="." unique_id=1058598359]
+layout_mode = 0
+offset_left = 539.0
+offset_top = 294.0
+offset_right = 750.0
+offset_bottom = 399.0
+text = "Play"
+
+[node name="Label" type="Label" parent="." unique_id=1407541187]
+layout_mode = 0
+offset_left = 702.0
+offset_top = 667.0
+offset_right = 1235.0
+offset_bottom = 688.0
+theme_override_colors/font_color = Color(0.035099994, 0.13, 0.09045832, 0.41960785)
+text = "A game made by Ruthie Edwards for Ludum Dare #60 (October 2026)"
+horizontal_alignment = 2

@@ -1,0 +1,25 @@
+[gd_resource type="Theme" format=3 uid="uid://ltjcp4ut2h2d"]
+
+[ext_resource type="FontFile" uid="uid://ctkijddk8equm" path="res://assets/fonts/IMFellEnglish-Regular.ttf" id="1_6yjno"]
+[ext_resource type="Texture2D" uid="uid://cbain0c7i760i" path="res://assets/images/button_hover.png" id="2_ynuli"]
+[ext_resource type="Texture2D" uid="uid://cffop00nbenl5" path="res://assets/images/button.png" id="3_xvlma"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_88jq3"]
+texture = ExtResource("2_ynuli")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_eok1q"]
+texture = ExtResource("3_xvlma")
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_pd8cc"]
+texture = ExtResource("2_ynuli")
+modulate_color = Color(0.55, 0.55, 0.55, 1)
+
+[resource]
+default_font = ExtResource("1_6yjno")
+Button/colors/font_color = Color(0.03529412, 0.12941177, 0.09411765, 1)
+Button/colors/font_hover_color = Color(0.0351, 0.09, 0.069869995, 1)
+Button/font_sizes/font_size = 33
+Button/fonts/font = ExtResource("1_6yjno")
+Button/styles/hover = SubResource("StyleBoxTexture_88jq3")
+Button/styles/normal = SubResource("StyleBoxTexture_eok1q")
+Button/styles/pressed = SubResource("StyleBoxTexture_pd8cc")
