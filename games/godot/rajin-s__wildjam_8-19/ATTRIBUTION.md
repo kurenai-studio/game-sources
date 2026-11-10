@@ -9,9 +9,11 @@
 
 ## Art
 
-The 1-bit tileset, character, and card frame include upstream Aseprite sources (`src/assets/tileset.aseprite`, `char.aseprite`, `card.aseprite`). The ink-doodle card illustrations `src/assets/card_art/frog.png`, `floor.png`, and `trees.png`, plus procedural `src/assets/noise.png` and a UV-checker debug texture, are part of the upstream project and are covered by its GPL-3.0 license. No third-party license files, fonts, or audio were present in the repository.
+The 1-bit tileset, character, and card frame include upstream Aseprite sources (`src/assets/tileset.aseprite`, `char.aseprite`, `card.aseprite`). The ink-doodle card illustrations `src/assets/card_art/frog.png`, `floor.png`, and `trees.png`, plus procedural `src/assets/noise.png`, are part of the upstream project and are covered by its GPL-3.0 license. No third-party license files, fonts, or audio were present in the repository.
 
 `src/assets/card_art/test.png` (and its `.import`) was omitted from this snapshot: it is an unused 1MB 3D bunny-in-helmet render, is not referenced by any scene or script, and has no declared source or separate license. Its style does not match the jam doodle art kept above.
+
+`src/assets/uv_checker.webp` (and its `.import`) was also omitted: it is an unused color UV inspection grid with A1–H8 typographic labels, is not referenced by any scene, script, or material, and has no separate license. It does not match the ink-doodle / 1-bit art kept above.
 
 ## Icon
 
