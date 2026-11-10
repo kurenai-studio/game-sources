@@ -1,0 +1,61 @@
+[gd_scene load_steps=11 format=2]
+
+[ext_resource path="res://script/light.gd" type="Script" id=2]
+[ext_resource path="res://audio/sfx/521332__skylarjulian__mein-bottle-pling.mp3" type="AudioStream" id=3]
+[ext_resource path="res://texture/light_source.png" type="Texture" id=4]
+
+[sub_resource type="CircleShape2D" id=7]
+radius = 2.0
+
+[sub_resource type="AtlasTexture" id=8]
+atlas = ExtResource( 4 )
+region = Rect2( 0, 0, 8, 8 )
+
+[sub_resource type="AtlasTexture" id=9]
+atlas = ExtResource( 4 )
+region = Rect2( 8, 0, 8, 8 )
+
+[sub_resource type="AtlasTexture" id=10]
+atlas = ExtResource( 4 )
+region = Rect2( 16, 0, 8, 8 )
+
+[sub_resource type="AtlasTexture" id=11]
+atlas = ExtResource( 4 )
+region = Rect2( 8, 0, 8, 8 )
+
+[sub_resource type="AtlasTexture" id=12]
+atlas = ExtResource( 4 )
+region = Rect2( 0, 0, 8, 8 )
+
+[sub_resource type="SpriteFrames" id=13]
+animations = [ {
+"frames": [ SubResource( 8 ), SubResource( 9 ), SubResource( 10 ), SubResource( 11 ), SubResource( 12 ) ],
+"loop": true,
+"name": "default",
+"speed": 5.0
+} ]
+
+[node name="light" type="Area2D"]
+monitorable = false
+script = ExtResource( 2 )
+
+[node name="shape" type="CollisionShape2D" parent="."]
+shape = SubResource( 7 )
+
+[node name="sprite" type="AnimatedSprite" parent="."]
+frames = SubResource( 13 )
+frame = 3
+playing = true
+
+[node name="particles" type="CPUParticles2D" parent="."]
+modulate = Color( 0.956863, 0.509804, 0.509804, 1 )
+lifetime = 0.3
+emission_shape = 1
+emission_sphere_radius = 1.0
+gravity = Vector2( 0, 5 )
+
+[node name="sound" type="AudioStreamPlayer2D" parent="."]
+stream = ExtResource( 3 )
+bus = "sounds"
+
+[connection signal="body_entered" from="." to="." method="_on_light_body_entered"]
