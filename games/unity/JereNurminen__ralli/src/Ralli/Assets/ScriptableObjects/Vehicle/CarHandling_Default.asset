@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab9000973f2a84faba23786e57913933, type: 3}
+  m_Name: CarHandling_Default
+  m_EditorClassIdentifier: 
+  maxSteerAngle: 45
+  steerResponse: 19.7
+  steerFadeSpeedKph: 162
+  highSpeedSteerFactor: 0.5
+  steeringThreshold: 0.3
+  baseAcceleration: 5.5
+  maxSpeedKph: 210
+  overdrivePowerMultiplier: 1.8
+  overdriveRampUpSpeed: 2
+  overdriveRampDownSpeed: 3
+  rollingDeceleration: 0.5
+  brakeDeceleration: 10
+  handbrakeDeceleration: 6
+  reverseAcceleration: 3
+  reverseMaxSpeedKph: 25
+  uphillGravityScale: 0.3
+  exitBoostMinHold: 0.4
+  exitBoostKickKph: 15
+  exitBoostDuration: 1
+  exitBoostAcceleration: 6
+  exitBoostGrip: 0.8
+  gearSpanKph: 45
+  gearCount: 6
+  idleRpm01: 0.12
+  throttleRpmBump: 0.08
+  overdriveRpmBump: 0.1129
+  rpmRiseRate: 3
+  rpmFallRate: 1.5
+  airborneRpmRiseRate: 5
+  heatRiseRate: 0.15
+  heatFallRate: 0.1
+  heatTaperStart: 0.9
+  powerAtMaxHeat: 0.5
+  gripStiffness: 12
+  frontGripG: 1.15
+  rearGripG: 1.3
+  frontGripUnderThrottle: 0.8
+  rearGripInOverdrive: 0.45
+  handbrakeRearGrip: 0.3
+  frontGripResponseTime: 0.4
+  rearGripResponseTime: 0.3
+  overdriveSteerExponent: 1
+  driftAngleLimit: 35
+  spinCatchRange: 20
+  spinYawDamping: 6
+  powerOversteer: 0.8
+  slidePowerFactor: 0.5
+  driftMomentum: 5
+  driftMomentumAngles: {x: 8, y: 45}
+  rideHeight: 1
+  groundProbeExtra: 0.6
+  supportStiffness: 160
+  supportDamping: 15
+  alignStiffness: 40
+  alignDamping: 8
+  centerOfMassYOffset: -0.6

@@ -1,0 +1,26 @@
+# Third-Party Assets
+
+Everything from outside this project lives in `Ralli/Assets/ThirdParty/` (git-ignored).
+Add a row here when an asset enters the project, and keep the row even if the asset is
+removed, so the record of what was tried stays complete. Before shipping, every row with
+status **In use** must have its credit/licence obligations met.
+
+Back up `Ralli/Assets/ThirdParty/` (with its `.meta` files) outside git. The `.meta` files
+hold the GUIDs that scenes and prefabs reference; re-importing without them breaks links.
+
+| Asset | Author | Source (URL) | Licence | Credit required? (exact text) | Path in project | Status | Added |
+|-------|--------|--------------|---------|-------------------------------|-----------------|--------|-------|
+| PSX Gas Station Pack (FBX set: `complete-station`, pumps, signs, props + textures; only `complete-station` used so far) | kyjhi | **Not recorded: add the store URL** (from the download `kyjhi - PSX Gas Station Pack.zip`) | Pack `License.txt`: "You can use these assets in any of your commercial or non-commercial games/projects." Modifications allowed. "You may not resell or redistribute the assets as standalone files." | Not stated. Suggested: "PSX Gas Station Pack by kyjhi" | `Assets/ThirdParty/kyjhi_PSXGasStationPack/` | In use (`Prefabs/GasStation.prefab`) | 2026-09-30 |
+| Police Operation Siren (16 s MP3; file renamed from `soundreality-police-operation-siren-144229.mp3`) | SoundReality | https://pixabay.com/sound-effects/film-special-effects-police-operation-siren-144229/ | Pixabay Content License: free for commercial use, no attribution; must not be sold or redistributed as a standalone file | Not required ("Attribution is not required but appreciated!"). Suggested: "Police siren by SoundReality (Pixabay)" | `Assets/ThirdParty/Pixabay_PoliceSiren/` | Evaluating | 2026-09-30 |
+| Racing Sound Pack (only `crash1`, `crash2`, `screech1`, `screech2` from `Misc/` imported; engine, horn and other clips not used) | Cascadia Games | https://cascadiagames.itch.io/racing-sound-pack | No formal licence named. Page: "These sounds may be used in your game projects, but may not be resold as assets or included in other asset packs." | Not stated. Suggested: "Racing Sound Pack by Cascadia Games" | `Assets/ThirdParty/CascadiaGames_RacingSoundPack/` | Evaluating | 2026-09-30 |
+| Race Tracks (13 songs as Intro/A/B/Full WAVs in "Brighter" and "Darker" sets, plus 4 menu loops) | Mettlesmith Music | https://mettlesmith.itch.io/race-tracks | **Unknown: not stated on the itch page or in the download** (page says "all tracks are YouTube safe"). Ask the author before shipping | **Unknown: ask the author** | `Assets/ThirdParty/Mettlesmith_RaceTracks/` | Evaluating | 2026-09-30 |
+| i6 German - Free Engine Sound Pack (demo of Realistic Engine Sounds 2; 9 interior + 9 exterior WAVs: idle, low/med/high on/off, maxRPM, startup) | Skril Studio | https://assetstore.unity.com/packages/audio/sound-fx/transportation/i6-german-free-engine-sound-pack-106037 | Standard Unity Asset Store EULA + pack licence (PDF): unlimited games, personal and commercial; not for real physical products (vehicles, toys); sound files must not be resold/redistributed | Not required. Suggested: "i6 German engine sounds by Skril Studio" | `Assets/ThirdParty/Car Engine Sound - i6 German Free/` | Evaluating | 2026-09-30 |
+| Classic JDM Sports Car (Interior & Rigged) - Low Poly (in-pack name "Unbranded Urban Car V01", `UUC_V01`; includes `wooden_studio_15_4k.exr`, a Poly Haven HDRI) | Polyeler | https://assetstore.unity.com/packages/3d/vehicles/land/classic-jdm-sports-car-interior-rigged-low-poly-362018 | Standard Unity Asset Store EULA | Not required. Suggested: "Classic JDM Sports Car by Polyeler". Raw files must not be redistributed | `Assets/ThirdParty/Polyeler/UnbrandedUrbanCar_V1/` | Evaluating | 2026-09-29 |
+| Brutal Skyboxes (47 equirectangular 4096×1024 skies: `skybox_emx_*`, `skybox_plain_emx_*`) | Pizza Doggy | https://pizzadoggy.itch.io/brutal-skyboxes | Pizza Doggy License Agreement (2026-09-01): non-exclusive, worldwide, perpetual; commercial + non-commercial games; may modify and use in marketing. **Restrictions section (§3+) not yet reviewed** | **Unknown: not in §1–2; check §3+ of the PDF** | `Assets/ThirdParty/PizzaDoggy_BrutalSkyboxes/` | Evaluating | 2026-09-29 |
+| Textured LowPoly Trees (Birch, Pine, DeadBirch, DeadTree, Tree models + bark/leaf textures) | Quaternius | https://quaternius.itch.io/textured-lowpoly-trees | CC0 1.0 | Not required (CC0). Suggested: "Textured LowPoly Trees by Quaternius" | `Assets/ThirdParty/Quaternius_TexturedLowpolyTrees/` | In use (roadside trees; our `Materials/Trees/*.mat` use its textures) | 2026-02-15 |
+| WRAD ARMS (first-person arms: `arms.fbx`, pale + dark albedo) | wriks (dark skin texture: Royalty3D) | https://wriks.itch.io/wrad-arms | CC0 1.0 | Not required (CC0). Author requests: "'WRAD ARMS' by wriks: https://wriks.motorcycles" | `Assets/ThirdParty/WRAD_ARMS/` | Evaluating | 2026-09-29 |
+
+**Status values:** Evaluating · In use · Removed
+
+**Licence notes:** CC BY = credit required. CC0 = none required, but credit anyway. Asset Store
+Standard EULA = no credit required, but can't be redistributed as source. itch.io = check the page.

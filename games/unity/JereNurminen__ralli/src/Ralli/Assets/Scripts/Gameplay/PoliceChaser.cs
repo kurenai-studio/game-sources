@@ -1,0 +1,332 @@
+using System;
+using UnityEngine;
+
+// The police: after a delay a van appears on the road behind the player and chases at a constant
+// speed along the road. It never dodges; traffic it touches is knocked loose and shoved aside.
+// Near the player it steers onto the player's line and rams them in a loop: chase, ram (drive into
+// the player, plus an exaggerated random shove), back off for a moment, repeat. Rams only hurt; the
+// player is caught when the van gets all the way past them (a missed ram carries on into a pass),
+// after which it brakes hard to a stop ahead of them. Assumes the van starts behind the player. When the player finishes the stage, the van stops chasing and drives straight
+// on in the left lane, past the player and off the road's dead end into the woods, and vanishes.
+public class PoliceChaser : MonoBehaviour
+{
+    private enum ChaseState { Chasing, Ramming, BackingOff, Stopping }
+
+    private const float PlayerHalfLength = 1.9f;
+    private const float PlayerHalfWidth = 0.8f;
+
+    [SerializeField] private PoliceConfig config;
+    [SerializeField] private RoadStreamGenerator road;
+
+    private CarController player;
+    private Rigidbody playerBody;
+    private Rigidbody van;
+    private BoxCollider vanCollider;
+    private float startTimer;
+    private float s;
+    private float speedMps;
+    private float lateralOffset;
+    private ChaseState state;
+    private float backoffTimer;
+    private VehicleLights vanLights;
+    private bool passingThrough;
+    private readonly Collider[] shoveBuffer = new Collider[16];
+
+    // The van got past the player: the lose condition.
+    public event Action CaughtPlayer;
+    // Every ram that lands.
+    public event Action RammedPlayer;
+    public bool IsChasing => van != null;
+    public PoliceLights Lights { get; private set; }
+    public bool HasCaughtPlayer { get; private set; }
+    public Transform Van => van != null ? van.transform : null;
+    // Bumper-to-bumper distance to the player along the road (m); meaningful while chasing.
+    public float GapToPlayer { get; private set; }
+
+    public PoliceConfig Config => config;
+    // While set, the start delay doesn't count down (at a stage start, until the player leaves
+    // the start station).
+    public bool HoldStart { get; set; }
+
+    // Stage setup: a runtime config copy, set before the chase starts.
+    public void UseConfig(PoliceConfig stageConfig)
+    {
+        config = stageConfig;
+    }
+
+    // The player finished: stop chasing and drive on through (a van not out yet never comes).
+    public void PassThrough()
+    {
+        passingThrough = true;
+        if (vanCollider != null)
+        {
+            vanCollider.enabled = false;
+        }
+    }
+
+    // How far behind the van is, in seconds: the gap over chase speed, or before it appears, the
+    // rest of its start delay plus the time to cover its spawn distance.
+    public float GetLeadSeconds()
+    {
+        float chaseSpeed = Mathf.Max(1f, config.chaseSpeedKph / 3.6f);
+        if (van == null)
+        {
+            return Mathf.Max(0f, config.startDelay - startTimer) + config.spawnDistanceBehind / chaseSpeed;
+        }
+
+        return Mathf.Max(0f, GapToPlayer) / chaseSpeed;
+    }
+
+    private void Start()
+    {
+        if (road == null)
+        {
+            road = FindFirstObjectByType<RoadStreamGenerator>();
+        }
+
+        player = FindFirstObjectByType<CarController>();
+        playerBody = player != null ? player.GetComponent<Rigidbody>() : null;
+    }
+
+    private void FixedUpdate()
+    {
+        if (config == null || road == null || player == null || !road.IsReady)
+        {
+            return;
+        }
+
+        float deltaTime = Time.fixedDeltaTime;
+        if (van == null)
+        {
+            // The delay counts from when the player turns the engine on (and is let go).
+            if (!player.EngineRunning || HoldStart || passingThrough)
+            {
+                return;
+            }
+
+            startTimer += deltaTime;
+            if (startTimer >= config.startDelay)
+            {
+                SpawnVan();
+            }
+
+            return;
+        }
+
+        if (passingThrough)
+        {
+            DriveThrough(deltaTime);
+            return;
+        }
+
+        Chase(deltaTime);
+        ShoveTraffic();
+    }
+
+    private void SpawnVan()
+    {
+        s = Mathf.Max(0f, road.GetEstimatedPlayerS() - config.spawnDistanceBehind);
+        speedMps = config.chaseSpeedKph / 3.6f;
+        lateralOffset = GetLaneOffset();
+
+        // Unscaled root carries physics and lights; a scaled child is the visible body. (Rotating
+        // lights under a non-uniformly scaled parent would get skewed.)
+        var root = new GameObject("PoliceVan");
+        root.transform.SetParent(transform, false);
+        vanCollider = root.AddComponent<BoxCollider>();
+        vanCollider.size = config.vanSize;
+
+        GameObject body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        body.name = "Body";
+        Destroy(body.GetComponent<Collider>());
+        body.transform.SetParent(root.transform, false);
+        body.transform.localScale = config.vanSize;
+
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+        if (shader != null)
+        {
+            var material = new Material(shader) { name = "PoliceVanMaterial", color = config.vanColor };
+            material.SetFloat("_Smoothness", 0.1f);
+            body.GetComponent<MeshRenderer>().sharedMaterial = material;
+        }
+
+        van = root.AddComponent<Rigidbody>();
+        van.isKinematic = true;
+        van.useGravity = false;
+        van.interpolation = RigidbodyInterpolation.Interpolate;
+        van.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+
+        if (config.vehicleLights != null)
+        {
+            vanLights = root.AddComponent<VehicleLights>();
+            vanLights.Build(config.vehicleLights, config.vanSize, false);
+        }
+
+        Lights = root.AddComponent<PoliceLights>();
+        Lights.Initialize(config);
+        root.AddComponent<PoliceSiren>().Initialize(config);
+
+        MoveAlongRoad(true);
+    }
+
+    private void Chase(float deltaTime)
+    {
+        float playerS = road.GetEstimatedPlayerS();
+        GapToPlayer = playerS - s - config.vanSize.z * 0.5f - PlayerHalfLength;
+
+        float playerLateral = lateralOffset;
+        float playerSpeed = 0f;
+        Vector3 roadForward = van.transform.forward;
+        Vector3 roadRight = van.transform.right;
+        if (road.TryGetRoadFrameAtS(playerS, out Vector3 playerRoadPoint, out roadForward, out roadRight, out _, out _))
+        {
+            playerLateral = Vector3.Dot(player.transform.position - playerRoadPoint, roadRight);
+            playerSpeed = Mathf.Max(0f, Vector3.Dot(playerBody.linearVelocity, roadForward));
+        }
+
+        // Van's rear past the player's front: caught.
+        if (state != ChaseState.Stopping && GapToPlayer < -(config.vanSize.z + PlayerHalfLength * 2f))
+        {
+            state = ChaseState.Stopping;
+            HasCaughtPlayer = true;
+            CaughtPlayer?.Invoke();
+        }
+
+        float chaseSpeed = config.chaseSpeedKph / 3.6f;
+        float targetSpeed = chaseSpeed;
+        float acceleration = config.accelerationMps2;
+        switch (state)
+        {
+            case ChaseState.Chasing:
+                if (GapToPlayer <= config.ramTriggerDistance)
+                {
+                    state = ChaseState.Ramming;
+                }
+
+                break;
+            case ChaseState.Ramming:
+                targetSpeed = playerSpeed + config.ramClosingSpeedKph / 3.6f;
+                bool lateralOverlap = Mathf.Abs(playerLateral - lateralOffset) < config.vanSize.x * 0.5f + PlayerHalfWidth;
+                // Once alongside (a missed ram) it no longer rams; it keeps closing and passes.
+                if (GapToPlayer <= config.ramContactGap && GapToPlayer > -1f && lateralOverlap)
+                {
+                    LandRam(roadForward, roadRight);
+                }
+
+                break;
+            case ChaseState.BackingOff:
+                targetSpeed = playerSpeed * config.backoffSpeedFactor;
+                acceleration = config.backoffBrakeMps2;
+                backoffTimer -= deltaTime;
+                if (backoffTimer <= 0f)
+                {
+                    state = ChaseState.Chasing;
+                }
+
+                break;
+            case ChaseState.Stopping:
+                targetSpeed = 0f;
+                acceleration = config.caughtBrakeMps2;
+                break;
+        }
+
+        if (vanLights != null)
+        {
+            vanLights.SetBraking(targetSpeed < speedMps - 0.5f);
+        }
+
+        speedMps = Mathf.MoveTowards(speedMps, targetSpeed, acceleration * deltaTime);
+        s += speedMps * deltaTime;
+
+        // Blend from its own lane onto the player's line as it closes in, staying on the road. From
+        // alongside onward it holds its line.
+        if (GapToPlayer > -1f && state != ChaseState.Stopping)
+        {
+            float homing = 1f - Mathf.Clamp01(GapToPlayer / Mathf.Max(1f, config.homingDistance));
+            float edge = road.GetRoadWidth() * 0.5f - config.vanSize.x * 0.5f;
+            float lateralTarget = Mathf.Clamp(Mathf.Lerp(GetLaneOffset(), playerLateral, homing), -edge, edge);
+            lateralOffset = Mathf.MoveTowards(lateralOffset, lateralTarget, config.lateralSpeed * deltaTime);
+        }
+
+        MoveAlongRoad(false);
+    }
+
+    private void DriveThrough(float deltaTime)
+    {
+        speedMps = Mathf.MoveTowards(speedMps, config.chaseSpeedKph / 3.6f, config.accelerationMps2 * deltaTime);
+        s += speedMps * deltaTime;
+        lateralOffset = Mathf.MoveTowards(lateralOffset, -GetLaneOffset(), config.lateralSpeed * deltaTime);
+        if (vanLights != null)
+        {
+            vanLights.SetBraking(false);
+        }
+
+        if (road.HasRoadEnd && s - road.RoadEndS > config.passThroughVanishDistance)
+        {
+            Destroy(van.gameObject);
+            van = null;
+            return;
+        }
+
+        MoveAlongRoad(false);
+    }
+
+    // The van's own contact already shoves the player; on top of that, an exaggerated random kick
+    // so no two hits play out the same.
+    private void LandRam(Vector3 roadForward, Vector3 roadRight)
+    {
+        float side = UnityEngine.Random.Range(-1f, 1f);
+        Vector3 kick = roadForward * config.ramPushSpeed + roadRight * (side * config.ramSideKick) + Vector3.up * config.ramUpKick;
+        playerBody.AddForce(kick, ForceMode.VelocityChange);
+        float spin = UnityEngine.Random.Range(-1f, 1f) * config.ramYawKick * Mathf.Deg2Rad;
+        playerBody.AddTorque(player.transform.up * spin, ForceMode.VelocityChange);
+
+        state = ChaseState.BackingOff;
+        backoffTimer = config.backoffTime;
+        RammedPlayer?.Invoke();
+    }
+
+    // Right-hand lane center, like traffic driving the player's direction.
+    private float GetLaneOffset()
+    {
+        return road.GetRoadWidth() * 0.25f;
+    }
+
+    // Past a dead end the van carries straight on along the road's last direction.
+    private void MoveAlongRoad(bool teleport)
+    {
+        float roadS = Mathf.Min(s, road.RoadEndS);
+        if (!road.TryGetRoadFrameAtS(roadS, out Vector3 position, out Vector3 forward, out Vector3 right, out Vector3 up, out _))
+        {
+            return;
+        }
+
+        position += forward * (s - roadS);
+        Vector3 vanPosition = position + right * lateralOffset + up * (config.vanSize.y * 0.5f);
+        Quaternion rotation = Quaternion.LookRotation(forward, up);
+        if (teleport)
+        {
+            van.transform.SetPositionAndRotation(vanPosition, rotation);
+            van.position = vanPosition;
+            van.rotation = rotation;
+            return;
+        }
+
+        van.MovePosition(vanPosition);
+        van.MoveRotation(rotation);
+    }
+
+    // Kinematic traffic can't be pushed, so anything the van touches is released to physics first.
+    private void ShoveTraffic()
+    {
+        Vector3 halfExtents = config.vanSize * 0.5f + Vector3.one * config.shovePadding;
+        int hits = Physics.OverlapBoxNonAlloc(van.position, halfExtents, shoveBuffer, van.rotation, ~0, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hits; i++)
+        {
+            if (shoveBuffer[i] != vanCollider && shoveBuffer[i].TryGetComponent(out TrafficVehicle traffic))
+            {
+                traffic.Release();
+            }
+        }
+    }
+}

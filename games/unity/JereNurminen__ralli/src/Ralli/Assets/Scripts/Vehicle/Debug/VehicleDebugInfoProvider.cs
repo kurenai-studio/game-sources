@@ -1,0 +1,52 @@
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+[RequireComponent(typeof(CarController))]
+[RequireComponent(typeof(CarInputReader))]
+public class VehicleDebugInfoProvider : MonoBehaviour, IDebugInfoProvider
+{
+    public int Priority => 100;
+    public string DisplayName => "Vehicle";
+    public bool IsVisible => true;
+
+    private CarController carController;
+    private CarInputReader carInput;
+
+    private void Awake()
+    {
+        carController = GetComponent<CarController>();
+        carInput = GetComponent<CarInputReader>();
+    }
+
+    public void BuildDebugInfo(DebugPanelBuilder builder)
+    {
+        builder.BeginSection("Vehicle");
+        builder.AddFloat("Speed (km/h)", carController.SpeedMps * 3.6f);
+        builder.AddBool("Grounded", carController.IsGrounded);
+        builder.AddBool("In Reverse", carController.InReverse);
+        builder.AddFloat("Steer Angle (deg)", carController.SteerAngleDegrees);
+        builder.AddFloat("Drift Angle (deg)", carController.DriftAngle);
+        builder.AddFloat("Overdrive", carController.OverdriveFactor);
+        builder.AddFloat("Engine Heat", carController.Heat01);
+        builder.AddFloat("Exit Boost", carController.ExitBoost01);
+        builder.AddFloat("Front Grip", carController.FrontGrip01);
+        builder.AddFloat("Rear Grip", carController.RearGrip01);
+        builder.AddFloat("Front Grip Usage", carController.FrontGripUsage01);
+        builder.AddFloat("Rear Grip Usage", carController.RearGripUsage01);
+        builder.AddFloat("Input Throttle", carInput.Throttle);
+        builder.AddFloat("Input Brake", carInput.Brake);
+        builder.AddFloat("Input Steer", carInput.Steer);
+        builder.AddBool("Input Handbrake", carInput.Handbrake);
+        builder.AddBool("Input Overdrive", carInput.Overdrive);
+        builder.AddValue("Steer Source", carInput.SteerSourcePath);
+
+        Gamepad gamepad = Gamepad.current;
+        builder.AddValue("Gamepad", gamepad != null ? gamepad.displayName : "none");
+        if (gamepad != null)
+        {
+            Vector2 stick = gamepad.leftStick.ReadUnprocessedValue();
+            builder.AddFloat("Raw Left Stick X", stick.x);
+            builder.AddFloat("Raw Left Stick Y", stick.y);
+        }
+    }
+}
