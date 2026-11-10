@@ -1,0 +1,476 @@
+{
+ "_doc": "Every event, in the order practice lists them, and how each one plays. tuning goes straight onto each athlete's Bouncer (game/bouncer.gd). qualify is the mark a player must reach to go on in the championship, per level; record is the world record the computer athletes hold until someone beats it. Distances are metres, times seconds. windows are the timing windows (perfect, good, ok) in seconds either side of the beat, per level.",
+ "order": [
+  "sprint",
+  "long_jump",
+  "meatball_put",
+  "hurdles",
+  "high_jump",
+  "triple_jump",
+  "vault",
+  "steeplechase",
+  "relay",
+  "dive",
+  "swim",
+  "trampoline",
+  "breaking",
+  "skateboard",
+  "ski_jump",
+  "bobsleigh"
+ ],
+ "windows": {
+  "easy": [
+   0.09,
+   0.15,
+   0.2
+  ],
+  "junior": [
+   0.07,
+   0.115,
+   0.16
+  ],
+  "pro": [
+   0.05,
+   0.09,
+   0.13
+  ]
+ },
+ "events": {
+  "sprint": {
+   "name": "100m Bounce",
+   "short": "Sprint",
+   "kind": "race",
+   "distance": 100.0,
+   "better": "low",
+   "unit": "s",
+   "how": "Tap on the beat as you land. Every tap in time puts more spring in your bounce.",
+   "how_easy": "Tap the two RUN buttons one after the other, as fast as you can!",
+   "qualify": {
+    "easy": 19.0,
+    "junior": 16.0,
+    "pro": 12.4
+   },
+   "record": 10.8,
+   "tuning": {
+    "v_min": 2.4,
+    "v_max": 10.4,
+    "accel": 7.0,
+    "brake": 11.0,
+    "low_arc": 0.62,
+    "high_arc": 0.42
+   }
+  },
+  "long_jump": {
+   "name": "Long Jump",
+   "short": "Long jump",
+   "kind": "jump",
+   "run_up": 34.0,
+   "better": "high",
+   "unit": "m",
+   "attempts": 3,
+   "how": "Bounce up the runway on the beat. Hold JUMP as you land by the board and let go on the next beat.",
+   "qualify": {
+    "easy": 3.8,
+    "junior": 5.0,
+    "pro": 7.0
+   },
+   "record": 8.6,
+   "gravity": 13.0,
+   "phases": [
+    "jump"
+   ],
+   "tuning": {
+    "v_min": 2.4,
+    "v_max": 10.0,
+    "accel": 7.0,
+    "brake": 11.0,
+    "low_arc": 0.6,
+    "high_arc": 0.42
+   },
+   "how_easy": "Tap RUN, RUN to run up. Press JUMP as close to the board as you can: early loses distance, over it is a foul. Hold JUMP and let go when the needle's in the green."
+  },
+  "hurdles": {
+   "name": "110m Hurdles",
+   "short": "Hurdles",
+   "kind": "race",
+   "distance": 110.0,
+   "better": "low",
+   "unit": "s",
+   "hurdles": {
+    "first": 13.72,
+    "gap": 9.14,
+    "count": 10,
+    "height": 0.84
+   },
+   "how": "Bounce on the beat, and tap JUMP as you land before each hurdle for a big bounce over it.",
+   "how_easy": "Tap the two RUN buttons one after the other, fast. JUMP when the circle shrinks onto you, just before each hurdle.",
+   "qualify": {
+    "easy": 23.0,
+    "junior": 19.5,
+    "pro": 14.6
+   },
+   "record": 12.9,
+   "tuning": {
+    "v_min": 2.4,
+    "v_max": 9.5,
+    "accel": 6.5,
+    "brake": 11.0,
+    "low_arc": 0.6,
+    "high_arc": 0.42,
+    "big_arc": 1.45
+   }
+  },
+  "triple_jump": {
+   "name": "Hop, Skip & Jump",
+   "short": "Triple jump",
+   "kind": "jump",
+   "run_up": 30.0,
+   "better": "high",
+   "unit": "m",
+   "attempts": 3,
+   "how": "Tap JUMP by the board to hop, tap it again as you land to skip, then hold it and let go on the beat to jump.",
+   "qualify": {
+    "easy": 8.5,
+    "junior": 11.0,
+    "pro": 14.6
+   },
+   "record": 17.9,
+   "gravity": 13.0,
+   "phases": [
+    "hop",
+    "skip",
+    "jump"
+   ],
+   "hop_keep": {
+    "perfect": 0.92,
+    "good": 0.87,
+    "ok": 0.8
+   },
+   "tuning": {
+    "v_min": 2.4,
+    "v_max": 9.8,
+    "accel": 7.0,
+    "brake": 11.0,
+    "low_arc": 0.6,
+    "high_arc": 0.42,
+    "big_arc": 0.95
+   },
+   "how_easy": "Tap RUN, RUN to run up. Press HOP as close to the board as you can, then SKIP and JUMP any time while you're in the air. Hold the last JUMP and let go in the green."
+  },
+  "high_jump": {
+   "name": "High Jump",
+   "short": "High jump",
+   "kind": "high",
+   "approach": 7,
+   "better": "high",
+   "unit": "m",
+   "start": 1.5,
+   "step": 0.1,
+   "attempts": 3,
+   "how": "Bounce in on the beat. Hold JUMP on the last bounce and let go on the beat, then tap JUMP at the top to arch over the bar.",
+   "qualify": {
+    "easy": 1.5,
+    "junior": 1.7,
+    "pro": 2.1
+   },
+   "record": 2.4,
+   "tuning": {
+    "v_min": 2.0,
+    "v_max": 6.8,
+    "accel": 6.0,
+    "brake": 9.0,
+    "low_arc": 0.55,
+    "high_arc": 0.45,
+    "pull": 0.3
+   },
+   "easy_drop": 0.2,
+   "how_easy": "Tap RUN, RUN to run in. Press JUMP on the spot when the circle closes, hold it and let go in the green, then tap ARCH at the top to get over the bar."
+  },
+  "dive": {
+   "name": "High Dive",
+   "short": "Dive",
+   "kind": "dive",
+   "board": 5.0,
+   "better": "high",
+   "unit": "pts",
+   "attempts": 3,
+   "how": "Bounce on the board on the beat, then press JUMP to take off. In the air, tap BOUNCE to flip and JUMP to twist, on the beat. Go straight before the water.",
+   "qualify": {
+    "easy": 40.0,
+    "junior": 60.0,
+    "pro": 150.0
+   },
+   "record": 240.0,
+   "tuning": {
+    "v_min": 0.0,
+    "v_max": 0.0,
+    "low_arc": 0.5,
+    "high_arc": 1.1,
+    "pull": 0.3
+   },
+   "how_easy": "Tap BOUNCE each time you land to bounce the board, then JUMP when the circle shrinks onto you. In the air, tap FLIP or TWIST on the beat, and be straight before the water."
+  },
+  "relay": {
+   "name": "4×50m Relay",
+   "short": "Relay",
+   "kind": "race",
+   "distance": 200.0,
+   "legs": 4,
+   "better": "low",
+   "unit": "s",
+   "how": "Four of your hot dogs, one after another. Bounce on the beat, and press JUMP as you land in the yellow box to tag the next one. A tag on the beat hands over all your spring.",
+   "how_easy": "Tap the two RUN buttons one after the other, fast. TAG your next hot dog in the yellow box when the circle shrinks onto you.",
+   "qualify": {
+    "easy": 36.0,
+    "junior": 30.0,
+    "pro": 23.0
+   },
+   "record": 20.2,
+   "tuning": {
+    "v_min": 2.4,
+    "v_max": 10.4,
+    "accel": 7.0,
+    "brake": 11.0,
+    "low_arc": 0.62,
+    "high_arc": 0.42
+   }
+  },
+  "steeplechase": {
+   "name": "Steeplechase",
+   "short": "Steeple",
+   "kind": "race",
+   "distance": 200.0,
+   "better": "low",
+   "unit": "s",
+   "hurdles": {
+    "at": [
+     26.0,
+     56.0,
+     86.0,
+     116.0,
+     146.0,
+     176.0
+    ],
+    "height": 0.91,
+    "barrier": true
+   },
+   "water": [
+    {
+     "x": 116.3,
+     "len": 2.4
+    }
+   ],
+   "how": "Two hundred metres with six barriers that don't fall over, and one with a pond behind it. JUMP on the landing before each barrier; go a little early for the water.",
+   "how_easy": "Tap the two RUN buttons one after the other, fast. JUMP when the circle shrinks onto you, to get over the barriers and the water.",
+   "qualify": {
+    "easy": 38.0,
+    "junior": 32.0,
+    "pro": 24.0
+   },
+   "record": 21.4,
+   "tuning": {
+    "v_min": 2.4,
+    "v_max": 9.6,
+    "accel": 6.5,
+    "brake": 11.0,
+    "low_arc": 0.6,
+    "high_arc": 0.42,
+    "big_arc": 1.55
+   }
+  },
+  "meatball_put": {
+   "name": "Meatball Put",
+   "short": "Meatball",
+   "kind": "throw",
+   "better": "high",
+   "unit": "m",
+   "attempts": 3,
+   "how": "No arms, so it's a header. Bounce on the spot to the beat to build up spring, then hold JUMP as you land and let go on the next beat to head the meatball away.",
+   "qualify": {
+    "easy": 8.5,
+    "junior": 11.0,
+    "pro": 18.5
+   },
+   "record": 22.9,
+   "tuning": {
+    "v_min": 0.0,
+    "v_max": 0.0,
+    "low_arc": 0.3,
+    "high_arc": 0.55,
+    "pull": 0.3
+   },
+   "how_easy": "No arms, so it's a header. Tap RUN, RUN to spin up the spring, then hold THROW and let go when the needle's in the green."
+  },
+  "vault": {
+   "name": "Springboard Vault",
+   "short": "Vault",
+   "kind": "high",
+   "approach": 9,
+   "better": "high",
+   "unit": "m",
+   "start": 3.5,
+   "step": 0.25,
+   "pro_start": 0.75,
+   "attempts": 3,
+   "shape": {
+    "spot": -2.4,
+    "step": 2.6,
+    "gravity": 9.8,
+    "launch": [
+     6.0,
+     4.4
+    ],
+    "aim": [
+     55.0,
+     25.0,
+     89.0
+    ],
+    "mat": [
+     0.4,
+     1.1
+    ],
+    "cpu_angle": 78.0,
+    "board": true
+   },
+   "how": "No pole: a springboard. Bounce in on the beat, hold JUMP on the board as you land and let go on the beat, then JUMP at the top to arch over the bar.",
+   "qualify": {
+    "easy": 3.0,
+    "junior": 4.0,
+    "pro": 5.25
+   },
+   "record": 6.0,
+   "tuning": {
+    "v_min": 2.0,
+    "v_max": 8.0,
+    "accel": 6.0,
+    "brake": 9.0,
+    "low_arc": 0.55,
+    "high_arc": 0.45,
+    "pull": 0.3
+   },
+   "easy_drop": 0.75,
+   "how_easy": "No pole: a springboard. Tap RUN, RUN to run in. Press JUMP on the board when the circle closes, hold it and let go in the green, then ARCH at the top."
+  },
+  "swim": {
+   "name": "50m Bun Paddle",
+   "short": "Swim",
+   "kind": "race",
+   "venue": "pool",
+   "distance": 50.0,
+   "breath": 4,
+   "better": "low",
+   "unit": "s",
+   "how": "Paddle along on the beat: every tap in time is a stroke. On the fourth beat of every bar the ring turns blue: press JUMP to take a breath, or get a mouthful of pool.",
+   "how_easy": "Tap the two SWIM buttons one after the other, as fast as you can! When AIR lights up, press it to take a breath.",
+   "qualify": {
+    "easy": 20.0,
+    "junior": 17.0,
+    "pro": 12.4
+   },
+   "record": 10.2,
+   "tuning": {
+    "v_min": 1.2,
+    "v_max": 5.4,
+    "accel": 4.0,
+    "brake": 7.0,
+    "low_arc": 0.32,
+    "high_arc": 0.22
+   }
+  },
+  "trampoline": {
+   "name": "Trampoline",
+   "short": "Trampoline",
+   "kind": "tramp",
+   "better": "high",
+   "unit": "pts",
+   "attempts": 2,
+   "how": "Each bounce is two beats: tap BOUNCE as you land on the beat, and on the beat at the top tap BOUNCE to somersault or JUMP to twist. Eight skills, then JUMP as you land to stick it.",
+   "qualify": {
+    "easy": 15.0,
+    "junior": 22.0,
+    "pro": 40.0
+   },
+   "record": 52.0,
+   "tuning": {
+    "v_min": 0.0,
+    "v_max": 0.0,
+    "low_arc": 1.2,
+    "high_arc": 4.6,
+    "pull": 0.3
+   },
+   "how_easy": "Tap BOUNCE each time you land. At the top of each bounce, tap FLIP or TWIST for a trick. After eight tricks, press STICK as you land."
+  },
+  "breaking": {
+   "name": "Breaking",
+   "short": "Breaking",
+   "kind": "battle",
+   "better": "high",
+   "unit": "pts",
+   "attempts": 1,
+   "how": "A dance battle. Watch the MC dance a pattern over two bars, then dance it back: BOUNCE for toprock, JUMP to spin on your head, each on its beat. Three rounds, busier every time.",
+   "qualify": {
+    "easy": 60.0,
+    "junior": 90.0,
+    "pro": 170.0
+   },
+   "record": 218.0,
+   "tuning": {},
+   "how_easy": "Watch the MC dance, then dance it back: ROCK and SPIN, each on its beat. The button that lights up is your next move."
+  },
+  "skateboard": {
+   "name": "Skateboarding",
+   "short": "Skate",
+   "kind": "skate",
+   "better": "high",
+   "unit": "pts",
+   "attempts": 2,
+   "how": "Tap BOUNCE on every beat to push and keep your flow up. JUMP on the beat to ollie a cone, to hop on a rail (hold it, let go on its last beat), or off a ramp: then BOUNCE or JUMP on the beat at the top for a trick, and BOUNCE as you land.",
+   "qualify": {
+    "easy": 400.0,
+    "junior": 600.0,
+    "pro": 1700.0
+   },
+   "record": 2500.0,
+   "tuning": {},
+   "how_easy": "Tap PUSH on every beat. OLLIE over cones and up ramps, then FLIP or SPIN in the air and LAND. On a rail, hold GRIND and let go at the end."
+  },
+  "ski_jump": {
+   "name": "Ski Jump",
+   "short": "Ski jump",
+   "kind": "skijump",
+   "better": "high",
+   "unit": "pts",
+   "attempts": 2,
+   "how": "Tap BOUNCE on every beat down the in-run to tuck. JUMP on the downbeat at the edge. In the air, BOUNCE on every beat to keep your balance. JUMP as you touch the snow for a telemark.",
+   "qualify": {
+    "easy": 50.0,
+    "junior": 70.0,
+    "pro": 120.0
+   },
+   "record": 148.0,
+   "tuning": {
+    "pull": 0.35
+   },
+   "how_easy": "Tap TUCK on every beat down the in-run, then JUMP at the edge when the circle shrinks onto you. In the air, tap STEADY on every beat, and LAND as you touch the snow."
+  },
+  "bobsleigh": {
+   "name": "Bun Bobsleigh",
+   "short": "Bobsleigh",
+   "kind": "bob",
+   "better": "low",
+   "unit": "s",
+   "attempts": 2,
+   "how": "Push the bun for a bar, tapping BOUNCE on the beat, then JUMP on the downbeat to hop in. Every two beats a bend comes: lean with it on its beat, JUMP for a high bend, BOUNCE for a low one.",
+   "qualify": {
+    "easy": 32.0,
+    "junior": 28.0,
+    "pro": 21.5
+   },
+   "record": 19.4,
+   "tuning": {
+    "pull": 0.3
+   },
+   "how_easy": "Tap the two RUN buttons, one then the other, to push the bun, then HOP in when the circle shrinks onto you. Then lean with each bend on its beat: HIGH or LOW, the one that lights up."
+  }
+ }
+}
