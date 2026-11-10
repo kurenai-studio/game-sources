@@ -1,0 +1,88 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7311130048730873174
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7311130048730873172}
+  - component: {fileID: 3339817035710067120}
+  - component: {fileID: 7311130048730873175}
+  - component: {fileID: 4913022387661080637}
+  m_Layer: 0
+  m_Name: GameController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7311130048730873172
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7311130048730873174}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -10, y: -10, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3339817035710067120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7311130048730873174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e11ecc7762bca7b45905082f6226b972, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  bot: {fileID: 5399729948325032824, guid: f83f41db89a7b8a4eaaa9d03a088324d, type: 3}
+  resources: 0
+  power: 100
+  maxBots: 1
+  botCollectionSpeed: 1
+  botsAvailable: 1
+  botPowerUsage: 1
+--- !u!114 &7311130048730873175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7311130048730873174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 762c0795aa3336244b692904762f1be1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tileSize: 64
+  minTrees: 100
+  maxTrees: 1000
+  tiles:
+  - {fileID: 7836879815496372655, guid: bec0d94dd90c24f4ab40c1698e7a261e, type: 3}
+  resources:
+  - {fileID: 87515706329032064, guid: a0fd3394d828acd4882bd642eb505e18, type: 3}
+  player: {fileID: 7515221990131951325, guid: 603b69f2098c8f7499800ecfc7f7984e, type: 3}
+  plot: {fileID: 5991084051238644973, guid: e1a88fd7e6ddf85408c3f8d7b70cfe3a, type: 3}
+--- !u!114 &4913022387661080637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7311130048730873174}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfa714efbec862e448f265aa0f4ad51a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoGrow: 1
