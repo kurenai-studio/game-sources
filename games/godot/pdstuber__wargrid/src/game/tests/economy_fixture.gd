@@ -1,0 +1,69 @@
+@warning_ignore_start("untyped_declaration")
+extends RefCounted
+
+const Simulation = preload("res://scripts/simulation/simulation.gd")
+const CombatDefinitions = preload("res://scripts/simulation/combat_definitions.gd")
+const Registry = preload("res://scripts/simulation/definitions/definitions.gd")
+
+# Movement pins were written for the 3.0 cells/s prototype speed; the shipped scout car is 2.4 (parity).
+static func run_legacy_speed(runner, test: Callable) -> bool:
+	var row: Dictionary = Registry.kind("usa_light_vehicle").duplicate(true)
+	row.speed = 3.0
+	Registry.add_test_kind("usa_light_vehicle", row)
+	var ok: bool = test.call(runner)
+	Registry.clear_test_kinds()
+	return ok
+
+static func make_world(credits: int = 10000, size: Vector2i = Vector2i(32,32)) -> RefCounted:
+	var sim = Simulation.new([],size)
+	sim.add_player(1,credits)
+	sim.spawn(1,Vector2(4.5,4.5),"usa_builder")
+	return sim
+
+static func send(sim: RefCounted, payload: Dictionary) -> Dictionary:
+	var state: Dictionary = sim.snapshot()
+	var command: Dictionary = payload.duplicate(true)
+	command.tick = command.get("tick",state.tick)
+	command.player = command.get("player",1)
+	var sequence: int = -1
+	for entry in state.last_sequences:
+		if entry.player == command.player:
+			sequence = entry.sequence
+	command.sequence = command.get("sequence",sequence + 1)
+	return sim.issue_command(command)
+
+static func build(runner, sim: RefCounted, kind: String, origin: Vector2i, max_ticks: int = 3000) -> int:
+	var next: int = sim.snapshot().next_entity_id
+	var result: Dictionary = send(sim,{"type":"build","builder_id":1,"building_kind":kind,"origin":[origin.x,origin.y]})
+	runner.check(result.ok,"fixture build accepted " + kind + ": " + result.error)
+	if not result.ok: return -1
+	for index in range(max_ticks):
+		sim.step()
+		for building in sim.snapshot().buildings:
+			if building.id == next and building.completed: return next
+		for outcome in sim.snapshot().command_results:
+			if not outcome.ok:
+				runner.check(false,"fixture build execution: " + outcome.error)
+				return -1
+	runner.check(false,"fixture build timeout " + kind)
+	return -1
+
+static func add_completed(sim: RefCounted, owner: int, kind: String, origin: Vector2i) -> int:
+	var id: int = sim._next_entity_id
+	sim._next_entity_id += 1
+	var hp: int = CombatDefinitions.profile(kind).max_hp
+	sim._buildings[id] = {"id":id,"owner":owner,"kind":kind,"hp":hp,"max_hp":hp,"origin":[origin.x,origin.y],"completed":true,"work":0,"paid_cost":0,"builder_id":null,"approach":null,"queue":[],"active_collector_id":null}
+	var combat: Variant = CombatDefinitions.initial_combat(kind)
+	if combat != null: sim._buildings[id].combat = combat
+	sim._replace_union(sim._union_cells())
+	return id
+
+static func object(sim: RefCounted, id: int) -> Dictionary:
+	var state: Dictionary = sim.snapshot()
+	for key in ["entities","buildings","sources"]:
+		for item in state[key]:
+			if item.id == id: return item
+	return {}
+
+static func steps(sim: RefCounted, count: int) -> void:
+	for index in range(count): sim.step()

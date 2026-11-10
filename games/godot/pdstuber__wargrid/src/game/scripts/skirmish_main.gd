@@ -1,0 +1,185 @@
+extends "res://scripts/base_main.gd"
+
+const Skirmish = preload("res://scripts/simulation/skirmish.gd")
+const View = preload("res://scripts/presentation/world_view.gd")
+const SoundPlayer = preload("res://scripts/presentation/sound_player.gd")
+const MusicPlayer = preload("res://scripts/presentation/music_player.gd")
+var _sound: SoundPlayer = null
+var _attack_move_mode: bool = false
+var inspected_id: int = -1
+static var factions: Dictionary = Registry.Factions.DEFAULT_SKIRMISH
+static var map_path: String = Skirmish.MAP_PATH
+static var starts: Array[int] = []
+static var match_seed: int = 0
+
+func _ready() -> void:
+	super._ready()
+	$HUD/Restart.pressed.connect(_restart)
+	var music := MusicPlayer.new()
+	add_child(music)
+	music.play_list(MusicPlayer.PLAYLIST, MusicPlayer.GAP_SECONDS)
+
+func _create_simulation() -> Simulation:
+	return Skirmish.create(true, "ai", factions, map_path, starts)
+
+func _escape_pending() -> bool:
+	return not simulation.match_over() and (_attack_move_mode or inspected_id != -1 or super())
+
+func _step_simulation() -> void:
+	Skirmish.issue_opponent(simulation)
+	simulation.step()
+	_collect_sound()
+
+func _ensure_sound() -> void:
+	if _sound != null: return
+	_sound = SoundPlayer.new(local_player)
+	add_child(_sound)
+
+func _submit(payload: Dictionary) -> void:
+	super._submit(payload)
+	if not _error.is_empty(): _sound.rejected(_error)
+
+func _collect_sound() -> void:
+	_ensure_sound()
+	_sound.collect_step(simulation.tick(), simulation.combat_events(), simulation.command_results())
+
+func _production_kind(building: Dictionary, state: Dictionary) -> String:
+	var kind: String = Skirmish.unit_for(_local_state(state).get("faction", Skirmish.default_faction()), building.kind)
+	return kind if not kind.is_empty() else super._production_kind(building, state)
+
+func _process(delta: float) -> void:
+	pan_camera(Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down"), delta)
+
+func _enter_placement(kind: String) -> void:
+	_attack_move_mode = false
+	super._enter_placement(kind)
+
+func _restart() -> void:
+	simulation = _create_simulation()
+	_sound.director.reset()
+	selected_ids.clear()
+	selected_building_id = -1
+	inspected_id = -1
+	_placement_kind = ""
+	_pending_placement = ""
+	_attack_move_mode = false
+	_selecting = false
+	_dragged = false
+	_error = ""
+	_sequence = 0
+	_last_result_tick = -1
+	_last_result_sequence = -1
+	_selection_box.hide()
+	_camera.zoom = Vector2.ONE
+	_reset_camera()
+	var empty: Array[Vector2i] = []
+	_view.set_build_preview(empty, false)
+	_refresh()
+
+func _ground(event: InputEventMouseButton) -> Vector2:
+	return Iso.plane_to_world(_view.make_canvas_position_local(event.position))
+
+func _finish_selection(point: Vector2) -> void:
+	super._finish_selection(point)
+	inspected_id = -1
+	if not _dragged and selected_ids.is_empty(): inspected_id = _enemy_at(_view.make_canvas_position_local(point))
+	_refresh()
+
+func _enemy_at(plane: Vector2) -> int:
+	var id: int = _view.pick_entity(plane, true)
+	if id == -1: return _view.pick_target(plane, local_player)
+	for unit: Dictionary in simulation.snapshot().entities:
+		if unit.id == id: return id if unit.owner != local_player else -1
+	return -1
+
+func _unhandled_input(event: InputEvent) -> void:
+	if simulation.match_over():
+		return
+	if event.is_action_pressed("deselect"): inspected_id = -1
+	if not _placement_kind.is_empty():
+		super._unhandled_input(event)
+		return
+	if event is InputEventKey and event.pressed and not event.echo and not is_selecting():
+		if event.physical_keycode == KEY_A and not selected_ids.is_empty():
+			_attack_move_mode = true
+			return
+		if event.physical_keycode == KEY_S and not selected_ids.is_empty():
+			_submit({"type":"stop","entity_ids":selected_ids.duplicate()})
+			return
+	if _attack_move_mode and (event.is_action_pressed("deselect") or (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed)):
+		_attack_move_mode = false
+		return
+	if _attack_move_mode and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if not event.pressed:
+			_attack_move_mode = false
+			var target: Vector2 = _ground(event)
+			_submit({"type":"attack_move","entity_ids":selected_ids.duplicate(),"target":[target.x,target.y]})
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed and not is_selecting() and _order_defence(event):
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed and not is_selecting() and not selected_ids.is_empty():
+		var enemy: int = _view.pick_target(_view.make_canvas_position_local(event.position), local_player)
+		if enemy != -1:
+			_submit({"type":"attack","entity_ids":selected_ids.duplicate(),"target_id":enemy})
+			return
+	super._unhandled_input(event)
+
+func _order_defence(event: InputEventMouseButton) -> bool:
+	var building: Dictionary = _building(simulation.snapshot(), selected_building_id)
+	if building.is_empty() or building.owner != local_player or not building.completed or building.get("combat") == null: return false
+	var enemy: int = _view.pick_target(_view.make_canvas_position_local(event.position), local_player)
+	if enemy == -1: return false
+	_submit({"type":"defence_attack","building_id":building.id,"target_id":enemy})
+	return true
+
+func _selected_summary(state: Dictionary) -> String:
+	if selected_ids.size() != 1: return ""
+	for unit: Dictionary in state.entities:
+		if unit.id != selected_ids[0]: continue
+		var line: String = "%s #%d HP %d/%d" % [Registry.kind(unit.kind).display_name, unit.id, unit.hp / 1000, unit.max_hp / 1000]
+		if unit.combat != null: line += " | %s%s" % [unit.combat.mode, "" if unit.combat.target_id == null else " -> #" + str(unit.combat.target_id)]
+		if unit.collection != null and unit.collection.enabled: line += _collection_suffix(state, unit)
+		return line + "\n"
+	return ""
+
+func _collection_suffix(state: Dictionary, unit: Dictionary) -> String:
+	var line: String = " | " + unit.collection.phase
+	if unit.collection.phase.begins_with("waiting_"): line += " (%s in line)" % _ordinal(View.line_position(state.entities, unit))
+	return line
+
+func _ordinal(n: int) -> String:
+	var suffix: String = "th" if n % 100 in [11, 12, 13] else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+	return str(n) + suffix
+
+func _inspected(state: Dictionary) -> Dictionary:
+	for key: String in ["entities", "buildings"]:
+		for object: Variant in state[key]:
+			if object.id == inspected_id: return object
+	return {}
+
+func _enemy_summary(state: Dictionary) -> String:
+	var object: Dictionary = _inspected(state)
+	if object.is_empty(): return ""
+	var line: String = "Enemy (P%d) %s #%d HP %d/%d" % [object.owner, Registry.kind(object.kind).display_name, object.id, object.hp / 1000, object.max_hp / 1000]
+	var combat: Variant = object.get("combat")
+	if combat != null: line += " | " + combat.mode + ("" if combat.target_id == null else " -> #%d" % combat.target_id)
+	return line + "\n"
+
+func _result_text(match_state: Dictionary) -> String:
+	if match_state.status == "draw": return "Draw"
+	if match_state.status != "won": return ""
+	return "Victory" if match_state.winner == simulation.team_of(local_player) else "Defeat"
+
+func _refresh_hud(state: Dictionary) -> void:
+	_ensure_sound()
+	super._refresh_hud(state)
+	_sound.update(state)
+	var result: String = _result_text(state.match)
+	var building: Dictionary = _building(state, selected_building_id)
+	if _inspected(state).is_empty(): inspected_id = -1
+	_view.set_inspected(inspected_id)
+	$HUD/Economy/Produce.text = "Produce %s (E)" % Registry.kind(_production_kind(building, state)).get("display_name", "") if not building.is_empty() else "Produce (E)"
+	_status.text += "\n" + (_selected_summary(state) + _enemy_summary(state)) + ("A: attack-move click | S: stop | You are %s (P%d)" % [("blue" if local_player == 1 else "red"), local_player] if result.is_empty() else "")
+	$HUD/Result.text = result
+	$HUD/Result.visible = not result.is_empty()
+	$HUD/Restart.visible = not result.is_empty()
