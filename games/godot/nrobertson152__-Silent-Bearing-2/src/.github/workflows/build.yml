@@ -1,0 +1,122 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Godot
+        run: |
+          curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+      - name: Import project
+        run: ./godot --headless --path . --import || true
+      - name: Compile every script
+        run: ./godot --headless --path . -s tools/check_scripts.gd
+      - name: Simulation tests
+        run: ./godot --headless --path . -s tests/run_tests.gd
+      - name: Smoke-run battles (catches runtime script errors)
+        run: |
+          for c in ffg7 dd963 bb61 krivak kirov sovsoyuz; do
+            ./godot --headless --path . -- --sandbox $c --warp 8 --smoke 120 2>&1 | tee -a smoke.log
+          done
+          if grep -q "SCRIPT ERROR" smoke.log || [ "$(grep -c 'SMOKE OK' smoke.log)" -lt 6 ]; then
+            echo "::error::A battle failed to run cleanly"; exit 1
+          fi
+      - name: Smoke-run campaign missions with coastlines and shore batteries
+        run: |
+          for m in us1 us5 us7 su3 su4 su6; do
+            ./godot --headless --path . -- --mission $m --warp 8 --smoke 90 2>&1 | tee -a missions.log
+          done
+          if grep -q "SCRIPT ERROR" missions.log || [ "$(grep -c 'SMOKE OK' missions.log)" -lt 6 ]; then
+            echo "::error::A campaign mission failed to run cleanly"; exit 1
+          fi
+      - name: Game flow (menus, campaign, debrief, every mission)
+        run: |
+          ./godot --headless --path . -s tests/flow_test.gd 2>&1 | tee flow.log
+          if grep -q "SCRIPT ERROR" flow.log || ! grep -q "FLOW OK" flow.log; then
+            echo "::error::The game flow test failed"; exit 1
+          fi
+
+  export:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache export templates
+        uses: actions/cache@v4
+        with:
+          path: templates.tpz
+          key: godot-templates-${{ env.GODOT_VERSION }}
+      - name: Download Godot and export templates
+        run: |
+          curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" godot
+          if ! unzip -tq templates.tpz >/dev/null 2>&1; then
+            rm -f templates.tpz
+            curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          fi
+          unzip -q templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mv templates/linux_release.x86_64 templates/windows_release_x86_64.exe templates/version.txt \
+            "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+      - name: Import project
+        run: ./godot --headless --path . --import || true
+      - name: Export Linux and Windows
+        run: |
+          mkdir -p build/linux build/windows
+          ./godot --headless --path . --export-release "Linux" build/linux/SilentBearing2.x86_64
+          ./godot --headless --path . --export-release "Windows" build/windows/SilentBearing2.exe
+      - name: Build the AppImage
+        run: |
+          curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o appimagetool \
+            "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool
+          tools/make_appimage.sh build/linux/SilentBearing2.x86_64 ./godot ./appimagetool SilentBearing2-x86_64.AppImage
+      - name: Run the AppImage
+        run: |
+          APPIMAGE_EXTRACT_AND_RUN=1 ./SilentBearing2-x86_64.AppImage --headless -- --sandbox dd963 --warp 8 --smoke 30 2>&1 | tee appimage.log
+          if grep -q "SCRIPT ERROR" appimage.log || ! grep -q "SMOKE OK" appimage.log; then
+            echo "::error::The AppImage did not run a battle cleanly"; exit 1
+          fi
+      - name: Package
+        run: |
+          cp README.md LICENSE build/linux/
+          cp README.md LICENSE build/windows/
+          tar -czf SilentBearing2-linux-x86_64.tar.gz -C build/linux .
+          (cd build/windows && zip -q -r ../../SilentBearing2-windows-x86_64.zip .)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SilentBearing2-linux-x86_64
+          path: SilentBearing2-linux-x86_64.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SilentBearing2-windows-x86_64
+          path: SilentBearing2-windows-x86_64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SilentBearing2-x86_64.AppImage
+          path: SilentBearing2-x86_64.AppImage
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            SilentBearing2-x86_64.AppImage
+            SilentBearing2-linux-x86_64.tar.gz
+            SilentBearing2-windows-x86_64.zip
