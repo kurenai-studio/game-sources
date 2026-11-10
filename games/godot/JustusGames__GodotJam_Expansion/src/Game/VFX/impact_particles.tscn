@@ -1,0 +1,53 @@
+[gd_scene load_steps=9 format=3 uid="uid://xwmyjjrnjhj3"]
+
+[ext_resource type="Script" uid="uid://dr07ypr2kj73y" path="res://Game/Scripts/VFX_Emitter.gd" id="1_jqukm"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jqukm"]
+shading_mode = 2
+emission_enabled = true
+emission = Color(0.971093, 0.31597558, 0, 1)
+emission_energy_multiplier = 13.78
+
+[sub_resource type="Curve" id="Curve_g3rti"]
+_limits = [-360.0, 360.0, 0.0, 1.0]
+_data = [Vector2(0, -360), 0.0, 0.0, 0, 0, Vector2(1, 360), 1008.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_wnskb"]
+curve = SubResource("Curve_g3rti")
+
+[sub_resource type="Curve" id="Curve_1ghh1"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_de3ds"]
+curve = SubResource("Curve_1ghh1")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sxcph"]
+lifetime_randomness = 1.0
+particle_flag_align_y = true
+emission_shape = 1
+emission_sphere_radius = 1.0
+angle_curve = SubResource("CurveTexture_wnskb")
+spread = 180.0
+initial_velocity_max = 57.86
+gravity = Vector3(0, -130, 0)
+radial_accel_min = 4.339998
+radial_accel_max = 23.199997
+scale_min = 0.39999998
+scale_max = 0.79999995
+scale_curve = SubResource("CurveTexture_de3ds")
+
+[sub_resource type="QuadMesh" id="QuadMesh_t0qa7"]
+
+[node name="ImpactParticles" type="GPUParticles3D"]
+material_override = SubResource("StandardMaterial3D_jqukm")
+amount = 50
+lifetime = 0.5
+explosiveness = 1.0
+randomness = 1.0
+fixed_fps = 60
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_sxcph")
+draw_pass_1 = SubResource("QuadMesh_t0qa7")
+script = ExtResource("1_jqukm")

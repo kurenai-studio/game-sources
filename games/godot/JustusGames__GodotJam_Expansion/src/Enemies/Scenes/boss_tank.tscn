@@ -1,0 +1,1472 @@
+[gd_scene load_steps=24 format=3 uid="uid://jjliiwsy80cm"]
+
+[ext_resource type="Script" uid="uid://bodo1vdeylfs3" path="res://Enemies/Scripts/enemy_boss_tank.gd" id="1_sqwdo"]
+[ext_resource type="PackedScene" uid="uid://bsmhkyeraywr6" path="res://Enemies/Projectiles/enemy_bullet.tscn" id="2_cfggv"]
+[ext_resource type="Script" uid="uid://bwrn83yee322m" path="res://Enemies/Scripts/enemy_boss_head.gd" id="2_h7vtl"]
+[ext_resource type="PackedScene" uid="uid://cgbpcs1vnk6cv" path="res://Game/VFX/explosion_particles.tscn" id="3_uwwr5"]
+[ext_resource type="PackedScene" uid="uid://igwab6bvtirj" path="res://Enemies/Scenes/enemy_auto_targeting_missiles.tscn" id="5_cfggv"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j5xm6"]
+shading_mode = 2
+albedo_color = Color(0.9666725, 0.4300282, 0.19206819, 1)
+emission_enabled = true
+rim = 0.01
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ja0i8"]
+shading_mode = 2
+albedo_color = Color(0.40589708, 0.42660576, 0, 1)
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bx2a7"]
+shading_mode = 2
+albedo_color = Color(0.99999994, 0.2066384, 0.28332004, 1)
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sqwdo"]
+shading_mode = 2
+albedo_color = Color(0.6099097, 0.31265754, 9.62615e-08, 1)
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ma4rh"]
+albedo_color = Color(0.9258593, 0.42791152, 1.92523e-07, 1)
+emission_enabled = true
+emission = Color(0.94171023, 0.5848778, 1.1551381e-06, 1)
+emission_energy_multiplier = 1.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wj0u1"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.84391916, 0, 0.066081785, 1)
+grow = true
+grow_amount = 0.101
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g8mrw"]
+next_pass = SubResource("StandardMaterial3D_wj0u1")
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+depth_draw_mode = 1
+shading_mode = 0
+albedo_color = Color(0.9942741, 0, 0.039242156, 0.7137255)
+grow = true
+grow_amount = 0.02
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.84391916, 0, 0.066081785, 1)
+stencil_outline_thickness = 0.101
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h7vtl"]
+albedo_color = Color(0.6822077, 0.7416239, 0.8765343, 1)
+metallic = 0.78
+metallic_specular = 0.51
+emission_enabled = true
+emission = Color(0.5067212, 0.5272487, 0.83523023, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cfggv"]
+next_pass = SubResource("StandardMaterial3D_wj0u1")
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+depth_draw_mode = 1
+shading_mode = 0
+albedo_color = Color(0.9942741, 0, 0.039242156, 0.7137255)
+grow = true
+grow_amount = 0.5
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.84391916, 0, 0.066081785, 1)
+stencil_outline_thickness = 0.101
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ma4rh"]
+size = Vector3(85.413086, 51.735107, 49.57202)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g8mrw"]
+size = Vector3(85.413086, 51.735107, 23.051758)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cfggv"]
+size = Vector3(43.228027, 51.735107, 10.76709)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_uwwr5"]
+height = 22.01218
+radius = 20.092285
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_g8mrw"]
+radius = 12.2269335
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8owfg"]
+size = Vector3(17.645508, 17.074202, 128.90039)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sqwdo"]
+size = Vector3(28.511719, 20.098492, 89.41797)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_h7vtl"]
+size = Vector3(36.43268, 27.789968, 45.114258)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ma4rh"]
+height = 10.329651
+radius = 45.51123
+
+[node name="BossTank" type="CharacterBody3D" node_paths=PackedStringArray("Turret_Locations") groups=["Enemy"]]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_sqwdo")
+Turret_Locations = [NodePath("Body/AutoTargetingTurret6"), NodePath("Body/AutoTargetingTurret7")]
+_enemy_body_root_path = NodePath("Body")
+_enemy_body_hit_root_path = NodePath("Body/BodyHIT")
+Projectile = ExtResource("2_cfggv")
+Enemy_Type = 8
+Health = 1500.0
+_explosion_particles = ExtResource("3_uwwr5")
+Allow_LookAt = false
+
+[node name="Body" type="Node3D" parent="."]
+
+[node name="CSGBox3D7" type="CSGBox3D" parent="Body"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 20.575317, 0)
+size = Vector3(42.149414, 4.677002, 13.638672)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 20.575317, -23.599518)
+size = Vector3(42.149414, 3.3828125, 13.638672)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 20.575317, 29.068192)
+size = Vector3(42.149414, 3.3828125, 13.638672)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -36.47181, 20.575317, 38.94613)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 35.300636, 20.575317, 38.94613)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGBox3D11" type="CSGBox3D" parent="Body"]
+transform = Transform3D(2.8903124, 0, 0, 0, 2.8903124, 0, 0, 0, 2.8903124, -57.505863, 30.779274, 0)
+size = Vector3(13.024414, 5.460449, 14.5625)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGTorus3D3" type="CSGTorus3D" parent="Body"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.7429757, 0, -5.235095e-07, 0, -5.988252, -58.104095, 20.40223, 1.1086998)
+inner_radius = 1.6219909
+outer_radius = 7.174017
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGTorus3D5" type="CSGTorus3D" parent="Body"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.3970733, 0, -5.235095e-07, 0, -5.988252, 0, 25.764648, 0)
+inner_radius = 1.6219909
+outer_radius = 8.748878
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body"]
+transform = Transform3D(2.8903124, 0, 0, 0, 2.8903124, 0, 0, 0, 2.8903124, 60.963406, 30.779274, 0)
+size = Vector3(13.024414, 5.460449, 14.5625)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body"]
+transform = Transform3D(2.2776904, -1.7793349, 0, 1.7793349, 2.2776904, 0, 0, 0, 3.2499301, 60.52252, 41.4275, 0)
+size = Vector3(11.300781, 5.460449, 13.060791)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body"]
+transform = Transform3D(2.0504549, 2.0370424, 0, -2.0370424, 2.0504549, 0, 0, 0, 3.2499304, -55.62114, 42.198025, 0)
+size = Vector3(10.762329, 5.460449, 13.060791)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGTorus3D4" type="CSGTorus3D" parent="Body"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.7429757, 0, -5.235095e-07, 0, -5.988252, 60.365173, 20.40223, 1.1086998)
+inner_radius = 1.6219909
+outer_radius = 7.174017
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="TankTracks3" type="Node3D" parent="Body"]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 75, 14.135, 0)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 0.63835907, -0.15073347, 40.35847)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(2.8903127, 3.639289e-08, -2.634522e-09, -3.639289e-08, 2.8601773, -0.41628614, -2.6345504e-09, 0.41628614, 2.8601773, 0.6383667, 0.2231288, 46.50689)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903131, 0, 0, 0, 2.8903131, 0.63835907, -0.58731556, -0.05024725)
+size = Vector3(8.850586, 6.173828, 24.028809)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 15.445309, -8.792568, 40.358467)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="Body/TankTracks3"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, -39.97931)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGTorus3D2" type="CSGTorus3D" parent="Body/TankTracks3"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, 36.998085)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, 15.658833, -0.13114738, 40.459118)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -16.915604, -0.13114738, 40.45912)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574718, -8.15102, 61.79125)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574715, -8.15102, 18.0917)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, -17.368233, -8.792568, 40.35847)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238815, -8.15102, 61.791252)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238823, -8.15102, 18.091702)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -1.4734192, -0.15073395, -40.290756)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(-2.8903124, -3.5527137e-15, 2.526791e-07, -3.6392887e-08, 2.860177, -0.41628608, -2.5004468e-07, -0.41628608, -2.860177, -1.4734268, 0.22312832, -46.43918)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -16.280365, -8.792568, -40.290756)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D7" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, -16.493889, -0.13114738, -40.39141)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D8" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, 16.08054, -0.13114738, -40.391415)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D9" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409782, -8.15102, -61.72354)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D10" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409775, -8.15102, -18.023985)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body/TankTracks3"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 16.533169, -8.792568, -40.29076)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D11" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -61.723537)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D12" type="CSGCylinder3D" parent="Body/TankTracks3"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -18.023987)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="TankTracks2" type="Node3D" parent="Body"]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 14.135, 0)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 0.63835907, -0.15073347, 40.35847)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(2.8903127, 3.639289e-08, -2.634522e-09, -3.639289e-08, 2.8601773, -0.41628614, -2.6345504e-09, 0.41628614, 2.8601773, 0.6383667, 0.2231288, 46.50689)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903131, 0, 0, 0, 2.8903131, 0.63835907, -0.58731556, -0.05024725)
+size = Vector3(8.850586, 6.173828, 24.028809)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 15.445309, -8.792568, 40.358467)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="Body/TankTracks2"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, -39.97931)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGTorus3D2" type="CSGTorus3D" parent="Body/TankTracks2"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, 36.998085)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, 15.658833, -0.13114738, 40.459118)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -16.915604, -0.13114738, 40.45912)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574718, -8.15102, 61.79125)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574715, -8.15102, 18.0917)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, -17.368233, -8.792568, 40.35847)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238815, -8.15102, 61.791252)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238823, -8.15102, 18.091702)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -1.4734192, -0.15073395, -40.290756)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(-2.8903124, -3.5527137e-15, 2.526791e-07, -3.6392887e-08, 2.860177, -0.41628608, -2.5004468e-07, -0.41628608, -2.860177, -1.4734268, 0.22312832, -46.43918)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -16.280365, -8.792568, -40.290756)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D7" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, -16.493889, -0.13114738, -40.39141)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D8" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, 16.08054, -0.13114738, -40.391415)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D9" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409782, -8.15102, -61.72354)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D10" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409775, -8.15102, -18.023985)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body/TankTracks2"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 16.533169, -8.792568, -40.29076)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D11" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -61.723537)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D12" type="CSGCylinder3D" parent="Body/TankTracks2"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -18.023987)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="TankTracks" type="Node3D" parent="Body"]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -75, 14.135, 0)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 0.63835907, -0.15073347, 40.35847)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, 3.639289e-08, -2.634522e-09, -3.639289e-08, 2.8601773, -0.41628614, -2.6345504e-09, 0.41628614, 2.8601773, 0.6383667, 0.2231288, 46.50689)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903131, 0, 0, 0, 2.8903131, 0.63835907, -0.58731556, -0.05024725)
+size = Vector3(8.850586, 6.173828, 24.028809)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 15.445309, -8.792568, 40.358467)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="Body/TankTracks"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, -39.97931)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGTorus3D2" type="CSGTorus3D" parent="Body/TankTracks"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, 36.998085)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, 15.658833, -0.13114738, 40.459118)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -16.915604, -0.13114738, 40.45913)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D13" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -44.20832, -0.13114738, 40.459126)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D14" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -32.125813, -0.13114738, 40.459126)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D15" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -119.03627, -0.13114738, 40.459133)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D16" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -106.953766, -0.13114738, 40.459137)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D17" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -44.20833, 14.504442, -56.992603)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D18" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -32.12582, 14.504442, -56.992603)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D19" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -119.03627, 14.504442, -56.992596)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D20" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -106.953766, 14.504442, -56.99258)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_sqwdo")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574718, -8.15102, 61.79125)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574715, -8.15102, 18.0917)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, -17.368233, -8.792568, 40.35847)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238815, -8.15102, 61.791252)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238823, -8.15102, 18.091702)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -1.4734192, -0.15073395, -40.290756)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(-2.8903124, -3.5527137e-15, 2.526791e-07, -3.6392887e-08, 2.860177, -0.41628608, -2.5004468e-07, -0.41628608, -2.860177, -1.4734268, 0.22312832, -46.43918)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -16.280365, -8.792568, -40.290756)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D7" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, -16.493889, -0.13114738, -40.39141)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D8" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, 16.080544, -0.13114738, -40.391415)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D9" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409782, -8.15102, -61.72354)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D10" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409775, -8.15102, -18.023985)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body/TankTracks"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 16.533169, -8.792568, -40.29076)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D11" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -61.723537)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D12" type="CSGCylinder3D" parent="Body/TankTracks"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -18.023987)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="BodyWeakSpot" type="Node3D" parent="Body"]
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="Body/BodyWeakSpot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75.88006, 23.000463, -37.37882)
+radius = 10.712421
+material = SubResource("StandardMaterial3D_ma4rh")
+
+[node name="CSGSphere3D2" type="CSGSphere3D" parent="Body/BodyWeakSpot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75.88006, 23.000463, 39.1918)
+radius = 10.712421
+material = SubResource("StandardMaterial3D_ma4rh")
+
+[node name="CSGSphere3D3" type="CSGSphere3D" parent="Body/BodyWeakSpot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74.85328, 23.000463, 39.1918)
+radius = 10.712421
+material = SubResource("StandardMaterial3D_ma4rh")
+
+[node name="CSGSphere3D4" type="CSGSphere3D" parent="Body/BodyWeakSpot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74.85328, 23.000463, -39.52033)
+radius = 10.712421
+material = SubResource("StandardMaterial3D_ma4rh")
+
+[node name="BodyHIT" type="Node3D" parent="Body"]
+visible = false
+
+[node name="CSGBox3D16" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 20.575317, 0)
+size = Vector3(42.149414, 4.677002, 13.638672)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D17" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 20.575317, -23.599518)
+size = Vector3(42.149414, 3.3828125, 13.638672)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D18" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 20.575317, 29.068192)
+size = Vector3(42.149414, 3.3828125, 13.638672)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D19" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -36.47181, 20.575317, 38.94613)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D20" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 35.300636, 20.575317, 38.94613)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D21" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(2.8903124, 0, 0, 0, 2.8903124, 0, 0, 0, 2.8903124, -57.505863, 30.779274, 0)
+size = Vector3(13.024414, 5.460449, 14.5625)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D6" type="CSGTorus3D" parent="Body/BodyHIT"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.7429757, 0, -5.235095e-07, 0, -5.988252, -58.104095, 20.40223, 1.1086998)
+inner_radius = 1.6219909
+outer_radius = 7.174017
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D7" type="CSGTorus3D" parent="Body/BodyHIT"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.3970733, 0, -5.235095e-07, 0, -5.988252, 0, 25.764648, 0)
+inner_radius = 1.6219909
+outer_radius = 8.748878
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D22" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(2.8903124, 0, 0, 0, 2.8903124, 0, 0, 0, 2.8903124, 60.963406, 30.779274, 0)
+size = Vector3(13.024414, 5.460449, 14.5625)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D23" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(2.2776904, -1.7793349, 0, 1.7793349, 2.2776904, 0, 0, 0, 2.8903124, 60.52252, 41.4275, 0)
+size = Vector3(11.300781, 5.460449, 13.060791)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D24" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(2.0504549, 2.0370424, 0, -2.0370424, 2.0504549, 0, 0, 0, 2.8903127, -55.62114, 42.198025, 0)
+size = Vector3(10.762329, 5.460449, 13.060791)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D8" type="CSGTorus3D" parent="Body/BodyHIT"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.7429757, 0, -5.235095e-07, 0, -5.988252, 60.365173, 20.40223, 1.1086998)
+inner_radius = 1.6219909
+outer_radius = 7.174017
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="TankTracks4" type="Node3D" parent="Body/BodyHIT"]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 75, 14.135, 0)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 0.63835907, -0.15073347, 40.35847)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(2.8903127, 3.639289e-08, -2.634522e-09, -3.639289e-08, 2.8601773, -0.41628614, -2.6345504e-09, 0.41628614, 2.8601773, 0.6383667, 0.2231288, 46.50689)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903131, 0, 0, 0, 2.8903131, 0.63835907, -0.58731556, -0.05024725)
+size = Vector3(8.850586, 6.173828, 24.028809)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 15.445309, -8.792568, 40.358467)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, -39.97931)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D2" type="CSGTorus3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, 36.998085)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, 15.658833, -0.13114738, 40.459118)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -16.915604, -0.13114738, 40.45912)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574718, -8.15102, 61.79125)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574715, -8.15102, 18.0917)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, -17.368233, -8.792568, 40.35847)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238815, -8.15102, 61.791252)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238823, -8.15102, 18.091702)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -1.4734192, -0.15073395, -40.290756)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-2.8903124, -3.5527137e-15, 2.526791e-07, -3.6392887e-08, 2.860177, -0.41628608, -2.5004468e-07, -0.41628608, -2.860177, -1.4734268, 0.22312832, -46.43918)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -16.280365, -8.792568, -40.290756)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D7" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, -16.493889, -0.13114738, -40.39141)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D8" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, 16.08054, -0.13114738, -40.391415)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D9" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409782, -8.15102, -61.72354)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D10" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409775, -8.15102, -18.023985)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 16.533169, -8.792568, -40.29076)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D11" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -61.723537)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D12" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks4"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -18.023987)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="TankTracks5" type="Node3D" parent="Body/BodyHIT"]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 14.135, 0)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 0.63835907, -0.15073347, 40.35847)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(2.8903127, 3.639289e-08, -2.634522e-09, -3.639289e-08, 2.8601773, -0.41628614, -2.6345504e-09, 0.41628614, 2.8601773, 0.6383667, 0.2231288, 46.50689)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903131, 0, 0, 0, 2.8903131, 0.63835907, -0.58731556, -0.05024725)
+size = Vector3(8.850586, 6.173828, 24.028809)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 15.445309, -8.792568, 40.358467)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, -39.97931)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D2" type="CSGTorus3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, 36.998085)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, 15.658833, -0.13114738, 40.459118)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -16.915604, -0.13114738, 40.45912)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574718, -8.15102, 61.79125)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574715, -8.15102, 18.0917)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, -17.368233, -8.792568, 40.35847)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238815, -8.15102, 61.791252)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238823, -8.15102, 18.091702)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -1.4734192, -0.15073395, -40.290756)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-2.8903124, -3.5527137e-15, 2.526791e-07, -3.6392887e-08, 2.860177, -0.41628608, -2.5004468e-07, -0.41628608, -2.860177, -1.4734268, 0.22312832, -46.43918)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -16.280365, -8.792568, -40.290756)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D7" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, -16.493889, -0.13114738, -40.39141)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D8" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, 16.08054, -0.13114738, -40.391415)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D9" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409782, -8.15102, -61.72354)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D10" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409775, -8.15102, -18.023985)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 16.533169, -8.792568, -40.29076)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D11" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -61.723537)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D12" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks5"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -18.023987)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="TankTracks6" type="Node3D" parent="Body/BodyHIT"]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -75, 14.135, 0)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 0.63835907, -0.15073347, 40.35847)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, 3.639289e-08, -2.634522e-09, -3.639289e-08, 2.8601773, -0.41628614, -2.6345504e-09, 0.41628614, 2.8601773, 0.6383667, 0.2231288, 46.50689)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903131, 0, 0, 0, 2.8903131, 0.63835907, -0.58731556, -0.05024725)
+size = Vector3(8.850586, 6.173828, 24.028809)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, 15.445309, -8.792568, 40.358467)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, -39.97931)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGTorus3D2" type="CSGTorus3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(5.9882517, 0, 5.684342e-14, 0, 5.988252, 0, -5.684342e-14, 0, 5.988252, 0.5404358, 6.348201, 36.998085)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, 15.658833, -0.13114738, 40.459118)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -16.915604, -0.13114738, 40.45913)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D13" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -44.20832, -0.13114738, 40.459126)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D14" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -32.125813, -0.13114738, 40.459126)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D15" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -119.03627, -0.13114738, 40.459133)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D16" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -106.953766, -0.13114738, 40.459137)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D17" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -44.20833, 14.504442, -56.992603)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D18" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -32.12582, 14.504442, -56.992603)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D19" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -119.03627, 14.504442, -56.992596)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D20" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, -2.842171e-14, -1.6940659e-21, 0, -1.2633959e-07, 2.8903127, -2.842171e-14, -2.8903127, -1.2633959e-07, -106.953766, 14.504442, -56.99258)
+radius = 1.446
+height = 5.335
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574718, -8.15102, 61.79125)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, 15.574715, -8.15102, 18.0917)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(2.8903127, 0, 0, 0, 2.8903127, 0, 0, 0, 2.8903127, -17.368233, -8.792568, 40.35847)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238815, -8.15102, 61.791252)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, -2.8903127, -1.2633959e-07, 0, -1.2633959e-07, 2.8903127, -2.8903127, 1.2633959e-07, 5.5224786e-15, -17.238823, -8.15102, 18.091702)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -1.4734192, -0.15073395, -40.290756)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-2.8903124, -3.5527137e-15, 2.526791e-07, -3.6392887e-08, 2.860177, -0.41628608, -2.5004468e-07, -0.41628608, -2.860177, -1.4734268, 0.22312832, -46.43918)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -16.280365, -8.792568, -40.290756)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D7" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, -16.493889, -0.13114738, -40.39141)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D8" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-2.8903127, -2.5267917e-07, -1.1044957e-14, -1.009742e-28, -1.263396e-07, 2.8903127, -2.5267917e-07, 2.8903127, 1.263396e-07, 16.080544, -0.13114738, -40.391415)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D9" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409782, -8.15102, -61.72354)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D10" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, -16.409775, -8.15102, -18.023985)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 16.533169, -8.792568, -40.29076)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D11" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -61.723537)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="CSGCylinder3D12" type="CSGCylinder3D" parent="Body/BodyHIT/TankTracks6"]
+transform = Transform3D(-1.2633959e-07, 2.8903127, 1.263396e-07, 1.6319914e-22, -1.263396e-07, 2.8903127, 2.8903127, 1.2633959e-07, 5.5224786e-15, 16.403759, -8.15102, -18.023987)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_g8mrw")
+
+[node name="AutoTargetingTurret6" parent="Body" groups=["Enemy"] instance=ExtResource("5_cfggv")]
+transform = Transform3D(0.65526825, 0.75539625, 0, -0.75539625, 0.65526825, 0, 0, 0, 1, 63.548603, 44.771744, -25.135303)
+
+[node name="AutoTargetingTurret7" parent="Body" groups=["Enemy"] instance=ExtResource("5_cfggv")]
+transform = Transform3D(0.7045351, -0.70966905, 0, 0.70966905, 0.7045351, 0, 0, 0, 1, -57.893227, 44.771744, -25.135303)
+
+[node name="Head" type="CharacterBody3D" parent="." node_paths=PackedStringArray("Turret_Locations") groups=["Enemy"]]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 54.351917, 0)
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("2_h7vtl")
+Turret_Locations = [NodePath("AutoTargetingTurret"), NodePath("AutoTargetingTurret2"), NodePath("AutoTargetingTurret3"), NodePath("AutoTargetingTurret4"), NodePath("AutoTargetingTurret5")]
+_enemy_body_root_path = NodePath("TankHead")
+_enemy_body_hit_root_path = NodePath("TankHeadHIT")
+Projectile = ExtResource("2_cfggv")
+Enemy_Type = 8
+Health = 800.0
+_explosion_particles = ExtResource("3_uwwr5")
+
+[node name="TankHead" type="Node3D" parent="Head"]
+
+[node name="CSGBox3D7" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-1.8903074, 0, 2.1864688, 0, 2.8903127, 0, -2.1864688, 0, -1.8903074, 19.767586, 32.281483, -3.7021174)
+size = Vector3(23.30603, 10.68042, 20.449188)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D17" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(1.6852237, 0, 2.3481753, 0, 2.8903124, 0, -2.3481753, 0, 1.6852237, -16.0138, 32.281483, -5.390202)
+size = Vector3(23.30603, 10.68042, 19.453705)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D16" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -0.20775414, 39.256123, 0.0018196106)
+size = Vector3(34.424805, 10.68042, 9.856445)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D18" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 41.14423, -33.178444)
+size = Vector3(13.517578, 2.7050781, 9.856445)
+material = SubResource("StandardMaterial3D_h7vtl")
+
+[node name="CSGBox3D19" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 26.937626, -33.178444)
+size = Vector3(13.517578, 2.7050781, 9.856445)
+material = SubResource("StandardMaterial3D_h7vtl")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 22.683094, 0)
+size = Vector3(45.926758, 3.3828125, 13.638672)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -36.47181, 20.575321, -15.674541)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 35.300636, 20.575321, -15.674541)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGTorus3D5" type="CSGTorus3D" parent="Head/TankHead"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.3970733, 0, -5.235095e-07, 0, -5.988252, 0, 11.838032, 0)
+inner_radius = 1.6219909
+outer_radius = 6.098587
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(2.8903124, 0, 0, 0, 2.8903124, 0, 0, 0, 2.8903124, 0, 31.981846, 0)
+size = Vector3(47.935303, 5.460449, 14.5625)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(-2.6797945, -1.0828702, 0, 1.0828702, -2.6797945, 0, 0, 0, 2.8903127, 60.52252, 41.4275, -1.9022365)
+size = Vector3(11.300781, 5.460449, 14.377075)
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Head/TankHead"]
+transform = Transform3D(2.4983287, -1.4533617, 0, 1.4533617, 2.4983287, 0, 0, 0, 2.8903127, -54.477592, 40.23227, -1.6743138)
+size = Vector3(10.762329, 5.460449, 14.21936)
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D13" type="CSGCylinder3D" parent="Head/TankHead"]
+transform = Transform3D(-2.8903127, -2.5267914e-07, -1.10449556e-14, -2.5267914e-07, 2.8903127, 1.4210855e-14, 1.1044956e-14, 1.4210855e-14, -2.8903127, 0, 0, 0)
+radius = 7.3374023
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="TankHeadHIT" type="Node3D" parent="Head"]
+visible = false
+
+[node name="CSGBox3D7" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-1.8903074, 0, 2.1864688, 0, 2.8903127, 0, -2.1864688, 0, -1.8903074, 19.767586, 32.281483, -3.7021174)
+size = Vector3(23.30603, 10.68042, 20.449188)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D17" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(1.6852237, 0, 2.3481753, 0, 2.8903124, 0, -2.3481753, 0, 1.6852237, -16.0138, 32.281483, -5.390202)
+size = Vector3(23.30603, 10.68042, 19.453705)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D16" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -0.20775414, 39.256123, 0.0018196106)
+size = Vector3(34.424805, 10.68042, 9.856445)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D18" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 41.14423, -33.178444)
+size = Vector3(13.517578, 2.7050781, 9.856445)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D19" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 26.937626, -33.178444)
+size = Vector3(13.517578, 2.7050781, 9.856445)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 0, 22.683094, 0)
+size = Vector3(45.926758, 3.3828125, 13.638672)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, -36.47181, 20.575321, -15.674541)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.8903127, 0, 2.5267917e-07, 0, 2.8903127, 0, -2.5267917e-07, 0, -2.8903127, 35.300636, 20.575321, -15.674541)
+size = Vector3(4.654297, 5.553711, 15.925537)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGTorus3D5" type="CSGTorus3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-5.9882517, 0, 5.235096e-07, 0, 2.3970733, 0, -5.235095e-07, 0, -5.988252, 0, 11.838032, 0)
+inner_radius = 1.6219909
+outer_radius = 6.098587
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(2.8903124, 0, 0, 0, 2.8903124, 0, 0, 0, 2.8903124, 0, 31.981846, 0)
+size = Vector3(47.935303, 5.460449, 14.5625)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.6797945, -1.0828702, 0, 1.0828702, -2.6797945, 0, 0, 0, 2.8903127, 60.52252, 41.4275, -1.9022365)
+size = Vector3(11.300781, 5.460449, 14.377075)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(2.4983287, -1.4533617, 0, 1.4533617, 2.4983287, 0, 0, 0, 2.8903127, -55.62114, 42.198025, -1.6743138)
+size = Vector3(10.762329, 5.460449, 14.21936)
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="CSGCylinder3D13" type="CSGCylinder3D" parent="Head/TankHeadHIT"]
+transform = Transform3D(-2.8903127, -2.5267914e-07, -1.10449556e-14, -2.5267914e-07, 2.8903127, 1.4210855e-14, 1.1044956e-14, 1.4210855e-14, -2.8903127, 0, 0, 0)
+radius = 7.3374023
+height = 15.85199
+material = SubResource("StandardMaterial3D_cfggv")
+
+[node name="UndamagedHead" type="StaticBody3D" parent="Head"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("BoxShape3D_ma4rh")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("BoxShape3D_g8mrw")
+
+[node name="CollisionShape3D3" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("BoxShape3D_cfggv")
+
+[node name="CollisionShape3D4" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("BoxShape3D_cfggv")
+
+[node name="CollisionShape3D5" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("BoxShape3D_cfggv")
+
+[node name="CollisionShape3D6" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("BoxShape3D_cfggv")
+
+[node name="CollisionShape3D17" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("CylinderShape3D_uwwr5")
+
+[node name="CollisionShape3D7" type="CollisionShape3D" parent="Head/UndamagedHead"]
+shape = SubResource("BoxShape3D_cfggv")
+
+[node name="HeadWeakSpot" type="Node3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -54.351917, 0)
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="Head/HeadWeakSpot"]
+transform = Transform3D(0.67074764, 0, 0, 0, 0.73869485, 0, 0, 0, 1, 35.428715, 74.41091, -35.646687)
+radius = 10.712421
+material = SubResource("StandardMaterial3D_ma4rh")
+
+[node name="CSGSphere3D2" type="CSGSphere3D" parent="Head/HeadWeakSpot"]
+transform = Transform3D(0.67074764, 0, 0, 0, 0.73869485, 0, 0, 0, 1, -36.500523, 74.41091, -35.646687)
+radius = 10.426969
+material = SubResource("StandardMaterial3D_ma4rh")
+
+[node name="CollisionShape3D5" type="CollisionShape3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -35.388023, 19.367184, -38.63388)
+shape = SubResource("SphereShape3D_g8mrw")
+
+[node name="CollisionShape3D6" type="CollisionShape3D" parent="Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35.36276, 19.367184, -38.63388)
+shape = SubResource("SphereShape3D_g8mrw")
+
+[node name="FirePoint" type="Marker3D" parent="Head"]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 33.584965, -41.22358)
+
+[node name="AutoTargetingTurret" parent="Head" groups=["Enemy"] instance=ExtResource("5_cfggv")]
+transform = Transform3D(0.9360288, 0.3519234, 0, -0.3519234, 0.9360288, 0, 0, 0, 1, 68.6885, 38.444042, -23.99408)
+
+[node name="AutoTargetingTurret2" parent="Head" groups=["Enemy"] instance=ExtResource("5_cfggv")]
+transform = Transform3D(0.9360288, 0.3519234, 0, -0.3519234, 0.9360288, 0, 0, 0, 1, 68.6885, 38.444042, -25.890772)
+
+[node name="AutoTargetingTurret3" parent="Head" groups=["Enemy"] instance=ExtResource("5_cfggv")]
+transform = Transform3D(0.9360288, 0.3519234, 0, -0.3519234, 0.9360288, 0, 0, 0, 1, 52.954533, 44.359623, -25.890772)
+
+[node name="AutoTargetingTurret4" parent="Head" groups=["Enemy"] instance=ExtResource("5_cfggv")]
+transform = Transform3D(0.86965007, -0.49366862, 0, 0.49366862, 0.86965007, 0, 0, 0, 1, -48.534054, 44.359623, -25.890772)
+
+[node name="AutoTargetingTurret5" parent="Head" groups=["Enemy"] instance=ExtResource("5_cfggv")]
+transform = Transform3D(0.86965007, -0.49366862, 0, 0.49366862, 0.86965007, 0, 0, 0, 1, -62.17682, 36.615124, -25.890772)
+
+[node name="UndamagedBody" type="StaticBody3D" parent="."]
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -73.5794, 11.708501, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D4" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 13.107086, 0)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D5" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75.71096, 14.293331, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D6" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 93.44851, 14.293331, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D7" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 59.884598, 14.293331, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D8" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.607662, 14.293331, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D9" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.514042, 14.293331, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D10" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57.60848, 15.7811775, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D11" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -90.69946, 9.06357, -0.4182434)
+shape = SubResource("BoxShape3D_8owfg")
+
+[node name="CollisionShape3D12" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36.464924, 16.58698, -0.4182434)
+shape = SubResource("BoxShape3D_sqwdo")
+
+[node name="CollisionShape3D13" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40.19093, 16.58698, -0.4182434)
+shape = SubResource("BoxShape3D_sqwdo")
+
+[node name="CollisionShape3D14" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 61.070415, 41.26587, 1.3815613)
+shape = SubResource("BoxShape3D_h7vtl")
+
+[node name="CollisionShape3D15" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56.226, 41.26587, -0.4182434)
+shape = SubResource("BoxShape3D_h7vtl")
+
+[node name="CollisionShape3D16" type="CollisionShape3D" parent="UndamagedBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7205124, 27.274384, -0.4182434)
+shape = SubResource("CylinderShape3D_ma4rh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74.7627, 23.037714, -39.507042)
+shape = SubResource("SphereShape3D_g8mrw")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75.58293, 23.037714, -37.07788)
+shape = SubResource("SphereShape3D_g8mrw")
+
+[node name="CollisionShape3D3" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75.58293, 23.037714, 40.97194)
+shape = SubResource("SphereShape3D_g8mrw")
+
+[node name="CollisionShape3D4" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 73.94902, 23.037714, 39.494125)
+shape = SubResource("SphereShape3D_g8mrw")

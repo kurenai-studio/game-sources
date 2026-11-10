@@ -1,0 +1,1394 @@
+[gd_scene load_steps=33 format=3 uid="uid://cnrvd8ht0u4ik"]
+
+[ext_resource type="PackedScene" uid="uid://cw564qmankkyx" path="res://Game/Scenes/turret_character.tscn" id="1_gj8w7"]
+[ext_resource type="PackedScene" uid="uid://cr6ik3hlc2dq6" path="res://Buildings/Scenes/build_spot.tscn" id="2_fujgv"]
+[ext_resource type="Script" uid="uid://dtl3wvji7il5f" path="res://Game/Scripts/build_camera_3d.gd" id="2_hnegi"]
+[ext_resource type="PackedScene" uid="uid://dtli4mtqhswl3" path="res://Game/Scenes/force_field_area_3d.tscn" id="3_2hn1u"]
+[ext_resource type="PackedScene" uid="uid://bbg4mt7x7bnjx" path="res://Enemies/Scenes/enemy_path_spawner.tscn" id="5_hnegi"]
+[ext_resource type="Script" uid="uid://bs8evo11ykaqt" path="res://Game/Scripts/enemy_waves_sequencer.gd" id="5_s3tsr"]
+[ext_resource type="Curve3D" uid="uid://8kch5n4ntylt" path="res://Enemies/EnemyPaths/drop_and_rise_corner_turn_Curve3D.tres" id="6_p5tjr"]
+[ext_resource type="PackedScene" uid="uid://cra6kfmxj22h" path="res://Enemies/Scenes/basic_tank.tscn" id="6_sxcph"]
+[ext_resource type="Curve3D" uid="uid://d311wqfjkstim" path="res://Enemies/EnemyPaths/ground_circle_base_Curve3D.tres" id="6_t0qa7"]
+[ext_resource type="PackedScene" uid="uid://br28rgoqvgog0" path="res://Enemies/Scenes/basic_flyer.tscn" id="7_g3rti"]
+[ext_resource type="Curve3D" uid="uid://dkm6mqx8nf2f7" path="res://Enemies/EnemyPaths/drop_and_rise_bombing_Curve3D.tres" id="8_1ghh1"]
+[ext_resource type="Curve3D" uid="uid://p4ebtw4ystse" path="res://Enemies/EnemyPaths/drop_and_rise_corner_turn_inverted_Curve3D.tres" id="8_de3ds"]
+[ext_resource type="PackedScene" uid="uid://c610okaeoghbs" path="res://Enemies/Scenes/bomber_flyer.tscn" id="9_de3ds"]
+[ext_resource type="Curve3D" uid="uid://x7probut8m7f" path="res://Enemies/EnemyPaths/ground_hook_base_Curve3D.tres" id="13_ox8wf"]
+[ext_resource type="PackedScene" uid="uid://cbwwsqvn7idhh" path="res://Enemies/Scenes/carrier_flyer.tscn" id="15_gl2m2"]
+[ext_resource type="Curve3D" uid="uid://b3axkrggffr5y" path="res://Enemies/EnemyPaths/descend_and_stay_curve3d.tres" id="15_j0c4u"]
+[ext_resource type="Curve3D" uid="uid://cjwleg4drb1y0" path="res://Enemies/EnemyPaths/boss01_firstPhase_curve3D.tres" id="17_nvh6e"]
+[ext_resource type="PackedScene" uid="uid://jjliiwsy80cm" path="res://Enemies/Scenes/boss_tank.tscn" id="18_wuf7a"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oqeow"]
+albedo_color = Color(0.26534176, 0.6162392, 0.12180809, 1)
+roughness = 0.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_oqeow"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hnegi"]
+albedo_color = Color(0.7947191, 0.4843105, 0.43380594, 1)
+metallic = 0.93
+roughness = 0.57
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gj8w7"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p5tjr"]
+albedo_color = Color(0.6461008, 0.706487, 0.44471303, 1)
+metallic = 1.0
+roughness = 0.57
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nvh6e"]
+albedo_color = Color(0.5127564, 0.38924325, 0.23619345, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hnegi"]
+material = SubResource("StandardMaterial3D_nvh6e")
+top_radius = 0.8
+bottom_radius = 0.8
+
+[sub_resource type="Environment" id="Environment_fujgv"]
+background_mode = 1
+background_color = Color(0.18401447, 0.08856543, 0.017623652, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.766843, 0.23733434, 0.16198674, 1)
+ambient_light_energy = 0.55
+fog_mode = 1
+fog_light_color = Color(0.3207888, 0.33979413, 0.61935484, 1)
+fog_density = 1.0
+fog_depth_begin = 0.0
+fog_depth_end = 642.9
+
+[sub_resource type="Animation" id="Animation_nvh6e"]
+resource_name = "Level1_BossWave"
+length = 250.0
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = false
+tracks/0/path = NodePath("Enemy_Waves_Sequencer/Flyer1")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(7.0666656, 158.59715, 230.61143),
+"transitions": PackedFloat32Array(1, 1, 1),
+"values": [{
+"args": [5],
+"method": &"start_formation_movement"
+}, {
+"args": [5],
+"method": &"start_formation_movement"
+}, {
+"args": [5],
+"method": &"start_formation_movement"
+}]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = false
+tracks/1/path = NodePath("Enemy_Waves_Sequencer/Flyer2")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(206.8),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = false
+tracks/2/path = NodePath("Enemy_Waves_Sequencer/Flyer4")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(7, 158.59715),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/3/type = "method"
+tracks/3/imported = false
+tracks/3/enabled = false
+tracks/3/path = NodePath("Enemy_Waves_Sequencer/Flyer3")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(177.56667, 230.61143),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/4/type = "method"
+tracks/4/imported = false
+tracks/4/enabled = false
+tracks/4/path = NodePath("Enemy_Waves_Sequencer/Tank3")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(39.166668, 104.63333, 247),
+"transitions": PackedFloat32Array(1, 1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [3],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/5/type = "method"
+tracks/5/imported = false
+tracks/5/enabled = false
+tracks/5/path = NodePath("Enemy_Waves_Sequencer/Bomber1")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(146.06667),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/6/type = "method"
+tracks/6/imported = false
+tracks/6/enabled = false
+tracks/6/path = NodePath("Enemy_Waves_Sequencer/Bomber2")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(145.83333),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/7/type = "method"
+tracks/7/imported = false
+tracks/7/enabled = false
+tracks/7/path = NodePath("Enemy_Waves_Sequencer/Bomber4")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(23.933332, 230.03334),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/8/type = "method"
+tracks/8/imported = false
+tracks/8/enabled = false
+tracks/8/path = NodePath("Enemy_Waves_Sequencer/Bomber3")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(24.066668, 146.13333),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/9/type = "method"
+tracks/9/imported = false
+tracks/9/enabled = false
+tracks/9/path = NodePath("Enemy_Waves_Sequencer/Bomber6")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(230.1, 324.46667),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = false
+tracks/10/path = NodePath("Enemy_Waves_Sequencer/Bomber5")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(229.96666, 324.63333),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = false
+tracks/11/path = NodePath("Enemy_Waves_Sequencer/Carrier1")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(64.8),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/12/type = "method"
+tracks/12/imported = false
+tracks/12/enabled = false
+tracks/12/path = NodePath("Enemy_Waves_Sequencer/Tank1")
+tracks/12/interp = 1
+tracks/12/loop_wrap = true
+tracks/12/keys = {
+"times": PackedFloat32Array(7.2333336, 230.61143),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [3],
+"method": &"start_formation_movement"
+}, {
+"args": [3],
+"method": &"start_formation_movement"
+}]
+}
+tracks/13/type = "method"
+tracks/13/imported = false
+tracks/13/enabled = false
+tracks/13/path = NodePath("Enemy_Waves_Sequencer/Tank2")
+tracks/13/interp = 1
+tracks/13/loop_wrap = true
+tracks/13/keys = {
+"times": PackedFloat32Array(141.6, 238.54646),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/14/type = "method"
+tracks/14/imported = false
+tracks/14/enabled = false
+tracks/14/path = NodePath("Enemy_Waves_Sequencer/Tank4")
+tracks/14/interp = 1
+tracks/14/loop_wrap = true
+tracks/14/keys = {
+"times": PackedFloat32Array(85.63333, 171.76666),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/15/type = "method"
+tracks/15/imported = false
+tracks/15/enabled = false
+tracks/15/path = NodePath("Enemy_Waves_Sequencer/Carrier4")
+tracks/15/interp = 1
+tracks/15/loop_wrap = true
+tracks/15/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"values": []
+}
+tracks/16/type = "method"
+tracks/16/imported = false
+tracks/16/enabled = true
+tracks/16/path = NodePath("Enemy_Waves_Sequencer/Boss1")
+tracks/16/interp = 1
+tracks/16/loop_wrap = true
+tracks/16/keys = {
+"times": PackedFloat32Array(2.9666667),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_s3tsr"]
+resource_name = "Level1_Wave1"
+length = 250.0
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Enemy_Waves_Sequencer/Flyer1")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.76666665, 16.833334, 117.833336),
+"transitions": PackedFloat32Array(1, 1, 1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [5],
+"method": &"start_formation_movement"
+}]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Enemy_Waves_Sequencer/Flyer2")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(37.333332, 67.46667, 95.933334, 143.83333),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}, {
+"args": [3],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [5],
+"method": &"start_formation_movement"
+}]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Enemy_Waves_Sequencer/Flyer4")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(164.1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/3/type = "method"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Enemy_Waves_Sequencer/Flyer3")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(163.40001, 206.16667),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/4/type = "method"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Enemy_Waves_Sequencer/Tank3")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(206.58087, 288.16666),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/5/type = "method"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Enemy_Waves_Sequencer/Bomber1")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"values": []
+}
+tracks/6/type = "method"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Enemy_Waves_Sequencer/Bomber2")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"values": []
+}
+tracks/7/type = "method"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Enemy_Waves_Sequencer/Bomber4")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(256.1),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/8/type = "method"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Enemy_Waves_Sequencer/Bomber3")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"values": []
+}
+tracks/9/type = "method"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Enemy_Waves_Sequencer/Bomber6")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(277.76666),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("Enemy_Waves_Sequencer/Bomber5")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(306.66666),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+
+[sub_resource type="Animation" id="Animation_j0c4u"]
+resource_name = "Level1_Wave2"
+length = 250.0
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Enemy_Waves_Sequencer/Flyer1")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(7.0666656, 158.59715, 230.61143),
+"transitions": PackedFloat32Array(1, 1, 1),
+"values": [{
+"args": [5],
+"method": &"start_formation_movement"
+}, {
+"args": [5],
+"method": &"start_formation_movement"
+}, {
+"args": [5],
+"method": &"start_formation_movement"
+}]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Enemy_Waves_Sequencer/Flyer2")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(206.8),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Enemy_Waves_Sequencer/Flyer4")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(7, 158.59715),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/3/type = "method"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Enemy_Waves_Sequencer/Flyer3")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(177.56667, 230.61143),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/4/type = "method"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Enemy_Waves_Sequencer/Tank3")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(39.166668, 104.63333, 247),
+"transitions": PackedFloat32Array(1, 1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [3],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/5/type = "method"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Enemy_Waves_Sequencer/Bomber1")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(146.06667),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/6/type = "method"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Enemy_Waves_Sequencer/Bomber2")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(145.83333),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/7/type = "method"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Enemy_Waves_Sequencer/Bomber4")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(23.933332, 230.03334),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/8/type = "method"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Enemy_Waves_Sequencer/Bomber3")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(24.066668, 146.13333),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/9/type = "method"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Enemy_Waves_Sequencer/Bomber6")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(230.1, 324.46667),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("Enemy_Waves_Sequencer/Bomber5")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(229.96666, 324.63333),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("Enemy_Waves_Sequencer/Carrier1")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(64.8),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/12/type = "method"
+tracks/12/imported = false
+tracks/12/enabled = true
+tracks/12/path = NodePath("Enemy_Waves_Sequencer/Tank1")
+tracks/12/interp = 1
+tracks/12/loop_wrap = true
+tracks/12/keys = {
+"times": PackedFloat32Array(7.2333336, 230.61143),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [3],
+"method": &"start_formation_movement"
+}, {
+"args": [3],
+"method": &"start_formation_movement"
+}]
+}
+tracks/13/type = "method"
+tracks/13/imported = false
+tracks/13/enabled = true
+tracks/13/path = NodePath("Enemy_Waves_Sequencer/Tank2")
+tracks/13/interp = 1
+tracks/13/loop_wrap = true
+tracks/13/keys = {
+"times": PackedFloat32Array(141.6, 238.54646),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/14/type = "method"
+tracks/14/imported = false
+tracks/14/enabled = true
+tracks/14/path = NodePath("Enemy_Waves_Sequencer/Tank4")
+tracks/14/interp = 1
+tracks/14/loop_wrap = true
+tracks/14/keys = {
+"times": PackedFloat32Array(85.63333, 171.76666),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/15/type = "method"
+tracks/15/imported = false
+tracks/15/enabled = true
+tracks/15/path = NodePath("Enemy_Waves_Sequencer/Carrier4")
+tracks/15/interp = 1
+tracks/15/loop_wrap = true
+tracks/15/keys = {
+"times": PackedFloat32Array(),
+"transitions": PackedFloat32Array(),
+"values": []
+}
+
+[sub_resource type="Animation" id="Animation_vpk13"]
+resource_name = "Level1_Wave3"
+length = 250.0
+tracks/0/type = "method"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Enemy_Waves_Sequencer/Flyer1")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(246, 246.7),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [5],
+"method": &"start_formation_movement"
+}, {
+"args": [5],
+"method": &"start_formation_movement"
+}]
+}
+tracks/1/type = "method"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Enemy_Waves_Sequencer/Flyer2")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(246.13332, 246.64679),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/2/type = "method"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Enemy_Waves_Sequencer/Flyer4")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(140.23334, 245.86667),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/3/type = "method"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Enemy_Waves_Sequencer/Flyer3")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(140.86667),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/4/type = "method"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Enemy_Waves_Sequencer/Tank3")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(140.66667, 197.03334, 247),
+"transitions": PackedFloat32Array(1, 1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [3],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/5/type = "method"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Enemy_Waves_Sequencer/Bomber1")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(128.2),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/6/type = "method"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Enemy_Waves_Sequencer/Bomber2")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(127.63333),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/7/type = "method"
+tracks/7/imported = false
+tracks/7/enabled = true
+tracks/7/path = NodePath("Enemy_Waves_Sequencer/Bomber4")
+tracks/7/interp = 1
+tracks/7/loop_wrap = true
+tracks/7/keys = {
+"times": PackedFloat32Array(96.36667, 224.06667),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/8/type = "method"
+tracks/8/imported = false
+tracks/8/enabled = true
+tracks/8/path = NodePath("Enemy_Waves_Sequencer/Bomber3")
+tracks/8/interp = 1
+tracks/8/loop_wrap = true
+tracks/8/keys = {
+"times": PackedFloat32Array(127.2),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/9/type = "method"
+tracks/9/imported = false
+tracks/9/enabled = true
+tracks/9/path = NodePath("Enemy_Waves_Sequencer/Bomber6")
+tracks/9/interp = 1
+tracks/9/loop_wrap = true
+tracks/9/keys = {
+"times": PackedFloat32Array(95.36667, 324.46667),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/10/type = "method"
+tracks/10/imported = false
+tracks/10/enabled = true
+tracks/10/path = NodePath("Enemy_Waves_Sequencer/Bomber5")
+tracks/10/interp = 1
+tracks/10/loop_wrap = true
+tracks/10/keys = {
+"times": PackedFloat32Array(95.23333, 324.63333),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}, {
+"args": [2],
+"method": &"start_formation_movement"
+}]
+}
+tracks/11/type = "method"
+tracks/11/imported = false
+tracks/11/enabled = true
+tracks/11/path = NodePath("Enemy_Waves_Sequencer/Carrier1")
+tracks/11/interp = 1
+tracks/11/loop_wrap = true
+tracks/11/keys = {
+"times": PackedFloat32Array(196.56667),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/12/type = "method"
+tracks/12/imported = false
+tracks/12/enabled = true
+tracks/12/path = NodePath("Enemy_Waves_Sequencer/Tank1")
+tracks/12/interp = 1
+tracks/12/loop_wrap = true
+tracks/12/keys = {
+"times": PackedFloat32Array(208.73334, 230.61143),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [3],
+"method": &"start_formation_movement"
+}, {
+"args": [3],
+"method": &"start_formation_movement"
+}]
+}
+tracks/13/type = "method"
+tracks/13/imported = false
+tracks/13/enabled = true
+tracks/13/path = NodePath("Enemy_Waves_Sequencer/Tank2")
+tracks/13/interp = 1
+tracks/13/loop_wrap = true
+tracks/13/keys = {
+"times": PackedFloat32Array(71.66667, 117.36667),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/14/type = "method"
+tracks/14/imported = false
+tracks/14/enabled = true
+tracks/14/path = NodePath("Enemy_Waves_Sequencer/Tank4")
+tracks/14/interp = 1
+tracks/14/loop_wrap = true
+tracks/14/keys = {
+"times": PackedFloat32Array(50.600002, 92.9),
+"transitions": PackedFloat32Array(1, 1),
+"values": [{
+"args": [4],
+"method": &"start_formation_movement"
+}, {
+"args": [4],
+"method": &"start_formation_movement"
+}]
+}
+tracks/15/type = "method"
+tracks/15/imported = false
+tracks/15/enabled = true
+tracks/15/path = NodePath("Enemy_Waves_Sequencer/Carrier4")
+tracks/15/interp = 1
+tracks/15/loop_wrap = true
+tracks/15/keys = {
+"times": PackedFloat32Array(247.46666),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/16/type = "method"
+tracks/16/imported = false
+tracks/16/enabled = true
+tracks/16/path = NodePath("Enemy_Waves_Sequencer/Carrier2")
+tracks/16/interp = 1
+tracks/16/loop_wrap = true
+tracks/16/keys = {
+"times": PackedFloat32Array(7.3),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+tracks/17/type = "method"
+tracks/17/imported = false
+tracks/17/enabled = true
+tracks/17/path = NodePath("Enemy_Waves_Sequencer/Carrier3")
+tracks/17/interp = 1
+tracks/17/loop_wrap = true
+tracks/17/keys = {
+"times": PackedFloat32Array(66.3),
+"transitions": PackedFloat32Array(1),
+"values": [{
+"args": [1],
+"method": &"start_formation_movement"
+}]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_gl2m2"]
+_data = {
+&"Level1_BossWave": SubResource("Animation_nvh6e"),
+&"Level1_Wave1": SubResource("Animation_s3tsr"),
+&"Level1_Wave2": SubResource("Animation_j0c4u"),
+&"Level1_Wave3": SubResource("Animation_vpk13")
+}
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_nvh6e"]
+size = Vector3(1035.4958, 304.51172, 44.07715)
+
+[node name="WhiteBox" type="Node3D"]
+
+[node name="Terrain" type="CSGBox3D" parent="."]
+transform = Transform3D(99.462685, 0.00027343095, 0.035000786, -0.12834093, 0.21185195, -0.1580429, -0.026529474, 0.00025357585, 131.99892, -6.322955, -13.145977, -6.8631854)
+use_collision = true
+size = Vector3(14.857422, 107.12024, 8.940247)
+material = SubResource("StandardMaterial3D_oqeow")
+
+[node name="StandardTurretBase" type="Node3D" parent="."]
+
+[node name="CSGMesh3D18" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(3.88781, 0, 0, 0, 3.88781, 0, 0, 0, 3.88781, 0.0531948, 6.18548, 0.0925354)
+use_collision = true
+mesh = SubResource("SphereMesh_oqeow")
+material = SubResource("StandardMaterial3D_hnegi")
+
+[node name="CSGMesh3D19" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(4.43323, 0, 0, 0, 3.07744, 0, 0, 0, 4.43323, 0.0599859, 3.05598, 0.0894531)
+use_collision = true
+mesh = SubResource("CylinderMesh_gj8w7")
+material = SubResource("StandardMaterial3D_p5tjr")
+
+[node name="CSGMesh3D21" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(2.50916, 0, 0, 0, 1.15576, 0, 0, 0, 2.50916, 0.0531948, 6.99668, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_gj8w7")
+material = SubResource("StandardMaterial3D_p5tjr")
+
+[node name="CSGMesh3D20" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(5.36943, 0, 0, 0, 1.4793, 0, 0, 0, 5.36943, 0.0531948, 0.283624, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_gj8w7")
+material = SubResource("StandardMaterial3D_hnegi")
+
+[node name="CSGMesh3D22" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(80, 0, 0, 0, 1.523, 0, 0, 0, 80, 0.0531948, -1.3737, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_gj8w7")
+
+[node name="CSGMesh3D23" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(80, 0, 0, 0, 3.386675, 0, 0, 0, 80, 0.0531948, -4.5436983, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_hnegi")
+
+[node name="TurretCharacter" parent="." node_paths=PackedStringArray("_building_camera") instance=ExtResource("1_gj8w7")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.2681, 0)
+_building_camera = NodePath("../BuildCamera3D")
+_forcefield_path = NodePath("../ForceField_Area3D")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.948485, -0.0413987, 0.314106, -0.151006, 0.812496, 0.563069, -0.27852, -0.581494, 0.764389, -5.27732, 12.6201, 0)
+shadow_enabled = true
+
+[node name="BuildCamera3D" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 158.41385, 0)
+projection = 1
+size = 66.786
+far = 500.0
+script = ExtResource("2_hnegi")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_fujgv")
+
+[node name="BuildLocations" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.150825, 0)
+
+[node name="BuildSpot" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.8843, 0.146836, 0.299128)
+
+[node name="BuildSpot4" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.1157, 0.146836, 0.299128)
+
+[node name="BuildSpot12" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.1157, 0.146836, 0.299128)
+
+[node name="BuildSpot2" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.115682, 0.146836, 16.2991)
+
+[node name="BuildSpot11" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.115682, 0.146836, 32.2991)
+
+[node name="BuildSpot3" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.115682, 0.146836, -15.7009)
+
+[node name="BuildSpot5" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.115682, 0.146836, -32.7009)
+
+[node name="BuildSpot6" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.1157, 0.146836, -15.7009)
+
+[node name="BuildSpot7" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.1157, 0.146836, 15.2991)
+
+[node name="BuildSpot8" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.8843, 0.146836, 15.2991)
+
+[node name="BuildSpot9" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15.8843, 0.146836, -15.7009)
+
+[node name="BuildSpot10" parent="BuildLocations" instance=ExtResource("2_fujgv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27.8843, 0.146836, 0.299099)
+
+[node name="ForceField_Area3D" parent="." instance=ExtResource("3_2hn1u")]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.010667801, 8.268101, 0.012269974)
+
+[node name="Enemy_Waves_Sequencer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_gl2m2")
+}
+script = ExtResource("5_s3tsr")
+
+[node name="Flyer1" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -180.21983, 21.676186, 44.95231)
+curve = ExtResource("6_p5tjr")
+Enemy_To_Spawn = ExtResource("7_g3rti")
+Slow_During_Attack = true
+Attack_Start_Ratio = 0.534
+Attack_End_Ratio = 0.601
+
+[node name="Flyer2" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(1.88, 0, 0, 0, 1.88, 0, 0, 0, 1.88, -359.297, 33.62159, -19.134274)
+curve = ExtResource("8_de3ds")
+Enemy_To_Spawn = ExtResource("7_g3rti")
+Slow_During_Attack = true
+Attack_Start_Ratio = 0.48
+Attack_End_Ratio = 0.508
+
+[node name="Flyer3" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(0.036451884, 0, 0.99933535, 0, 1, 0, -0.99933535, 0, 0.036451884, -37.205673, 16.876717, 205.35037)
+curve = ExtResource("8_de3ds")
+Enemy_To_Spawn = ExtResource("7_g3rti")
+Slow_During_Attack = true
+Attack_Start_Ratio = 0.461
+Attack_End_Ratio = 0.527
+
+[node name="Flyer4" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -27.46399, 29.298264, -181.97104)
+curve = ExtResource("6_p5tjr")
+Enemy_To_Spawn = ExtResource("7_g3rti")
+Slow_During_Attack = true
+Attack_Start_Ratio = 0.523
+Attack_End_Ratio = 0.586
+
+[node name="Bomber1" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -59.37549, 51.991608, 0)
+curve = ExtResource("8_1ghh1")
+Enemy_To_Spawn = ExtResource("9_de3ds")
+Spawn_Amount = 5
+Spawn_Delay = 4.0
+Enemy_Speed = 0.05
+Attack_Start_Ratio = 0.3
+Is_Bomber = true
+
+[node name="Bomber2" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.8668213, 51.991608, 0)
+curve = ExtResource("8_1ghh1")
+Enemy_To_Spawn = ExtResource("9_de3ds")
+Spawn_Amount = 5
+Spawn_Delay = 4.0
+Enemy_Speed = 0.05
+Attack_Start_Ratio = 0.3
+Is_Bomber = true
+
+[node name="Bomber3" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.10925, 51.991608, 0)
+curve = ExtResource("8_1ghh1")
+Enemy_To_Spawn = ExtResource("9_de3ds")
+Spawn_Amount = 5
+Spawn_Delay = 4.0
+Enemy_Speed = 0.05
+Attack_Start_Ratio = 0.3
+Is_Bomber = true
+
+[node name="Bomber4" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 4.8668647, 80.12868, -64.24235)
+curve = ExtResource("8_1ghh1")
+Enemy_To_Spawn = ExtResource("9_de3ds")
+Spawn_Amount = 5
+Spawn_Delay = 4.0
+Enemy_Speed = 0.05
+Attack_Start_Ratio = 0.3
+Is_Bomber = true
+
+[node name="Bomber5" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 4.866862, 80.12868, -4.053116e-05)
+curve = ExtResource("8_1ghh1")
+Enemy_To_Spawn = ExtResource("9_de3ds")
+Spawn_Amount = 5
+Spawn_Delay = 4.0
+Enemy_Speed = 0.05
+Attack_Start_Ratio = 0.3
+Is_Bomber = true
+
+[node name="Bomber6" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 4.866859, 80.12868, 64.24239)
+curve = ExtResource("8_1ghh1")
+Enemy_To_Spawn = ExtResource("9_de3ds")
+Spawn_Amount = 5
+Spawn_Delay = 4.0
+Enemy_Speed = 0.05
+Attack_Start_Ratio = 0.3
+Is_Bomber = true
+
+[node name="Tank1" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 5.6384315, -1.430851, 63.77285)
+curve = ExtResource("6_t0qa7")
+Enemy_To_Spawn = ExtResource("6_sxcph")
+Spawn_Amount = 8
+Spawn_Delay = 4.0
+Enemy_Speed = 0.02
+Attack_Start_Ratio = 0.352
+Attack_End_Ratio = 0.616
+
+[node name="Tank2" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -65.35553, -1.430851, 12.762356)
+curve = ExtResource("13_ox8wf")
+Enemy_To_Spawn = ExtResource("6_sxcph")
+Spawn_Amount = 8
+Spawn_Delay = 4.0
+Enemy_Speed = 0.02
+Attack_Start_Ratio = 0.34
+Attack_End_Ratio = 0.527
+
+[node name="Tank3" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, -17.788574, -1.430851, -61.508823)
+curve = ExtResource("13_ox8wf")
+Enemy_To_Spawn = ExtResource("6_sxcph")
+Spawn_Amount = 8
+Spawn_Delay = 4.0
+Enemy_Speed = 0.02
+Attack_Start_Ratio = 0.34
+Attack_End_Ratio = 0.527
+
+[node name="Tank4" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -5.6289635, -1.430851, -63.723022)
+curve = ExtResource("6_t0qa7")
+Enemy_To_Spawn = ExtResource("6_sxcph")
+Spawn_Amount = 8
+Spawn_Delay = 4.0
+Enemy_Speed = 0.02
+Attack_Start_Ratio = 0.352
+Attack_End_Ratio = 0.616
+
+[node name="Carrier1" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-0.99999994, 0, -5.9604645e-08, 0, 1, 0, 5.9604645e-08, 0, -0.99999994, 0, 22.261177, -144.98743)
+curve = ExtResource("15_j0c4u")
+Enemy_To_Spawn = ExtResource("15_gl2m2")
+Enemy_Speed = 0.08
+Attack_Start_Ratio = 0.372
+Attack_End_Ratio = 0.676
+Is_Carrier = true
+Attack_At_Path_End = true
+
+[node name="Carrier2" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(0.027729705, 0, 0.9996153, 0, 1, 0, -0.9996153, 0, 0.027729705, 129.90422, 26.072899, -0.56188965)
+curve = ExtResource("15_j0c4u")
+Enemy_To_Spawn = ExtResource("15_gl2m2")
+Enemy_Speed = 0.08
+Attack_Start_Ratio = 0.372
+Attack_End_Ratio = 0.676
+Is_Carrier = true
+Attack_At_Path_End = true
+
+[node name="Carrier3" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(-0.027729793, 0, -0.9996153, 0, 1, 0, 0.9996153, 0, -0.027729793, -112.744415, 26.072899, -0.56188965)
+curve = ExtResource("15_j0c4u")
+Enemy_To_Spawn = ExtResource("15_gl2m2")
+Enemy_Speed = 0.08
+Attack_Start_Ratio = 0.372
+Attack_End_Ratio = 0.676
+Is_Carrier = true
+Attack_At_Path_End = true
+
+[node name="Carrier4" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(0.9996153, 0, -0.02772975, 0, 1, 0, 0.02772975, 0, 0.9996153, 0.11323547, 26.072899, 136.97247)
+curve = ExtResource("15_j0c4u")
+Enemy_To_Spawn = ExtResource("15_gl2m2")
+Enemy_Speed = 0.08
+Attack_Start_Ratio = 0.372
+Attack_End_Ratio = 0.676
+Is_Carrier = true
+Attack_At_Path_End = true
+
+[node name="Boss1" parent="Enemy_Waves_Sequencer" instance=ExtResource("5_hnegi")]
+transform = Transform3D(0.9999998, 0, 0, 0, 1, 0, 0, 0, 0.9999998, 0, 0, 238.9524)
+curve = ExtResource("17_nvh6e")
+Enemy_To_Spawn = ExtResource("18_wuf7a")
+Enemy_Speed = 0.005
+Attack_Start_Ratio = 0.071
+Attack_End_Ratio = 1.0
+
+[node name="Threat_Detection" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 0
+input_ray_pickable = false
+monitorable = false
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="Threat_Detection"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 446.70428)
+shape = SubResource("BoxShape3D_nvh6e")
+
+[node name="CollisionShape3D3" type="CollisionShape3D" parent="Threat_Detection"]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -412.79434, 0, 0.01473999)
+shape = SubResource("BoxShape3D_nvh6e")
+
+[node name="CollisionShape3D4" type="CollisionShape3D" parent="Threat_Detection"]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 446.68942, 0, 0.01473999)
+shape = SubResource("BoxShape3D_nvh6e")
+
+[node name="CollisionShape3D5" type="CollisionShape3D" parent="Threat_Detection"]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 10.894867, 0, -359.51578)
+shape = SubResource("BoxShape3D_nvh6e")
+
+[node name="TimeBetweenWaves" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 5.0
+one_shot = true
+
+[connection signal="animation_finished" from="Enemy_Waves_Sequencer" to="Enemy_Waves_Sequencer" method="_on_animation_finished"]
+[connection signal="body_entered" from="Threat_Detection" to="TurretCharacter" method="_on_threat_detection_body_entered"]
+[connection signal="timeout" from="TimeBetweenWaves" to="Enemy_Waves_Sequencer" method="_on_time_between_waves_timeout"]

@@ -1,0 +1,65 @@
+[gd_scene load_steps=11 format=3 uid="uid://cgbpcs1vnk6cv"]
+
+[ext_resource type="Script" uid="uid://dr07ypr2kj73y" path="res://Game/Scripts/VFX_Emitter.gd" id="1_734br"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_734br"]
+shading_mode = 0
+albedo_color = Color(1, 0.7542772, 0.50562376, 1)
+
+[sub_resource type="Curve" id="Curve_g3rti"]
+_limits = [-360.0, 360.0, 0.0, 1.0]
+_data = [Vector2(0, -360), 0.0, 0.0, 0, 0, Vector2(1, 360), 1008.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_wnskb"]
+curve = SubResource("Curve_g3rti")
+
+[sub_resource type="Gradient" id="Gradient_734br"]
+colors = PackedColorArray(0.40243968, 0.23638576, 0, 1, 0.94211143, 0.25744635, 0, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_qvbwo"]
+gradient = SubResource("Gradient_734br")
+
+[sub_resource type="Curve" id="Curve_j0wj7"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.5850526), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_de3ds"]
+curve = SubResource("Curve_j0wj7")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_rpj8i"]
+lifetime_randomness = 1.0
+emission_shape = 1
+emission_sphere_radius = 0.5
+angle_min = -349.1
+angle_max = 318.50003
+angle_curve = SubResource("CurveTexture_wnskb")
+direction = Vector3(0, 0, 0)
+spread = 180.0
+initial_velocity_min = 2.0
+initial_velocity_max = 25.0
+radial_velocity_min = 0.49997765
+radial_velocity_max = 0.99997765
+linear_accel_min = 1.9999977
+linear_accel_max = 4.9999976
+radial_accel_min = 2.2599976
+radial_accel_max = 4.9999976
+damping_min = 5.65
+damping_max = 12.107
+scale_min = 0.39999998
+scale_curve = SubResource("CurveTexture_de3ds")
+color_ramp = SubResource("GradientTexture1D_qvbwo")
+
+[sub_resource type="QuadMesh" id="QuadMesh_t0qa7"]
+
+[node name="ExplosionParticles" type="GPUParticles3D"]
+material_override = SubResource("StandardMaterial3D_734br")
+amount = 200
+lifetime = 0.7
+explosiveness = 1.0
+randomness = 1.0
+fixed_fps = 60
+transform_align = 1
+process_material = SubResource("ParticleProcessMaterial_rpj8i")
+draw_pass_1 = SubResource("QuadMesh_t0qa7")
+script = ExtResource("1_734br")

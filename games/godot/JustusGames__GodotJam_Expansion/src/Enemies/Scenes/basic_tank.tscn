@@ -1,0 +1,230 @@
+[gd_scene load_steps=13 format=3 uid="uid://cra6kfmxj22h"]
+
+[ext_resource type="Script" uid="uid://cs3ejptceix3f" path="res://Enemies/Scripts/enemy_basic_tank.gd" id="1_dd2k4"]
+[ext_resource type="PackedScene" uid="uid://bsmhkyeraywr6" path="res://Enemies/Projectiles/enemy_bullet.tscn" id="2_8gfss"]
+[ext_resource type="PackedScene" uid="uid://cgbpcs1vnk6cv" path="res://Game/VFX/explosion_particles.tscn" id="3_2xsvj"]
+[ext_resource type="PackedScene" uid="uid://b17kyq3ifotuf" path="res://Enemies/Scenes/enemy_auto_targeting_turret.tscn" id="4_8gfss"]
+[ext_resource type="PackedScene" uid="uid://dqqlwv5brlcoe" path="res://Enemies/Projectiles/enemy_rocket.tscn" id="5_2xsvj"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j5xm6"]
+shading_mode = 2
+albedo_color = Color(0.9666725, 0.4300282, 0.19206819, 1)
+emission_enabled = true
+rim = 0.01
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bx2a7"]
+shading_mode = 2
+albedo_color = Color(0.99999994, 0.2066384, 0.28332004, 1)
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ja0i8"]
+shading_mode = 2
+albedo_color = Color(0.40589708, 0.42660576, 0, 1)
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8ak5q"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.84391916, 0, 0.066081785, 1)
+grow = true
+grow_amount = 0.101
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xyejf"]
+next_pass = SubResource("StandardMaterial3D_8ak5q")
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+depth_draw_mode = 1
+shading_mode = 0
+albedo_color = Color(0.9942741, 0, 0.039242156, 0.7137255)
+grow = true
+grow_amount = 0.02
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.84391916, 0, 0.066081785, 1)
+stencil_outline_thickness = 0.101
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_j5xm6"]
+size = Vector3(4.6311035, 7.470625, 16.789063)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hj4kx"]
+size = Vector3(2.347412, 1.8476563, 12.773972)
+
+[node name="Tank" type="CharacterBody3D" node_paths=PackedStringArray("Turret_Locations") groups=["Enemy"]]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_dd2k4")
+Turret_Locations = [NodePath("AutoTargetingTurret")]
+_enemy_body_root_path = NodePath("Body")
+_enemy_body_hit_root_path = NodePath("Body/BodyHIT")
+Projectile = ExtResource("2_8gfss")
+Enemy_Type = 4
+Health = 14.0
+_explosion_particles = ExtResource("3_2xsvj")
+
+[node name="Body" type="Node3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 0, 7.315651, 0)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3486284e-07, -2.4839072, -0.32241774)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="Body"]
+transform = Transform3D(1, 1.2591332e-08, -9.1150554e-10, -1.2591332e-08, 0.9895736, -0.14402805, -9.1150554e-10, 0.14402805, 0.9895736, 4.1609468e-08, -2.3545573, 1.8048329)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="Body"]
+transform = Transform3D(1, -2.7536413e-09, -4.337153e-11, 2.7536413e-09, 0.99950385, 0.031497985, -4.3378634e-11, -0.031497985, 0.99950385, -6.729764e-07, -2.6349573, -6.47772)
+size = Vector3(8.850586, 6.173828, 8.37793)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.1229563, -5.473838, -0.32241818)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="Body"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.0718353, 0, 0, 0, 2.0718353, -0.033880543, -0.23538375, -4.141941)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_bx2a7")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Body"]
+transform = Transform3D(1, -7.1054274e-15, -4.2351647e-22, 0, -4.371139e-08, 1, -7.1054274e-15, -1, -4.371139e-08, 5.196832, -2.4771307, -0.28759477)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D3" type="CSGCylinder3D" parent="Body"]
+transform = Transform3D(1, -7.1054274e-15, -4.2351647e-22, 0, -4.371139e-08, 1, -7.1054274e-15, -1, -4.371139e-08, -6.073378, -2.4771307, -0.28759378)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_ja0i8")
+
+[node name="CSGCylinder3D2" type="CSGCylinder3D" parent="Body"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, 5.167731, -5.251873, 7.0929666)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D4" type="CSGCylinder3D" parent="Body"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, 5.16773, -5.251873, -8.026349)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2299805, -5.473838, -0.3224172)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D5" type="CSGCylinder3D" parent="Body"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, -6.185206, -5.251873, 7.0929675)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGCylinder3D6" type="CSGCylinder3D" parent="Body"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, -6.185207, -5.251873, -8.026348)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="BodyHIT" type="Node3D" parent="Body"]
+unique_name_in_owner = true
+visible = false
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.3486284e-07, -2.4839072, -0.32241774)
+size = Vector3(8.850586, 4.677002, 8.37793)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(1, 1.2591332e-08, -9.1150554e-10, -1.2591332e-08, 0.9895736, -0.14402805, -9.1150554e-10, 0.14402805, 0.9895736, 4.1609468e-08, -2.354557, 1.8048329)
+size = Vector3(8.850586, 3.3623047, 8.595215)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D11" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(1, -2.7536413e-09, -4.337153e-11, 2.7536413e-09, 0.99950385, 0.031497985, -4.3378634e-11, -0.031497985, 0.99950385, -6.729764e-07, -2.6349573, -6.47772)
+size = Vector3(8.850586, 6.173828, 8.37793)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.1229563, -5.473838, -0.32241818)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGTorus3D2" type="CSGTorus3D" parent="Body/BodyHIT"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.0718353, 0, 0, 0, 2.0718353, -0.033880543, -0.23538399, -4.141941)
+inner_radius = 1.6219909
+outer_radius = 2.7947152
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGCylinder3D7" type="CSGCylinder3D" parent="Body/BodyHIT"]
+transform = Transform3D(1, -7.1054274e-15, -4.2351647e-22, 0, -4.371139e-08, 1, -7.1054274e-15, -1, -4.371139e-08, 5.196832, -2.477131, -0.28759477)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGCylinder3D8" type="CSGCylinder3D" parent="Body/BodyHIT"]
+transform = Transform3D(1, -7.1054274e-15, -4.2351647e-22, 0, -4.371139e-08, 1, -7.1054274e-15, -1, -4.371139e-08, -6.073378, -2.477131, -0.28759378)
+radius = 3.0512695
+height = 15.85199
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGCylinder3D9" type="CSGCylinder3D" parent="Body/BodyHIT"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, 5.167731, -5.251873, 7.0929666)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGCylinder3D10" type="CSGCylinder3D" parent="Body/BodyHIT"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, 5.16773, -5.251873, -8.026349)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="Body/BodyHIT"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2299805, -5.473838, -0.3224172)
+size = Vector3(4.4455566, 3.6539307, 14.932617)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGCylinder3D11" type="CSGCylinder3D" parent="Body/BodyHIT"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, -6.185206, -5.251873, 7.0929675)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGCylinder3D12" type="CSGCylinder3D" parent="Body/BodyHIT"]
+transform = Transform3D(-4.371139e-08, -1, -4.371139e-08, 0, -4.371139e-08, 1, -1, 4.371139e-08, 1.9106855e-15, -6.185207, -5.251873, -8.026348)
+radius = 2.0019531
+height = 4.34375
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="FirePoint" type="Marker3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.020363, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.2815685, 3.8449483, 0.719352)
+shape = SubResource("BoxShape3D_j5xm6")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.168974, 3.8449483, 0.719352)
+shape = SubResource("BoxShape3D_j5xm6")
+
+[node name="CollisionShape3D3" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.47618914, 4.542204, 2.1599648)
+shape = SubResource("BoxShape3D_hj4kx")
+
+[node name="AutoTargetingTurret" parent="." instance=ExtResource("4_8gfss")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.41383, 4.1948385)
+Projectile = ExtResource("5_2xsvj")

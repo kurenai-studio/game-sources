@@ -1,0 +1,48 @@
+[gd_scene load_steps=6 format=3 uid="uid://bsmhkyeraywr6"]
+
+[ext_resource type="Script" uid="uid://di0w0jg8te38f" path="res://Game/Scripts/basic_bullet.gd" id="1_1rlgt"]
+[ext_resource type="PackedScene" uid="uid://xwmyjjrnjhj3" path="res://Game/VFX/impact_particles.tscn" id="2_ov4cr"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1rlgt"]
+radius = 0.97703516
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ov4cr"]
+albedo_color = Color(0.9999997, 0.20942506, 0.3788902, 1)
+emission_enabled = true
+emission = Color(0.9884736, 0, 0.27702147, 1)
+emission_energy_multiplier = 6.43
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1rpsa"]
+albedo_color = Color(0.9490679, 1.6364455e-06, 0.5704014, 1)
+emission_enabled = true
+emission = Color(0.98577446, 0.4092424, 0.99394065, 1)
+emission_energy_multiplier = 1.25
+
+[node name="BasicBullet" type="CharacterBody3D" groups=["NeedsCleaning"]]
+collision_layer = 16
+collision_mask = 4
+motion_mode = 1
+script = ExtResource("1_1rlgt")
+_impact_particles = ExtResource("2_ov4cr")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07910156, 0)
+shape = SubResource("SphereShape3D_1rlgt")
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.810853, 0, 0, 0, 0.5255044, 0, 0, 0, 1.0246445, 0, 0, 0)
+cast_shadow = 0
+radius = 0.8424224
+radial_segments = 4
+rings = 4
+smooth_faces = false
+material = SubResource("StandardMaterial3D_ov4cr")
+
+[node name="CSGSphere3D2" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.491613, 0, 0, 0, 0.270881, 0, 0, 0, 2.3905804, -0.00129187, -0.00307393, 1.128876)
+cast_shadow = 0
+radius = 0.657881
+radial_segments = 4
+rings = 2
+smooth_faces = false
+material = SubResource("StandardMaterial3D_1rpsa")

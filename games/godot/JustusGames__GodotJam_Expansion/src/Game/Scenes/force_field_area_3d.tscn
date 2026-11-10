@@ -1,0 +1,97 @@
+[gd_scene load_steps=9 format=3 uid="uid://dtli4mtqhswl3"]
+
+[ext_resource type="Script" uid="uid://bcak0htqcxdbi" path="res://Game/Scripts/forcefield_area3d.gd" id="1_dbr15"]
+
+[sub_resource type="Gradient" id="Gradient_fujgv"]
+offsets = PackedFloat32Array(0, 0.585809, 1)
+colors = PackedColorArray(0.718943, 0.312746, 4.81307e-07, 1, 0.239299, 0.304499, 0.665744, 1, 0.643771, 0, 0.206038, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_2hn1u"]
+frequency = 0.0471
+fractal_lacunarity = 5.225
+fractal_gain = 0.975
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_j1s4i"]
+noise = SubResource("FastNoiseLite_2hn1u")
+color_ramp = SubResource("Gradient_fujgv")
+seamless = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hnegi"]
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+shading_mode = 2
+disable_ambient_light = true
+albedo_color = Color(0.26479155, 0.2374612, 1, 0.20500001)
+albedo_texture = SubResource("NoiseTexture2D_j1s4i")
+roughness = 0.63
+emission_enabled = true
+emission = Color(0.656486, 0.656702, 0.931054, 1)
+emission_energy_multiplier = 3.66
+emission_operator = 1
+emission_texture = SubResource("NoiseTexture2D_j1s4i")
+rim = 0.65
+rim_tint = 0.91
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wj0u1"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.35253903, 0.5592148, 0.51100004)
+grow = true
+grow_amount = 0.101
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dbr15"]
+next_pass = SubResource("StandardMaterial3D_wj0u1")
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+depth_draw_mode = 1
+shading_mode = 0
+albedo_color = Color(0.6491829, 0, 0.3055162, 0.066)
+grow = true
+grow_amount = 0.1
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(1, 0.35253903, 0.5592148, 0.51100004)
+stencil_outline_thickness = 0.101
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_p5tjr"]
+radius = 7.680484
+
+[node name="ForceField_Area3D" type="StaticBody3D"]
+collision_layer = 4
+collision_mask = 0
+input_ray_pickable = false
+script = ExtResource("1_dbr15")
+
+[node name="Forcfield" type="CSGSphere3D" parent="."]
+unique_name_in_owner = true
+cast_shadow = 0
+radius = 7.6443043
+radial_segments = 32
+rings = 32
+material = SubResource("StandardMaterial3D_hnegi")
+
+[node name="ForcfieldHIT" type="CSGSphere3D" parent="."]
+unique_name_in_owner = true
+visible = false
+cast_shadow = 0
+radius = 7.6443043
+radial_segments = 32
+rings = 32
+material = SubResource("StandardMaterial3D_dbr15")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+unique_name_in_owner = true
+shape = SubResource("SphereShape3D_p5tjr")
+
+[node name="ResetTimer" type="Timer" parent="."]
+wait_time = 10.0
+one_shot = true
+
+[connection signal="timeout" from="ResetTimer" to="." method="_on_reset_timer_timeout"]

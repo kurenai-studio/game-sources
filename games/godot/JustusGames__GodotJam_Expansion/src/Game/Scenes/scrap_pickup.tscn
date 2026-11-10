@@ -1,0 +1,31 @@
+[gd_scene load_steps=4 format=3 uid="uid://c017yxisxoc0w"]
+
+[ext_resource type="Script" uid="uid://cd65mkrbis00x" path="res://Game/Scripts/scrap_pickup.gd" id="1_rxdy3"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_xjdmg"]
+radius = 2.4582863
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_smjjn"]
+albedo_color = Color(0, 0.9073491, 0.93181264, 1)
+metallic = 1.0
+roughness = 0.18
+
+[node name="Scrap" type="CharacterBody3D" groups=["NeedsCleaning"]]
+collision_layer = 0
+collision_mask = 32
+motion_mode = 1
+script = ExtResource("1_rxdy3")
+speed = 250.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_xjdmg")
+
+[node name="CSGTorus3D" type="CSGTorus3D" parent="."]
+inner_radius = 1.0145147
+outer_radius = 1.7949339
+material = SubResource("StandardMaterial3D_smjjn")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGTorus3D"]
+radius = 0.96777344
+height = 2.7822266
+material = SubResource("StandardMaterial3D_smjjn")

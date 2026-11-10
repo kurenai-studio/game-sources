@@ -1,0 +1,71 @@
+[gd_scene load_steps=4 format=3 uid="uid://bmn46lom0x358"]
+
+[ext_resource type="Texture2D" uid="uid://ckedwnher4hmu" path="res://Interface/Textures/damage_indicator_color.png" id="1_s35kh"]
+[ext_resource type="Script" uid="uid://d7kv2hvd1xin" path="res://Interface/Scripts/damage_indicator.gd" id="2_a71n7"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_a71n7"]
+blend_mode = 1
+light_mode = 1
+
+[node name="DamageIndicatorRoot" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_a71n7")
+
+[node name="DamageIndicator" type="TextureRect" parent="."]
+unique_name_in_owner = true
+material = SubResource("CanvasItemMaterial_a71n7")
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -64.0
+offset_right = 64.0
+offset_bottom = 64.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(2, 2)
+pivot_offset = Vector2(64, 128)
+texture = ExtResource("1_s35kh")
+stretch_mode = 3
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = 98.53998
+offset_right = 150.0
+offset_bottom = 157.80005
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(150, 0)
+
+[node name="ThreadDetectedLabel" type="Label" parent="Panel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -142.5
+offset_top = -22.5
+offset_right = 142.5
+offset_bottom = 22.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0.44705883, 0, 1)
+theme_override_font_sizes/font_size = 32
+text = "THREAT DETECTED"
+horizontal_alignment = 1
+vertical_alignment = 1

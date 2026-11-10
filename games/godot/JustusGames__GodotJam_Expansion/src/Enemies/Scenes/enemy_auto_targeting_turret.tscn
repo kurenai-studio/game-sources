@@ -1,0 +1,168 @@
+[gd_scene load_steps=11 format=3 uid="uid://b17kyq3ifotuf"]
+
+[ext_resource type="Script" uid="uid://fa0pta4wlf00" path="res://Enemies/Scripts/tank_turret_body.gd" id="1_u3t28"]
+[ext_resource type="PackedScene" uid="uid://bsmhkyeraywr6" path="res://Enemies/Projectiles/enemy_bullet.tscn" id="2_qk0vw"]
+[ext_resource type="PackedScene" uid="uid://cgbpcs1vnk6cv" path="res://Game/VFX/explosion_particles.tscn" id="3_jywq3"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_8gfss"]
+size = Vector3(6.948242, 4.3828125, 7.9476433)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hj4kx"]
+size = Vector3(2.347412, 1.8476563, 12.773972)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j5xm6"]
+shading_mode = 2
+albedo_color = Color(0.9666725, 0.4300282, 0.19206819, 1)
+emission_enabled = true
+rim = 0.01
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kfdm6"]
+shading_mode = 2
+albedo_color = Color(0.13979033, 0.07600755, 0.04364916, 1)
+metallic = 1.0
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hgaop"]
+albedo_color = Color(0.6822077, 0.7416239, 0.8765343, 1)
+metallic = 0.78
+metallic_specular = 0.51
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m8y6f"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.84391916, 0, 0.066081785, 1)
+grow = true
+grow_amount = 0.101
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xyejf"]
+next_pass = SubResource("StandardMaterial3D_m8y6f")
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+depth_draw_mode = 1
+shading_mode = 0
+albedo_color = Color(0.9942741, 0, 0.039242156, 0.7137255)
+grow = true
+grow_amount = 0.02
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.84391916, 0, 0.066081785, 1)
+stencil_outline_thickness = 0.101
+
+[node name="AutoTargetingTurret" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_u3t28")
+_enemy_body_root_path = NodePath("TankTurret")
+_enemy_body_hit_root_path = NodePath("TankTurret/TankTurretHIT")
+Projectile = ExtResource("2_qk0vw")
+Enemy_Type = 7
+_explosion_particles = ExtResource("3_jywq3")
+_min_fire_delay = 2.0
+_max_fire_delay = 3.0
+
+[node name="CollisionShape3D4" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.47618914, 2.2378855, 1.6881413)
+shape = SubResource("BoxShape3D_8gfss")
+
+[node name="CollisionShape3D5" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.13932085, 2.5795317, -8.03941)
+shape = SubResource("BoxShape3D_hj4kx")
+
+[node name="TankTurret" type="Node3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 0, 0)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="TankTurret"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 0, 0, 2.071835, -0.034259606, 2.05482, 0.22171211)
+size = Vector3(1.6193848, 1.7880859, 1)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D11" type="CSGBox3D" parent="TankTurret"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 0, 0, 2.071835, -0.03425971, 2.05482, -2.7468843)
+size = Vector3(2.9978027, 1.7880859, 2.7114258)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="TankTurret"]
+transform = Transform3D(1.6166296, 0, 0, 0, 1.6373017, 0, 0, 0, 1, 8.7618264e-07, 2.1120057, 7.651575)
+size = Vector3(0.9628906, 0.9238281, 13.719727)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D11" type="CSGBox3D" parent="TankTurret/CSGBox3D10"]
+transform = Transform3D(0.6835021, 0, -5.151435e-14, 0, 0.47400552, 0, -2.5579538e-13, 0, 0.4142625, 1.3170052e-08, 0, 6.973131)
+size = Vector3(0.8688965, 1.3066406, 1.7216797)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="TankTurret/CSGBox3D10"]
+transform = Transform3D(0.6835021, 0, -1.7230661e-13, 0, 0.47400552, 0, -9.450218e-13, 0, 0.4142596, -6.460135e-07, 0, -3.9902685)
+size = Vector3(2.2929688, 2.9375, 13.679077)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D4" type="CSGBox3D" parent="TankTurret"]
+transform = Transform3D(2.071835, -2.0898756e-07, 1.4076932e-08, 1.7089522e-07, 1.7670586, 1.0816672, -1.2111477e-07, -1.0816672, 1.7670586, -0.03425972, 3.455286, -2.0609841)
+size = Vector3(0.7216797, 1.7880859, 2.4951172)
+material = SubResource("StandardMaterial3D_hgaop")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="TankTurret"]
+transform = Transform3D(1.8491275, 0.93446666, 0, -0.93446666, 1.8491275, 0, 0, 0, 2.071835, 2.0605853, 2.05482, 0.22171211)
+size = Vector3(1.6193848, 3.0947266, 1)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="TankTurret"]
+transform = Transform3D(1.9391701, -0.7294657, 1.0679742e-09, 0.7294657, 1.9391701, -1.9640012e-08, 5.9154246e-09, 1.8758428e-08, 2.071835, -2.231344, 2.05482, 0.22171211)
+size = Vector3(1.6193848, 3.0947266, 1)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="FirePoint" type="Marker3D" parent="TankTurret"]
+unique_name_in_owner = true
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 1.3162862e-06, 2.007631, 15.056559)
+
+[node name="TankTurretHIT" type="Node3D" parent="TankTurret"]
+unique_name_in_owner = true
+visible = false
+
+[node name="CSGBox3D" type="CSGBox3D" parent="TankTurret/TankTurretHIT"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 0, 0, 2.071835, -0.034259606, 2.05482, 0.22171211)
+size = Vector3(1.6193848, 1.7880859, 1)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D11" type="CSGBox3D" parent="TankTurret/TankTurretHIT"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 0, 0, 2.071835, -0.03425971, 2.05482, -2.7468843)
+size = Vector3(2.9978027, 1.7880859, 2.7114258)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="TankTurret/TankTurretHIT"]
+transform = Transform3D(1.6166296, 0, 0, 0, 1.6373017, 0, 0, 0, 1, 8.7618264e-07, 2.1120057, 7.651575)
+size = Vector3(0.9628906, 0.9238281, 13.719727)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D11" type="CSGBox3D" parent="TankTurret/TankTurretHIT/CSGBox3D10"]
+transform = Transform3D(0.6835021, 0, -5.151435e-14, 0, 0.47400552, 0, -2.5579538e-13, 0, 0.4142625, 1.3170052e-08, 0, 6.973131)
+size = Vector3(0.8688965, 1.3066406, 1.7216797)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="TankTurret/TankTurretHIT/CSGBox3D10"]
+transform = Transform3D(0.6835021, 0, -1.7230661e-13, 0, 0.47400552, 0, -9.450218e-13, 0, 0.4142596, -6.460135e-07, 0, -3.9902685)
+size = Vector3(2.2929688, 2.9375, 13.679077)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D4" type="CSGBox3D" parent="TankTurret/TankTurretHIT"]
+transform = Transform3D(2.071835, -2.0898756e-07, 1.4076932e-08, 1.7089522e-07, 1.7670586, 1.0816672, -1.2111477e-07, -1.0816672, 1.7670586, -0.03425972, 3.455286, -2.0609841)
+size = Vector3(0.7216797, 1.7880859, 2.4951172)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="TankTurret/TankTurretHIT"]
+transform = Transform3D(1.8491275, 0.93446666, 0, -0.93446666, 1.8491275, 0, 0, 0, 2.071835, 2.0605853, 2.05482, 0.22171211)
+size = Vector3(1.6193848, 3.0947266, 1)
+material = SubResource("StandardMaterial3D_xyejf")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="TankTurret/TankTurretHIT"]
+transform = Transform3D(1.9391701, -0.7294657, 1.0679742e-09, 0.7294657, 1.9391701, -1.9640012e-08, 5.9154246e-09, 1.8758428e-08, 2.071835, -2.231344, 2.05482, 0.22171211)
+size = Vector3(1.6193848, 3.0947266, 1)
+material = SubResource("StandardMaterial3D_xyejf")
