@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cqwfi0p3efb32"]
+
+[ext_resource type="Script" uid="uid://dxvusj8vfn7pb" path="res://Scripts/ship.gd" id="1_4qyt1"]
+[ext_resource type="Texture2D" uid="uid://bgeoebnqkoi15" path="res://Images/Boat/Boat1.png" id="1_78pfh"]
+[ext_resource type="AudioStream" uid="uid://bpto5n067dtj6" path="res://Sound/ship_spawn.wav" id="3_xxxu3"]
+[ext_resource type="AudioStream" uid="uid://btt6cp12s8umq" path="res://Sound/ship_crash.wav" id="4_6ejuo"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4qyt1"]
+size = Vector2(30, 28)
+
+[sub_resource type="Curve2D" id="Curve2D_4lamp"]
+
+[node name="Ship" type="Area2D" unique_id=1279541785]
+collision_layer = 4
+collision_mask = 5
+script = ExtResource("1_4qyt1")
+
+[node name="ShipArea" type="CollisionShape2D" parent="." unique_id=1455084833]
+position = Vector2(0, -1)
+shape = SubResource("RectangleShape2D_4qyt1")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=509288599]
+position = Vector2(0, -3)
+texture = ExtResource("1_78pfh")
+
+[node name="Path2D" type="Path2D" parent="." unique_id=1092900364]
+curve = SubResource("Curve2D_4lamp")
+
+[node name="PathFollow2D" type="PathFollow2D" parent="Path2D" unique_id=473672141]
+
+[node name="AlwaysDodgeRay" type="RayCast2D" parent="." unique_id=591703107]
+collision_mask = 2
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="RockRay" type="RayCast2D" parent="." unique_id=409688089]
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="OnScreenNotifier" type="VisibleOnScreenNotifier2D" parent="." unique_id=1727636890]
+position = Vector2(-8, -8)
+rect = Rect2(-8, -8, 32, 30)
+
+[node name="RockRayHit" type="RayCast2D" parent="." unique_id=1927780876]
+target_position = Vector2(0, 0)
+hit_from_inside = true
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="ShipSpawnAudio" type="AudioStreamPlayer" parent="." unique_id=1506174145]
+stream = ExtResource("3_xxxu3")
+
+[node name="ShipCrashAudio" type="AudioStreamPlayer" parent="." unique_id=1412888797]
+stream = ExtResource("4_6ejuo")
+
+[connection signal="screen_exited" from="OnScreenNotifier" to="." method="_on_on_screen_notifier_screen_exited"]

@@ -1,0 +1,112 @@
+[gd_scene format=3 uid="uid://bafknhql1mfx7"]
+
+[ext_resource type="PackedScene" uid="uid://c1loicnfuquuq" path="res://Scenes/lighthouse.tscn" id="1_ebmjs"]
+[ext_resource type="Script" uid="uid://b8byusgy5dq6h" path="res://Scripts/game.gd" id="1_qxrlw"]
+[ext_resource type="PackedScene" uid="uid://d0rbdkjm5pldx" path="res://Scenes/rock.tscn" id="3_wrm1d"]
+[ext_resource type="PackedScene" uid="uid://brp7qejx48b8k" path="res://Scenes/level_complete_powerup_select.tscn" id="4_3dryh"]
+
+[node name="Game" type="Node2D" unique_id=1516169995]
+script = ExtResource("1_qxrlw")
+
+[node name="Background" type="ColorRect" parent="." unique_id=633306872]
+offset_right = 720.0
+offset_bottom = 720.0
+color = Color(0, 0, 0.24705882, 1)
+
+[node name="Rocks" type="Node2D" parent="." unique_id=260382543]
+
+[node name="RockN" parent="Rocks" unique_id=1938764703 instance=ExtResource("3_wrm1d")]
+position = Vector2(-606, -386)
+
+[node name="RockS" parent="Rocks" unique_id=1788990594 instance=ExtResource("3_wrm1d")]
+position = Vector2(-606, -386)
+placement = 1
+
+[node name="RockE" parent="Rocks" unique_id=2123944510 instance=ExtResource("3_wrm1d")]
+position = Vector2(-606, -384)
+placement = 2
+
+[node name="RockW" parent="Rocks" unique_id=1321709870 instance=ExtResource("3_wrm1d")]
+position = Vector2(-607, -385)
+placement = 3
+
+[node name="RockR1" parent="Rocks" unique_id=592149500 instance=ExtResource("3_wrm1d")]
+position = Vector2(-607, -385)
+placement = 4
+
+[node name="RockR2" parent="Rocks" unique_id=1395953426 instance=ExtResource("3_wrm1d")]
+position = Vector2(-607, -385)
+placement = 4
+
+[node name="RockR3" parent="Rocks" unique_id=1936390527 instance=ExtResource("3_wrm1d")]
+position = Vector2(-607, -385)
+placement = 4
+
+[node name="RockR4" parent="Rocks" unique_id=724045577 instance=ExtResource("3_wrm1d")]
+position = Vector2(-607, -385)
+placement = 4
+
+[node name="RockR5" parent="Rocks" unique_id=1288449490 instance=ExtResource("3_wrm1d")]
+position = Vector2(-607, -385)
+placement = 4
+
+[node name="RockR6" parent="Rocks" unique_id=1179018123 instance=ExtResource("3_wrm1d")]
+position = Vector2(-607, -385)
+placement = 4
+
+[node name="Ships" type="Node2D" parent="." unique_id=838387477]
+position = Vector2(0, -8)
+
+[node name="Lighthouse" parent="." unique_id=1137881333 instance=ExtResource("1_ebmjs")]
+position = Vector2(360, 360)
+
+[node name="RefuelButton" type="Button" parent="." unique_id=535799050]
+offset_left = 602.0
+offset_top = 654.0
+offset_right = 706.0
+offset_bottom = 708.0
+text = "Refuel Light"
+
+[node name="ShipSpawnTimer" type="Timer" parent="." unique_id=1090460522]
+one_shot = true
+
+[node name="ScoreLabel" type="Label" parent="." unique_id=83367086]
+offset_left = 614.0
+offset_top = 593.0
+offset_right = 696.0
+offset_bottom = 616.0
+text = "Score: 0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HourLabel" type="Label" parent="." unique_id=302417794]
+offset_left = 609.0
+offset_top = 610.0
+offset_right = 701.0
+offset_bottom = 633.0
+text = "Hour: 1/12"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="LevelLabel" type="Label" parent="." unique_id=731361472]
+offset_left = 618.0
+offset_top = 627.0
+offset_right = 693.0
+offset_bottom = 650.0
+text = "Day: 1/3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HourCounter" type="Timer" parent="." unique_id=1901566691]
+wait_time = 20.0
+autostart = true
+
+[node name="LevelCompletePowerupSelect" parent="." unique_id=271330207 instance=ExtResource("4_3dryh")]
+process_mode = 2
+visible = false
+
+[connection signal="relight_done" from="Lighthouse" to="." method="_on_lighthouse_relight_done"]
+[connection signal="pressed" from="RefuelButton" to="." method="_on_refuel_button_pressed"]
+[connection signal="timeout" from="ShipSpawnTimer" to="." method="_on_ship_spawn_timer_timeout"]
+[connection signal="timeout" from="HourCounter" to="." method="_on_hour_counter_timeout"]
+[connection signal="start_next_level" from="LevelCompletePowerupSelect" to="." method="_on_level_complete_powerup_select_start_next_level"]

@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://c1loicnfuquuq"]
+
+[ext_resource type="Script" uid="uid://0sa2tqr1e331" path="res://Scripts/lighthouse.gd" id="1_3v32o"]
+[ext_resource type="Texture2D" uid="uid://thnmtuuj04sy" path="res://Images/Lighthouse.png" id="2_ejxau"]
+[ext_resource type="Shader" uid="uid://pdft08h0j2vg" path="res://Shaders/dither.gdshader" id="3_vdw5v"]
+[ext_resource type="Shader" uid="uid://dkqoigsdwa2ih" path="res://Shaders/light_path.gdshader" id="4_ejxau"]
+[ext_resource type="AudioStream" uid="uid://bihv7hepdibir" path="res://Sound/rotate.wav" id="5_qu26u"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g4v7s"]
+size = Vector2(66, 67)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yf5fn"]
+shader = ExtResource("4_ejxau")
+shader_parameter/dither_alpha = 0.5
+shader_parameter/circle_center = Vector2(0, 0)
+shader_parameter/radius_squared = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_g4v7s"]
+radius = 15.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3v32o"]
+shader = ExtResource("3_vdw5v")
+shader_parameter/dither_alpha = 0.0
+
+[sub_resource type="Gradient" id="Gradient_3v32o"]
+offsets = PackedFloat32Array(0, 0.2)
+colors = PackedColorArray(1, 1, 0, 1, 1, 1, 0, 0)
+metadata/_snap_enabled = true
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_3v32o"]
+gradient = SubResource("Gradient_3v32o")
+width = 96
+height = 96
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+
+[node name="Lighthouse" type="Area2D" unique_id=428206831]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_3v32o")
+
+[node name="Collision" type="CollisionShape2D" parent="." unique_id=1579102352]
+position = Vector2(0, -0.5)
+shape = SubResource("RectangleShape2D_g4v7s")
+
+[node name="Sprite" type="Sprite2D" parent="." unique_id=1310792525]
+texture = ExtResource("2_ejxau")
+
+[node name="LightPath" type="Polygon2D" parent="." unique_id=1445128242]
+material = SubResource("ShaderMaterial_yf5fn")
+color = Color(1, 1, 0, 1)
+
+[node name="Light" type="Area2D" parent="." unique_id=779316359]
+collision_layer = 8
+collision_mask = 8
+
+[node name="LightCircleShape" type="CollisionShape2D" parent="Light" unique_id=943682256]
+shape = SubResource("CircleShape2D_g4v7s")
+debug_color = Color(1, 1, 0, 0.49803922)
+
+[node name="LightSpotDisplay" type="TextureRect" parent="Light" unique_id=500188905]
+material = SubResource("ShaderMaterial_3v32o")
+offset_left = -48.0
+offset_top = -48.0
+offset_right = 48.0
+offset_bottom = 48.0
+texture = SubResource("GradientTexture2D_3v32o")
+
+[node name="RotateSounds" type="AudioStreamPlayer" parent="." unique_id=294032289]
+stream = ExtResource("5_qu26u")
+
+[connection signal="area_entered" from="Light" to="." method="_on_light_area_entered"]
+[connection signal="area_exited" from="Light" to="." method="_on_light_area_exited"]
