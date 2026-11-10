@@ -1,0 +1,459 @@
+[gd_scene load_steps=24 format=3 uid="uid://n3awr57d1wr5"]
+
+[ext_resource type="Script" path="res://game/player.gd" id="1_g2ulq"]
+[ext_resource type="Script" path="res://game/game_manager.gd" id="1_nxh51"]
+[ext_resource type="PackedScene" uid="uid://cp8erxw60ltvb" path="res://levels/level_01.tscn" id="3_etsqu"]
+[ext_resource type="Texture2D" uid="uid://bngjifo0q3vqc" path="res://assets/images/popsicle-stick-optimized.png" id="3_gu30e"]
+[ext_resource type="Texture2D" uid="uid://dln4h6c7yh2v8" path="res://assets/images/character-rough-optimized.png" id="3_lkgxl"]
+[ext_resource type="Script" path="res://game/eraser_cursor.gd" id="5_iacd0"]
+[ext_resource type="Script" path="res://game/eraser_counter.gd" id="6_mua3w"]
+[ext_resource type="Script" path="res://game/out_of_bounds_area.gd" id="7_8bbpv"]
+[ext_resource type="Script" path="res://game/eraser.gd" id="7_8jy88"]
+[ext_resource type="Script" path="res://game/money_label.gd" id="7_hel73"]
+[ext_resource type="Script" path="res://game/money.gd" id="8_qnedn"]
+[ext_resource type="Texture2D" uid="uid://xwrquaf8clov" path="res://assets/images/coin-optimized.png" id="12_744o7"]
+[ext_resource type="Texture2D" uid="uid://mmfwcx8kf5o5" path="res://assets/images/eraser.svg" id="12_ejj45"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_bxn4m"]
+radius = 11.6715
+height = 70.4753
+
+[sub_resource type="LabelSettings" id="LabelSettings_xe1pq"]
+font_size = 24
+font_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_ts2ks"]
+font_size = 32
+font_color = Color(0, 0, 0, 1)
+
+[sub_resource type="Animation" id="Animation_6l8xt"]
+resource_name = "Erase"
+length = 0.4
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:offset")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.133333, 0.233333, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(-20, 10), Vector2(25, -10), Vector2(-24, 16), Vector2(0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0.0, -0.0698132]
+}
+
+[sub_resource type="Animation" id="Animation_xyw0c"]
+resource_name = "Idle"
+
+[sub_resource type="Animation" id="Animation_62xeg"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:offset")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_b01ff"]
+_data = {
+"Erase": SubResource("Animation_6l8xt"),
+"Idle": SubResource("Animation_xyw0c"),
+"RESET": SubResource("Animation_62xeg")
+}
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_3e3hn"]
+radius = 25.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_u1oji"]
+size = Vector2(300, 1537)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_d54rk"]
+size = Vector2(32589, 206.5)
+
+[node name="GameManager" type="Node2D" node_paths=PackedStringArray("level_completed_overlay", "level_failed_overlay", "victory_overlay")]
+script = ExtResource("1_nxh51")
+level_completed_overlay = NodePath("Camera2D/UI/LevelCompletedOverlay")
+level_failed_overlay = NodePath("Camera2D/UI/LevelFailedOverlay")
+victory_overlay = NodePath("Camera2D/UI/VictoryOverlay")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+z_index = 1
+floor_max_angle = 1.309
+script = ExtResource("1_g2ulq")
+
+[node name="Stick" type="Sprite2D" parent="Player"]
+position = Vector2(-150, -61)
+scale = Vector2(0.371622, 0.371622)
+texture = ExtResource("3_gu30e")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player"]
+scale = Vector2(0.07, 0.07)
+texture = ExtResource("3_lkgxl")
+offset = Vector2(0, -950)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+position = Vector2(0, -65)
+scale = Vector2(1.79925, 1.79925)
+shape = SubResource("CapsuleShape2D_bxn4m")
+
+[node name="Level" parent="." instance=ExtResource("3_etsqu")]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(285, -192)
+position_smoothing_enabled = true
+drag_horizontal_enabled = true
+drag_vertical_enabled = true
+drag_left_margin = 1.0
+drag_top_margin = 1.0
+drag_right_margin = 1.0
+drag_bottom_margin = 0.0
+
+[node name="UI" type="Node" parent="Camera2D"]
+
+[node name="LevelLabel" type="Label" parent="Camera2D/UI"]
+offset_left = -219.0
+offset_top = 157.0
+offset_right = -139.0
+offset_bottom = 191.0
+text = "Level 1"
+label_settings = SubResource("LabelSettings_xe1pq")
+metadata/_edit_use_anchors_ = true
+
+[node name="MoneyLabel" type="Label" parent="Camera2D/UI"]
+offset_left = -195.0
+offset_top = 125.0
+offset_right = -115.0
+offset_bottom = 159.0
+text = "0"
+label_settings = SubResource("LabelSettings_xe1pq")
+script = ExtResource("7_hel73")
+
+[node name="Sprite2D" type="Sprite2D" parent="Camera2D/UI/MoneyLabel"]
+position = Vector2(-16, 17)
+scale = Vector2(0.04, 0.04)
+texture = ExtResource("12_744o7")
+
+[node name="LevelCompletedOverlay" type="Control" parent="Camera2D/UI"]
+process_mode = 2
+visible = false
+top_level = true
+z_index = 100
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -227.0
+offset_top = -576.0
+offset_right = -227.0
+offset_bottom = -576.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="ColorRect" parent="Camera2D/UI/LevelCompletedOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.352941)
+
+[node name="CenterContainer" type="CenterContainer" parent="Camera2D/UI/LevelCompletedOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -512.0
+offset_top = -384.0
+offset_right = 512.0
+offset_bottom = 384.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Modal" type="ColorRect" parent="Camera2D/UI/LevelCompletedOverlay/CenterContainer"]
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Camera2D/UI/LevelCompletedOverlay/CenterContainer/Modal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Camera2D/UI/LevelCompletedOverlay/CenterContainer/Modal/VBoxContainer"]
+layout_mode = 2
+text = "Level completed!
+
+"
+label_settings = SubResource("LabelSettings_ts2ks")
+horizontal_alignment = 1
+
+[node name="NextButton" type="Button" parent="Camera2D/UI/LevelCompletedOverlay/CenterContainer/Modal/VBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Next level"
+
+[node name="MenuButton" type="Button" parent="Camera2D/UI/LevelCompletedOverlay/CenterContainer/Modal/VBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Back to menu"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Camera2D/UI/LevelCompletedOverlay/CenterContainer/Modal/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="LevelFailedOverlay" type="Control" parent="Camera2D/UI"]
+process_mode = 2
+visible = false
+top_level = true
+z_index = 100
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -227.0
+offset_top = -576.0
+offset_right = -227.0
+offset_bottom = -576.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="ColorRect" parent="Camera2D/UI/LevelFailedOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.258808, 1.18823e-07, 3.60981e-08, 0.352941)
+
+[node name="CenterContainer" type="CenterContainer" parent="Camera2D/UI/LevelFailedOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -512.0
+offset_top = -384.0
+offset_right = 512.0
+offset_bottom = 384.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Modal" type="ColorRect" parent="Camera2D/UI/LevelFailedOverlay/CenterContainer"]
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Camera2D/UI/LevelFailedOverlay/CenterContainer/Modal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Camera2D/UI/LevelFailedOverlay/CenterContainer/Modal/VBoxContainer"]
+layout_mode = 2
+text = "Uh oh.
+
+"
+label_settings = SubResource("LabelSettings_ts2ks")
+horizontal_alignment = 1
+
+[node name="TryAgainButton" type="Button" parent="Camera2D/UI/LevelFailedOverlay/CenterContainer/Modal/VBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Try again"
+
+[node name="MenuButton" type="Button" parent="Camera2D/UI/LevelFailedOverlay/CenterContainer/Modal/VBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Back to menu"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Camera2D/UI/LevelFailedOverlay/CenterContainer/Modal/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="VictoryOverlay" type="Control" parent="Camera2D/UI"]
+process_mode = 2
+visible = false
+top_level = true
+z_index = 100
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -227.0
+offset_top = -576.0
+offset_right = -227.0
+offset_bottom = -576.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Backdrop" type="ColorRect" parent="Camera2D/UI/VictoryOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.352941)
+
+[node name="CenterContainer" type="CenterContainer" parent="Camera2D/UI/VictoryOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -512.0
+offset_top = -384.0
+offset_right = 512.0
+offset_bottom = 384.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Modal" type="ColorRect" parent="Camera2D/UI/VictoryOverlay/CenterContainer"]
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Camera2D/UI/VictoryOverlay/CenterContainer/Modal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="Label" type="Label" parent="Camera2D/UI/VictoryOverlay/CenterContainer/Modal/VBoxContainer"]
+layout_mode = 2
+text = "Victory!
+You've completed the entire game!
+
+"
+label_settings = SubResource("LabelSettings_ts2ks")
+horizontal_alignment = 1
+
+[node name="MenuButton" type="Button" parent="Camera2D/UI/VictoryOverlay/CenterContainer/Modal/VBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Back to menu"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Camera2D/UI/VictoryOverlay/CenterContainer/Modal/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="EraserCursor" type="Node2D" parent="."]
+position = Vector2(174, -81)
+script = ExtResource("5_iacd0")
+
+[node name="Eraser" type="Sprite2D" parent="EraserCursor"]
+z_index = 10
+position = Vector2(-25, -84)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("12_ejj45")
+centered = false
+script = ExtResource("7_8jy88")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="EraserCursor/Eraser"]
+libraries = {
+"": SubResource("AnimationLibrary_b01ff")
+}
+autoplay = "Idle"
+
+[node name="Timer" type="Timer" parent="EraserCursor/Eraser"]
+wait_time = 0.25
+
+[node name="EraserCounter" type="ProgressBar" parent="EraserCursor/Eraser"]
+offset_left = 428.0
+offset_top = 176.0
+offset_right = 448.0
+offset_bottom = 276.0
+rotation = 1.09996
+max_value = 3.0
+step = 1.0
+value = 3.0
+fill_mode = 2
+show_percentage = false
+script = ExtResource("6_mua3w")
+
+[node name="EraserArea2D" type="Area2D" parent="EraserCursor"]
+metadata/_edit_lock_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EraserCursor/EraserArea2D"]
+shape = SubResource("CircleShape2D_3e3hn")
+metadata/_edit_lock_ = true
+
+[node name="State" type="Node" parent="."]
+
+[node name="Money" type="Node" parent="State"]
+script = ExtResource("8_qnedn")
+
+[node name="OutOfBoundsArea" type="Area2D" parent="."]
+script = ExtResource("7_8bbpv")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="OutOfBoundsArea"]
+position = Vector2(-412, -2.5)
+shape = SubResource("RectangleShape2D_u1oji")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="OutOfBoundsArea"]
+position = Vector2(15734.5, 872.75)
+shape = SubResource("RectangleShape2D_d54rk")
+
+[connection signal="pressed" from="Camera2D/UI/LevelCompletedOverlay/CenterContainer/Modal/VBoxContainer/NextButton" to="." method="load_next_level"]
+[connection signal="pressed" from="Camera2D/UI/LevelCompletedOverlay/CenterContainer/Modal/VBoxContainer/MenuButton" to="." method="go_to_menu"]
+[connection signal="pressed" from="Camera2D/UI/LevelFailedOverlay/CenterContainer/Modal/VBoxContainer/TryAgainButton" to="." method="restart_current_level"]
+[connection signal="pressed" from="Camera2D/UI/LevelFailedOverlay/CenterContainer/Modal/VBoxContainer/MenuButton" to="." method="go_to_menu"]
+[connection signal="pressed" from="Camera2D/UI/VictoryOverlay/CenterContainer/Modal/VBoxContainer/MenuButton" to="." method="go_to_menu"]
+[connection signal="timeout" from="EraserCursor/Eraser/Timer" to="EraserCursor/Eraser" method="stop_erasing"]
+[connection signal="area_entered" from="EraserCursor/EraserArea2D" to="EraserCursor" method="_on_cursor_entered_node"]
+[connection signal="area_exited" from="EraserCursor/EraserArea2D" to="EraserCursor" method="_on_cursor_left_node"]
+[connection signal="body_entered" from="EraserCursor/EraserArea2D" to="EraserCursor" method="_on_cursor_entered_node"]
+[connection signal="body_exited" from="EraserCursor/EraserArea2D" to="EraserCursor" method="_on_cursor_left_node"]
+[connection signal="input_event" from="EraserCursor/EraserArea2D" to="EraserCursor" method="_on_eraser_area_2d_input_event"]
+[connection signal="money_updated" from="State/Money" to="Camera2D/UI/MoneyLabel" method="_on_money_money_updated"]
+[connection signal="body_entered" from="OutOfBoundsArea" to="OutOfBoundsArea" method="_on_body_entered"]

@@ -1,0 +1,178 @@
+[gd_scene load_steps=10 format=3 uid="uid://rwftu6ycdrsb"]
+
+[ext_resource type="Script" path="res://game/level.gd" id="1_fkvcr"]
+[ext_resource type="Texture2D" uid="uid://dfg08e31v64vb" path="res://assets/images/cell.svg" id="2_lsmrp"]
+[ext_resource type="PackedScene" uid="uid://dyvakus2uhyay" path="res://game/block.tscn" id="3_ta1kv"]
+[ext_resource type="PackedScene" uid="uid://br6g6ah8hgvd0" path="res://game/obstacle.tscn" id="4_84igw"]
+[ext_resource type="PackedScene" uid="uid://bgomyojoa86d7" path="res://game/coin.tscn" id="5_kjagw"]
+[ext_resource type="Script" path="res://game/victory_area_collision_shape.gd" id="6_h1bak"]
+[ext_resource type="FontFile" uid="uid://ccjm25febi27g" path="res://assets/fonts/IndieFlower-Regular.ttf" id="7_4it6q"]
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_k7hj2"]
+a = Vector2(-240, 0)
+b = Vector2(11200, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_h8dhl"]
+size = Vector2(234.75, 289.125)
+
+[node name="Level" type="Node2D" node_paths=PackedStringArray("victory_area")]
+script = ExtResource("1_fkvcr")
+level_number = 1
+speed_multiplier = 0.5
+victory_area = NodePath("VictoryArea2D")
+
+[node name="GridPaper" type="Sprite2D" parent="."]
+z_index = -1
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("2_lsmrp")
+centered = false
+offset = Vector2(-240, -768)
+region_enabled = true
+region_rect = Rect2(0, 0, 10240, 1536)
+metadata/_edit_lock_ = true
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(0, 4)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("SegmentShape2D_k7hj2")
+
+[node name="Line2D" type="Line2D" parent="Floor"]
+points = PackedVector2Array(-240, 0, 11200, 0)
+width = 8.0
+default_color = Color(0.376028, 0.376029, 0.376028, 1)
+
+[node name="Blocks" type="Node2D" parent="."]
+
+[node name="Block" parent="Blocks" instance=ExtResource("3_ta1kv")]
+position = Vector2(1147, -37)
+
+[node name="Obstacles" type="Node2D" parent="."]
+
+[node name="Obstacle" parent="Obstacles" instance=ExtResource("4_84igw")]
+position = Vector2(1883, -163)
+
+[node name="Obstacle2" parent="Obstacles" instance=ExtResource("4_84igw")]
+position = Vector2(2749, -59)
+
+[node name="Obstacle3" parent="Obstacles" instance=ExtResource("4_84igw")]
+position = Vector2(2749, -178)
+
+[node name="Obstacle4" parent="Obstacles" instance=ExtResource("4_84igw")]
+position = Vector2(2696, -398)
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin" parent="Coins" instance=ExtResource("5_kjagw")]
+position = Vector2(3744, -130)
+
+[node name="VictoryArea2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VictoryArea2D"]
+position = Vector2(5075.62, -146.562)
+shape = SubResource("RectangleShape2D_h8dhl")
+script = ExtResource("6_h1bak")
+
+[node name="Tutorial" type="Node2D" parent="."]
+
+[node name="Jump" type="RichTextLabel" parent="Tutorial"]
+offset_left = 79.0
+offset_top = 18.0
+offset_right = 598.0
+offset_bottom = 89.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = "Press [u]Spacebar[/u] to jump"
+fit_content = true
+
+[node name="Block" type="RichTextLabel" parent="Tutorial"]
+offset_left = 593.0
+offset_top = -354.0
+offset_right = 1112.0
+offset_bottom = -212.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = "   You can jump over blocks and run on them."
+fit_content = true
+
+[node name="Block2" type="RichTextLabel" parent="Tutorial"]
+offset_left = 997.0
+offset_top = 30.0
+offset_right = 1330.0
+offset_bottom = 172.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = " Just don't get 
+trapped behind!"
+fit_content = true
+
+[node name="Skulls" type="RichTextLabel" parent="Tutorial"]
+offset_left = 1757.0
+offset_top = 31.0
+offset_right = 2090.0
+offset_bottom = 173.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = "Avoid skulls at
+    all cost."
+fit_content = true
+
+[node name="Erasing" type="RichTextLabel" parent="Tutorial"]
+offset_left = 2264.0
+offset_top = -339.0
+offset_right = 2618.0
+offset_bottom = -197.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = "[u]Click[/u] on anything 
+  to erase it."
+fit_content = true
+
+[node name="Erasing2" type="RichTextLabel" parent="Tutorial"]
+offset_left = 2719.0
+offset_top = 28.0
+offset_right = 3223.0
+offset_bottom = 170.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = "   You can erase up
+to 3 things in each level."
+fit_content = true
+
+[node name="Coins" type="RichTextLabel" parent="Tutorial"]
+offset_left = 3555.0
+offset_top = 27.0
+offset_right = 4059.0
+offset_bottom = 169.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = "Collect coins to buy
+      upgrades."
+fit_content = true
+
+[node name="End" type="RichTextLabel" parent="Tutorial"]
+offset_left = 4546.0
+offset_top = 34.0
+offset_right = 5046.0
+offset_bottom = 176.0
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+theme_override_fonts/normal_font = ExtResource("7_4it6q")
+theme_override_font_sizes/normal_font_size = 48
+bbcode_enabled = true
+text = "Reach this area to complete a level."
+fit_content = true

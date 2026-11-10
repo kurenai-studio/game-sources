@@ -1,0 +1,235 @@
+[gd_scene load_steps=9 format=3 uid="uid://d2e3i2wlvfini"]
+
+[ext_resource type="Script" path="res://game/level.gd" id="1_yym5i"]
+[ext_resource type="Texture2D" uid="uid://dfg08e31v64vb" path="res://assets/images/cell.svg" id="2_g8d7q"]
+[ext_resource type="PackedScene" uid="uid://dyvakus2uhyay" path="res://game/block.tscn" id="3_qbyv4"]
+[ext_resource type="PackedScene" uid="uid://br6g6ah8hgvd0" path="res://game/obstacle.tscn" id="4_wyxxl"]
+[ext_resource type="PackedScene" uid="uid://bgomyojoa86d7" path="res://game/coin.tscn" id="5_rcygt"]
+[ext_resource type="Script" path="res://game/victory_area_collision_shape.gd" id="6_i17vb"]
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_k7hj2"]
+a = Vector2(-240, 0)
+b = Vector2(11200, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3fhg4"]
+size = Vector2(221.5, 207.75)
+
+[node name="Level2" type="Node2D" node_paths=PackedStringArray("victory_area")]
+script = ExtResource("1_yym5i")
+level_number = 4
+speed_multiplier = 1.5
+victory_area = NodePath("VictoryArea2D")
+
+[node name="GridPaper" type="Sprite2D" parent="."]
+z_index = -1
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("2_g8d7q")
+centered = false
+offset = Vector2(-240, -768)
+region_enabled = true
+region_rect = Rect2(0, 0, 10240, 1536)
+metadata/_edit_lock_ = true
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(0, 4)
+metadata/erasable = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("SegmentShape2D_k7hj2")
+one_way_collision = true
+
+[node name="Line2D" type="Line2D" parent="Floor"]
+points = PackedVector2Array(-240, 0, 11200, 0)
+width = 8.0
+default_color = Color(0.376028, 0.376029, 0.376028, 1)
+
+[node name="Blocks" type="Node2D" parent="."]
+
+[node name="Block" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(247, 286)
+
+[node name="Block2" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(323, 286)
+
+[node name="Block3" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(397, 286)
+
+[node name="Block4" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(473, 286)
+
+[node name="Block5" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(545, 286)
+
+[node name="Block6" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(621, 286)
+
+[node name="Block7" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(695, 286)
+
+[node name="Block8" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(771, 286)
+
+[node name="Block9" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(844, 286)
+
+[node name="Block10" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(920, 286)
+
+[node name="Block11" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(994, 286)
+
+[node name="Block12" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1070, 286)
+
+[node name="Block13" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1142, 286)
+
+[node name="Block14" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1218, 286)
+
+[node name="Block15" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1292, 286)
+
+[node name="Block16" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1368, 286)
+
+[node name="Block17" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1441, 286)
+
+[node name="Block18" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1517, 286)
+
+[node name="Block19" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1591, 286)
+
+[node name="Block20" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1667, 286)
+
+[node name="Block21" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1739, 286)
+
+[node name="Block22" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1815, 286)
+
+[node name="Block23" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1889, 286)
+
+[node name="Block24" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(1965, 286)
+
+[node name="Block25" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2041, 286)
+
+[node name="Block26" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2117, 286)
+
+[node name="Block27" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2191, 286)
+
+[node name="Block28" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2267, 286)
+
+[node name="Block29" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2339, 286)
+
+[node name="Block30" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2415, 286)
+
+[node name="Block31" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2489, 286)
+
+[node name="Block32" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2565, 286)
+
+[node name="Block33" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2738, 199)
+
+[node name="Block34" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2813, 114)
+
+[node name="Block35" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2888, 30)
+
+[node name="Block36" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(2960, -54)
+
+[node name="Block37" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(3036, -138)
+
+[node name="Block38" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(3235, 33)
+
+[node name="Block39" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(3540, 34)
+
+[node name="Block40" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(3790, 35)
+
+[node name="Block41" parent="Blocks" instance=ExtResource("3_qbyv4")]
+position = Vector2(4018, 35)
+
+[node name="Obstacles" type="Node2D" parent="."]
+
+[node name="Obstacle" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(385, -70)
+
+[node name="Obstacle2" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(586, -70)
+
+[node name="Obstacle3" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(781, -71)
+
+[node name="Obstacle4" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(985, -71)
+
+[node name="Obstacle5" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(1175, -71)
+
+[node name="Obstacle6" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(1379, -71)
+
+[node name="Obstacle7" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(1607, -70)
+
+[node name="Obstacle8" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(1808, -70)
+
+[node name="Obstacle9" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(2003, -71)
+
+[node name="Obstacle10" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(2207, -71)
+
+[node name="Obstacle11" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(2397, -71)
+
+[node name="Obstacle12" parent="Obstacles" instance=ExtResource("4_wyxxl")]
+position = Vector2(2601, -71)
+
+[node name="Obstacle13" parent="." instance=ExtResource("4_wyxxl")]
+position = Vector2(3385, -70)
+
+[node name="Obstacle14" parent="." instance=ExtResource("4_wyxxl")]
+position = Vector2(3656, -70)
+
+[node name="Obstacle15" parent="." instance=ExtResource("4_wyxxl")]
+position = Vector2(3899, -68)
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin" parent="Coins" instance=ExtResource("5_rcygt")]
+position = Vector2(2004, -69)
+
+[node name="Coin2" parent="Coins" instance=ExtResource("5_rcygt")]
+position = Vector2(3113, -142)
+
+[node name="Coin3" parent="Coins" instance=ExtResource("5_rcygt")]
+position = Vector2(2811, 34)
+
+[node name="VictoryArea2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VictoryArea2D"]
+position = Vector2(4196, -114)
+shape = SubResource("RectangleShape2D_3fhg4")
+script = ExtResource("6_i17vb")
