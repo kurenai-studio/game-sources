@@ -1,0 +1,108 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cd6be16483d2497d843fc0a519aa643, type: 3}
+  m_Name: RoadGeneration_Default
+  m_EditorClassIdentifier: 
+  seed: 0
+  chunkLength: 140
+  minChunkLength: 100
+  maxChunkLength: 180
+  samplesPerChunk: 80
+  chunksAhead: 8
+  chunksBehind: 2
+  roadWidth: 9.6
+  roadThickness: 0.35
+  shoulderWidth: 0.825
+  shoulderDrop: 0.05
+  ditchWidth: 3
+  ditchDepth: 0.2
+  ditchBottomFlatWidth: 0.75
+  forestFloorYOffset: -0.5
+  corridorApronDepth: 1.5
+  corridorRadiusMargin: 1.5
+  spawnForestTrees: 1
+  treeBandWidth: 30
+  treeCellSize: 5
+  treeDensity: 0.331
+  birchRatio: 0.2
+  treeDitchClearance: 1.5
+  treeColliderWidth: 0.6
+  treeColliderHeight: 8
+  treeModelRotationOffsetEuler: {x: -90, y: 0, z: 0}
+  maxTurnRateDegPerMeter: 1
+  turnRateResponse: 0.2
+  enableHills: 1
+  smallBumpAmplitude: 0.9
+  smallBumpWavelength: 42
+  smallBumpOccurrence: 0.22
+  smallBumpPatchLength: 160
+  elevationCatchupDistance: 30
+  designedElevationOffsetFade: 400
+  maxSlopeAngleDeg: 8
+  slopeResponse: 0.12
+  terrainTileSize: 48
+  terrainTileResolution: 24
+  terrainRadius: 720
+  terrainWallMargin: 2
+  terrainWallHeight: 25
+  terrainWallSink: 3
+  terrainBearingBias: 60
+  terrainTilesPerFrame: 4
+  terrainNoiseScale: 260
+  terrainNoiseAmplitude: 16
+  terrainNoiseOctaves: 3
+  roadBlendWidth: 25
+  roadFlatRing: 1.5
+  corridorTuckDepth: 1.2
+  curvePieceProbability: 0.72
+  minStraightLength: 28
+  maxStraightLength: 90
+  minCurveLength: 30
+  maxCurveLength: 75
+  minCurveTurnRateDegPerMeter: 0.12
+  maxCurveTurnRateDegPerMeter: 0.3
+  oppositeCurveChance: 0.65
+  designedPiecePool: {fileID: 11400000, guid: 0c56a6ebf90934f2fb8cffae3bdb53a3, type: 2}
+  minProceduralBetweenDesigned: 200
+  maxProceduralBetweenDesigned: 600
+  headingCorrectionStrength: 0.816
+  targetBearing: 0
+  bankFromCurvature: 6.75
+  maxBankAngle: 5.35
+  bankTurnRateDeadzone: 0.08
+  bankTargetResponse: 0.08
+  bankChangeRateDegPerMeter: 1
+  railsOnlyOnDesignedPieces: 1
+  minCurvatureForRail: 0.01
+  minRailSpanLengthMeters: 6
+  railLateralOffsetMeters: 0.25
+  railHeightMeters: 0.8
+  railEndTaperMeters: 1
+  railEndDropDistanceMeters: 4
+  railEndGroundClipDepthMeters: 0.08
+  railSampleSpacingMeters: 1
+  railBeamDepthMeters: 0.24
+  railBeamHeightMeters: 0.35
+  railBeamFlangeThicknessMeters: 0.055
+  railPostSpacingMeters: 3
+  railPostWidthMeters: 0.2
+  railPostDepthMeters: 0.15
+  railPostHeightMeters: 0.8
+  railPostEmbedDepthMeters: 0.1
+  drawGizmos: 1
+  gizmoFrameStride: 8
+  gizmoFrameLength: 1.5
+  logSmoothnessDiagnostics: 1
+  seamKinkWarningDeg: 2.5
+  drawSeamMarkers: 1
+  seamMarkerRadius: 0.6
+  seamMarkerHeight: 2.2

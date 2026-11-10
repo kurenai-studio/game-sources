@@ -1,0 +1,100 @@
+using UnityEngine;
+
+[CreateAssetMenu(menuName = "Ralli/Traffic/Traffic Config", fileName = "TrafficConfig")]
+public class TrafficConfig : ScriptableObject
+{
+    [Header("Spawning")]
+    [Tooltip("Enable traffic spawning.")]
+    public bool enableTraffic = true;
+    [Tooltip("Approximate vehicles per kilometer, split across both lanes.")]
+    public float vehiclesPerKilometer = 10f;
+    [Tooltip("Density multiplier at max progress.")]
+    public float maxDensityMultiplier = 1.8f;
+    [Tooltip("Player progress distance (m) where max density multiplier is reached.")]
+    public float densityRampDistance = 6000f;
+    [Tooltip("Maximum vehicles spawned per chunk.")]
+    public int maxVehiclesPerChunk = 4;
+    [Tooltip("Minimum longitudinal spacing between traffic vehicles in same lane (m).")]
+    public float sameLaneMinSpacing = 24f;
+    [Tooltip("Extra chunks ahead of active range where traffic can spawn.")]
+    public int spawnAheadChunks = 1;
+    [Tooltip("Never spawn traffic closer than this to the player along the road (m).")]
+    public float minSpawnDistanceFromPlayer = 80f;
+
+    [Header("Speed")]
+    [Tooltip("Base traffic speed in km/h.")]
+    public float trafficSpeedKph = 80f;
+    [Tooltip("Random speed variation (+/- km/h).")]
+    public float speedVarianceKph = 6f;
+    [Tooltip("How quickly traffic reaches target speed (m/s²).")]
+    public float accelerationMps2 = 3.0f;
+    [Tooltip("How quickly traffic slows down when braking (m/s²).")]
+    public float brakingMps2 = 6.0f;
+
+    [Header("Following")]
+    [Tooltip("Gap kept to the car ahead when stopped (m, bumper to bumper).")]
+    public float followMinGap = 6f;
+    [Tooltip("Extra gap per m/s of own speed (s). 1.2 = about a 1.2 second following distance.")]
+    public float followTimeGap = 1.2f;
+    [Tooltip("How firmly a car adjusts speed to hold the gap (1/s).")]
+    public float followGapGain = 0.6f;
+
+    [Header("Panic (player heading at them in their lane)")]
+    [Tooltip("Panic when a collision with the player is this many seconds away or less.")]
+    public float panicTimeToCollision = 1f;
+    [Tooltip("Ignore the player unless closing faster than this (m/s).")]
+    public float panicMinClosingSpeed = 6f;
+    [Tooltip("How far outside the lane (m) the player still counts as in it.")]
+    public float panicLaneMargin = 0.6f;
+    [Tooltip("Sideways nudge toward the car's own road edge when it panics (m/s). Small = a flinch.")]
+    public float panicSwerveSpeed = 1.2f;
+    [Tooltip("Turn toward the road edge when it panics (degrees per second).")]
+    public float panicSwerveYawRate = 15f;
+    [Tooltip("Extra slowdown while the panicked car skids (physics drag; higher = harder stop).")]
+    public float panicBrakeDrag = 0.6f;
+
+    [Header("Cornering")]
+    [Tooltip("Enable corner-based speed reduction.")]
+    public bool slowInCorners = true;
+    [Tooltip("Turn-rate threshold (deg/m) where slowdown starts.")]
+    public float cornerSlowStartTurnRateDegPerMeter = 0.18f;
+    [Tooltip("Turn-rate threshold (deg/m) for maximum slowdown.")]
+    public float cornerSlowMaxTurnRateDegPerMeter = 0.8f;
+    [Tooltip("Speed multiplier at maximum corner slowdown.")]
+    [Range(0.2f, 1f)] public float cornerMinSpeedFactor = 0.55f;
+
+    [Header("Lane Placement")]
+    [Tooltip("Inset from each asphalt edge used when computing lane centers (m).")]
+    public float laneShoulderInset = 0.45f;
+    [Tooltip("Chance [0..1] that a spawned vehicle is in player's direction lane.")]
+    [Range(0f, 1f)] public float sameDirectionLaneChance = 0.35f;
+
+    [Header("Collision Response")]
+    [Tooltip("Distance to player (m) where a traffic car is released from spline-following and becomes dynamic.")]
+    [Min(0.05f)] public float ragdollReleaseDistance = 0.5f;
+
+    [Header("Real Headlights (pooled)")]
+    [Tooltip("How many traffic cars get real headlights that light the road (nearest oncoming first). Fixed cost, regardless of traffic density.")]
+    [Range(0, 8)] public int realHeadlightCount = 4;
+    [Tooltip("Only cars ahead of the player within this distance along the road (m) qualify.")]
+    public float realHeadlightMaxDistance = 150f;
+    public float realHeadlightIntensity = 8f;
+    public float realHeadlightRange = 45f;
+    public float realHeadlightAngle = 70f;
+    [Tooltip("Fade time (s) when a light moves between cars, so it never pops.")]
+    public float realHeadlightFadeTime = 0.3f;
+    [Tooltip("How visible the fake beam of these lights is. 0 = off.")]
+    [Range(0f, 1f)] public float realHeadlightBeamVisibility = 0.1f;
+
+    [Header("Debug")]
+    [Tooltip("Show a ball above each car: green = following its lane, red = braking, black = released to physics.")]
+    public bool showStateMarkers;
+
+    [Header("Visuals")]
+    [Tooltip("Headlights, tail and brake lights on traffic cars. Empty = no lights.")]
+    public VehicleLightsConfig vehicleLights;
+    [Tooltip("Simple traffic body size (x=width, y=height, z=length).")]
+    public Vector3 vehicleBoxSize = new Vector3(1.78f, 1.46f, 4.05f);
+    [Tooltip("Traffic vehicle rigidbody mass in kilograms.")]
+    public float vehicleMassKg = 1100f;
+}
