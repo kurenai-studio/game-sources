@@ -1,0 +1,166 @@
+[gd_scene format=3 uid="uid://dg3yho1iais8w"]
+
+[ext_resource type="Texture2D" uid="uid://cwqo0jhvgfxp1" path="res://spr/spr_items.png" id="2_4dnhj"]
+[ext_resource type="PackedScene" uid="uid://dx2w5piqqnpr8" path="res://src/text_box.tscn" id="2_515sp"]
+[ext_resource type="Texture2D" uid="uid://lyh1agsdctmu" path="res://spr/spr_cup.png" id="3_02y5j"]
+[ext_resource type="Texture2D" uid="uid://c0c18ndvusr1v" path="res://spr/spr_selector.png" id="3_4dnhj"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_02y5j"]
+size = Vector2(16, 16)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4dnhj"]
+size = Vector2(123, 26.75)
+
+[node name="UI" type="Node2D" unique_id=1126369861]
+visible = false
+
+[node name="TimeBox" parent="." unique_id=791219887 instance=ExtResource("2_515sp")]
+offset_right = 81.0
+offset_bottom = 27.0
+text = "10:00 AM"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="PointsBox" parent="." unique_id=138651206 instance=ExtResource("2_515sp")]
+offset_top = 176.0
+offset_right = 136.0
+offset_bottom = 200.0
+text = "0 (0-0)"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="CupsBox" parent="." unique_id=2053957986 instance=ExtResource("2_515sp")]
+offset_top = 136.0
+offset_right = 40.0
+offset_bottom = 160.0
+text = "4/4"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InventoryBox" parent="." unique_id=2140603983 instance=ExtResource("2_515sp")]
+offset_top = 156.0
+offset_right = 104.0
+offset_bottom = 180.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="InvArea1" type="Area2D" parent="InventoryBox" unique_id=727465563]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InventoryBox/InvArea1" unique_id=1956040182]
+position = Vector2(12, 12)
+shape = SubResource("RectangleShape2D_02y5j")
+
+[node name="Sprite2D" type="Sprite2D" parent="InventoryBox/InvArea1" unique_id=2114117047]
+position = Vector2(12, 12)
+texture = ExtResource("2_4dnhj")
+hframes = 17
+
+[node name="InvArea2" type="Area2D" parent="InventoryBox" unique_id=1783021624]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InventoryBox/InvArea2" unique_id=1017437788]
+position = Vector2(28, 12)
+shape = SubResource("RectangleShape2D_02y5j")
+
+[node name="Sprite2D" type="Sprite2D" parent="InventoryBox/InvArea2" unique_id=1201076705]
+position = Vector2(28, 12)
+texture = ExtResource("2_4dnhj")
+hframes = 17
+
+[node name="InvArea3" type="Area2D" parent="InventoryBox" unique_id=1246147373]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InventoryBox/InvArea3" unique_id=1343040770]
+position = Vector2(44, 12)
+shape = SubResource("RectangleShape2D_02y5j")
+
+[node name="Sprite2D" type="Sprite2D" parent="InventoryBox/InvArea3" unique_id=1458307984]
+position = Vector2(44, 12)
+texture = ExtResource("2_4dnhj")
+hframes = 17
+
+[node name="InvArea4" type="Area2D" parent="InventoryBox" unique_id=1589932685]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InventoryBox/InvArea4" unique_id=1188445878]
+position = Vector2(60, 12)
+shape = SubResource("RectangleShape2D_02y5j")
+
+[node name="Sprite2D" type="Sprite2D" parent="InventoryBox/InvArea4" unique_id=660473898]
+position = Vector2(60, 12)
+texture = ExtResource("2_4dnhj")
+hframes = 17
+
+[node name="InvArea5" type="Area2D" parent="InventoryBox" unique_id=271020377]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InventoryBox/InvArea5" unique_id=703839054]
+position = Vector2(76, 12)
+shape = SubResource("RectangleShape2D_02y5j")
+
+[node name="Sprite2D" type="Sprite2D" parent="InventoryBox/InvArea5" unique_id=1328062503]
+position = Vector2(76, 12)
+texture = ExtResource("2_4dnhj")
+hframes = 17
+
+[node name="InvArea6" type="Area2D" parent="InventoryBox" unique_id=1790435039]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InventoryBox/InvArea6" unique_id=1096585670]
+position = Vector2(92, 12)
+shape = SubResource("RectangleShape2D_02y5j")
+
+[node name="Sprite2D" type="Sprite2D" parent="InventoryBox/InvArea6" unique_id=1909483598]
+position = Vector2(92, 12)
+texture = ExtResource("2_4dnhj")
+hframes = 17
+
+[node name="Selector" type="Sprite2D" parent="InventoryBox" unique_id=538627151]
+visible = false
+position = Vector2(12, 12)
+texture = ExtResource("3_4dnhj")
+
+[node name="DescriptionBox" parent="." unique_id=1301738060 instance=ExtResource("2_515sp")]
+offset_left = 132.0
+offset_top = 176.0
+offset_right = 320.0
+offset_bottom = 200.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BrewedBox" parent="." unique_id=232536129 instance=ExtResource("2_515sp")]
+offset_left = 151.0
+offset_top = 47.0
+offset_right = 175.0
+offset_bottom = 73.0
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="BrewedBox" unique_id=684558645]
+position = Vector2(12, 13)
+texture = ExtResource("3_02y5j")
+
+[node name="ConfirmButton" parent="." unique_id=667097596 instance=ExtResource("2_515sp")]
+offset_left = 95.0
+offset_top = 86.0
+offset_right = 226.0
+offset_bottom = 121.0
+text = "Confirm: Serve"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Area2D" type="Area2D" parent="ConfirmButton" unique_id=933881178]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ConfirmButton/Area2D" unique_id=618016890]
+position = Vector2(66, 17)
+shape = SubResource("RectangleShape2D_4dnhj")
+
+[node name="CancelButton" parent="." unique_id=1714016715 instance=ExtResource("2_515sp")]
+offset_left = 95.0
+offset_top = 117.0
+offset_right = 226.0
+offset_bottom = 152.0
+text = "Cancel: Drink (Save)"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Area2D" type="Area2D" parent="CancelButton" unique_id=1913957110]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CancelButton/Area2D" unique_id=1150252464]
+position = Vector2(66, 18)
+shape = SubResource("RectangleShape2D_4dnhj")
