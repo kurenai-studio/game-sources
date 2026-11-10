@@ -1,0 +1,26 @@
+# Sound effects
+
+Made by tools/gen_audio.py. Real instruments are from the Versilian Community Sample Library (CC0, https://github.com/sgossner/VCSL).
+
+- `bounce_perfect`: A bounce right on the beat: a kalimba C6 over a light woodblock tick (VCSL, CC0)
+- `bounce_good`: A good bounce: a kalimba G5, softer (VCSL, CC0)
+- `bounce_ok`: An ok bounce: just the woodblock, quietly (VCSL, CC0)
+- `bounce_miss`: A missed landing: a soft low marimba thud (VCSL, CC0)
+- `bounce_fumble`: A tap off the beat: a kalimba note that wobbles down (VCSL, CC0)
+- `tick`: The count-in: a woodblock (VCSL, CC0)
+- `gun`: The start: two woodblocks clapped together, with a puff (VCSL, CC0)
+- `click`: A button: a quiet woodblock tick (VCSL, CC0)
+- `boing_big`: A big bounce: a cartoon spring, soft (synthesised)
+- `squash`: Squashing down to jump: a soft squish (synthesised)
+- `whoosh`: Taking off: air rushing past (synthesised)
+- `sand`: Landing in the sand pit: a soft gritty thump (synthesised)
+- `clonk`: Knocking a hurdle or the bar: a hollow wooden clonk (VCSL marimba and woodblock, CC0)
+- `flump`: Landing on the high-jump mat (synthesised)
+- `swish`: A trick in the air: a swish and a glint (synthesised, glockenspiel VCSL CC0)
+- `splash`: Going into the water (synthesised)
+- `sizzle`: On a hot streak: a sausage sizzling in the pan (synthesised)
+- `cheer`: The crowd claps (synthesised applause)
+- `finish`: Crossing the line first: a glockenspiel arpeggio (VCSL, CC0)
+- `fanfare`: A record or a medal: hand chimes and glockenspiel (VCSL, CC0)
+- `tag`: A relay changeover: two quick kalimba notes, up (VCSL, CC0)
+- `wobble`: A false start or a foul: a wobbly kalimba (VCSL, CC0)

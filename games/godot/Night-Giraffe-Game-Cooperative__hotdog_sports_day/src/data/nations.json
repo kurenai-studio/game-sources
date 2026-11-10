@@ -1,0 +1,466 @@
+{
+ "_doc": "The teams (the five home nations of Britain and Ireland among them). Each nation's athlete is that country's own hot dog: its sausage, its bun and its toppings (all painted by tools/dogs.py), with an 80s sweatband and a silly sausage name in the team's colours. skill (0-1) is how steady the athlete is when the computer plays it; best is the event it shines in, also the others it's good at. The player's own athlete is made in the dressing room and saved in the profile.",
+ "nations": [
+  {
+   "id": "usa",
+   "country": "USA",
+   "athlete": "Frankie Furter",
+   "dog": "Chicago Dog",
+   "sausage": "frank",
+   "bun": "poppy",
+   "toppings": [
+    "mustard",
+    "relish",
+    "tomato",
+    "pickle"
+   ],
+   "band": [
+    "blue",
+    "red"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.86,
+   "best": "sprint",
+   "line": "Dragged through the Walled Garden and proud of it.",
+   "also": [
+    "relay",
+    "skateboard"
+   ]
+  },
+  {
+   "id": "ger",
+   "country": "Germany",
+   "athlete": "Brat Pitt",
+   "dog": "Bratwurst",
+   "sausage": "brat",
+   "bun": "crusty",
+   "toppings": [
+    "sauerkraut",
+    "mustard"
+   ],
+   "band": [
+    "black",
+    "gold"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.9,
+   "best": "long_jump",
+   "line": "Precise to the millimetre, and the mustard.",
+   "also": [
+    "meatball_put",
+    "bobsleigh"
+   ]
+  },
+  {
+   "id": "den",
+   "country": "Denmark",
+   "athlete": "Hans Christian Pølsen",
+   "dog": "Rød Pølse",
+   "sausage": "red",
+   "bun": "soft",
+   "toppings": [
+    "remoulade",
+    "crispy_onion"
+   ],
+   "band": [
+    "red",
+    "white"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "tache",
+   "skill": 0.84,
+   "best": "hurdles",
+   "line": "Tells a lovely story of Unicorn Bounce and the Cloud Kingdom.",
+   "also": [
+    "swim"
+   ]
+  },
+  {
+   "id": "kor",
+   "country": "South Korea",
+   "athlete": "Kernel Kim",
+   "dog": "Corn Dog",
+   "sausage": "corn",
+   "bun": "none",
+   "toppings": [
+    "potato_cubes",
+    "ketchup"
+   ],
+   "band": [
+    "white",
+    "red"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.88,
+   "best": "high_jump",
+   "line": "Bounces like Astro in hover-boots across a pocket galaxy.",
+   "also": [
+    "breaking"
+   ]
+  },
+  {
+   "id": "jpn",
+   "country": "Japan",
+   "athlete": "Tako Bell",
+   "dog": "Tako Wiener",
+   "sausage": "tako",
+   "bun": "soft",
+   "toppings": [
+    "ketchup",
+    "nori"
+   ],
+   "band": [
+    "white",
+    "red"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.87,
+   "best": "dive",
+   "line": "Cut into an octopus for the bento box, and proud of every leg.",
+   "also": [
+    "trampoline",
+    "swim"
+   ]
+  },
+  {
+   "id": "gbr",
+   "country": "Great Britain",
+   "athlete": "Bangers McMash",
+   "dog": "Banger in a Bap",
+   "sausage": "banger",
+   "bun": "soft",
+   "toppings": [
+    "brown_sauce",
+    "onion"
+   ],
+   "band": [
+    "navy",
+    "red"
+   ],
+   "hair": "flattop",
+   "specs": "none",
+   "tache": "handlebar",
+   "skill": 0.78,
+   "best": "triple_jump",
+   "line": "Trains with Reggie and Ronnie in Hollow Wood. Keeps on bouncing.",
+   "also": [
+    "steeplechase"
+   ]
+  },
+  {
+   "id": "aus",
+   "country": "Australia",
+   "athlete": "Snag Dundee",
+   "dog": "Sausage Sizzle",
+   "sausage": "frank",
+   "bun": "white",
+   "toppings": [
+    "ketchup",
+    "onion"
+   ],
+   "band": [
+    "green",
+    "gold"
+   ],
+   "hair": "curly",
+   "specs": "shades",
+   "tache": "none",
+   "skill": 0.83,
+   "best": "sprint",
+   "line": "One slice of bread, no fuss, flat out.",
+   "also": [
+    "relay",
+    "swim"
+   ]
+  },
+  {
+   "id": "mex",
+   "country": "Mexico",
+   "athlete": "Bacon Banderas",
+   "dog": "Sonoran Dog",
+   "sausage": "bacon",
+   "bun": "bolillo",
+   "toppings": [
+    "beans",
+    "jalapeno",
+    "mayo"
+   ],
+   "band": [
+    "green",
+    "red"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "tache",
+   "skill": 0.81,
+   "best": "hurdles",
+   "line": "Wrapped in bacon for extra bounce.",
+   "also": [
+    "steeplechase"
+   ]
+  },
+  {
+   "id": "bra",
+   "country": "Brazil",
+   "athlete": "Hotdoginho",
+   "dog": "Cachorro-Quente",
+   "sausage": "frank",
+   "bun": "soft",
+   "toppings": [
+    "potato_sticks",
+    "corn_peas",
+    "ketchup"
+   ],
+   "band": [
+    "green",
+    "yellow"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.85,
+   "best": "triple_jump",
+   "line": "Wears a crown of crunchy potato sticks. Earned it.",
+   "also": [
+    "breaking",
+    "skateboard"
+   ]
+  },
+  {
+   "id": "fra",
+   "country": "France",
+   "athlete": "Napoleon Bunaparte",
+   "dog": "Le Parisien",
+   "sausage": "frank",
+   "bun": "baguette",
+   "toppings": [
+    "cheese"
+   ],
+   "band": [
+    "blue",
+    "red"
+   ],
+   "hair": "none",
+   "specs": "round",
+   "tache": "none",
+   "skill": 0.84,
+   "best": "dive",
+   "line": "A whole baguette. Very short temper, very long bun.",
+   "also": [
+    "vault"
+   ]
+  },
+  {
+   "id": "chi",
+   "country": "Chile",
+   "athlete": "Guaca Molly",
+   "dog": "Completo",
+   "sausage": "frank",
+   "bun": "soft",
+   "toppings": [
+    "avocado",
+    "tomato",
+    "mayo"
+   ],
+   "band": [
+    "red",
+    "blue"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.82,
+   "best": "high_jump",
+   "line": "The avocado hairdo stays on. Always.",
+   "also": [
+    "trampoline"
+   ]
+  },
+  {
+   "id": "cze",
+   "country": "Czechia",
+   "athlete": "Párek Parker",
+   "dog": "Párek v Rohlíku",
+   "sausage": "frank",
+   "bun": "tube",
+   "toppings": [
+    "mustard"
+   ],
+   "band": [
+    "white",
+    "red"
+   ],
+   "hair": "spikes",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.8,
+   "best": "long_jump",
+   "line": "Pops out of the top of the roll like a jack-in-the-box.",
+   "also": [
+    "meatball_put",
+    "ski_jump"
+   ]
+  },
+  {
+   "id": "jam",
+   "country": "Jamaica",
+   "athlete": "Usain Bun",
+   "dog": "Jerk Dog",
+   "sausage": "chorizo",
+   "bun": "crusty",
+   "toppings": [
+    "jalapeno",
+    "onion"
+   ],
+   "band": [
+    "green",
+    "gold"
+   ],
+   "hair": "none",
+   "specs": "shades",
+   "tache": "none",
+   "skill": 0.93,
+   "best": "sprint",
+   "also": [
+    "relay",
+    "bobsleigh"
+   ],
+   "line": "Fastest bun alive. Also, somehow, a bobsleigh team."
+  },
+  {
+   "id": "eng",
+   "country": "England",
+   "athlete": "Benedict Cumberland",
+   "dog": "Cumberland Bap",
+   "sausage": "cumberland",
+   "bun": "floury",
+   "toppings": [
+    "mustard",
+    "onion"
+   ],
+   "band": [
+    "white",
+    "red"
+   ],
+   "hair": "curly",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.85,
+   "best": "relay",
+   "line": "Gets race tips by Wren Post from Mr Featherington on the roofs.",
+   "also": [
+    "trampoline",
+    "meatball_put"
+   ]
+  },
+  {
+   "id": "wal",
+   "country": "Wales",
+   "athlete": "Glamorgan Freeman",
+   "dog": "Glamorgan Sausage",
+   "sausage": "glamorgan",
+   "bun": "soft",
+   "toppings": [
+    "leek"
+   ],
+   "band": [
+    "red",
+    "green"
+   ],
+   "hair": "none",
+   "specs": "none",
+   "tache": "tache",
+   "skill": 0.83,
+   "best": "meatball_put",
+   "line": "Baked by the little folk of the Heartwood tree, with a leek plume.",
+   "also": [
+    "breaking",
+    "hurdles"
+   ]
+  },
+  {
+   "id": "sco",
+   "country": "Scotland",
+   "athlete": "Neeps McTatties",
+   "dog": "Square Sausage Roll",
+   "sausage": "lorne",
+   "bun": "floury",
+   "toppings": [
+    "brown_sauce"
+   ],
+   "band": [
+    "sky",
+    "white"
+   ],
+   "hair": "flattop",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.84,
+   "best": "swim",
+   "line": "The only square sausage in the Games. The corners help, apparently.",
+   "also": [
+    "ski_jump",
+    "steeplechase"
+   ]
+  },
+  {
+   "id": "nir",
+   "country": "Northern Ireland",
+   "athlete": "Rory McFry",
+   "dog": "Ulster Fry Farl",
+   "sausage": "banger",
+   "bun": "farl",
+   "toppings": [
+    "ketchup"
+   ],
+   "band": [
+    "green",
+    "white"
+   ],
+   "hair": "spikes",
+   "specs": "none",
+   "tache": "none",
+   "skill": 0.82,
+   "best": "vault",
+   "line": "Sits in a soda farl. Bounces like it's had the whole fry.",
+   "also": [
+    "trampoline"
+   ]
+  },
+  {
+   "id": "irl",
+   "country": "Ireland",
+   "athlete": "Saoirse O'Sizzle",
+   "dog": "Breakfast Roll",
+   "sausage": "frank",
+   "bun": "crusty",
+   "toppings": [
+    "egg",
+    "brown_sauce"
+   ],
+   "band": [
+    "green",
+    "orange"
+   ],
+   "hair": "curly",
+   "specs": "round",
+   "tache": "none",
+   "skill": 0.86,
+   "best": "steeplechase",
+   "line": "Leaves a crust on the Kitchen Table for the Night Giraffe.",
+   "also": [
+    "skateboard",
+    "relay"
+   ]
+  }
+ ]
+}

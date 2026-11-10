@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#24152e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>HotDog Sports Day</title>
+<!--
+  A phone's buttons for HotDog Sports Day: the game serves this page on the home
+  Wi-Fi (ui/remote.gd) and the phone becomes a player. Each press is stamped
+  with when the finger landed, on the game's clock (kept in step by pings), so
+  the game judges it on the beat however long the Wi-Fi takes.
+-->
+<style>
+  :root {
+    --ink: #24152e; --paper: #fffaf0; --plum: #3a2a4a; --panel: #2a1e3e;
+    --ketchup: #e0383a; --sky: #6aa2e2; --mustard: #f7d331; --amber: #ffd060; --grey: #a8a6ba;
+    --me: #f7d331;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper);
+    font-family: "Arial Black", "Segoe UI Black", system-ui, sans-serif; font-weight: 900;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none;
+  }
+  body {
+    display: flex; flex-direction: column;
+    background: linear-gradient(180deg, #3a1e4e 0%, var(--ink) 55%);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .outlined { text-shadow: -2px 0 var(--ink), 2px 0 var(--ink), 0 -2px var(--ink), 0 2px var(--ink), 0 3px 0 var(--ink); }
+
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 14px 8px;
+    border-bottom: 3px solid var(--ink); background: rgba(36, 21, 46, 0.55);
+    transition: background 0.2s;
+  }
+  header.turn { background: var(--plum); background: color-mix(in srgb, var(--me) 35%, var(--ink)); }
+  #dogbox { width: 60px; height: 80px; position: relative; flex: none; }
+  #dog {
+    position: absolute; left: 50%; bottom: 0; height: 76px; image-rendering: pixelated;
+    transform-origin: 50% 100%; transform: translateX(-50%);
+  }
+  #shadow { position: absolute; left: 50%; bottom: -2px; width: 34px; height: 5px; margin-left: -17px;
+    background: rgba(0, 0, 0, 0.35); border-radius: 50%; }
+  #who { flex: 1; min-width: 0; }
+  #tag { font-size: 13px; color: var(--grey); }
+  #tag b { display: inline-block; padding: 1px 7px; border: 2px solid var(--ink); border-radius: 6px;
+    background: var(--me); color: var(--ink); margin-right: 6px; }
+  #name { font-size: 20px; color: var(--me); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #what { text-align: right; flex: none; max-width: 48%; }
+  #title { font-family: "Courier New", monospace; font-weight: 900; font-size: 18px; color: var(--amber);
+    background: #120a18; border: 2px solid var(--ink); border-radius: 4px; padding: 3px 8px; display: inline-block;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  #hint { font-size: 12px; color: var(--paper); margin-top: 4px; opacity: 0.85; }
+  #change {
+    display: none; font: inherit; font-size: 12px; color: var(--paper); background: #7a3ad2;
+    border: 2px solid var(--ink); border-radius: 8px; padding: 6px 10px; box-shadow: 0 3px 0 var(--ink); margin-top: 4px;
+    white-space: nowrap;
+  }
+  @media (max-width: 560px) {
+    #what { flex-basis: 100%; max-width: 100%; text-align: left; display: flex; align-items: center; gap: 10px; }
+    #hint { margin-top: 0; }
+  }
+  body.lobby #change { display: inline-block; }
+
+  #pad {
+    flex: 1; display: grid; gap: 14px; padding: 14px; position: relative;
+    grid-template-columns: 1fr 1fr; grid-template-areas: "bounce jump";
+  }
+  @media (orientation: portrait) {
+    #pad { grid-template-columns: 1fr; grid-template-rows: 2fr 3fr; grid-template-areas: "jump" "bounce"; }
+  }
+  /* a button-bash race: two RUN buttons side by side, tapped in turn, and JUMP */
+  body.bash #pad { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr; grid-template-areas: "bounce run2 jump"; }
+  @media (orientation: portrait) {
+    body.bash #pad { grid-template-columns: 1fr 1fr; grid-template-rows: 2fr 3fr; grid-template-areas: "jump jump" "bounce run2"; }
+  }
+  #run2 { grid-area: run2; background: var(--ketchup); display: none; }
+  body.bash #run2 { display: flex; }
+  .btn {
+    position: relative; border: 4px solid var(--ink); border-radius: 34px; display: flex;
+    align-items: center; justify-content: center; font-size: clamp(28px, 9vw, 64px);
+    box-shadow: 0 9px 0 var(--ink), inset 0 -10px 0 rgba(0, 0, 0, 0.18), inset 0 8px 0 rgba(255, 255, 255, 0.2);
+    transition: transform 0.04s, filter 0.04s; touch-action: none;
+  }
+  .btn::before { content: ""; position: absolute; left: 12%; top: 10%; width: 16%; height: 14%;
+    border-radius: 50%; background: rgba(255, 255, 255, 0.35); }
+  .btn.down { transform: translateY(6px); box-shadow: 0 3px 0 var(--ink), inset 0 -4px 0 rgba(0, 0, 0, 0.18); filter: brightness(1.25); }
+  #bounce { grid-area: bounce; background: var(--ketchup); }
+  .btn.lit { outline: 5px solid rgba(247, 211, 49, 0.95); outline-offset: 4px; animation: lit 0.45s ease-in-out infinite alternate; }
+  @keyframes lit { to { outline-color: rgba(247, 211, 49, 0.25); } }
+  #jump { grid-area: jump; background: var(--sky); }
+
+  #flash { position: absolute; left: 0; right: 0; top: 38%; text-align: center; font-size: 44px;
+    pointer-events: none; opacity: 0; transition: opacity 0.35s, transform 0.35s; }
+  #flash.on { opacity: 1; transform: translateY(-10px); transition: none; }
+  #go { position: absolute; left: 0; right: 0; top: 6px; text-align: center; font-size: 22px; color: var(--me);
+    pointer-events: none; display: none; }
+  header.turn ~ #pad #go { display: block; animation: pulse 0.6s infinite alternate; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.12); } }
+
+  #cover {
+    position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; background: rgba(36, 21, 46, 0.94); text-align: center; padding: 24px; z-index: 10;
+  }
+  #cover img { width: min(70vw, 360px); image-rendering: pixelated; }
+  #cover p { margin: 0; font-size: 18px; line-height: 1.4; }
+  #cover small { color: var(--grey); font-size: 12px; }
+  #cover.hidden { display: none; }
+</style>
+</head>
+<body>
+<div id="cover">
+  <img src="/logo.png" alt="HotDog Sports Day">
+  <p id="coverText">Joining the Games…</p>
+  <small id="coverSmall">Keep this phone on the same Wi-Fi as the game.</small>
+</div>
+<header id="head">
+  <div id="dogbox"><div id="shadow"></div><img id="dog" alt=""></div>
+  <div id="who">
+    <div id="tag"><b id="num">P?</b><span id="role">PLAYER</span></div>
+    <div id="name"></div>
+    <button id="change" type="button">Change hot dog</button>
+  </div>
+  <div id="what"><div id="title">HOTDOG SPORTS DAY</div><div id="hint"></div></div>
+</header>
+<main id="pad">
+  <div class="btn outlined" id="bounce">Bounce</div>
+  <div class="btn outlined" id="run2">Run</div>
+  <div class="btn outlined" id="jump">Jump</div>
+  <div id="go" class="outlined">Your go!</div>
+  <div id="flash" class="outlined"></div>
+</main>
+<script>
+"use strict";
+(function () {
+  var WS_PORT = "{{WS_PORT}}";
+  if (WS_PORT.indexOf("{") === 0) WS_PORT = String(Number(location.port || 80) + 1);
+  var GRADES = {
+    perfect: ["PERFECT!", "#fff07a"], good: ["GOOD", "#8ad42a"], ok: ["OK", "#6a92e2"],
+    miss: ["MISS", "#a8a6ba"], fumble: ["WOBBLE!", "#ff6a6a"]
+  };
+
+  var id = null;
+  try { id = localStorage.getItem("hotdog-id"); } catch (e) {}
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    try { localStorage.setItem("hotdog-id", id); } catch (e) {}
+  }
+
+  var $ = function (s) { return document.getElementById(s); };
+  var ws = null, offset = null, samples = [], pingTimer = null, quick = 0;
+  var me = { turn: false, beat: null, dog: "" };
+  var bump = 0;
+
+  function cover(text, small) {
+    $("coverText").textContent = text;
+    $("coverSmall").textContent = small || "";
+    $("cover").className = text ? "" : "hidden";
+  }
+
+  function send(m) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(m)); }
+
+  // -- the game's clock --------------------------------------------------------------------
+  function ping() { send({ t: "ping", c: performance.now() }); }
+  function pong(m) {
+    var now = performance.now(), rtt = now - m.c;
+    if (rtt < 0 || rtt > 2000) return;
+    samples.push({ rtt: rtt, off: m.h - (m.c + rtt / 2) });
+    if (samples.length > 24) samples.shift();
+    var best = samples[0];
+    for (var i = 1; i < samples.length; i++) if (samples[i].rtt < best.rtt) best = samples[i];
+    offset = best.off;
+  }
+  function schedulePings() {
+    clearInterval(pingTimer);
+    quick = 0;
+    pingTimer = setInterval(function () {
+      ping();
+      if (++quick === 12) { clearInterval(pingTimer); pingTimer = setInterval(ping, 2000); }
+    }, 120);
+  }
+  function stamp(e) {
+    var now = performance.now(), t = e && e.timeStamp;
+    if (!(t > 0) || Math.abs(now - t) > 1000) t = now;
+    return offset === null ? -1 : t + offset;
+  }
+
+  // -- talking to the game -----------------------------------------------------------------
+  function connect() {
+    try { ws = new WebSocket("ws://" + location.hostname + ":" + WS_PORT + "/"); }
+    catch (e) { setTimeout(connect, 1500); return; }
+    ws.onopen = function () {
+      samples = []; offset = null;
+      send({ t: "hello", id: id });
+      schedulePings();
+    };
+    ws.onmessage = function (ev) {
+      var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.t === "pong") pong(m);
+      else if (m.t === "you") you(m);
+      else if (m.t === "grade") flash(m.g);
+      else if (m.t === "words") words(m);
+      else if (m.t === "full") { cover("The Games are full", "Four players already. Ask someone to swap with you."); ws.onclose = null; }
+      else if (m.t === "bye") { cover("You've left the Games", "Reload this page to join again."); ws.onclose = null; }
+    };
+    ws.onclose = function () {
+      clearInterval(pingTimer);
+      cover("Looking for the game…", "Is it still on the PLAY TOGETHER screen or in a game? Same Wi-Fi?");
+      setTimeout(connect, 1200);
+    };
+  }
+
+  function you(m) {
+    cover("");
+    document.documentElement.style.setProperty("--me", m.colour ? "#" + m.colour : "#f7d331");
+    $("num").textContent = "P" + (m.player + 1);
+    $("role").textContent = m.playing ? "Player " + (m.player + 1) : "Watching";
+    $("name").textContent = m.name || "";
+    if (m.dog && m.dog !== me.dog) { me.dog = m.dog; $("dog").src = m.dog; }
+    $("title").textContent = m.title || "HotDog Sports Day";
+    $("hint").textContent = m.hint || "";
+    me.bash = !!m.bash;
+    document.body.className = (m.lobby || !m.play ? "lobby" : "") + (me.bash ? " bash" : "");
+    var word = (m.run || "Run");
+    $("bounce").textContent = me.bash ? word : "Bounce";
+    $("run2").textContent = word;
+    $("jump").textContent = "Jump";
+    ["bounce", "run2", "jump"].forEach(function (id) { $(id).classList.remove("lit"); });
+    if (m.words) words(m.words);
+    if (m.turn && !me.turn && navigator.vibrate) navigator.vibrate([70, 50, 70]);
+    me.turn = !!m.turn;
+    $("head").className = me.turn ? "turn" : "";
+    me.beat = m.beat && m.beat.ms ? m.beat : null;
+  }
+
+  // what the buttons do right now, and the one to press next (it pulses)
+  function nice(w) { return w ? w.charAt(0) + w.slice(1).toLowerCase() : ""; }
+  function words(m) {
+    $("bounce").textContent = nice(m.b);
+    $("run2").textContent = nice(m.b);
+    $("jump").textContent = nice(m.j);
+    $("bounce").classList.toggle("lit", m.l === 0);
+    $("run2").classList.toggle("lit", m.l === 0);
+    $("jump").classList.toggle("lit", m.l === 1);
+  }
+
+  var flashTimer = null;
+  function flash(g) {
+    if (window.__hotdog) window.__hotdog.grades.push(g);
+    var w = GRADES[g];
+    if (!w) return;
+    var f = $("flash");
+    f.textContent = w[0];
+    f.style.color = w[1];
+    f.className = "outlined on";
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { f.className = "outlined"; }, 60);
+    if (g === "perfect" && navigator.vibrate) navigator.vibrate(25);
+  }
+
+  // -- the buttons -------------------------------------------------------------------------
+  function wire(el, action, side) {
+    var held = {};
+    function count() { var n = 0; for (var k in held) n++; return n; }
+    function down(e) {
+      e.preventDefault();
+      if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function () {});
+      }
+      var was = count();
+      held[e.pointerId] = true;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      if (was === 0) {
+        var m = { t: "tap", a: action, d: 1, h: stamp(e) };
+        if (me.bash && side !== undefined) m.s = side;
+        send(m);
+        el.classList.add("down");
+        if (navigator.vibrate) navigator.vibrate(12);
+        bump = action ? 2 : 1;
+      }
+    }
+    function up(e) {
+      if (!held[e.pointerId]) return;
+      delete held[e.pointerId];
+      if (count() === 0) {
+        send({ t: "tap", a: action, d: 0, h: stamp(e) });
+        el.classList.remove("down");
+      }
+    }
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+    el.addEventListener("lostpointercapture", up);
+    el.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  }
+  wire($("bounce"), 0, 0);
+  wire($("run2"), 0, 1);
+  wire($("jump"), 1);
+  document.addEventListener("touchstart", function (e) { if (e.target.id !== "change") e.preventDefault(); }, { passive: false });
+  $("change").addEventListener("click", function () { send({ t: "next" }); });
+
+  var keys = { " ": 0, z: 0, a: 0, ArrowLeft: 0, Enter: 1, x: 1, s: 1, ArrowRight: 1, ArrowUp: 1 };
+  var keyHeld = {};
+  document.addEventListener("keydown", function (e) {
+    if (!(e.key in keys) || keyHeld[e.key]) return;
+    keyHeld[e.key] = true;
+    send({ t: "tap", a: keys[e.key], d: 1, h: stamp(e) });
+    $(keys[e.key] ? "jump" : "bounce").classList.add("down");
+  });
+  document.addEventListener("keyup", function (e) {
+    if (!(e.key in keys)) return;
+    delete keyHeld[e.key];
+    send({ t: "tap", a: keys[e.key], d: 0, h: stamp(e) });
+    $(keys[e.key] ? "jump" : "bounce").classList.remove("down");
+  });
+
+  // -- the hot dog bounces on the game's beat ------------------------------------------------
+  var bumpT = 0;
+  function frame(now) {
+    var ms = 682, t0 = 0;
+    if (me.beat && offset !== null) { ms = me.beat.ms; t0 = me.beat.t0; now = now + offset; }
+    var ph = (((now - t0) / ms) % 1 + 1) % 1;
+    var lift = Math.sin(Math.PI * ph) * 10;
+    var sq = ph < 0.08 ? 0.86 : (ph > 0.94 ? 0.9 : 1);
+    if (bump) { bumpT = bump === 2 ? 22 : 12; bump = 0; }
+    lift += bumpT; bumpT *= 0.82;
+    $("dog").style.transform = "translateX(-50%) translateY(" + (-lift).toFixed(1) + "px) scale(" + (2 - sq).toFixed(2) + "," + sq.toFixed(2) + ")";
+    $("shadow").style.transform = "scale(" + (1 - lift / 40).toFixed(2) + ")";
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // for trying the page by hand from a browser's console
+  window.__hotdog = { state: function () { return { beat: me.beat, offset: offset, turn: me.turn }; }, grades: [] };
+  connect();
+})();
+</script>
+</body>
+</html>
