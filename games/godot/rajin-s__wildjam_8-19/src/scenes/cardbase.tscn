@@ -1,0 +1,214 @@
+[gd_scene load_steps=30 format=2]
+
+[ext_resource path="res://assets/models/card_outline.obj" type="ArrayMesh" id=1]
+[ext_resource path="res://assets/card.png" type="Texture" id=2]
+[ext_resource path="res://scripts/cards/s_3DUI_viewport.gd" type="Script" id=3]
+[ext_resource path="res://scripts/cards/s_card.gd" type="Script" id=4]
+[ext_resource path="res://scripts/s_follow.gd" type="Script" id=5]
+[ext_resource path="res://scripts/cards/c_card_info.gd" type="Script" id=6]
+[ext_resource path="res://scripts/cards/c_card_orientation.gd" type="Script" id=7]
+[ext_resource path="res://assets/card_art.shader" type="Shader" id=8]
+[ext_resource path="res://assets/card_art/frog.png" type="Texture" id=9]
+[ext_resource path="res://assets/card_art/trees.png" type="Texture" id=10]
+[ext_resource path="res://assets/card_art/floor.png" type="Texture" id=11]
+
+[sub_resource type="SpatialMaterial" id=1]
+flags_unshaded = true
+params_use_alpha_scissor = true
+params_alpha_scissor_threshold = 0.5
+albedo_texture = ExtResource( 2 )
+
+[sub_resource type="QuadMesh" id=17]
+size = Vector2( 2, 2.8 )
+
+[sub_resource type="SpatialMaterial" id=2]
+flags_unshaded = true
+
+[sub_resource type="ViewportTexture" id=3]
+viewport_path = NodePath("Content/Text Viewport")
+
+[sub_resource type="SpatialMaterial" id=4]
+resource_local_to_scene = true
+flags_transparent = true
+flags_unshaded = true
+albedo_texture = SubResource( 3 )
+
+[sub_resource type="QuadMesh" id=5]
+size = Vector2( 1.6, 1.1 )
+
+[sub_resource type="ViewportTexture" id=6]
+viewport_path = NodePath("Content/Title Viewport")
+
+[sub_resource type="SpatialMaterial" id=7]
+resource_local_to_scene = true
+flags_transparent = true
+flags_unshaded = true
+albedo_texture = SubResource( 6 )
+
+[sub_resource type="QuadMesh" id=8]
+size = Vector2( 1.6, 0.24 )
+
+[sub_resource type="ShaderMaterial" id=18]
+shader = ExtResource( 8 )
+shader_param/color = Color( 1, 0.25098, 0.25098, 1 )
+shader_param/offset = 0.35
+shader_param/perspective = 0.002
+shader_param/tex = ExtResource( 11 )
+
+[sub_resource type="QuadMesh" id=10]
+
+[sub_resource type="ShaderMaterial" id=9]
+shader = ExtResource( 8 )
+shader_param/color = Color( 1, 0.25098, 0.25098, 1 )
+shader_param/offset = -0.56
+shader_param/perspective = null
+shader_param/tex = ExtResource( 9 )
+
+[sub_resource type="ShaderMaterial" id=11]
+shader = ExtResource( 8 )
+shader_param/color = Color( 0.239216, 0.945098, 1, 1 )
+shader_param/offset = -0.92
+shader_param/perspective = 0.0
+shader_param/tex = ExtResource( 10 )
+
+[sub_resource type="SpatialMaterial" id=12]
+flags_unshaded = true
+params_cull_mode = 1
+albedo_color = Color( 0, 0, 0, 1 )
+
+[sub_resource type="CubeMesh" id=13]
+size = Vector3( 1.74, 1.5, 0.1 )
+
+[sub_resource type="BoxShape" id=14]
+extents = Vector3( 1.08594, 1.53315, 0.190749 )
+
+[sub_resource type="SpatialMaterial" id=15]
+flags_unshaded = true
+
+[sub_resource type="SphereMesh" id=16]
+radius = 0.1
+height = 0.2
+
+[node name="Card" type="Spatial"]
+script = ExtResource( 4 )
+
+[node name="Info" type="Node" parent="."]
+script = ExtResource( 6 )
+title = "card title"
+text = "This is a coool card!"
+
+[node name="Content" type="Node" parent="."]
+
+[node name="Text Viewport" type="Viewport" parent="Content"]
+size = Vector2( 160, 110 )
+transparent_bg = true
+handle_input_locally = false
+hdr = false
+disable_3d = true
+render_target_v_flip = true
+script = ExtResource( 3 )
+
+[node name="Text" type="Label" parent="Content/Text Viewport"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = "This is a coool card!"
+align = 1
+
+[node name="Title Viewport" type="Viewport" parent="Content"]
+size = Vector2( 160, 24 )
+transparent_bg = true
+handle_input_locally = false
+hdr = false
+disable_3d = true
+render_target_v_flip = true
+script = ExtResource( 3 )
+
+[node name="Text" type="Label" parent="Content/Title Viewport"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+text = "card title"
+valign = 2
+uppercase = true
+
+[node name="Separator" type="Node" parent="."]
+
+[node name="Object" type="Spatial" parent="Separator"]
+script = ExtResource( 5 )
+target_path = NodePath("../..")
+speed = 12.0
+
+[node name="Main" type="MeshInstance" parent="Separator/Object"]
+material_override = SubResource( 1 )
+mesh = SubResource( 17 )
+material/0 = null
+
+[node name="Outline" type="MeshInstance" parent="Separator/Object/Main"]
+transform = Transform( 1, 0, 0, 0, -1.62921e-07, -1, 0, 1, -1.62921e-07, 0, 0, -0.0060451 )
+visible = false
+material_override = SubResource( 2 )
+mesh = ExtResource( 1 )
+material/0 = null
+
+[node name="Text" type="MeshInstance" parent="Separator/Object"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.782051, 0.0758155 )
+material_override = SubResource( 4 )
+mesh = SubResource( 5 )
+material/0 = null
+
+[node name="Title" type="MeshInstance" parent="Separator/Object"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.070299, 1.26314, 0.0534974 )
+material_override = SubResource( 7 )
+mesh = SubResource( 8 )
+material/0 = null
+
+[node name="Art" type="Spatial" parent="Separator/Object"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.502242, -0.00825769 )
+
+[node name="MeshInstance3" type="MeshInstance" parent="Separator/Object/Art"]
+transform = Transform( 1.92592, 0, 0, 0, 1.92592, 0, 0, 0, 0.722534, -0.0678264, 0.120413, 0 )
+material_override = SubResource( 18 )
+cast_shadow = 0
+mesh = SubResource( 10 )
+material/0 = null
+
+[node name="MeshInstance" type="MeshInstance" parent="Separator/Object/Art"]
+transform = Transform( 1.92592, 0, 0, 0, 1.92592, 0, 0, 0, 0.722534, 0, -0.138, -0.01 )
+material_override = SubResource( 9 )
+cast_shadow = 0
+mesh = SubResource( 10 )
+material/0 = null
+
+[node name="MeshInstance2" type="MeshInstance" parent="Separator/Object/Art"]
+transform = Transform( 1.59892, 0, 0, 0, 1.59892, 0, 0, 0, 0.990492, 0, -0.225, -0.02 )
+material_override = SubResource( 11 )
+cast_shadow = 0
+mesh = SubResource( 10 )
+material/0 = null
+
+[node name="Background" type="MeshInstance" parent="Separator/Object/Art"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.147762, -0.05 )
+material_override = SubResource( 12 )
+mesh = SubResource( 13 )
+material/0 = null
+
+[node name="Orientation" type="Node" parent="Separator/Object"]
+script = ExtResource( 7 )
+angle_scale = 0.12
+angle_speed = 6.0
+offset = Vector2( -29.06, 50 )
+angle_min = Vector2( -10, -10 )
+angle_max = Vector2( 10, 10 )
+
+[node name="Area" type="Area" parent="Separator/Object"]
+
+[node name="CollisionShape" type="CollisionShape" parent="Separator/Object/Area"]
+transform = Transform( 0.999999, -0.000902656, -0.000684231, 0.00090074, 0.999996, -0.00278039, 0.000686751, 0.00277976, 0.999996, 0, 0, 0 )
+shape = SubResource( 14 )
+
+[node name="Handle Visualizer" type="MeshInstance" parent="."]
+visible = false
+material_override = SubResource( 15 )
+mesh = SubResource( 16 )
+material/0 = null
+[connection signal="mouse_entered" from="Separator/Object/Area" to="Separator/Object/Orientation" method="enable_orientation"]
+[connection signal="mouse_exited" from="Separator/Object/Area" to="Separator/Object/Orientation" method="disable_orientation"]
