@@ -1,0 +1,92 @@
+[gd_scene load_steps=15 format=3 uid="uid://b7315qnkl71wy"]
+
+[ext_resource type="PackedScene" uid="uid://c6snuufknxa4i" path="res://ui/main_menu/main_menu.tscn" id="1_gycre"]
+[ext_resource type="Script" uid="uid://ceu3hljjipg3m" path="res://ui/ui.gd" id="1_pa1oa"]
+[ext_resource type="AudioStream" uid="uid://e48pmu76iuyt" path="res://assets/Blip.wav" id="2_ay4pc"]
+[ext_resource type="PackedScene" uid="uid://w400y1tswh20" path="res://ui/restart_dialog/restart_dialog.tscn" id="2_bo1jx"]
+[ext_resource type="PackedScene" uid="uid://dfup8lo2ylqox" path="res://ui/victory_dialog/victory_dialog.tscn" id="3_bo1jx"]
+[ext_resource type="PackedScene" uid="uid://bcg7o6vjsgfdh" path="res://ui/controls_menu/controls_menu.tscn" id="4_tf0e0"]
+[ext_resource type="PackedScene" uid="uid://dacdj2mwp52fo" path="res://ui/settings_menu/settings_menu.tscn" id="5_obcwv"]
+[ext_resource type="PackedScene" uid="uid://dr5d03ub4rmrt" path="res://ui/about_dialog/about_dialog.tscn" id="6_gycre"]
+[ext_resource type="Script" uid="uid://b6mvb4x5xka40" path="res://ui/about_dialog/about_dialog.gd" id="7_pa1oa"]
+[ext_resource type="Script" uid="uid://wc2d1f3aso1k" path="res://ui/menu_button.gd" id="10_ay4pc"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_n5ude"]
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+bg_color = Color(0.1, 0.1, 0.1, 0.88235295)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[sub_resource type="Theme" id="Theme_y4yjw"]
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_n5ude")
+
+[sub_resource type="InputEventAction" id="InputEventAction_y4yjw"]
+action = &"menu_toggle"
+
+[sub_resource type="Shortcut" id="Shortcut_waa4j"]
+events = [SubResource("InputEventAction_y4yjw")]
+
+[node name="UI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_y4yjw")
+script = ExtResource("1_pa1oa")
+
+[node name="Blip" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_ay4pc")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RestartDialog" parent="CenterContainer" instance=ExtResource("2_bo1jx")]
+visible = false
+layout_mode = 2
+
+[node name="VictoryDialog" parent="CenterContainer" instance=ExtResource("3_bo1jx")]
+visible = false
+layout_mode = 2
+
+[node name="MainMenu" parent="CenterContainer" instance=ExtResource("1_gycre")]
+layout_mode = 2
+
+[node name="ControlsMenu" parent="CenterContainer" instance=ExtResource("4_tf0e0")]
+visible = false
+layout_mode = 2
+
+[node name="SettingsMenu" parent="CenterContainer" instance=ExtResource("5_obcwv")]
+visible = false
+layout_mode = 2
+
+[node name="AboutDialog" parent="CenterContainer" instance=ExtResource("6_gycre")]
+visible = false
+layout_mode = 2
+script = ExtResource("7_pa1oa")
+
+[node name="MenuButton" type="Button" parent="." groups=["ui_buttons"]]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -53.0
+offset_bottom = 31.0
+grow_horizontal = 0
+shortcut = SubResource("Shortcut_waa4j")
+text = "Menu"
+script = ExtResource("10_ay4pc")
+next_menu = 2

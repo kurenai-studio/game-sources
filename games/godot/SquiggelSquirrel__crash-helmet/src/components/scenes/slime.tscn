@@ -1,0 +1,121 @@
+[gd_scene load_steps=13 format=3 uid="uid://e3713eesboqs"]
+
+[ext_resource type="Script" uid="uid://beqlvubbw5oyh" path="res://components/scripts/slime.gd" id="1_5jc4t"]
+[ext_resource type="AudioStream" uid="uid://c00x0w3m2bqe3" path="res://assets/Squish1.wav" id="2_0vqgi"]
+[ext_resource type="Texture2D" uid="uid://c64ha33by25qk" path="res://assets/spritesheet.png" id="2_4l1t8"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rka8t"]
+atlas = ExtResource("2_4l1t8")
+region = Rect2(16, 96, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5hph3"]
+atlas = ExtResource("2_4l1t8")
+region = Rect2(32, 96, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_j7kpp"]
+atlas = ExtResource("2_4l1t8")
+region = Rect2(48, 96, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bjebc"]
+atlas = ExtResource("2_4l1t8")
+region = Rect2(80, 96, 32, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5rr72"]
+atlas = ExtResource("2_4l1t8")
+region = Rect2(112, 96, 32, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_j7kpp"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rka8t")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5hph3")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 2.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_j7kpp")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bjebc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5rr72")
+}],
+"loop": false,
+"name": &"splitting",
+"speed": 3.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gyffv"]
+size = Vector2(15, 9)
+
+[sub_resource type="Gradient" id="Gradient_5jc4t"]
+colors = PackedColorArray(0.39885554, 0.99999994, 0.4860688, 1, 0, 0.91542435, 0.39701995, 0)
+
+[sub_resource type="Gradient" id="Gradient_4l1t8"]
+colors = PackedColorArray(0.6075, 0.65024996, 0.75, 1, 1, 1, 1, 1)
+
+[node name="Slime" type="CharacterBody2D"]
+collision_layer = 20
+collision_mask = 21
+script = ExtResource("1_5jc4t")
+
+[node name="SquishSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_0vqgi")
+bus = &"SFX"
+
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_j7kpp")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 3.5)
+shape = SubResource("RectangleShape2D_gyffv")
+
+[node name="Timer" type="Timer" parent="."]
+wait_time = 5.0
+autostart = true
+
+[node name="SpawnZone" type="Area2D" parent="."]
+position = Vector2(16, -1)
+collision_layer = 4
+collision_mask = 7
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="SpawnZone"]
+position = Vector2(0, 3.5)
+shape = SubResource("RectangleShape2D_gyffv")
+
+[node name="Particles" type="CPUParticles2D" parent="."]
+process_mode = 3
+position = Vector2(0, 4)
+emitting = false
+amount = 16
+lifetime = 0.5
+one_shot = true
+explosiveness = 0.95
+fixed_fps = 30
+draw_order = 1
+emission_shape = 3
+emission_rect_extents = Vector2(8, 4)
+direction = Vector2(0, 1)
+spread = 180.0
+gravity = Vector2(0, 49)
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+angle_min = -179.99998
+angle_max = 180.00002
+scale_amount_min = 2.0
+scale_amount_max = 2.0
+color = Color(0.8047426, 0.80474263, 0.8047426, 1)
+color_ramp = SubResource("Gradient_5jc4t")
+color_initial_ramp = SubResource("Gradient_4l1t8")
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
+[connection signal="finished" from="Particles" to="." method="_on_particles_finished"]

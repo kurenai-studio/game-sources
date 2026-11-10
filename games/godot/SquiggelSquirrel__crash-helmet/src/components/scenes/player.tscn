@@ -1,0 +1,156 @@
+[gd_scene load_steps=16 format=3 uid="uid://b02hs7nef70l3"]
+
+[ext_resource type="Script" uid="uid://08juu61jxdto" path="res://components/scripts/player.gd" id="1_onrkg"]
+[ext_resource type="Texture2D" uid="uid://c64ha33by25qk" path="res://assets/spritesheet.png" id="2_onrkg"]
+[ext_resource type="AudioStream" uid="uid://6d1b58sclltb" path="res://assets/Death.wav" id="3_crc4w"]
+[ext_resource type="AudioStream" uid="uid://bn3vyj5aedqel" path="res://assets/Jump.wav" id="4_2tl0q"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hn12h"]
+radius = 7.5
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_onrkg"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(0, 112, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1jxqw"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(0, 112, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dw050"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(16, 112, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b26j0"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(32, 112, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_i3pqv"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(0, 64, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hqtel"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(0, 64, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sweqy"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(16, 64, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2hs0m"]
+atlas = ExtResource("2_onrkg")
+region = Rect2(32, 64, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_1jxqw"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_onrkg")
+}],
+"loop": true,
+"name": &"head_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1jxqw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dw050")
+}, {
+"duration": 2.0,
+"texture": SubResource("AtlasTexture_b26j0")
+}],
+"loop": true,
+"name": &"head_down_running",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_i3pqv")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hqtel")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sweqy")
+}, {
+"duration": 2.0,
+"texture": SubResource("AtlasTexture_2hs0m")
+}],
+"loop": true,
+"name": &"running",
+"speed": 6.0
+}]
+
+[sub_resource type="Gradient" id="Gradient_onrkg"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 67
+floor_stop_on_slope = false
+floor_block_on_wall = false
+floor_max_angle = 0.87266463
+floor_snap_length = 4.0
+script = ExtResource("1_onrkg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_hn12h")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(2, 2)
+limit_enabled = false
+
+[node name="RayCast2D" type="RayCast2D" parent="."]
+enabled = false
+exclude_parent = false
+target_position = Vector2(16, 0)
+collision_mask = 7
+
+[node name="Skis" type="Sprite2D" parent="."]
+position = Vector2(0, 6)
+texture = ExtResource("2_onrkg")
+offset = Vector2(0, -2)
+region_enabled = true
+region_rect = Rect2(48, 72, 16, 8)
+
+[node name="Head" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, 5)
+sprite_frames = SubResource("SpriteFrames_1jxqw")
+animation = &"head_down_running"
+autoplay = "idle"
+offset = Vector2(0, -5)
+
+[node name="CPUParticles2D" type="CPUParticles2D" parent="."]
+position = Vector2(5, 7)
+direction = Vector2(-1, 0)
+gravity = Vector2(0, 49)
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+color_ramp = SubResource("Gradient_onrkg")
+
+[node name="HazardSense" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HazardSense"]
+shape = SubResource("CircleShape2D_hn12h")
+
+[node name="IceSense" type="RayCast2D" parent="."]
+target_position = Vector2(0, 16)
+collision_mask = 32
+
+[node name="DeathSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_crc4w")
+bus = &"SFX"
+
+[node name="JumpSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_2tl0q")
+bus = &"SFX"
+
+[connection signal="body_entered" from="HazardSense" to="." method="_on_hazard_sense_body_entered"]

@@ -1,0 +1,35 @@
+[gd_scene load_steps=5 format=3 uid="uid://cjl3lhgp5nwmx"]
+
+[ext_resource type="Script" uid="uid://i7loxqu4rgy2" path="res://components/scripts/game.gd" id="1_feb5d"]
+[ext_resource type="Texture2D" uid="uid://dvbuipmo2lauk" path="res://assets/splash.png" id="3_feb5d"]
+[ext_resource type="AudioStream" uid="uid://b8yi8j57koq45" path="res://assets/BeepBox-Song.wav" id="4_7jktm"]
+[ext_resource type="PackedScene" uid="uid://b7315qnkl71wy" path="res://ui/ui.tscn" id="4_fc0e3"]
+
+[node name="Game" type="Node" node_paths=PackedStringArray("world", "death_tint", "ui_root")]
+process_mode = 3
+script = ExtResource("1_feb5d")
+world = NodePath("World")
+death_tint = NodePath("World/DeathTint")
+ui_root = NodePath("CanvasLayer/UI")
+
+[node name="Splash" type="Sprite2D" parent="."]
+texture = ExtResource("3_feb5d")
+centered = false
+
+[node name="World" type="Node2D" parent="."]
+process_mode = 1
+
+[node name="DeathTint" type="CanvasModulate" parent="World"]
+visible = false
+color = Color(0.9, 0.40499997, 0.35999995, 1)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="UI" parent="CanvasLayer" instance=ExtResource("4_fc0e3")]
+offset_left = 1.0
+offset_right = 1.0
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_7jktm")
+autoplay = true
+bus = &"Music"
