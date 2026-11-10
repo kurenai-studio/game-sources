@@ -9,7 +9,13 @@
 
 ## Art
 
-Enemy, tower, tilemap, and GUI textures in `src/Textures/` are part of the upstream project and are covered by its MIT license. No third-party license files were present in the repository.
+Tower, tilemap, fuel-can, energy-bar, and wave-bubble textures in `src/Textures/` are part of the upstream project and are covered by its MIT license. They match the jam-period hand-drawn style of Godot Wild Jam #60 (August 2023).
+
+The upstream enemy sprites `Textures/Enemy/Goblins1.png` and `Goblins2.png` (Photoshop CC 2019 XMP: created 2019-11-28, last saved 2020-01, shared OriginalDocumentID, years before the jam) and the 4027×4027 stock-style `Textures/GUI/money_icon.png` had no redistributable third-party source or license in the repository. Those three files are replaced in this snapshot by original flat marks drawn for the collection (same filenames, MIT), so the snapshot does not ship the unattributed pack:
+
+- `src/Textures/Enemy/Goblins1.png` (md5 `9dd82907497cc37fb48f9bc4618baab2`) — original top-down green hooded archer
+- `src/Textures/Enemy/Goblins2.png` (md5 `28a5ffebbd87019dfea7e561a610c667`) — original top-down gold-armored orc with sword
+- `src/Textures/GUI/money_icon.png` (md5 `32c8491a648c47b76e3230e9e015f11c`) — original stacked-bill UI icon
 
 ## Icon
 
