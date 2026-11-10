@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s3nml"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ce7lb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ui16j"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_qxd86"]
+
+[sub_resource type="Resource" id="Resource_bfnbi"]
+script = ExtResource("2_ce7lb")
+text = "{subject} sowed one corner of the field with flowers, and nobody had the heart to say anything."
+
+[sub_resource type="Resource" id="Resource_yf23g"]
+script = ExtResource("3_ui16j")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_74qmo"]
+script = ExtResource("3_ui16j")
+kind = 6
+key = &"nature_loving"
+
+[sub_resource type="Resource" id="Resource_i36p8"]
+script = ExtResource("3_ui16j")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_uc8qm"]
+script = ExtResource("3_ui16j")
+kind = 10
+
+[resource]
+script = ExtResource("4_qxd86")
+id = &"flower_corner"
+title = "A quiet moment"
+requires = Array[ExtResource("3_ui16j")]([SubResource("Resource_yf23g")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_ui16j")]([SubResource("Resource_74qmo"), SubResource("Resource_i36p8"), SubResource("Resource_uc8qm")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ce7lb")]([SubResource("Resource_bfnbi")])

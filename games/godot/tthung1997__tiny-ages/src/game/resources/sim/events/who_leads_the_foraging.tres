@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1tbi8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_q6ty7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jgks3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_xaa0w"]
+
+[sub_resource type="Resource" id="Resource_c5uvl"]
+script = ExtResource("2_q6ty7")
+kind = 11
+key = &"forager"
+
+[sub_resource type="Resource" id="Resource_ol0i3"]
+script = ExtResource("2_q6ty7")
+kind = 1
+key = &"forager_chosen"
+
+[sub_resource type="Resource" id="Resource_gkh62"]
+script = ExtResource("2_q6ty7")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_nwvrn"]
+script = ExtResource("2_q6ty7")
+text = "{subject} took the baskets down the river bank, and everyone came back with more."
+
+[sub_resource type="Resource" id="Resource_ml0si"]
+script = ExtResource("1_1tbi8")
+id = &"lead_the_baskets"
+label = "Let {subject} lead the foraging parties"
+effects = Array[ExtResource("2_q6ty7")]([SubResource("Resource_c5uvl"), SubResource("Resource_ol0i3"), SubResource("Resource_gkh62"), SubResource("Resource_nwvrn")])
+
+[sub_resource type="Resource" id="Resource_763ub"]
+script = ExtResource("2_q6ty7")
+kind = 0
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_d13bp"]
+script = ExtResource("2_q6ty7")
+kind = 1
+key = &"foraging_shared"
+
+[sub_resource type="Resource" id="Resource_gsaku"]
+script = ExtResource("2_q6ty7")
+text = "Everyone took a turn with the baskets, and the work went round the fire like a story."
+
+[sub_resource type="Resource" id="Resource_i68uw"]
+script = ExtResource("1_1tbi8")
+id = &"share_the_baskets"
+label = "Share the foraging out evenly"
+effects = Array[ExtResource("2_q6ty7")]([SubResource("Resource_763ub"), SubResource("Resource_d13bp"), SubResource("Resource_gsaku")])
+
+[sub_resource type="Resource" id="Resource_1luq7"]
+script = ExtResource("3_jgks3")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_qvmow"]
+script = ExtResource("3_jgks3")
+kind = 5
+amount = 204
+
+[sub_resource type="Resource" id="Resource_gt0at"]
+script = ExtResource("3_jgks3")
+kind = 8
+amount = 1
+negate = true
+
+[sub_resource type="Resource" id="Resource_8tmc4"]
+script = ExtResource("3_jgks3")
+kind = 9
+key = &"bigger_group"
+
+[sub_resource type="Resource" id="Resource_8e5q8"]
+script = ExtResource("3_jgks3")
+kind = 2
+key = &"food"
+amount = 30
+negate = true
+
+[sub_resource type="Resource" id="Resource_tupe7"]
+script = ExtResource("3_jgks3")
+kind = 7
+
+[resource]
+script = ExtResource("4_xaa0w")
+id = &"who_leads_the_foraging"
+title = "Who leads the foraging"
+body = "The food pile is thinner than it was, and the baskets come back later. {subject} knows where the best of the river bank is."
+requires = Array[ExtResource("3_jgks3")]([SubResource("Resource_1luq7"), SubResource("Resource_qvmow"), SubResource("Resource_gt0at"), SubResource("Resource_8tmc4"), SubResource("Resource_8e5q8")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_jgks3")]([SubResource("Resource_tupe7")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_1tbi8")]([SubResource("Resource_ml0si"), SubResource("Resource_i68uw")])

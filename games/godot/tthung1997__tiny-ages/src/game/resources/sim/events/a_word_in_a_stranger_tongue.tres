@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_538j8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_a6uux"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_yh3br"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_najy4"]
+
+[sub_resource type="Resource" id="Resource_28w34"]
+script = ExtResource("2_a6uux")
+text = "Someone said good morning in a stranger's tongue, and a dog looked up."
+
+[sub_resource type="Resource" id="Resource_ajwpn"]
+script = ExtResource("3_yh3br")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_3okid"]
+script = ExtResource("3_yh3br")
+key = &"learned_words"
+
+[resource]
+script = ExtResource("4_najy4")
+id = &"a_word_in_a_stranger_tongue"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_yh3br")]([SubResource("Resource_ajwpn"), SubResource("Resource_3okid")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_a6uux")]([SubResource("Resource_28w34")])

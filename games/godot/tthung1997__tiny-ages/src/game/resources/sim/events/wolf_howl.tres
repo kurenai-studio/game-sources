@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ssk3h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ltm4a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_qj8od"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_f6kw0"]
+
+[sub_resource type="Resource" id="Resource_hxch1"]
+script = ExtResource("2_ltm4a")
+text = "Far off in the night, a lone wolf howled, and was not answered."
+
+[sub_resource type="Resource" id="Resource_arwxs"]
+script = ExtResource("3_qj8od")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_aemj0"]
+script = ExtResource("3_qj8od")
+key = &"wolf_driven_off"
+
+[resource]
+script = ExtResource("4_f6kw0")
+id = &"wolf_howl"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_qj8od")]([SubResource("Resource_arwxs"), SubResource("Resource_aemj0")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ltm4a")]([SubResource("Resource_hxch1")])

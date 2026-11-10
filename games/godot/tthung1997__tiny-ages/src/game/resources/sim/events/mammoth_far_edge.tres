@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_o5swg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7138a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_oji13"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_apk3c"]
+
+[sub_resource type="Resource" id="Resource_pv1d7"]
+script = ExtResource("2_7138a")
+text = "The mammoth watched the camp from the far edge of the grass, and the camp watched back."
+
+[sub_resource type="Resource" id="Resource_s8qvi"]
+script = ExtResource("3_oji13")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_wotib"]
+script = ExtResource("3_oji13")
+key = &"mammoth_distant"
+
+[resource]
+script = ExtResource("4_apk3c")
+id = &"mammoth_far_edge"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_oji13")]([SubResource("Resource_s8qvi"), SubResource("Resource_wotib")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_7138a")]([SubResource("Resource_pv1d7")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7u4t8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3he83"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hsxmr"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bny5c"]
+
+[sub_resource type="Resource" id="Resource_jxrh6"]
+script = ExtResource("2_3he83")
+text = "The seal with the tree was pressed into the wax, and the tree came out so clear that a leaf could be counted."
+
+[sub_resource type="Resource" id="Resource_r304h"]
+script = ExtResource("3_hsxmr")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_v62yo"]
+script = ExtResource("3_hsxmr")
+key = &"seal_tree"
+
+[resource]
+script = ExtResource("4_bny5c")
+id = &"the_seal_in_the_wax"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_hsxmr")]([SubResource("Resource_r304h"), SubResource("Resource_v62yo")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_3he83")]([SubResource("Resource_jxrh6")])

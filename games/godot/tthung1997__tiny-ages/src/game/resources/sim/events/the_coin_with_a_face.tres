@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1hpuy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_jbpjy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_3kdys"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_og2y5"]
+
+[sub_resource type="Resource" id="Resource_71wpj"]
+script = ExtResource("2_jbpjy")
+text = "A face was stamped on every coin, and everyone was sure it was somebody else's."
+
+[sub_resource type="Resource" id="Resource_wykm8"]
+script = ExtResource("3_3kdys")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_yse08"]
+script = ExtResource("3_3kdys")
+key = &"coin_face"
+
+[resource]
+script = ExtResource("4_og2y5")
+id = &"the_coin_with_a_face"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_3kdys")]([SubResource("Resource_wykm8"), SubResource("Resource_yse08")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_jbpjy")]([SubResource("Resource_71wpj")])

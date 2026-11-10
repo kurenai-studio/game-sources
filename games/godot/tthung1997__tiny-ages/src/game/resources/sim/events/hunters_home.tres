@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_56jtb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_uyict"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_oxpj7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_edcwe"]
+
+[sub_resource type="Resource" id="Resource_feu7y"]
+script = ExtResource("2_uyict")
+text = "The hunters came back at dusk with a deer slung between two poles."
+
+[sub_resource type="Resource" id="Resource_8nn0u"]
+script = ExtResource("3_oxpj7")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_0m3nv"]
+script = ExtResource("3_oxpj7")
+key = &"path_hunting"
+
+[resource]
+script = ExtResource("4_edcwe")
+id = &"hunters_home"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_oxpj7")]([SubResource("Resource_8nn0u"), SubResource("Resource_0m3nv")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_uyict")]([SubResource("Resource_feu7y")])

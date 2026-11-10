@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s5axe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gu3h4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_2ecvh"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_wbmhn"]
+
+[sub_resource type="Resource" id="Resource_6l854"]
+script = ExtResource("2_gu3h4")
+text = "The water from the new well tasted of stone, and everyone agreed it was better."
+
+[sub_resource type="Resource" id="Resource_3lhi8"]
+script = ExtResource("3_2ecvh")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_kbvax"]
+script = ExtResource("3_2ecvh")
+key = &"well_dug"
+
+[resource]
+script = ExtResource("4_wbmhn")
+id = &"well_water"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_2ecvh")]([SubResource("Resource_3lhi8"), SubResource("Resource_kbvax")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_gu3h4")]([SubResource("Resource_6l854")])

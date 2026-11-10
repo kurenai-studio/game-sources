@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_0fcxd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_5id66"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lfix7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_n5ljk"]
+
+[sub_resource type="Resource" id="Resource_4606k"]
+script = ExtResource("2_5id66")
+text = "{subject} was found at the lamp long after everyone else had gone to bed, reading something with a faintly alarmed expression."
+
+[sub_resource type="Resource" id="Resource_e5vbg"]
+script = ExtResource("3_lfix7")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_5gdld"]
+script = ExtResource("3_lfix7")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_2q8to"]
+script = ExtResource("3_lfix7")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_8tg8v"]
+script = ExtResource("3_lfix7")
+kind = 10
+
+[resource]
+script = ExtResource("4_n5ljk")
+id = &"a_reader_at_the_lamp"
+title = "A quiet moment"
+requires = Array[ExtResource("3_lfix7")]([SubResource("Resource_e5vbg")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_lfix7")]([SubResource("Resource_5gdld"), SubResource("Resource_2q8to"), SubResource("Resource_8tg8v")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_5id66")]([SubResource("Resource_4606k")])

@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_eq5ud"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_h70h6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6j352"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_niamc"]
+
+[sub_resource type="Resource" id="Resource_rnxij"]
+script = ExtResource("2_h70h6")
+kind = 1
+key = &"bracelets"
+
+[sub_resource type="Resource" id="Resource_jfqic"]
+script = ExtResource("2_h70h6")
+text = "A bracelet was made for everyone in the village, and every wrist flashed in the sun like a small signal."
+
+[sub_resource type="Resource" id="Resource_acodm"]
+script = ExtResource("1_eq5ud")
+id = &"a_bracelet_for_everyone"
+label = "Make a bracelet for everyone"
+effects = Array[ExtResource("2_h70h6")]([SubResource("Resource_rnxij"), SubResource("Resource_jfqic")])
+
+[sub_resource type="Resource" id="Resource_l8rke"]
+script = ExtResource("2_h70h6")
+kind = 1
+key = &"first_blade"
+
+[sub_resource type="Resource" id="Resource_yebqn"]
+script = ExtResource("2_h70h6")
+text = "The first thing the smith made was a blade, and the second thing was a sheath, because the blade had to go somewhere."
+
+[sub_resource type="Resource" id="Resource_2qrqy"]
+script = ExtResource("1_eq5ud")
+id = &"a_blade_first"
+label = "Make a blade first"
+effects = Array[ExtResource("2_h70h6")]([SubResource("Resource_l8rke"), SubResource("Resource_yebqn")])
+
+[sub_resource type="Resource" id="Resource_m5bdd"]
+script = ExtResource("3_6j352")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_bkhok"]
+script = ExtResource("3_6j352")
+kind = 11
+amount = 32
+
+[sub_resource type="Resource" id="Resource_dkdpl"]
+script = ExtResource("3_6j352")
+kind = 9
+key = &"first_casting"
+
+[resource]
+script = ExtResource("4_niamc")
+id = &"a_bright_thing"
+title = "A bright thing"
+body = "The first metal is a surprise every time, and everyone wants to hold it."
+category = &"settlement"
+requires = Array[ExtResource("3_6j352")]([SubResource("Resource_m5bdd"), SubResource("Resource_bkhok"), SubResource("Resource_dkdpl")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_eq5ud")]([SubResource("Resource_acodm"), SubResource("Resource_2qrqy")])

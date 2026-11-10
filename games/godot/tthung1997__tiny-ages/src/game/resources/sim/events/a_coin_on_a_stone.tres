@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8iwk7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2sumu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_d1eeq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_jc21b"]
+
+[sub_resource type="Resource" id="Resource_nfkro"]
+script = ExtResource("2_2sumu")
+text = "Somebody dropped a piece of silver on a stone, and a dozen heads turned at the sound."
+
+[sub_resource type="Resource" id="Resource_muxe4"]
+script = ExtResource("3_d1eeq")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_2j6ou"]
+script = ExtResource("3_d1eeq")
+kind = 9
+key = &"silver_by_weight"
+
+[resource]
+script = ExtResource("4_jc21b")
+id = &"a_coin_on_a_stone"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_d1eeq")]([SubResource("Resource_muxe4"), SubResource("Resource_2j6ou")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_2sumu")]([SubResource("Resource_nfkro")])

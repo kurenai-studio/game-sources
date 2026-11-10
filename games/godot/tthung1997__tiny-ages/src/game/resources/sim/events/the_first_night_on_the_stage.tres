@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_2v2eg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8ox24"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ddixw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7v2ww"]
+
+[sub_resource type="Resource" id="Resource_may57"]
+script = ExtResource("2_8ox24")
+text = "The first night on the stage, a stranger in the crowd wept at the right moment, and was thanked."
+
+[sub_resource type="Resource" id="Resource_jkqak"]
+script = ExtResource("3_ddixw")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_dw3om"]
+script = ExtResource("3_ddixw")
+key = &"stage_built"
+
+[resource]
+script = ExtResource("4_7v2ww")
+id = &"the_first_night_on_the_stage"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ddixw")]([SubResource("Resource_jkqak"), SubResource("Resource_dw3om")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_8ox24")]([SubResource("Resource_may57")])

@@ -1,0 +1,115 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_us212"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_yqlsm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_w8kij"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_v5778"]
+
+[sub_resource type="Resource" id="Resource_weyl5"]
+script = ExtResource("2_yqlsm")
+kind = 1
+key = &"town_wall"
+
+[sub_resource type="Resource" id="Resource_vvnct"]
+script = ExtResource("2_yqlsm")
+kind = 0
+key = &"wood"
+amount = -24
+
+[sub_resource type="Resource" id="Resource_rwfyh"]
+script = ExtResource("2_yqlsm")
+kind = 10
+key = &"mud_brick_walls"
+text = "Mud-brick Walls"
+
+[sub_resource type="Resource" id="Resource_fr2t8"]
+script = ExtResource("2_yqlsm")
+text = "A wall of mud-brick went round the village, and for the first time it had an inside."
+
+[sub_resource type="Resource" id="Resource_anej3"]
+script = ExtResource("3_w8kij")
+kind = 2
+key = &"wood"
+amount = 24
+
+[sub_resource type="Resource" id="Resource_i2bqf"]
+script = ExtResource("1_us212")
+id = &"raise_a_new_wall"
+label = "Raise a wall of mud-brick"
+requires = Array[ExtResource("3_w8kij")]([SubResource("Resource_anej3")])
+effects = Array[ExtResource("2_yqlsm")]([SubResource("Resource_weyl5"), SubResource("Resource_vvnct"), SubResource("Resource_rwfyh"), SubResource("Resource_fr2t8")])
+
+[sub_resource type="Resource" id="Resource_i2off"]
+script = ExtResource("2_yqlsm")
+kind = 1
+key = &"palisade"
+
+[sub_resource type="Resource" id="Resource_tde0w"]
+script = ExtResource("2_yqlsm")
+kind = 0
+key = &"wood"
+amount = -14
+
+[sub_resource type="Resource" id="Resource_1qj2y"]
+script = ExtResource("2_yqlsm")
+kind = 10
+key = &"mud_brick_walls"
+text = "Mud-brick Walls"
+
+[sub_resource type="Resource" id="Resource_phbqf"]
+script = ExtResource("2_yqlsm")
+text = "A palisade of split trunks went round the village, with a gate that took four people to open and three to agree about."
+
+[sub_resource type="Resource" id="Resource_mrqyj"]
+script = ExtResource("3_w8kij")
+kind = 2
+key = &"wood"
+amount = 14
+
+[sub_resource type="Resource" id="Resource_em0l7"]
+script = ExtResource("1_us212")
+id = &"plant_a_palisade"
+label = "Plant a palisade with a gate"
+requires = Array[ExtResource("3_w8kij")]([SubResource("Resource_mrqyj")])
+effects = Array[ExtResource("2_yqlsm")]([SubResource("Resource_i2off"), SubResource("Resource_tde0w"), SubResource("Resource_1qj2y"), SubResource("Resource_phbqf")])
+
+[sub_resource type="Resource" id="Resource_6wdwe"]
+script = ExtResource("3_w8kij")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_7qdhw"]
+script = ExtResource("3_w8kij")
+kind = 11
+amount = 108
+
+[sub_resource type="Resource" id="Resource_j7hit"]
+script = ExtResource("3_w8kij")
+kind = 9
+key = &"mud_brick_walls"
+negate = true
+
+[sub_resource type="Resource" id="Resource_wlsyw"]
+script = ExtResource("3_w8kij")
+key = &"low_wall"
+negate = true
+
+[sub_resource type="Resource" id="Resource_bve8h"]
+script = ExtResource("3_w8kij")
+kind = 7
+
+[resource]
+script = ExtResource("4_v5778")
+id = &"ring_the_village"
+title = "A line round the houses"
+body = "The village is open on every side, and the paths go out from it like the spokes of a wheel. Someone would like to know where it stops."
+category = &"settlement"
+requires = Array[ExtResource("3_w8kij")]([SubResource("Resource_6wdwe"), SubResource("Resource_7qdhw"), SubResource("Resource_j7hit"), SubResource("Resource_wlsyw")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_w8kij")]([SubResource("Resource_bve8h")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_us212")]([SubResource("Resource_i2bqf"), SubResource("Resource_em0l7")])

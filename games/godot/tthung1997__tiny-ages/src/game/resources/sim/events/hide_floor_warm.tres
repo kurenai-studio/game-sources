@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_17s4c"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_exosk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ykatm"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_544hn"]
+
+[sub_resource type="Resource" id="Resource_watyo"]
+script = ExtResource("2_exosk")
+text = "Bare feet came down warm on the hide floor, and someone said how good it felt."
+
+[sub_resource type="Resource" id="Resource_gqfdl"]
+script = ExtResource("3_ykatm")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_h43ma"]
+script = ExtResource("3_ykatm")
+key = &"hide_floor"
+
+[resource]
+script = ExtResource("4_544hn")
+id = &"hide_floor_warm"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ykatm")]([SubResource("Resource_gqfdl"), SubResource("Resource_h43ma")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_exosk")]([SubResource("Resource_watyo")])

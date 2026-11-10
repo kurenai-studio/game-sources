@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hx7vo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_kdgdx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_4vo5y"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_swtt7"]
+
+[sub_resource type="Resource" id="Resource_levp2"]
+script = ExtResource("2_kdgdx")
+text = "{subject} stood at the furnace until the hammering started, and then stood a little closer."
+
+[sub_resource type="Resource" id="Resource_s721d"]
+script = ExtResource("3_4vo5y")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_52xq8"]
+script = ExtResource("3_4vo5y")
+kind = 9
+key = &"first_bloom"
+
+[sub_resource type="Resource" id="Resource_bgspf"]
+script = ExtResource("3_4vo5y")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_kcjvj"]
+script = ExtResource("3_4vo5y")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_t8757"]
+script = ExtResource("3_4vo5y")
+kind = 10
+
+[resource]
+script = ExtResource("4_swtt7")
+id = &"watching_the_bloom"
+title = "A quiet moment"
+requires = Array[ExtResource("3_4vo5y")]([SubResource("Resource_s721d"), SubResource("Resource_52xq8")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_4vo5y")]([SubResource("Resource_bgspf"), SubResource("Resource_kcjvj"), SubResource("Resource_t8757")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_kdgdx")]([SubResource("Resource_levp2")])

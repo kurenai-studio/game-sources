@@ -1,0 +1,105 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_xbre2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_m1ruf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_snxlp"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_jxxkh"]
+
+[sub_resource type="Resource" id="Resource_8bosi"]
+script = ExtResource("2_m1ruf")
+kind = 1
+key = &"library_kept"
+
+[sub_resource type="Resource" id="Resource_jc75k"]
+script = ExtResource("2_m1ruf")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_up14d"]
+script = ExtResource("2_m1ruf")
+kind = 10
+key = &"lamp_and_stage"
+text = "The Lamp and the Stage"
+
+[sub_resource type="Resource" id="Resource_207ot"]
+script = ExtResource("2_m1ruf")
+text = "A room was set aside, with shelves, and a lamp that was lit each evening, and a rule about not eating near the shelves."
+
+[sub_resource type="Resource" id="Resource_ovpxp"]
+script = ExtResource("3_snxlp")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_8e23u"]
+script = ExtResource("1_xbre2")
+id = &"keep_them_in_a_library"
+label = "Keep them in a room with shelves"
+requires = Array[ExtResource("3_snxlp")]([SubResource("Resource_ovpxp")])
+effects = Array[ExtResource("2_m1ruf")]([SubResource("Resource_8bosi"), SubResource("Resource_jc75k"), SubResource("Resource_up14d"), SubResource("Resource_207ot")])
+
+[sub_resource type="Resource" id="Resource_kd8si"]
+script = ExtResource("2_m1ruf")
+kind = 1
+key = &"school_started"
+
+[sub_resource type="Resource" id="Resource_h87gv"]
+script = ExtResource("2_m1ruf")
+kind = 10
+key = &"lamp_and_stage"
+text = "The Lamp and the Stage"
+
+[sub_resource type="Resource" id="Resource_stwgv"]
+script = ExtResource("2_m1ruf")
+text = "A school was begun, with a few benches and a teacher who was both patient and wrong about a number of things, and the children loved it."
+
+[sub_resource type="Resource" id="Resource_pp4hr"]
+script = ExtResource("1_xbre2")
+id = &"teach_them_in_a_school"
+label = "Teach them to children, in a school"
+effects = Array[ExtResource("2_m1ruf")]([SubResource("Resource_kd8si"), SubResource("Resource_h87gv"), SubResource("Resource_stwgv")])
+
+[sub_resource type="Resource" id="Resource_krows"]
+script = ExtResource("3_snxlp")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_jsf4v"]
+script = ExtResource("3_snxlp")
+kind = 11
+amount = 216
+
+[sub_resource type="Resource" id="Resource_tk8c3"]
+script = ExtResource("3_snxlp")
+kind = 9
+key = &"lamp_and_stage"
+negate = true
+
+[sub_resource type="Resource" id="Resource_d3tmq"]
+script = ExtResource("3_snxlp")
+kind = 9
+key = &"the_square"
+
+[sub_resource type="Resource" id="Resource_1kfyf"]
+script = ExtResource("3_snxlp")
+key = &"learned_words"
+
+[sub_resource type="Resource" id="Resource_n03rk"]
+script = ExtResource("3_snxlp")
+kind = 7
+
+[resource]
+script = ExtResource("4_jxxkh")
+id = &"their_words_in_ink"
+title = "Their words, in ink"
+body = "The words of the far shore, learned a few at a time, are now long enough to want writing down, and somebody has to decide where they should live."
+requires = Array[ExtResource("3_snxlp")]([SubResource("Resource_krows"), SubResource("Resource_jsf4v"), SubResource("Resource_tk8c3"), SubResource("Resource_d3tmq"), SubResource("Resource_1kfyf")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_snxlp")]([SubResource("Resource_n03rk")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_xbre2")]([SubResource("Resource_8e23u"), SubResource("Resource_pp4hr")])

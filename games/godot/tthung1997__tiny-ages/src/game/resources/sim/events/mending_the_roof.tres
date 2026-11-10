@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bb76s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_554hc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_83e1f"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p634e"]
+
+[sub_resource type="Resource" id="Resource_frl3d"]
+script = ExtResource("2_554hc")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_64yo2"]
+script = ExtResource("2_554hc")
+kind = 1
+key = &"tight_roofs"
+
+[sub_resource type="Resource" id="Resource_yg61k"]
+script = ExtResource("2_554hc")
+text = "Fresh reed went over the worn thatch, and the next storm drummed on it harmlessly."
+
+[sub_resource type="Resource" id="Resource_fuvgf"]
+script = ExtResource("3_83e1f")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_biwyr"]
+script = ExtResource("1_bb76s")
+id = &"patch_it_now"
+label = "Patch it while the weather holds"
+requires = Array[ExtResource("3_83e1f")]([SubResource("Resource_fuvgf")])
+effects = Array[ExtResource("2_554hc")]([SubResource("Resource_frl3d"), SubResource("Resource_64yo2"), SubResource("Resource_yg61k")])
+
+[sub_resource type="Resource" id="Resource_2jyg1"]
+script = ExtResource("2_554hc")
+kind = 1
+key = &"leaky_roofs"
+
+[sub_resource type="Resource" id="Resource_ylodd"]
+script = ExtResource("2_554hc")
+text = "They waited for dry weather, and put a pot under the drip in the meantime."
+
+[sub_resource type="Resource" id="Resource_wef8f"]
+script = ExtResource("1_bb76s")
+id = &"wait_for_dry"
+label = "Wait for dry weather"
+effects = Array[ExtResource("2_554hc")]([SubResource("Resource_2jyg1"), SubResource("Resource_ylodd")])
+
+[sub_resource type="Resource" id="Resource_tgn6s"]
+script = ExtResource("3_83e1f")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_ffrde"]
+script = ExtResource("3_83e1f")
+kind = 11
+amount = 38
+
+[sub_resource type="Resource" id="Resource_nijkt"]
+script = ExtResource("3_83e1f")
+kind = 9
+key = &"first_roof"
+
+[resource]
+script = ExtResource("4_p634e")
+id = &"mending_the_roof"
+title = "Rain through the thatch"
+body = "Rain has found the thatch again, and the dark patch on the ceiling grows every night."
+category = &"settlement"
+requires = Array[ExtResource("3_83e1f")]([SubResource("Resource_tgn6s"), SubResource("Resource_ffrde"), SubResource("Resource_nijkt")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_bb76s")]([SubResource("Resource_biwyr"), SubResource("Resource_wef8f")])

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qgx6b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_k02yp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_3jtn5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5xgfv"]
+
+[sub_resource type="Resource" id="Resource_vd4tp"]
+script = ExtResource("2_k02yp")
+text = "The hunters talked all evening about the one that got away."
+
+[sub_resource type="Resource" id="Resource_4c3dk"]
+script = ExtResource("3_3jtn5")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_aidr6"]
+script = ExtResource("3_3jtn5")
+key = &"path_hunting"
+
+[resource]
+script = ExtResource("4_5xgfv")
+id = &"one_that_got_away"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_3jtn5")]([SubResource("Resource_4c3dk"), SubResource("Resource_aidr6")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_k02yp")]([SubResource("Resource_vd4tp")])

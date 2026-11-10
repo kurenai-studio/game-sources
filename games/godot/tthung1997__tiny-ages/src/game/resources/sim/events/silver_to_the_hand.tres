@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ak7w7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ljsda"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_q5adl"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rm5ds"]
+
+[sub_resource type="Resource" id="Resource_202of"]
+script = ExtResource("2_ljsda")
+kind = 1
+key = &"coin_handfuls"
+
+[sub_resource type="Resource" id="Resource_86d00"]
+script = ExtResource("2_ljsda")
+kind = 1
+key = &"coin_struck"
+
+[sub_resource type="Resource" id="Resource_y4868"]
+script = ExtResource("2_ljsda")
+kind = 10
+key = &"silver_by_weight"
+text = "Silver by Weight"
+
+[sub_resource type="Resource" id="Resource_fntph"]
+script = ExtResource("2_ljsda")
+text = "The silver was cut into handfuls, and each one was marked, and the size of a hand was finally written down in metal."
+
+[sub_resource type="Resource" id="Resource_0em1s"]
+script = ExtResource("1_ak7w7")
+id = &"cut_a_handful"
+label = "Cut it into handfuls, and mark each one"
+effects = Array[ExtResource("2_ljsda")]([SubResource("Resource_202of"), SubResource("Resource_86d00"), SubResource("Resource_y4868"), SubResource("Resource_fntph")])
+
+[sub_resource type="Resource" id="Resource_1n12q"]
+script = ExtResource("2_ljsda")
+kind = 1
+key = &"coin_handprint"
+
+[sub_resource type="Resource" id="Resource_oxq6q"]
+script = ExtResource("2_ljsda")
+kind = 1
+key = &"coin_struck"
+
+[sub_resource type="Resource" id="Resource_tchyd"]
+script = ExtResource("2_ljsda")
+kind = 10
+key = &"silver_by_weight"
+text = "Silver by Weight"
+
+[sub_resource type="Resource" id="Resource_ycx4m"]
+script = ExtResource("2_ljsda")
+text = "A hand was pressed into each soft piece, and the village had a coin that nobody could argue with, because everyone had been in it."
+
+[sub_resource type="Resource" id="Resource_mskgy"]
+script = ExtResource("1_ak7w7")
+id = &"stamp_the_hand"
+label = "Press a hand into each piece"
+effects = Array[ExtResource("2_ljsda")]([SubResource("Resource_1n12q"), SubResource("Resource_oxq6q"), SubResource("Resource_tchyd"), SubResource("Resource_ycx4m")])
+
+[sub_resource type="Resource" id="Resource_mdo8a"]
+script = ExtResource("3_q5adl")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_g8n24"]
+script = ExtResource("3_q5adl")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_so4xj"]
+script = ExtResource("3_q5adl")
+kind = 9
+key = &"silver_by_weight"
+negate = true
+
+[sub_resource type="Resource" id="Resource_fnht8"]
+script = ExtResource("3_q5adl")
+kind = 9
+key = &"fuller_harvest"
+
+[sub_resource type="Resource" id="Resource_j04f0"]
+script = ExtResource("3_q5adl")
+key = &"handful_weights"
+
+[sub_resource type="Resource" id="Resource_iu2ln"]
+script = ExtResource("3_q5adl")
+kind = 7
+
+[resource]
+script = ExtResource("4_rm5ds")
+id = &"silver_to_the_hand"
+title = "A handful of silver"
+body = "A trader has paid in silver, and the village has weighed it, as it weighs everything, by the handful, and the handful has begun to get larger."
+category = &"settlement"
+requires = Array[ExtResource("3_q5adl")]([SubResource("Resource_mdo8a"), SubResource("Resource_g8n24"), SubResource("Resource_so4xj"), SubResource("Resource_fnht8"), SubResource("Resource_j04f0")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_q5adl")]([SubResource("Resource_iu2ln")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_ak7w7")]([SubResource("Resource_0em1s"), SubResource("Resource_mskgy")])

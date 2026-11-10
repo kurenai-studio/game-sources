@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1pj6v"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_5ft06"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_k0os2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gwjva"]
+
+[sub_resource type="Resource" id="Resource_e5sa1"]
+script = ExtResource("2_5ft06")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_1hrpd"]
+script = ExtResource("2_5ft06")
+kind = 1
+key = &"furnace_moved"
+
+[sub_resource type="Resource" id="Resource_jv5kw"]
+script = ExtResource("2_5ft06")
+text = "The furnace was moved a little way off, and the smoke went the other way, and {subject}'s dinners tasted of dinner."
+
+[sub_resource type="Resource" id="Resource_4vew5"]
+script = ExtResource("3_k0os2")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_dipxs"]
+script = ExtResource("1_1pj6v")
+id = &"move_the_furnace_out"
+label = "Move the furnace out of the smoke's way"
+requires = Array[ExtResource("3_k0os2")]([SubResource("Resource_4vew5")])
+effects = Array[ExtResource("2_5ft06")]([SubResource("Resource_e5sa1"), SubResource("Resource_1hrpd"), SubResource("Resource_jv5kw")])
+
+[sub_resource type="Resource" id="Resource_2q8mc"]
+script = ExtResource("2_5ft06")
+kind = 1
+key = &"burning_days"
+
+[sub_resource type="Resource" id="Resource_ipr2w"]
+script = ExtResource("2_5ft06")
+text = "Burning days became days when nobody went near the furnace who did not have to, and a sort of holiday atmosphere, with soot."
+
+[sub_resource type="Resource" id="Resource_ny3cs"]
+script = ExtResource("1_1pj6v")
+id = &"ask_everyone_to_keep_clear"
+label = "Ask everyone to keep clear on burning days"
+effects = Array[ExtResource("2_5ft06")]([SubResource("Resource_2q8mc"), SubResource("Resource_ipr2w")])
+
+[sub_resource type="Resource" id="Resource_05088"]
+script = ExtResource("3_k0os2")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vju8u"]
+script = ExtResource("3_k0os2")
+kind = 11
+amount = 8
+
+[sub_resource type="Resource" id="Resource_16wqx"]
+script = ExtResource("3_k0os2")
+kind = 7
+
+[resource]
+script = ExtResource("4_gwjva")
+id = &"downwind"
+title = "Downwind"
+body = "{subject} lives downwind of the furnace, and has begun to describe every dinner as 'a little smoky'."
+requires = Array[ExtResource("3_k0os2")]([SubResource("Resource_05088"), SubResource("Resource_vju8u")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_k0os2")]([SubResource("Resource_16wqx")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_1pj6v")]([SubResource("Resource_dipxs"), SubResource("Resource_ny3cs")])

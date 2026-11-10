@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s8bjf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_35rdg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_5k543"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_d7vr4"]
+
+[sub_resource type="Resource" id="Resource_yyh1i"]
+script = ExtResource("2_35rdg")
+kind = 1
+key = &"name_said"
+
+[sub_resource type="Resource" id="Resource_cnvhd"]
+script = ExtResource("2_35rdg")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_svhtg"]
+script = ExtResource("2_35rdg")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_joktk"]
+script = ExtResource("2_35rdg")
+text = "The name was said slowly, three times, and the captain said it back each time a little more wrongly, and wrote it down anyway."
+
+[sub_resource type="Resource" id="Resource_6i5g4"]
+script = ExtResource("1_s8bjf")
+id = &"say_it_slowly"
+label = "Say it slowly, and have them say it back"
+effects = Array[ExtResource("2_35rdg")]([SubResource("Resource_yyh1i"), SubResource("Resource_cnvhd"), SubResource("Resource_svhtg"), SubResource("Resource_joktk")])
+
+[sub_resource type="Resource" id="Resource_7p1t5"]
+script = ExtResource("2_35rdg")
+kind = 1
+key = &"name_written"
+
+[sub_resource type="Resource" id="Resource_nehsy"]
+script = ExtResource("2_35rdg")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_s148e"]
+script = ExtResource("2_35rdg")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_nb2bf"]
+script = ExtResource("2_35rdg")
+text = "The name was written in the sand, and the captain copied it onto a tablet, and the tide came in on the original."
+
+[sub_resource type="Resource" id="Resource_rk86d"]
+script = ExtResource("1_s8bjf")
+id = &"write_it_in_the_sand"
+label = "Write it in the sand for them"
+effects = Array[ExtResource("2_35rdg")]([SubResource("Resource_7p1t5"), SubResource("Resource_nehsy"), SubResource("Resource_s148e"), SubResource("Resource_nb2bf")])
+
+[sub_resource type="Resource" id="Resource_java5"]
+script = ExtResource("3_5k543")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_8cwsa"]
+script = ExtResource("3_5k543")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_nootc"]
+script = ExtResource("3_5k543")
+kind = 9
+key = &"name_abroad"
+negate = true
+
+[sub_resource type="Resource" id="Resource_aprs0"]
+script = ExtResource("3_5k543")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_dtqbd"]
+script = ExtResource("3_5k543")
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_u7bst"]
+script = ExtResource("3_5k543")
+kind = 7
+
+[resource]
+script = ExtResource("4_d7vr4")
+id = &"a_ship_asks_the_name"
+title = "A ship up the river"
+body = "A ship with a deep keel has come up the river, a thing the river was not built for, and the captain has asked, very politely, what the town is called."
+category = &"exploration"
+requires = Array[ExtResource("3_5k543")]([SubResource("Resource_java5"), SubResource("Resource_8cwsa"), SubResource("Resource_nootc"), SubResource("Resource_aprs0"), SubResource("Resource_dtqbd")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_5k543")]([SubResource("Resource_u7bst")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_s8bjf")]([SubResource("Resource_6i5g4"), SubResource("Resource_rk86d")])

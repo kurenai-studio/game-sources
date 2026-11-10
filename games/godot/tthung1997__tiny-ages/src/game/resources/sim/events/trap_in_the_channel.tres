@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y08u0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_eslcg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_wdwam"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gnbr8"]
+
+[sub_resource type="Resource" id="Resource_a4xut"]
+script = ExtResource("2_eslcg")
+text = "The willow trap in the channel was checked at dawn, and was not empty."
+
+[sub_resource type="Resource" id="Resource_y7434"]
+script = ExtResource("3_wdwam")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_bcnng"]
+script = ExtResource("3_wdwam")
+key = &"fish_trap"
+
+[resource]
+script = ExtResource("4_gnbr8")
+id = &"trap_in_the_channel"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_wdwam")]([SubResource("Resource_y7434"), SubResource("Resource_bcnng")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_eslcg")]([SubResource("Resource_a4xut")])

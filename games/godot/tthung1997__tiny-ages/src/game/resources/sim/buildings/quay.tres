@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_yop15"]
+
+[resource]
+script = ExtResource("1_yop15")
+id = &"quay"
+display_name = "Quay"
+description = "A timber pier where the boats tie up and the catch comes in."
+cost = Dictionary[StringName, int]({
+&"wood": 14
+})
+work_required = 36
+daily_output = Dictionary[StringName, float]({
+&"food": 0.5
+})
+tags = Array[StringName]([&"river", &"exposed"])
+completion_flag = &"quay_built"

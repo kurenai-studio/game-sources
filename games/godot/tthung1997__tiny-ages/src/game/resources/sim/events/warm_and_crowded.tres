@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7mo8a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1m7id"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rn30o"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_pdbjy"]
+
+[sub_resource type="Resource" id="Resource_dod5r"]
+script = ExtResource("2_1m7id")
+text = "It was crowded in the cave tonight, and warm, and nobody minded."
+
+[sub_resource type="Resource" id="Resource_aqebt"]
+script = ExtResource("3_rn30o")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_gpqao"]
+script = ExtResource("3_rn30o")
+key = &"shared_cave"
+
+[resource]
+script = ExtResource("4_pdbjy")
+id = &"warm_and_crowded"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_rn30o")]([SubResource("Resource_aqebt"), SubResource("Resource_gpqao")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_1m7id")]([SubResource("Resource_dod5r")])

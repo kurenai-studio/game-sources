@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_u3v2u"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_p2m4o"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_qq5o2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ypdh6"]
+
+[sub_resource type="Resource" id="Resource_12i53"]
+script = ExtResource("2_p2m4o")
+text = "One of the youngest asked for the rest of the story, and was told, \"Later.\""
+
+[sub_resource type="Resource" id="Resource_kscib"]
+script = ExtResource("3_qq5o2")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_k50bd"]
+script = ExtResource("3_qq5o2")
+key = &"short_tale"
+
+[resource]
+script = ExtResource("4_ypdh6")
+id = &"short_story"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_qq5o2")]([SubResource("Resource_kscib"), SubResource("Resource_k50bd")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_p2m4o")]([SubResource("Resource_12i53")])

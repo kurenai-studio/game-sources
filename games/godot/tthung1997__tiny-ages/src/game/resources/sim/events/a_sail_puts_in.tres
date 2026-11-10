@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6ie0i"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_05ccl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mdb80"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_6hju6"]
+
+[sub_resource type="Resource" id="Resource_d75o5"]
+script = ExtResource("2_05ccl")
+kind = 1
+key = &"rowed_out"
+
+[sub_resource type="Resource" id="Resource_ts0jx"]
+script = ExtResource("2_05ccl")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_rbcnu"]
+script = ExtResource("2_05ccl")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_modan"]
+script = ExtResource("2_05ccl")
+text = "A boat went out to meet them, and the two crews spent an hour being polite across a gap of water."
+
+[sub_resource type="Resource" id="Resource_pj0st"]
+script = ExtResource("1_6ie0i")
+id = &"row_out_to_meet_them"
+label = "Row out to meet them"
+effects = Array[ExtResource("2_05ccl")]([SubResource("Resource_d75o5"), SubResource("Resource_ts0jx"), SubResource("Resource_rbcnu"), SubResource("Resource_modan")])
+
+[sub_resource type="Resource" id="Resource_bq250"]
+script = ExtResource("2_05ccl")
+kind = 1
+key = &"waited_on_shore"
+
+[sub_resource type="Resource" id="Resource_7bxun"]
+script = ExtResource("2_05ccl")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_hq34p"]
+script = ExtResource("2_05ccl")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_wdar1"]
+script = ExtResource("2_05ccl")
+text = "The villagers waited on the shore with bread and a great many questions, and the visitors came up the beach with a bundle of gifts and the same."
+
+[sub_resource type="Resource" id="Resource_n2sfa"]
+script = ExtResource("1_6ie0i")
+id = &"wait_on_the_shore"
+label = "Wait for them on the shore"
+effects = Array[ExtResource("2_05ccl")]([SubResource("Resource_bq250"), SubResource("Resource_7bxun"), SubResource("Resource_hq34p"), SubResource("Resource_wdar1")])
+
+[sub_resource type="Resource" id="Resource_yhjln"]
+script = ExtResource("3_mdb80")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_1axnr"]
+script = ExtResource("3_mdb80")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_bsgqg"]
+script = ExtResource("3_mdb80")
+kind = 9
+key = &"beyond_the_water"
+negate = true
+
+[sub_resource type="Resource" id="Resource_wl4bk"]
+script = ExtResource("3_mdb80")
+kind = 9
+key = &"wheel_and_road"
+
+[sub_resource type="Resource" id="Resource_507fu"]
+script = ExtResource("3_mdb80")
+kind = 7
+
+[resource]
+script = ExtResource("4_6hju6")
+id = &"a_sail_puts_in"
+title = "A sail from over the sea"
+body = "A ship with a square sail has put in at the beach, the first anyone has seen, and its crew are all looking at the village with polite alarm."
+category = &"exploration"
+requires = Array[ExtResource("3_mdb80")]([SubResource("Resource_yhjln"), SubResource("Resource_1axnr"), SubResource("Resource_bsgqg"), SubResource("Resource_wl4bk")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_mdb80")]([SubResource("Resource_507fu")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_6ie0i")]([SubResource("Resource_pj0st"), SubResource("Resource_n2sfa")])

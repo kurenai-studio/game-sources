@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_sjoqt"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gjqgc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_bgg8t"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ysd6g"]
+
+[sub_resource type="Resource" id="Resource_utoip"]
+script = ExtResource("2_gjqgc")
+text = "Pigeons walked about the square with a proprietary air, and took off all at once when a child ran at them, and landed in the same place."
+
+[sub_resource type="Resource" id="Resource_1g12d"]
+script = ExtResource("3_bgg8t")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_5q6fd"]
+script = ExtResource("3_bgg8t")
+kind = 9
+key = &"the_square"
+
+[resource]
+script = ExtResource("4_ysd6g")
+id = &"pigeons_on_the_stones"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_bgg8t")]([SubResource("Resource_1g12d"), SubResource("Resource_5q6fd")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_gjqgc")]([SubResource("Resource_utoip")])

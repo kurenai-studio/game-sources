@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_85ahv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_tic6l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_p5iqn"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_46jp3"]
+
+[sub_resource type="Resource" id="Resource_dnq42"]
+script = ExtResource("2_tic6l")
+kind = 0
+key = &"wood"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_k02aa"]
+script = ExtResource("2_tic6l")
+kind = 1
+key = &"torch_at_mouth"
+
+[sub_resource type="Resource" id="Resource_r7n33"]
+script = ExtResource("2_tic6l")
+text = "A torch burned at the cave mouth all night, and the scratching stopped."
+
+[sub_resource type="Resource" id="Resource_k32wg"]
+script = ExtResource("3_p5iqn")
+kind = 2
+key = &"wood"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_2rdj6"]
+script = ExtResource("1_85ahv")
+id = &"keep_a_torch"
+label = "Keep a torch burning at the cave mouth"
+requires = Array[ExtResource("3_p5iqn")]([SubResource("Resource_k32wg")])
+effects = Array[ExtResource("2_tic6l")]([SubResource("Resource_dnq42"), SubResource("Resource_k02aa"), SubResource("Resource_r7n33")])
+
+[sub_resource type="Resource" id="Resource_p0sna"]
+script = ExtResource("2_tic6l")
+kind = 1
+key = &"deep_sleepers"
+
+[sub_resource type="Resource" id="Resource_jqelv"]
+script = ExtResource("2_tic6l")
+text = "The beds were moved to the back of the cave, where the sound could not reach."
+
+[sub_resource type="Resource" id="Resource_uml5d"]
+script = ExtResource("1_85ahv")
+id = &"sleep_deeper"
+label = "Move the beds deeper into the cave"
+effects = Array[ExtResource("2_tic6l")]([SubResource("Resource_p0sna"), SubResource("Resource_jqelv")])
+
+[sub_resource type="Resource" id="Resource_vfl8e"]
+script = ExtResource("3_p5iqn")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_yynuk"]
+script = ExtResource("3_p5iqn")
+kind = 5
+amount = 98
+
+[resource]
+script = ExtResource("4_46jp3")
+id = &"night_noises"
+title = "Scratching in the night"
+body = "Something has been scratching at the cave wall after dark, always just out of sight."
+category = &"nature"
+requires = Array[ExtResource("3_p5iqn")]([SubResource("Resource_vfl8e"), SubResource("Resource_yynuk")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_85ahv")]([SubResource("Resource_2rdj6"), SubResource("Resource_uml5d")])

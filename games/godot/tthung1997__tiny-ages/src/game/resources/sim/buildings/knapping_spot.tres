@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_2ncjg"]
+
+[resource]
+script = ExtResource("1_2ncjg")
+id = &"knapping_spot"
+display_name = "Knapping Spot"
+description = "A flat stone and a pile of flint: a place to make better tools."
+cost = Dictionary[StringName, int]({
+&"wood": 12
+})
+work_required = 40
+daily_output = Dictionary[StringName, float]({
+&"wood": 0.5
+})
+completion_achievement = &"stone_tools"
+completion_achievement_title = "Stone Tools"

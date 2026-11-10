@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ehg53"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_fftxh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6u0pf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dryst"]
+
+[sub_resource type="Resource" id="Resource_e6uqf"]
+script = ExtResource("2_fftxh")
+kind = 1
+key = &"stepping_stones"
+
+[sub_resource type="Resource" id="Resource_0f378"]
+script = ExtResource("2_fftxh")
+text = "A line of flat stones was laid across the shallows, each one carried from the bank."
+
+[sub_resource type="Resource" id="Resource_x3l25"]
+script = ExtResource("1_ehg53")
+id = &"lay_stepping_stones"
+label = "Lay a line of flat stones across it"
+effects = Array[ExtResource("2_fftxh")]([SubResource("Resource_e6uqf"), SubResource("Resource_0f378")])
+
+[sub_resource type="Resource" id="Resource_2a0as"]
+script = ExtResource("2_fftxh")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_ph5e0"]
+script = ExtResource("2_fftxh")
+kind = 1
+key = &"log_bridge"
+
+[sub_resource type="Resource" id="Resource_5li3s"]
+script = ExtResource("2_fftxh")
+text = "A tree came down across the river with a crack, and by dusk everyone had walked over it."
+
+[sub_resource type="Resource" id="Resource_efy31"]
+script = ExtResource("3_6u0pf")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_ccqih"]
+script = ExtResource("1_ehg53")
+id = &"fell_a_log"
+label = "Fell a tree to lie across it"
+requires = Array[ExtResource("3_6u0pf")]([SubResource("Resource_efy31")])
+effects = Array[ExtResource("2_fftxh")]([SubResource("Resource_2a0as"), SubResource("Resource_ph5e0"), SubResource("Resource_5li3s")])
+
+[sub_resource type="Resource" id="Resource_20v5u"]
+script = ExtResource("3_6u0pf")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_2mn0s"]
+script = ExtResource("3_6u0pf")
+kind = 5
+amount = 152
+
+[resource]
+script = ExtResource("4_dryst")
+id = &"the_ford"
+title = "The hard crossing"
+body = "The river is easiest to cross at one place, and everyone has begun to slip there."
+category = &"settlement"
+requires = Array[ExtResource("3_6u0pf")]([SubResource("Resource_20v5u"), SubResource("Resource_2mn0s")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ehg53")]([SubResource("Resource_x3l25"), SubResource("Resource_ccqih")])

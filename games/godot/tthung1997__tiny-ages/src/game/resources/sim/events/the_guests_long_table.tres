@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ohx8d"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vqmof"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mfanw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_b02pe"]
+
+[sub_resource type="Resource" id="Resource_wavd0"]
+script = ExtResource("2_vqmof")
+text = "The long table stood in the lane all evening, and the last guest left with a loaf under each arm."
+
+[sub_resource type="Resource" id="Resource_yj0sh"]
+script = ExtResource("3_mfanw")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_cwb2h"]
+script = ExtResource("3_mfanw")
+key = &"long_table"
+
+[resource]
+script = ExtResource("4_b02pe")
+id = &"the_guests_long_table"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_mfanw")]([SubResource("Resource_yj0sh"), SubResource("Resource_cwb2h")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_vqmof")]([SubResource("Resource_wavd0")])

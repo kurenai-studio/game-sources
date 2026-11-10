@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y1yn7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8vhy3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ucfqy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p8ikt"]
+
+[sub_resource type="Resource" id="Resource_6ic7v"]
+script = ExtResource("2_8vhy3")
+text = "The green beads were worn at every neck, and the question of where the stone came from was discussed more than ever."
+
+[sub_resource type="Resource" id="Resource_o5jbv"]
+script = ExtResource("3_ucfqy")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_3ctul"]
+script = ExtResource("3_ucfqy")
+key = &"green_beads"
+
+[resource]
+script = ExtResource("4_p8ikt")
+id = &"beads_remembered"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ucfqy")]([SubResource("Resource_o5jbv"), SubResource("Resource_3ctul")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_8vhy3")]([SubResource("Resource_6ic7v")])

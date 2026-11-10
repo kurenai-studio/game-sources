@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6k2kg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_e45wn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_f8sxd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_r2bpe"]
+
+[sub_resource type="Resource" id="Resource_e3bks"]
+script = ExtResource("2_e45wn")
+text = "A long grey thread of flax came off a stick, finer than yesterday's."
+
+[sub_resource type="Resource" id="Resource_g7mtx"]
+script = ExtResource("3_f8sxd")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_1tk4d"]
+script = ExtResource("3_f8sxd")
+key = &"flax_thread"
+
+[resource]
+script = ExtResource("4_r2bpe")
+id = &"flax_thread_spun"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_f8sxd")]([SubResource("Resource_g7mtx"), SubResource("Resource_1tk4d")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_e45wn")]([SubResource("Resource_e3bks")])

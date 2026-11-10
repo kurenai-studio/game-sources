@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_g61lq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_sqghh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_op283"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_nvyvl"]
+
+[sub_resource type="Resource" id="Resource_5ui4w"]
+script = ExtResource("2_sqghh")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_5br0v"]
+script = ExtResource("2_sqghh")
+kind = 18
+
+[sub_resource type="Resource" id="Resource_7jwnw"]
+script = ExtResource("2_sqghh")
+kind = 1
+key = &"rebuild_at_once"
+
+[sub_resource type="Resource" id="Resource_mqpg5"]
+script = ExtResource("2_sqghh")
+text = "Every hand turned out to rebuild, and the damage was put right in a day."
+
+[sub_resource type="Resource" id="Resource_7eene"]
+script = ExtResource("3_op283")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_xpq03"]
+script = ExtResource("1_g61lq")
+id = &"rebuild_at_once"
+label = "Rebuild it at once"
+requires = Array[ExtResource("3_op283")]([SubResource("Resource_7eene")])
+effects = Array[ExtResource("2_sqghh")]([SubResource("Resource_5ui4w"), SubResource("Resource_5br0v"), SubResource("Resource_7jwnw"), SubResource("Resource_mqpg5")])
+
+[sub_resource type="Resource" id="Resource_im2s0"]
+script = ExtResource("2_sqghh")
+kind = 0
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_lut5o"]
+script = ExtResource("2_sqghh")
+kind = 1
+key = &"salvage_and_mend"
+
+[sub_resource type="Resource" id="Resource_dwugg"]
+script = ExtResource("2_sqghh")
+text = "Timber and thatch were sorted out of the wreckage, and a good deal was kept. The damage would be mended by hand in time."
+
+[sub_resource type="Resource" id="Resource_nxh04"]
+script = ExtResource("1_g61lq")
+id = &"salvage_and_mend"
+label = "Salvage the wreckage and mend it by hand"
+effects = Array[ExtResource("2_sqghh")]([SubResource("Resource_im2s0"), SubResource("Resource_lut5o"), SubResource("Resource_dwugg")])
+
+[sub_resource type="Resource" id="Resource_33jck"]
+script = ExtResource("2_sqghh")
+kind = 15
+key = &"tornado"
+
+[sub_resource type="Resource" id="Resource_4kg1i"]
+script = ExtResource("2_sqghh")
+kind = 17
+text = "The wind took hold of the {building} and left it in pieces."
+
+[sub_resource type="Resource" id="Resource_ydyxd"]
+script = ExtResource("3_op283")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_3uf41"]
+script = ExtResource("3_op283")
+kind = 13
+amount = 2
+
+[sub_resource type="Resource" id="Resource_wlhmq"]
+script = ExtResource("3_op283")
+kind = 14
+
+[sub_resource type="Resource" id="Resource_4i6ke"]
+script = ExtResource("3_op283")
+kind = 15
+
+[resource]
+script = ExtResource("4_nvyvl")
+id = &"tornado"
+title = "A wind from the ridge"
+body = "A black funnel of wind came down off the ridge, tore across the village and was gone. It left a trail of wreckage and scattered stores."
+category = &"nature"
+requires = Array[ExtResource("3_op283")]([SubResource("Resource_ydyxd"), SubResource("Resource_3uf41"), SubResource("Resource_wlhmq"), SubResource("Resource_4i6ke")])
+chance_per_tick = 0.0008
+cooldown_ticks = 1920
+effects = Array[ExtResource("2_sqghh")]([SubResource("Resource_33jck"), SubResource("Resource_4kg1i")])
+choices = Array[ExtResource("1_g61lq")]([SubResource("Resource_xpq03"), SubResource("Resource_nxh04")])

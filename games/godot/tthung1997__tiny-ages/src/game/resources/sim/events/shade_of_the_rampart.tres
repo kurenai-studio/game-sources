@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_es3we"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ymorv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_dmrg7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_skbi4"]
+
+[sub_resource type="Resource" id="Resource_ug4eo"]
+script = ExtResource("2_ymorv")
+text = "The shadow of the rampart reached the lane by afternoon, and the dogs moved into it."
+
+[sub_resource type="Resource" id="Resource_flwuu"]
+script = ExtResource("3_dmrg7")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_acfx0"]
+script = ExtResource("3_dmrg7")
+kind = 9
+key = &"the_hill_fort"
+
+[resource]
+script = ExtResource("4_skbi4")
+id = &"shade_of_the_rampart"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_dmrg7")]([SubResource("Resource_flwuu"), SubResource("Resource_acfx0")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ymorv")]([SubResource("Resource_ug4eo")])

@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qur4c"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_knqja"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1l6uq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mwncq"]
+
+[sub_resource type="Resource" id="Resource_ijl72"]
+script = ExtResource("2_knqja")
+kind = 0
+key = &"wood"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_cuwew"]
+script = ExtResource("2_knqja")
+kind = 1
+key = &"bathhouse"
+
+[sub_resource type="Resource" id="Resource_tegtw"]
+script = ExtResource("2_knqja")
+text = "A bathhouse went up by the basin, with a hot room and a cool one, and the whole town went in on the first evening and came out looking amazed."
+
+[sub_resource type="Resource" id="Resource_kvc4j"]
+script = ExtResource("3_1l6uq")
+kind = 2
+key = &"wood"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_pff28"]
+script = ExtResource("1_qur4c")
+id = &"raise_a_bathhouse"
+label = "Raise a bathhouse by the basin, for everyone"
+requires = Array[ExtResource("3_1l6uq")]([SubResource("Resource_kvc4j")])
+effects = Array[ExtResource("2_knqja")]([SubResource("Resource_ijl72"), SubResource("Resource_cuwew"), SubResource("Resource_tegtw")])
+
+[sub_resource type="Resource" id="Resource_nk8p0"]
+script = ExtResource("2_knqja")
+kind = 1
+key = &"home_baths"
+
+[sub_resource type="Resource" id="Resource_0e5k6"]
+script = ExtResource("2_knqja")
+text = "Every household heated its own water, and the smoke of a hundred little fires went up on bath day, and the whole town smelled of herbs."
+
+[sub_resource type="Resource" id="Resource_ns3xn"]
+script = ExtResource("1_qur4c")
+id = &"heat_water_at_home"
+label = "Let each household heat its own water"
+effects = Array[ExtResource("2_knqja")]([SubResource("Resource_nk8p0"), SubResource("Resource_0e5k6")])
+
+[sub_resource type="Resource" id="Resource_mtmm6"]
+script = ExtResource("3_1l6uq")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_qas0t"]
+script = ExtResource("3_1l6uq")
+kind = 11
+amount = 66
+
+[sub_resource type="Resource" id="Resource_2087w"]
+script = ExtResource("3_1l6uq")
+kind = 9
+key = &"water_from_afar"
+
+[resource]
+script = ExtResource("4_mwncq")
+id = &"the_bathhouse"
+title = "Warm water"
+body = "Water is coming into the town, and the question of what to do with it has become, overnight, a matter of strong feeling."
+category = &"settlement"
+requires = Array[ExtResource("3_1l6uq")]([SubResource("Resource_mtmm6"), SubResource("Resource_qas0t"), SubResource("Resource_2087w")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_qur4c")]([SubResource("Resource_pff28"), SubResource("Resource_ns3xn")])

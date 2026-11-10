@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_mgxpu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_36moj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_w0175"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_anvpd"]
+
+[sub_resource type="Resource" id="Resource_1gf3g"]
+script = ExtResource("2_36moj")
+kind = 1
+key = &"market_charter"
+
+[sub_resource type="Resource" id="Resource_woi38"]
+script = ExtResource("2_36moj")
+text = "The rota was written into a charter, and signed by all the towns, and the market days fell into a kind of music."
+
+[sub_resource type="Resource" id="Resource_ld55k"]
+script = ExtResource("1_mgxpu")
+id = &"a_shared_charter"
+label = "Write the rota into a charter the towns share"
+effects = Array[ExtResource("2_36moj")]([SubResource("Resource_1gf3g"), SubResource("Resource_woi38")])
+
+[sub_resource type="Resource" id="Resource_3ks2l"]
+script = ExtResource("2_36moj")
+kind = 1
+key = &"market_hospitality"
+
+[sub_resource type="Resource" id="Resource_g1d4v"]
+script = ExtResource("2_36moj")
+text = "Each market was met with a meal, and the visitors stayed as friends, and the rota was kept by custom and kindness."
+
+[sub_resource type="Resource" id="Resource_stfvm"]
+script = ExtResource("1_mgxpu")
+id = &"hospitality_on_the_round"
+label = "Host each market with a meal, and stay as friends"
+effects = Array[ExtResource("2_36moj")]([SubResource("Resource_3ks2l"), SubResource("Resource_g1d4v")])
+
+[sub_resource type="Resource" id="Resource_cvehd"]
+script = ExtResource("3_w0175")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_bd616"]
+script = ExtResource("3_w0175")
+kind = 11
+amount = 340
+
+[sub_resource type="Resource" id="Resource_cqh4p"]
+script = ExtResource("3_w0175")
+kind = 9
+key = &"the_square"
+
+[resource]
+script = ExtResource("4_anvpd")
+id = &"when_the_market_returns"
+title = "When the market returns"
+body = "The markets of the other towns come round on a rota, and the town's own comes round on its own, and someone has asked how the rota should be shared."
+category = &"settlement"
+requires = Array[ExtResource("3_w0175")]([SubResource("Resource_cvehd"), SubResource("Resource_bd616"), SubResource("Resource_cqh4p")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_mgxpu")]([SubResource("Resource_ld55k"), SubResource("Resource_stfvm")])

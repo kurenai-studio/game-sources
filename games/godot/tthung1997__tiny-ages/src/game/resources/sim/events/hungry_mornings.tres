@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_w5ftm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_duwg7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_olyg8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dhll5"]
+
+[sub_resource type="Resource" id="Resource_j43qt"]
+script = ExtResource("2_duwg7")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_ato6u"]
+script = ExtResource("2_duwg7")
+text = "The whole group worked the river bank and came back with full baskets."
+
+[sub_resource type="Resource" id="Resource_qmsiv"]
+script = ExtResource("1_w5ftm")
+id = &"forage_together"
+label = "Spend the day foraging together"
+effects = Array[ExtResource("2_duwg7")]([SubResource("Resource_j43qt"), SubResource("Resource_ato6u")])
+
+[sub_resource type="Resource" id="Resource_phtuo"]
+script = ExtResource("2_duwg7")
+kind = 0
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_e66w3"]
+script = ExtResource("2_duwg7")
+kind = 1
+key = &"snares"
+
+[sub_resource type="Resource" id="Resource_bpp5v"]
+script = ExtResource("2_duwg7")
+text = "Snares went into the long grass, and by evening there was a rabbit."
+
+[sub_resource type="Resource" id="Resource_uumdf"]
+script = ExtResource("1_w5ftm")
+id = &"set_snares"
+label = "Set snares in the long grass"
+effects = Array[ExtResource("2_duwg7")]([SubResource("Resource_phtuo"), SubResource("Resource_e66w3"), SubResource("Resource_bpp5v")])
+
+[sub_resource type="Resource" id="Resource_8r4vg"]
+script = ExtResource("3_olyg8")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_2wah0"]
+script = ExtResource("3_olyg8")
+kind = 5
+amount = 6
+
+[sub_resource type="Resource" id="Resource_4oc72"]
+script = ExtResource("3_olyg8")
+kind = 2
+key = &"food"
+amount = 4
+negate = true
+
+[resource]
+script = ExtResource("4_dhll5")
+id = &"hungry_mornings"
+title = "Hungry mornings"
+body = "The food pile is low and the mornings have gone quiet. Nobody has complained, but everyone has noticed."
+category = &"settlement"
+requires = Array[ExtResource("3_olyg8")]([SubResource("Resource_8r4vg"), SubResource("Resource_2wah0"), SubResource("Resource_4oc72")])
+chance_per_tick = 0.03
+cooldown_ticks = 240
+choices = Array[ExtResource("1_w5ftm")]([SubResource("Resource_qmsiv"), SubResource("Resource_uumdf")])

@@ -1,0 +1,84 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_r5pqk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_paeix"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_c4x1s"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_tnjdq"]
+
+[sub_resource type="Resource" id="Resource_372ph"]
+script = ExtResource("2_paeix")
+kind = 1
+key = &"green_stone"
+
+[sub_resource type="Resource" id="Resource_kvu7g"]
+script = ExtResource("2_paeix")
+kind = 10
+key = &"green_stone"
+text = "Word from the Hills"
+
+[sub_resource type="Resource" id="Resource_0wv63"]
+script = ExtResource("2_paeix")
+text = "{subject} followed the stream up into the hills and found a cliff streaked green from top to bottom, and came back with a heavy bag."
+
+[sub_resource type="Resource" id="Resource_x5oqn"]
+script = ExtResource("1_r5pqk")
+id = &"follow_the_stream"
+label = "Follow the stream to where it came from"
+effects = Array[ExtResource("2_paeix")]([SubResource("Resource_372ph"), SubResource("Resource_kvu7g"), SubResource("Resource_0wv63")])
+
+[sub_resource type="Resource" id="Resource_bb4yb"]
+script = ExtResource("2_paeix")
+kind = 1
+key = &"bead_shown"
+
+[sub_resource type="Resource" id="Resource_qdrhs"]
+script = ExtResource("2_paeix")
+kind = 7
+key = &"green_stone_shown"
+amount = 96
+
+[sub_resource type="Resource" id="Resource_2kimd"]
+script = ExtResource("2_paeix")
+text = "{subject} showed the bead to the oldest in the camp, who turned it over for a long time and said they knew of a stream."
+
+[sub_resource type="Resource" id="Resource_77keg"]
+script = ExtResource("1_r5pqk")
+id = &"keep_the_bead"
+label = "Show the bead to the elders, and ask where it is from"
+effects = Array[ExtResource("2_paeix")]([SubResource("Resource_bb4yb"), SubResource("Resource_qdrhs"), SubResource("Resource_2kimd")])
+
+[sub_resource type="Resource" id="Resource_880mu"]
+script = ExtResource("3_c4x1s")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_nv1oj"]
+script = ExtResource("3_c4x1s")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_1kr16"]
+script = ExtResource("3_c4x1s")
+kind = 9
+key = &"green_stone"
+negate = true
+
+[sub_resource type="Resource" id="Resource_267ru"]
+script = ExtResource("3_c4x1s")
+kind = 7
+
+[resource]
+script = ExtResource("4_tnjdq")
+id = &"green_stone_found"
+title = "A green stone"
+body = "{subject} brought back a stone from a stream in the hills, streaked bright green. It sat in the cook fire all night, and in the morning there was a bead of something red and gold in the ashes."
+category = &"exploration"
+requires = Array[ExtResource("3_c4x1s")]([SubResource("Resource_880mu"), SubResource("Resource_nv1oj"), SubResource("Resource_1kr16")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_c4x1s")]([SubResource("Resource_267ru")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_r5pqk")]([SubResource("Resource_x5oqn"), SubResource("Resource_77keg")])

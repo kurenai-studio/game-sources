@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_h1rg7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_trk4d"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_da8ty"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_o76pr"]
+
+[sub_resource type="Resource" id="Resource_u7b1y"]
+script = ExtResource("2_trk4d")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_xluwj"]
+script = ExtResource("2_trk4d")
+kind = 1
+key = &"hurdle_gate"
+
+[sub_resource type="Resource" id="Resource_20apa"]
+script = ExtResource("2_trk4d")
+text = "A hurdle of woven withies went up across the gap, and the herd stood and looked at it."
+
+[sub_resource type="Resource" id="Resource_fogqc"]
+script = ExtResource("3_da8ty")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_26qn7"]
+script = ExtResource("1_h1rg7")
+id = &"build_a_gate"
+label = "Weave a hurdle gate"
+requires = Array[ExtResource("3_da8ty")]([SubResource("Resource_fogqc")])
+effects = Array[ExtResource("2_trk4d")]([SubResource("Resource_u7b1y"), SubResource("Resource_xluwj"), SubResource("Resource_20apa")])
+
+[sub_resource type="Resource" id="Resource_x0yd7"]
+script = ExtResource("2_trk4d")
+kind = 1
+key = &"herd_watch"
+
+[sub_resource type="Resource" id="Resource_1frnc"]
+script = ExtResource("2_trk4d")
+text = "Someone sat by the plot all day, and had a very good view of the herd."
+
+[sub_resource type="Resource" id="Resource_n0w6g"]
+script = ExtResource("1_h1rg7")
+id = &"post_a_watcher"
+label = "Post someone to watch the plot"
+effects = Array[ExtResource("2_trk4d")]([SubResource("Resource_x0yd7"), SubResource("Resource_1frnc")])
+
+[sub_resource type="Resource" id="Resource_bj3kj"]
+script = ExtResource("3_da8ty")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_y11t0"]
+script = ExtResource("3_da8ty")
+kind = 11
+amount = 14
+
+[sub_resource type="Resource" id="Resource_0611m"]
+script = ExtResource("3_da8ty")
+key = &"path_herding"
+
+[resource]
+script = ExtResource("4_o76pr")
+id = &"pasture_gate"
+title = "Into the sown ground"
+body = "The herd keeps wandering into the small sown plot, and the plot keeps losing."
+category = &"settlement"
+requires = Array[ExtResource("3_da8ty")]([SubResource("Resource_bj3kj"), SubResource("Resource_y11t0"), SubResource("Resource_0611m")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_h1rg7")]([SubResource("Resource_26qn7"), SubResource("Resource_n0w6g")])

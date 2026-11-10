@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_i0b4l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gbvqe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1lrbq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_pdpla"]
+
+[sub_resource type="Resource" id="Resource_qjko3"]
+script = ExtResource("2_gbvqe")
+kind = 15
+key = &"drought"
+
+[sub_resource type="Resource" id="Resource_r27la"]
+script = ExtResource("2_gbvqe")
+text = "The rain held off for weeks and the river sank to its stones. Foraging took everyone further afield."
+
+[sub_resource type="Resource" id="Resource_70p3d"]
+script = ExtResource("3_1lrbq")
+kind = 13
+amount = 1
+
+[sub_resource type="Resource" id="Resource_2jk8r"]
+script = ExtResource("3_1lrbq")
+kind = 14
+
+[sub_resource type="Resource" id="Resource_m4u17"]
+script = ExtResource("3_1lrbq")
+kind = 15
+key = &"dry"
+negate = true
+
+[sub_resource type="Resource" id="Resource_875qb"]
+script = ExtResource("3_1lrbq")
+key = &"well_dug"
+negate = true
+
+[resource]
+script = ExtResource("4_pdpla")
+id = &"dry_summer_quiet"
+title = "A dry summer"
+category = &"nature"
+requires = Array[ExtResource("3_1lrbq")]([SubResource("Resource_70p3d"), SubResource("Resource_2jk8r"), SubResource("Resource_m4u17"), SubResource("Resource_875qb")])
+chance_per_tick = 0.002
+cooldown_ticks = 960
+effects = Array[ExtResource("2_gbvqe")]([SubResource("Resource_qjko3"), SubResource("Resource_r27la")])

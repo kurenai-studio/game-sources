@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6tm0v"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1kfdu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ud01j"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1r14q"]
+
+[sub_resource type="Resource" id="Resource_otvsf"]
+script = ExtResource("2_1kfdu")
+kind = 1
+key = &"guests_at_the_gate"
+
+[sub_resource type="Resource" id="Resource_fffx6"]
+script = ExtResource("2_1kfdu")
+text = "Guests were received in the court inside the gate, under the old hill-fort's wall, and were visibly impressed by it, and by being offered a seat."
+
+[sub_resource type="Resource" id="Resource_x7cvq"]
+script = ExtResource("1_6tm0v")
+id = &"receive_them_at_the_gate"
+label = "Receive them in the court inside the gate"
+effects = Array[ExtResource("2_1kfdu")]([SubResource("Resource_otvsf"), SubResource("Resource_fffx6")])
+
+[sub_resource type="Resource" id="Resource_1xcfp"]
+script = ExtResource("2_1kfdu")
+kind = 1
+key = &"guests_at_the_water"
+
+[sub_resource type="Resource" id="Resource_564h4"]
+script = ExtResource("2_1kfdu")
+text = "Guests were received where the lane met the water, and were handed a cup before they were asked their business, which turned out to be a very good order."
+
+[sub_resource type="Resource" id="Resource_ytbii"]
+script = ExtResource("1_6tm0v")
+id = &"receive_them_at_the_lane_end"
+label = "Receive them at the end of the lane, by the water"
+effects = Array[ExtResource("2_1kfdu")]([SubResource("Resource_1xcfp"), SubResource("Resource_564h4")])
+
+[sub_resource type="Resource" id="Resource_6kfnt"]
+script = ExtResource("3_ud01j")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_d8l50"]
+script = ExtResource("3_ud01j")
+kind = 11
+amount = 2
+
+[resource]
+script = ExtResource("4_1r14q")
+id = &"where_guests_meet"
+title = "Where guests meet"
+body = "The town is a city now, and guests arrive daily, and nobody has agreed where they should be received."
+category = &"settlement"
+requires = Array[ExtResource("3_ud01j")]([SubResource("Resource_6kfnt"), SubResource("Resource_d8l50")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_6tm0v")]([SubResource("Resource_x7cvq"), SubResource("Resource_ytbii")])

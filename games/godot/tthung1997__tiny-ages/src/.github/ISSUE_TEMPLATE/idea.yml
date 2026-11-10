@@ -1,0 +1,28 @@
+name: Idea or plan
+description: Something to build, change or decide
+labels: ["design"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What
+      description: What would the player see or do, or what should change?
+    validations:
+      required: true
+  - type: textarea
+    id: fit
+    attributes:
+      label: How it fits the game
+      description: >-
+        Nothing is demanded of the player: no timers that expire, no penalties for being away,
+        no failure states, and every decision is a real choice between two directions.
+        Does this respect that? See docs/gameplay.md (P2, P4, P12, P13).
+    validations:
+      required: false
+  - type: textarea
+    id: open
+    attributes:
+      label: Open questions
+      description: What still needs deciding before it can be built?
+    validations:
+      required: false

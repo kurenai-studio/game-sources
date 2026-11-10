@@ -1,0 +1,96 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_m3c13"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_urgpe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_b7mlr"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_oufik"]
+
+[sub_resource type="Resource" id="Resource_7wjfc"]
+script = ExtResource("2_urgpe")
+kind = 13
+amount = 1
+
+[sub_resource type="Resource" id="Resource_ysbow"]
+script = ExtResource("2_urgpe")
+kind = 1
+key = &"traveller_stayed"
+
+[sub_resource type="Resource" id="Resource_je4vv"]
+script = ExtResource("2_urgpe")
+text = "The traveller sat down by the fire, ate, and stayed, and the group grew."
+
+[sub_resource type="Resource" id="Resource_0a2y7"]
+script = ExtResource("1_m3c13")
+id = &"offer_a_place"
+label = "Offer them a place by the fire"
+effects = Array[ExtResource("2_urgpe")]([SubResource("Resource_7wjfc"), SubResource("Resource_ysbow"), SubResource("Resource_je4vv")])
+
+[sub_resource type="Resource" id="Resource_rj6pb"]
+script = ExtResource("2_urgpe")
+kind = 0
+key = &"food"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_am15y"]
+script = ExtResource("2_urgpe")
+kind = 1
+key = &"traveller_fed"
+
+[sub_resource type="Resource" id="Resource_1a56b"]
+script = ExtResource("2_urgpe")
+text = "The traveller ate what was offered, told a long story of the valleys beyond, and went on in the morning."
+
+[sub_resource type="Resource" id="Resource_ymt0e"]
+script = ExtResource("3_b7mlr")
+kind = 2
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_uiixp"]
+script = ExtResource("1_m3c13")
+id = &"feed_and_send_on"
+label = "Feed them and send them on with a story to tell"
+requires = Array[ExtResource("3_b7mlr")]([SubResource("Resource_ymt0e")])
+effects = Array[ExtResource("2_urgpe")]([SubResource("Resource_rj6pb"), SubResource("Resource_am15y"), SubResource("Resource_1a56b")])
+
+[sub_resource type="Resource" id="Resource_rsrfh"]
+script = ExtResource("3_b7mlr")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_8udm5"]
+script = ExtResource("3_b7mlr")
+kind = 5
+amount = 200
+
+[sub_resource type="Resource" id="Resource_yd8wq"]
+script = ExtResource("3_b7mlr")
+kind = 8
+amount = 1
+negate = true
+
+[sub_resource type="Resource" id="Resource_r1eil"]
+script = ExtResource("3_b7mlr")
+kind = 9
+key = &"bigger_group"
+
+[sub_resource type="Resource" id="Resource_6b5dp"]
+script = ExtResource("3_b7mlr")
+kind = 12
+amount = 1
+
+[sub_resource type="Resource" id="Resource_ik1qn"]
+script = ExtResource("3_b7mlr")
+kind = 2
+key = &"food"
+amount = 12
+
+[resource]
+script = ExtResource("4_oufik")
+id = &"traveller_at_dusk"
+title = "A traveller at dusk"
+body = "Someone walking alone has stopped at the edge of the firelight, with the look of a person who has come a long way and would like to be asked in."
+category = &"exploration"
+requires = Array[ExtResource("3_b7mlr")]([SubResource("Resource_rsrfh"), SubResource("Resource_8udm5"), SubResource("Resource_yd8wq"), SubResource("Resource_r1eil"), SubResource("Resource_6b5dp"), SubResource("Resource_ik1qn")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_m3c13")]([SubResource("Resource_0a2y7"), SubResource("Resource_uiixp")])

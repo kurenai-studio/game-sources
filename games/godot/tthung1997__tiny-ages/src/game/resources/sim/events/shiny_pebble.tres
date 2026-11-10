@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1pui2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dq76l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_o8amh"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ud7j7"]
+
+[sub_resource type="Resource" id="Resource_3ulip"]
+script = ExtResource("2_dq76l")
+text = "{subject} found a pebble that flashed in the water, and keeps it in a pouch."
+
+[sub_resource type="Resource" id="Resource_ho2vu"]
+script = ExtResource("3_o8amh")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_olrlo"]
+script = ExtResource("3_o8amh")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_xx8wx"]
+script = ExtResource("3_o8amh")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_ys86o"]
+script = ExtResource("3_o8amh")
+kind = 10
+
+[resource]
+script = ExtResource("4_ud7j7")
+id = &"shiny_pebble"
+title = "A quiet moment"
+requires = Array[ExtResource("3_o8amh")]([SubResource("Resource_ho2vu")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_o8amh")]([SubResource("Resource_olrlo"), SubResource("Resource_xx8wx"), SubResource("Resource_ys86o")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_dq76l")]([SubResource("Resource_3ulip")])

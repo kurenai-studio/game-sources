@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_biy6g"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_k77gp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_48vct"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_h6ai2"]
+
+[sub_resource type="Resource" id="Resource_xux6v"]
+script = ExtResource("2_k77gp")
+text = "A reed mat at the door had worn a little in the middle, in the shape of a foot."
+
+[sub_resource type="Resource" id="Resource_rg87s"]
+script = ExtResource("3_48vct")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_tf1bc"]
+script = ExtResource("3_48vct")
+key = &"door_mats"
+
+[resource]
+script = ExtResource("4_h6ai2")
+id = &"mat_at_the_door"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_48vct")]([SubResource("Resource_rg87s"), SubResource("Resource_tf1bc")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_k77gp")]([SubResource("Resource_xux6v")])

@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_c108g"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1dogq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_id7pj"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_a3x82"]
+
+[sub_resource type="Resource" id="Resource_tlysl"]
+script = ExtResource("2_1dogq")
+kind = 1
+key = &"pot_marks"
+
+[sub_resource type="Resource" id="Resource_l66qw"]
+script = ExtResource("2_1dogq")
+text = "Every pot was scratched with a mark before it went in the kiln, and the marks became the first thing the children learned to read."
+
+[sub_resource type="Resource" id="Resource_rtxf8"]
+script = ExtResource("1_c108g")
+id = &"mark_each_pot"
+label = "Scratch a mark on each pot"
+effects = Array[ExtResource("2_1dogq")]([SubResource("Resource_tlysl"), SubResource("Resource_l66qw")])
+
+[sub_resource type="Resource" id="Resource_ia4jm"]
+script = ExtResource("2_1dogq")
+kind = 1
+key = &"pots_plain"
+
+[sub_resource type="Resource" id="Resource_djsx7"]
+script = ExtResource("2_1dogq")
+text = "The pots were left plain, and the argument was settled, as arguments are, by whoever was loudest."
+
+[sub_resource type="Resource" id="Resource_7c7rn"]
+script = ExtResource("1_c108g")
+id = &"leave_them_plain"
+label = "Leave them plain"
+effects = Array[ExtResource("2_1dogq")]([SubResource("Resource_ia4jm"), SubResource("Resource_djsx7")])
+
+[sub_resource type="Resource" id="Resource_yvpek"]
+script = ExtResource("3_id7pj")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_7aut5"]
+script = ExtResource("3_id7pj")
+kind = 11
+amount = 346
+
+[sub_resource type="Resource" id="Resource_os5nv"]
+script = ExtResource("3_id7pj")
+kind = 8
+amount = 2
+negate = true
+
+[sub_resource type="Resource" id="Resource_hdt7q"]
+script = ExtResource("3_id7pj")
+kind = 9
+key = &"fired_clay"
+
+[resource]
+script = ExtResource("4_a3x82")
+id = &"whose_pot"
+title = "Whose pot is whose"
+body = "The pots in the lane all look alike, and the argument about whose is whose has gone on since breakfast."
+category = &"settlement"
+requires = Array[ExtResource("3_id7pj")]([SubResource("Resource_yvpek"), SubResource("Resource_7aut5"), SubResource("Resource_os5nv"), SubResource("Resource_hdt7q")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_c108g")]([SubResource("Resource_rtxf8"), SubResource("Resource_7c7rn")])

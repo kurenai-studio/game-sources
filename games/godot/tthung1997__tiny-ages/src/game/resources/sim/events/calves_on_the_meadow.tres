@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_yrqxy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_fpu80"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rvgub"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_f4sdn"]
+
+[sub_resource type="Resource" id="Resource_mspxm"]
+script = ExtResource("2_fpu80")
+text = "The watcher brought the calves home from the far meadow, singing something tuneless."
+
+[sub_resource type="Resource" id="Resource_ohshq"]
+script = ExtResource("3_rvgub")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_rk2aq"]
+script = ExtResource("3_rvgub")
+key = &"calves_grazing"
+
+[resource]
+script = ExtResource("4_f4sdn")
+id = &"calves_on_the_meadow"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_rvgub")]([SubResource("Resource_ohshq"), SubResource("Resource_rk2aq")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_fpu80")]([SubResource("Resource_mspxm")])

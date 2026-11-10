@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_f3ug0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_uiij3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6h7ht"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_v7rxe"]
+
+[sub_resource type="Resource" id="Resource_57v44"]
+script = ExtResource("2_uiij3")
+text = "The grey wolf was back at the edge of the light, and nobody minded."
+
+[sub_resource type="Resource" id="Resource_dlhgf"]
+script = ExtResource("3_6h7ht")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_p2t2m"]
+script = ExtResource("3_6h7ht")
+key = &"wolf_fed"
+
+[resource]
+script = ExtResource("4_v7rxe")
+id = &"wolf_waits"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_6h7ht")]([SubResource("Resource_dlhgf"), SubResource("Resource_p2t2m")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_uiij3")]([SubResource("Resource_57v44")])

@@ -1,0 +1,94 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gwuom"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dmdp0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_naocw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_fanot"]
+
+[sub_resource type="Resource" id="Resource_5o841"]
+script = ExtResource("2_dmdp0")
+kind = 1
+key = &"granary_full"
+
+[sub_resource type="Resource" id="Resource_ggq6l"]
+script = ExtResource("2_dmdp0")
+kind = 10
+key = &"fuller_harvest"
+text = "A Fuller Harvest"
+
+[sub_resource type="Resource" id="Resource_75v7x"]
+script = ExtResource("2_dmdp0")
+text = "It was filled to the roof, and the door was shut on a heap of grain so large that the mice held a meeting."
+
+[sub_resource type="Resource" id="Resource_s8sl8"]
+script = ExtResource("1_gwuom")
+id = &"fill_it_to_the_roof"
+label = "Fill it to the roof"
+effects = Array[ExtResource("2_dmdp0")]([SubResource("Resource_5o841"), SubResource("Resource_ggq6l"), SubResource("Resource_75v7x")])
+
+[sub_resource type="Resource" id="Resource_7ukgs"]
+script = ExtResource("2_dmdp0")
+kind = 1
+key = &"granary_roomy"
+
+[sub_resource type="Resource" id="Resource_3rpnd"]
+script = ExtResource("2_dmdp0")
+kind = 10
+key = &"fuller_harvest"
+text = "A Fuller Harvest"
+
+[sub_resource type="Resource" id="Resource_s3ixl"]
+script = ExtResource("2_dmdp0")
+text = "A third was left empty, and was looked at all winter with the quiet pride of people who have been sensible."
+
+[sub_resource type="Resource" id="Resource_0c8kt"]
+script = ExtResource("1_gwuom")
+id = &"leave_it_roomy"
+label = "Leave a third of it empty, for the bad year"
+effects = Array[ExtResource("2_dmdp0")]([SubResource("Resource_7ukgs"), SubResource("Resource_3rpnd"), SubResource("Resource_s3ixl")])
+
+[sub_resource type="Resource" id="Resource_i561h"]
+script = ExtResource("3_naocw")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_fiphw"]
+script = ExtResource("3_naocw")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_kcod1"]
+script = ExtResource("3_naocw")
+kind = 9
+key = &"fuller_harvest"
+negate = true
+
+[sub_resource type="Resource" id="Resource_xwrn0"]
+script = ExtResource("3_naocw")
+kind = 9
+key = &"first_bloom"
+
+[sub_resource type="Resource" id="Resource_kltam"]
+script = ExtResource("3_naocw")
+kind = 0
+key = &"granary"
+
+[sub_resource type="Resource" id="Resource_qlejb"]
+script = ExtResource("3_naocw")
+kind = 7
+
+[resource]
+script = ExtResource("4_fanot")
+id = &"the_first_full_granary"
+title = "Up to the rafters"
+body = "The granary is nearly full, and the last baskets are being passed up a ladder by people who are enjoying the problem."
+category = &"settlement"
+requires = Array[ExtResource("3_naocw")]([SubResource("Resource_i561h"), SubResource("Resource_fiphw"), SubResource("Resource_kcod1"), SubResource("Resource_xwrn0"), SubResource("Resource_kltam")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_naocw")]([SubResource("Resource_qlejb")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_gwuom")]([SubResource("Resource_s8sl8"), SubResource("Resource_0c8kt")])

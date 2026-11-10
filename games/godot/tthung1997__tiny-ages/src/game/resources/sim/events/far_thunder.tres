@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_cl8lr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_cyuew"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gkyf1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e8rt5"]
+
+[sub_resource type="Resource" id="Resource_sywqp"]
+script = ExtResource("2_cyuew")
+text = "Thunder grumbled far off, and everyone looked up and nobody was afraid."
+
+[sub_resource type="Resource" id="Resource_u1sf2"]
+script = ExtResource("3_gkyf1")
+kind = 5
+
+[resource]
+script = ExtResource("4_e8rt5")
+id = &"far_thunder"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_gkyf1")]([SubResource("Resource_u1sf2")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_cyuew")]([SubResource("Resource_sywqp")])

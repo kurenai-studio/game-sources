@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ix3jh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_u5yg0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_l1gxb"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_6fk0n"]
+
+[sub_resource type="Resource" id="Resource_vuh0r"]
+script = ExtResource("2_u5yg0")
+kind = 1
+key = &"wool_spun"
+
+[sub_resource type="Resource" id="Resource_gt45f"]
+script = ExtResource("2_u5yg0")
+kind = 10
+key = &"woven_cloth"
+text = "Woven Cloth"
+
+[sub_resource type="Resource" id="Resource_xxmub"]
+script = ExtResource("2_u5yg0")
+text = "{subject} spun the wool on a stick weighted with a stone, and by the new moon there was cloth that kept the wind out."
+
+[sub_resource type="Resource" id="Resource_mkf5s"]
+script = ExtResource("1_ix3jh")
+id = &"spin_the_wool"
+label = "Spin it into thread"
+effects = Array[ExtResource("2_u5yg0")]([SubResource("Resource_vuh0r"), SubResource("Resource_gt45f"), SubResource("Resource_xxmub")])
+
+[sub_resource type="Resource" id="Resource_4kvi2"]
+script = ExtResource("2_u5yg0")
+kind = 1
+key = &"wool_felted"
+
+[sub_resource type="Resource" id="Resource_dexee"]
+script = ExtResource("2_u5yg0")
+kind = 10
+key = &"woven_cloth"
+text = "Woven Cloth"
+
+[sub_resource type="Resource" id="Resource_wxrhe"]
+script = ExtResource("2_u5yg0")
+text = "{subject} combed the wool and pressed it flat with wet hands, and the felt that dried was warm, and thick, and held its shape."
+
+[sub_resource type="Resource" id="Resource_cifbg"]
+script = ExtResource("1_ix3jh")
+id = &"stuff_the_bedding"
+label = "Comb it and press it into felt"
+effects = Array[ExtResource("2_u5yg0")]([SubResource("Resource_4kvi2"), SubResource("Resource_dexee"), SubResource("Resource_wxrhe")])
+
+[sub_resource type="Resource" id="Resource_30swv"]
+script = ExtResource("3_l1gxb")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_42nsm"]
+script = ExtResource("3_l1gxb")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_jeaoj"]
+script = ExtResource("3_l1gxb")
+kind = 9
+key = &"woven_cloth"
+negate = true
+
+[sub_resource type="Resource" id="Resource_2g88g"]
+script = ExtResource("3_l1gxb")
+key = &"path_herding"
+
+[sub_resource type="Resource" id="Resource_stktv"]
+script = ExtResource("3_l1gxb")
+kind = 7
+
+[resource]
+script = ExtResource("4_6fk0n")
+id = &"wool_on_the_thorns"
+title = "Wool on the thorns"
+body = "Tufts of wool hang from every thorn bush along the herd's path. {subject} has been gathering them in the hem of a tunic."
+category = &"nature"
+requires = Array[ExtResource("3_l1gxb")]([SubResource("Resource_30swv"), SubResource("Resource_42nsm"), SubResource("Resource_jeaoj"), SubResource("Resource_2g88g")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_l1gxb")]([SubResource("Resource_stktv")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_ix3jh")]([SubResource("Resource_mkf5s"), SubResource("Resource_cifbg")])

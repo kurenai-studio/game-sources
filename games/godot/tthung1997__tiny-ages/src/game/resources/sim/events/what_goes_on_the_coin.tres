@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_5x0fr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3h82y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ib7q3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dcluw"]
+
+[sub_resource type="Resource" id="Resource_l6xtu"]
+script = ExtResource("2_3h82y")
+kind = 1
+key = &"coin_tree"
+
+[sub_resource type="Resource" id="Resource_344o6"]
+script = ExtResource("2_3h82y")
+text = "A tree went on the coin, and the tree was recognisably the old pine by the cave, and the cave was quietly flattered."
+
+[sub_resource type="Resource" id="Resource_4irax"]
+script = ExtResource("1_5x0fr")
+id = &"a_tree"
+label = "A tree"
+effects = Array[ExtResource("2_3h82y")]([SubResource("Resource_l6xtu"), SubResource("Resource_344o6")])
+
+[sub_resource type="Resource" id="Resource_201gg"]
+script = ExtResource("2_3h82y")
+kind = 1
+key = &"coin_face"
+
+[sub_resource type="Resource" id="Resource_fpi51"]
+script = ExtResource("2_3h82y")
+text = "A face went on the coin, and every household was convinced it was theirs, and the mint kept very quiet."
+
+[sub_resource type="Resource" id="Resource_fjp0y"]
+script = ExtResource("1_5x0fr")
+id = &"a_face"
+label = "A face"
+effects = Array[ExtResource("2_3h82y")]([SubResource("Resource_201gg"), SubResource("Resource_fpi51")])
+
+[sub_resource type="Resource" id="Resource_l84c0"]
+script = ExtResource("3_ib7q3")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_7irhr"]
+script = ExtResource("3_ib7q3")
+kind = 11
+amount = 170
+
+[sub_resource type="Resource" id="Resource_tsn0e"]
+script = ExtResource("3_ib7q3")
+kind = 9
+key = &"silver_by_weight"
+
+[resource]
+script = ExtResource("4_dcluw")
+id = &"what_goes_on_the_coin"
+title = "What goes on the coin"
+body = "Every coin needs a picture, and every household has a view on what it should be."
+category = &"settlement"
+requires = Array[ExtResource("3_ib7q3")]([SubResource("Resource_l84c0"), SubResource("Resource_7irhr"), SubResource("Resource_tsn0e")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_5x0fr")]([SubResource("Resource_4irax"), SubResource("Resource_fjp0y")])

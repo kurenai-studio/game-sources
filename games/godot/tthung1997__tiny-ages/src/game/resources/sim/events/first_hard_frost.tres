@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_fvp33"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_5g8k8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_w4jiw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bcw5l"]
+
+[sub_resource type="Resource" id="Resource_aeona"]
+script = ExtResource("2_5g8k8")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_wocya"]
+script = ExtResource("2_5g8k8")
+kind = 1
+key = &"warm_winter"
+
+[sub_resource type="Resource" id="Resource_44p1o"]
+script = ExtResource("2_5g8k8")
+text = "The fire burned high until dawn, and nobody woke shivering."
+
+[sub_resource type="Resource" id="Resource_c5fd4"]
+script = ExtResource("3_w4jiw")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_412h4"]
+script = ExtResource("1_fvp33")
+id = &"keep_fire_high"
+label = "Keep the fire high all night"
+requires = Array[ExtResource("3_w4jiw")]([SubResource("Resource_c5fd4")])
+effects = Array[ExtResource("2_5g8k8")]([SubResource("Resource_aeona"), SubResource("Resource_wocya"), SubResource("Resource_44p1o")])
+
+[sub_resource type="Resource" id="Resource_vxexu"]
+script = ExtResource("2_5g8k8")
+kind = 1
+key = &"huddled"
+
+[sub_resource type="Resource" id="Resource_8c1qm"]
+script = ExtResource("2_5g8k8")
+text = "They rationed the wood and slept in a heap, grumbling and warm enough."
+
+[sub_resource type="Resource" id="Resource_cd3jv"]
+script = ExtResource("1_fvp33")
+id = &"huddle_close"
+label = "Ration the wood and huddle close"
+effects = Array[ExtResource("2_5g8k8")]([SubResource("Resource_vxexu"), SubResource("Resource_8c1qm")])
+
+[sub_resource type="Resource" id="Resource_7a78u"]
+script = ExtResource("3_w4jiw")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_im80q"]
+script = ExtResource("3_w4jiw")
+kind = 5
+amount = 32
+
+[sub_resource type="Resource" id="Resource_o616k"]
+script = ExtResource("3_w4jiw")
+kind = 13
+amount = 3
+
+[resource]
+script = ExtResource("4_bcw5l")
+id = &"first_hard_frost"
+title = "The first hard frost"
+body = "The first hard frost has come. The river is edged with ice, and the wood pile is shrinking faster than it grows."
+category = &"nature"
+requires = Array[ExtResource("3_w4jiw")]([SubResource("Resource_7a78u"), SubResource("Resource_im80q"), SubResource("Resource_o616k")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_fvp33")]([SubResource("Resource_412h4"), SubResource("Resource_cd3jv")])

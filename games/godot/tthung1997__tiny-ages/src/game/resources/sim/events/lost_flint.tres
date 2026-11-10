@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_yujx0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dy4pl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1aemp"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_o4h4m"]
+
+[sub_resource type="Resource" id="Resource_h80au"]
+script = ExtResource("2_dy4pl")
+kind = 1
+key = &"wrestled"
+
+[sub_resource type="Resource" id="Resource_n5472"]
+script = ExtResource("2_dy4pl")
+text = "They wrestled in the firelight until both were laughing, and the flint turned up in a boot."
+
+[sub_resource type="Resource" id="Resource_fqg5x"]
+script = ExtResource("1_yujx0")
+id = &"wrestle_it_out"
+label = "Let them settle it with a wrestle by the fire"
+effects = Array[ExtResource("2_dy4pl")]([SubResource("Resource_h80au"), SubResource("Resource_n5472")])
+
+[sub_resource type="Resource" id="Resource_liob6"]
+script = ExtResource("2_dy4pl")
+kind = 1
+key = &"searched_together"
+
+[sub_resource type="Resource" id="Resource_uacha"]
+script = ExtResource("2_dy4pl")
+text = "The whole group searched the cave, and found the flint, and a good many other lost things."
+
+[sub_resource type="Resource" id="Resource_6yfiv"]
+script = ExtResource("1_yujx0")
+id = &"search_together"
+label = "Turn the whole cave over, everyone together"
+effects = Array[ExtResource("2_dy4pl")]([SubResource("Resource_liob6"), SubResource("Resource_uacha")])
+
+[sub_resource type="Resource" id="Resource_5fttg"]
+script = ExtResource("3_1aemp")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_107h2"]
+script = ExtResource("3_1aemp")
+kind = 5
+amount = 80
+
+[resource]
+script = ExtResource("4_o4h4m")
+id = &"lost_flint"
+title = "The missing flint"
+body = "The best flint in the cave has gone missing, and two of the group are each sure the other has it."
+requires = Array[ExtResource("3_1aemp")]([SubResource("Resource_5fttg"), SubResource("Resource_107h2")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_yujx0")]([SubResource("Resource_fqg5x"), SubResource("Resource_6yfiv")])

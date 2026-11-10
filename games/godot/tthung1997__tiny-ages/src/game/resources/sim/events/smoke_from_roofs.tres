@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_u8qpt"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_p1df8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7hsdm"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_xuyha"]
+
+[sub_resource type="Resource" id="Resource_s4wa6"]
+script = ExtResource("2_p1df8")
+text = "On still mornings the smoke stood straight up from every roof, each in its own thread."
+
+[sub_resource type="Resource" id="Resource_uycye"]
+script = ExtResource("3_7hsdm")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_nb7qs"]
+script = ExtResource("3_7hsdm")
+kind = 9
+key = &"first_roof"
+
+[resource]
+script = ExtResource("4_xuyha")
+id = &"smoke_from_roofs"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_7hsdm")]([SubResource("Resource_uycye"), SubResource("Resource_nb7qs")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_p1df8")]([SubResource("Resource_s4wa6")])

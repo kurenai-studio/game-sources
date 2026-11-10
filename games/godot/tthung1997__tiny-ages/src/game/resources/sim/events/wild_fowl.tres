@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_wnr3n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_w8bl3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6d6sx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_vbaqj"]
+
+[sub_resource type="Resource" id="Resource_pj67d"]
+script = ExtResource("2_w8bl3")
+kind = 0
+key = &"food"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_wlf0l"]
+script = ExtResource("2_w8bl3")
+kind = 1
+key = &"hens"
+
+[sub_resource type="Resource" id="Resource_8eyww"]
+script = ExtResource("2_w8bl3")
+text = "A little grain was scattered each dawn, and by the new moon the birds came when called."
+
+[sub_resource type="Resource" id="Resource_dciyu"]
+script = ExtResource("3_6d6sx")
+kind = 2
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_syw8r"]
+script = ExtResource("1_wnr3n")
+id = &"tempt_them_with_grain"
+label = "Scatter a little grain for them"
+requires = Array[ExtResource("3_6d6sx")]([SubResource("Resource_dciyu")])
+effects = Array[ExtResource("2_w8bl3")]([SubResource("Resource_pj67d"), SubResource("Resource_wlf0l"), SubResource("Resource_8eyww")])
+
+[sub_resource type="Resource" id="Resource_o1mxn"]
+script = ExtResource("2_w8bl3")
+kind = 1
+key = &"wild_fowl_left"
+
+[sub_resource type="Resource" id="Resource_rvtoh"]
+script = ExtResource("2_w8bl3")
+text = "The birds were let be, and carried on arguing on the roofs."
+
+[sub_resource type="Resource" id="Resource_lk18q"]
+script = ExtResource("1_wnr3n")
+id = &"let_them_be"
+label = "Let them be"
+effects = Array[ExtResource("2_w8bl3")]([SubResource("Resource_o1mxn"), SubResource("Resource_rvtoh")])
+
+[sub_resource type="Resource" id="Resource_5c35t"]
+script = ExtResource("3_6d6sx")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_nouml"]
+script = ExtResource("3_6d6sx")
+kind = 11
+amount = 142
+
+[resource]
+script = ExtResource("4_vbaqj")
+id = &"wild_fowl"
+title = "Small brown birds"
+body = "A flock of small brown fowl has begun nesting by the huts, as if it had been invited."
+category = &"nature"
+requires = Array[ExtResource("3_6d6sx")]([SubResource("Resource_5c35t"), SubResource("Resource_nouml")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_wnr3n")]([SubResource("Resource_syw8r"), SubResource("Resource_lk18q")])

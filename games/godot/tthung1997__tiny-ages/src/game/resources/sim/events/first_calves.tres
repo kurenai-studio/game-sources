@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_uig7i"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_6gf46"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_seq73"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_m4yjb"]
+
+[sub_resource type="Resource" id="Resource_q4b7p"]
+script = ExtResource("2_6gf46")
+kind = 0
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_7qde8"]
+script = ExtResource("2_6gf46")
+kind = 1
+key = &"calves_penned"
+
+[sub_resource type="Resource" id="Resource_t0euh"]
+script = ExtResource("2_6gf46")
+kind = 10
+key = &"first_harvest"
+text = "The First Calves"
+
+[sub_resource type="Resource" id="Resource_qjbgb"]
+script = ExtResource("2_6gf46")
+text = "The group kept watch through the long nights of calving. By midsummer there was milk, and nobody had lost an animal."
+
+[sub_resource type="Resource" id="Resource_kxq0a"]
+script = ExtResource("1_uig7i")
+id = &"tend_the_calves"
+label = "Keep them close and tend the herd"
+effects = Array[ExtResource("2_6gf46")]([SubResource("Resource_q4b7p"), SubResource("Resource_7qde8"), SubResource("Resource_t0euh"), SubResource("Resource_qjbgb")])
+
+[sub_resource type="Resource" id="Resource_j25dj"]
+script = ExtResource("2_6gf46")
+kind = 1
+key = &"calves_grazing"
+
+[sub_resource type="Resource" id="Resource_13y6p"]
+script = ExtResource("2_6gf46")
+kind = 10
+key = &"first_harvest"
+text = "The First Calves"
+
+[sub_resource type="Resource" id="Resource_w3ieq"]
+script = ExtResource("2_6gf46")
+text = "A watcher took the calves out to the far meadow each morning, and the herd came home fat and unbothered."
+
+[sub_resource type="Resource" id="Resource_eeq5o"]
+script = ExtResource("1_uig7i")
+id = &"let_them_roam"
+label = "Let them graze the far meadow with a watcher"
+effects = Array[ExtResource("2_6gf46")]([SubResource("Resource_j25dj"), SubResource("Resource_13y6p"), SubResource("Resource_w3ieq")])
+
+[sub_resource type="Resource" id="Resource_7ow5t"]
+script = ExtResource("3_seq73")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_j838t"]
+script = ExtResource("3_seq73")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_rkn23"]
+script = ExtResource("3_seq73")
+key = &"path_herding"
+
+[sub_resource type="Resource" id="Resource_8e01h"]
+script = ExtResource("3_seq73")
+kind = 9
+key = &"first_harvest"
+negate = true
+
+[sub_resource type="Resource" id="Resource_gareg"]
+script = ExtResource("3_seq73")
+kind = 13
+
+[resource]
+script = ExtResource("4_m4yjb")
+id = &"first_calves"
+title = "Calves in the spring"
+body = "The herd that winters by the camp has calves this spring: small, unsteady things, and their mothers watch the camp with suspicion."
+category = &"nature"
+requires = Array[ExtResource("3_seq73")]([SubResource("Resource_7ow5t"), SubResource("Resource_j838t"), SubResource("Resource_rkn23"), SubResource("Resource_8e01h"), SubResource("Resource_gareg")])
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_uig7i")]([SubResource("Resource_kxq0a"), SubResource("Resource_eeq5o")])

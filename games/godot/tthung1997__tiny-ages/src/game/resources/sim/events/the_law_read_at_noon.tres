@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hd0ss"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_w00lw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_w2aie"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3ptre"]
+
+[sub_resource type="Resource" id="Resource_gek3j"]
+script = ExtResource("2_w00lw")
+text = "A line of the law was read aloud at noon in the square, and a small crowd nodded as if it had been said about them personally."
+
+[sub_resource type="Resource" id="Resource_5ebi1"]
+script = ExtResource("3_w2aie")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_y7h4q"]
+script = ExtResource("3_w2aie")
+kind = 9
+key = &"written_law"
+
+[resource]
+script = ExtResource("4_3ptre")
+id = &"the_law_read_at_noon"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_w2aie")]([SubResource("Resource_5ebi1"), SubResource("Resource_y7h4q")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_w00lw")]([SubResource("Resource_gek3j")])

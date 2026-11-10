@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_52udo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_6pth8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_l8g0t"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rq5ku"]
+
+[sub_resource type="Resource" id="Resource_l40eq"]
+script = ExtResource("2_6pth8")
+kind = 0
+key = &"food"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_p6qb0"]
+script = ExtResource("2_6pth8")
+kind = 1
+key = &"good_neighbours"
+
+[sub_resource type="Resource" id="Resource_nmmcs"]
+script = ExtResource("2_6pth8")
+text = "A sack of grain went over the ridge. A string of shells came back, and a message nobody could read."
+
+[sub_resource type="Resource" id="Resource_ujoyr"]
+script = ExtResource("3_l8g0t")
+kind = 2
+key = &"food"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_emx6x"]
+script = ExtResource("1_52udo")
+id = &"send_a_gift"
+label = "Send a gift of grain over the ridge"
+requires = Array[ExtResource("3_l8g0t")]([SubResource("Resource_ujoyr")])
+effects = Array[ExtResource("2_6pth8")]([SubResource("Resource_l40eq"), SubResource("Resource_p6qb0"), SubResource("Resource_nmmcs")])
+
+[sub_resource type="Resource" id="Resource_bbapv"]
+script = ExtResource("2_6pth8")
+kind = 1
+key = &"waited_for_visitors"
+
+[sub_resource type="Resource" id="Resource_6xh45"]
+script = ExtResource("2_6pth8")
+text = "They watched the smoke for three days, and the smoke, presumably, watched them."
+
+[sub_resource type="Resource" id="Resource_1wffi"]
+script = ExtResource("1_52udo")
+id = &"watch_and_wait"
+label = "Watch, and wait to be visited"
+effects = Array[ExtResource("2_6pth8")]([SubResource("Resource_bbapv"), SubResource("Resource_6xh45")])
+
+[sub_resource type="Resource" id="Resource_jima2"]
+script = ExtResource("3_l8g0t")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_glksg"]
+script = ExtResource("3_l8g0t")
+kind = 11
+amount = 208
+
+[resource]
+script = ExtResource("4_rq5ku")
+id = &"smoke_in_the_next_valley"
+title = "Smoke beyond the ridge"
+body = "A thin column of smoke rises beyond the ridge, where there was never smoke before."
+category = &"exploration"
+requires = Array[ExtResource("3_l8g0t")]([SubResource("Resource_jima2"), SubResource("Resource_glksg")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_52udo")]([SubResource("Resource_emx6x"), SubResource("Resource_1wffi")])

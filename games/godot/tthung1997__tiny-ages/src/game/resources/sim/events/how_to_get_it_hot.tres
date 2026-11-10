@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_nc26b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rfgcu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_f83cs"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gmdbm"]
+
+[sub_resource type="Resource" id="Resource_bfp3y"]
+script = ExtResource("2_rfgcu")
+kind = 1
+key = &"bellows"
+
+[sub_resource type="Resource" id="Resource_wlclv"]
+script = ExtResource("2_rfgcu")
+text = "A hide bag and a clay pipe made a bellows, and the hearth breathed in and out like something alive."
+
+[sub_resource type="Resource" id="Resource_yvbxf"]
+script = ExtResource("1_nc26b")
+id = &"make_a_bellows"
+label = "Make a bellows from a hide bag and a clay pipe"
+effects = Array[ExtResource("2_rfgcu")]([SubResource("Resource_bfp3y"), SubResource("Resource_wlclv")])
+
+[sub_resource type="Resource" id="Resource_bsao2"]
+script = ExtResource("2_rfgcu")
+kind = 1
+key = &"chimney"
+
+[sub_resource type="Resource" id="Resource_3htsw"]
+script = ExtResource("2_rfgcu")
+text = "A tall clay chimney went up behind the hearth and pulled the air through it like a long cold drink."
+
+[sub_resource type="Resource" id="Resource_7t6b2"]
+script = ExtResource("1_nc26b")
+id = &"raise_a_chimney"
+label = "Raise a tall clay chimney"
+effects = Array[ExtResource("2_rfgcu")]([SubResource("Resource_bsao2"), SubResource("Resource_3htsw")])
+
+[sub_resource type="Resource" id="Resource_xoxfe"]
+script = ExtResource("3_f83cs")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_iiwut"]
+script = ExtResource("3_f83cs")
+kind = 11
+amount = 2
+
+[resource]
+script = ExtResource("4_gmdbm")
+id = &"how_to_get_it_hot"
+title = "How to get it hot"
+body = "The hearth is hot, but not hot enough, and everyone has an opinion about the air."
+category = &"settlement"
+requires = Array[ExtResource("3_f83cs")]([SubResource("Resource_xoxfe"), SubResource("Resource_iiwut")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_nc26b")]([SubResource("Resource_yvbxf"), SubResource("Resource_7t6b2")])

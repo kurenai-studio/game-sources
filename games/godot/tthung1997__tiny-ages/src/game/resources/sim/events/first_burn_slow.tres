@@ -1,0 +1,87 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_v4wrx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1dsy5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gd6qo"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_u7o00"]
+
+[sub_resource type="Resource" id="Resource_d6tek"]
+script = ExtResource("2_1dsy5")
+kind = 1
+key = &"bloom_blown"
+
+[sub_resource type="Resource" id="Resource_jll1l"]
+script = ExtResource("2_1dsy5")
+kind = 10
+key = &"first_bloom"
+text = "The First Bloom"
+
+[sub_resource type="Resource" id="Resource_b2blv"]
+script = ExtResource("2_1dsy5")
+text = "The bellows were worked in turns until dawn. When the furnace was broken open there was a bloom in it, glowing, ugly and exactly what was wanted."
+
+[sub_resource type="Resource" id="Resource_trnr6"]
+script = ExtResource("1_v4wrx")
+id = &"blow_all_night"
+label = "Work the bellows all night, in turns"
+effects = Array[ExtResource("2_1dsy5")]([SubResource("Resource_d6tek"), SubResource("Resource_jll1l"), SubResource("Resource_b2blv")])
+
+[sub_resource type="Resource" id="Resource_prh3s"]
+script = ExtResource("2_1dsy5")
+kind = 1
+key = &"bloom_cooled"
+
+[sub_resource type="Resource" id="Resource_5etiu"]
+script = ExtResource("2_1dsy5")
+kind = 10
+key = &"first_bloom"
+text = "The First Bloom"
+
+[sub_resource type="Resource" id="Resource_tf8qq"]
+script = ExtResource("2_1dsy5")
+text = "The furnace was left to burn down by itself. In the morning there was a lump in the ashes, still warm, and {subject} was seen to hug it."
+
+[sub_resource type="Resource" id="Resource_7es60"]
+script = ExtResource("1_v4wrx")
+id = &"let_it_burn_down"
+label = "Let it burn down on its own, and open it in the morning"
+effects = Array[ExtResource("2_1dsy5")]([SubResource("Resource_prh3s"), SubResource("Resource_5etiu"), SubResource("Resource_tf8qq")])
+
+[sub_resource type="Resource" id="Resource_f2vrh"]
+script = ExtResource("3_gd6qo")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_i0ns2"]
+script = ExtResource("3_gd6qo")
+kind = 11
+amount = 48
+
+[sub_resource type="Resource" id="Resource_ch0gl"]
+script = ExtResource("3_gd6qo")
+kind = 9
+key = &"first_bloom"
+negate = true
+
+[sub_resource type="Resource" id="Resource_3aw4s"]
+script = ExtResource("3_gd6qo")
+key = &"path_ore"
+
+[sub_resource type="Resource" id="Resource_f8cow"]
+script = ExtResource("3_gd6qo")
+kind = 7
+
+[resource]
+script = ExtResource("4_u7o00")
+id = &"first_burn_slow"
+title = "A night's burn"
+body = "{subject} has packed the new furnace with red ore and charcoal in layers, and sealed the top with clay. All it wants now is the bellows, and a very long night."
+requires = Array[ExtResource("3_gd6qo")]([SubResource("Resource_f2vrh"), SubResource("Resource_i0ns2"), SubResource("Resource_ch0gl"), SubResource("Resource_3aw4s")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_gd6qo")]([SubResource("Resource_f8cow")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_v4wrx")]([SubResource("Resource_trnr6"), SubResource("Resource_7es60")])

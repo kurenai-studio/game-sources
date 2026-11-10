@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_a6cum"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_orp3m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rtvt6"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bnl6b"]
+
+[sub_resource type="Resource" id="Resource_hdca1"]
+script = ExtResource("2_orp3m")
+kind = 1
+key = &"pot_fired"
+
+[sub_resource type="Resource" id="Resource_fbb7p"]
+script = ExtResource("2_orp3m")
+kind = 10
+key = &"fired_clay"
+text = "Fired Clay"
+
+[sub_resource type="Resource" id="Resource_r3hnr"]
+script = ExtResource("2_orp3m")
+text = "{subject} shaped a squat little pot and buried it in hot ashes. Next morning it held water, and everyone had to hold it."
+
+[sub_resource type="Resource" id="Resource_8bo76"]
+script = ExtResource("1_a6cum")
+id = &"fire_a_pot"
+label = "Shape some clay and fire it on purpose"
+effects = Array[ExtResource("2_orp3m")]([SubResource("Resource_hdca1"), SubResource("Resource_fbb7p"), SubResource("Resource_r3hnr")])
+
+[sub_resource type="Resource" id="Resource_86046"]
+script = ExtResource("2_orp3m")
+kind = 1
+key = &"dish_baked"
+
+[sub_resource type="Resource" id="Resource_cuol8"]
+script = ExtResource("2_orp3m")
+kind = 10
+key = &"fired_clay"
+text = "Fired Clay"
+
+[sub_resource type="Resource" id="Resource_ekdck"]
+script = ExtResource("2_orp3m")
+text = "{subject} shaped a flat dish and set it on stones heated in the fire, and by evening it was a plate that held a fish."
+
+[sub_resource type="Resource" id="Resource_32o65"]
+script = ExtResource("1_a6cum")
+id = &"leave_the_shell"
+label = "Bake a flat dish on hot stones"
+effects = Array[ExtResource("2_orp3m")]([SubResource("Resource_86046"), SubResource("Resource_cuol8"), SubResource("Resource_ekdck")])
+
+[sub_resource type="Resource" id="Resource_dgjry"]
+script = ExtResource("3_rtvt6")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_5fd5p"]
+script = ExtResource("3_rtvt6")
+kind = 11
+amount = 108
+
+[sub_resource type="Resource" id="Resource_vm3un"]
+script = ExtResource("3_rtvt6")
+kind = 9
+key = &"fired_clay"
+negate = true
+
+[sub_resource type="Resource" id="Resource_onpsw"]
+script = ExtResource("3_rtvt6")
+kind = 7
+
+[resource]
+script = ExtResource("4_bnl6b")
+id = &"clay_hardens"
+title = "Clay by the fire"
+body = "{subject} left a basket smeared with river clay too close to the fire. The basket burned away, but the clay did not melt. It stood there hard and red, and rang when it was tapped."
+requires = Array[ExtResource("3_rtvt6")]([SubResource("Resource_dgjry"), SubResource("Resource_5fd5p"), SubResource("Resource_vm3un")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_rtvt6")]([SubResource("Resource_onpsw")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_a6cum")]([SubResource("Resource_8bo76"), SubResource("Resource_32o65")])

@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_nr17l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_kj62f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1a5fd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p0xsg"]
+
+[sub_resource type="Resource" id="Resource_onvx5"]
+script = ExtResource("2_kj62f")
+kind = 1
+key = &"reed_teachers"
+
+[sub_resource type="Resource" id="Resource_cbfql"]
+script = ExtResource("2_kj62f")
+kind = 10
+key = &"woven_cloth"
+text = "Woven Cloth"
+
+[sub_resource type="Resource" id="Resource_rnyk2"]
+script = ExtResource("2_kj62f")
+text = "{subject} showed the others the over-and-under, and soon the whole camp was weaving, badly and happily."
+
+[sub_resource type="Resource" id="Resource_dq5a1"]
+script = ExtResource("1_nr17l")
+id = &"show_the_others"
+label = "Show the others how it is done"
+effects = Array[ExtResource("2_kj62f")]([SubResource("Resource_onvx5"), SubResource("Resource_cbfql"), SubResource("Resource_rnyk2")])
+
+[sub_resource type="Resource" id="Resource_uc2n1"]
+script = ExtResource("2_kj62f")
+kind = 1
+key = &"fine_plaiting"
+
+[sub_resource type="Resource" id="Resource_co35i"]
+script = ExtResource("2_kj62f")
+kind = 10
+key = &"woven_cloth"
+text = "Woven Cloth"
+
+[sub_resource type="Resource" id="Resource_ux3oo"]
+script = ExtResource("2_kj62f")
+text = "{subject} plaited the reeds finer and finer, with a thread of dry grass through them, until the mat was something you could wear."
+
+[sub_resource type="Resource" id="Resource_357x7"]
+script = ExtResource("1_nr17l")
+id = &"keep_it_a_mat"
+label = "Plait it finer, with a thread of grass through it"
+effects = Array[ExtResource("2_kj62f")]([SubResource("Resource_uc2n1"), SubResource("Resource_co35i"), SubResource("Resource_ux3oo")])
+
+[sub_resource type="Resource" id="Resource_e6cl0"]
+script = ExtResource("3_1a5fd")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_4fccv"]
+script = ExtResource("3_1a5fd")
+kind = 11
+amount = 198
+
+[sub_resource type="Resource" id="Resource_3ek54"]
+script = ExtResource("3_1a5fd")
+kind = 9
+key = &"woven_cloth"
+negate = true
+
+[sub_resource type="Resource" id="Resource_ofg1e"]
+script = ExtResource("3_1a5fd")
+kind = 7
+
+[resource]
+script = ExtResource("4_p0xsg")
+id = &"plaited_reeds"
+title = "Mats of reed"
+body = "{subject} has been plaiting river reeds into mats, over and under, over and under. The mat has begun to look like something softer than a mat."
+requires = Array[ExtResource("3_1a5fd")]([SubResource("Resource_e6cl0"), SubResource("Resource_4fccv"), SubResource("Resource_3ek54")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_1a5fd")]([SubResource("Resource_ofg1e")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_nr17l")]([SubResource("Resource_dq5a1"), SubResource("Resource_357x7")])

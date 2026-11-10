@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_tbabd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_38t4f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_xgqoa"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_a3k3c"]
+
+[sub_resource type="Resource" id="Resource_h1bfm"]
+script = ExtResource("2_38t4f")
+text = "A child shouted the village's name into the cave, and the cave said it back a little slower."
+
+[sub_resource type="Resource" id="Resource_5geyy"]
+script = ExtResource("3_xgqoa")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_8e2nq"]
+script = ExtResource("3_xgqoa")
+key = &"named_for_cave"
+
+[resource]
+script = ExtResource("4_a3k3c")
+id = &"named_for_the_cave"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_xgqoa")]([SubResource("Resource_5geyy"), SubResource("Resource_8e2nq")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_38t4f")]([SubResource("Resource_h1bfm")])

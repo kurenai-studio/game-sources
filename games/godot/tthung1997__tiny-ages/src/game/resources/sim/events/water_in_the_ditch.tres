@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ar5gw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gt8cx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7eupx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_j35l0"]
+
+[sub_resource type="Resource" id="Resource_s8glj"]
+script = ExtResource("2_gt8cx")
+kind = 0
+key = &"wood"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_pbiq8"]
+script = ExtResource("2_gt8cx")
+kind = 1
+key = &"ditch_channel"
+
+[sub_resource type="Resource" id="Resource_cty2f"]
+script = ExtResource("2_gt8cx")
+text = "A channel was cut from the river, and the ditch filled to the brim and stayed full, and the frog was joined by a great many relatives."
+
+[sub_resource type="Resource" id="Resource_qreho"]
+script = ExtResource("3_7eupx")
+kind = 2
+key = &"wood"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_43src"]
+script = ExtResource("1_ar5gw")
+id = &"cut_a_channel"
+label = "Cut a channel from the river"
+requires = Array[ExtResource("3_7eupx")]([SubResource("Resource_qreho")])
+effects = Array[ExtResource("2_gt8cx")]([SubResource("Resource_s8glj"), SubResource("Resource_pbiq8"), SubResource("Resource_cty2f")])
+
+[sub_resource type="Resource" id="Resource_omvu4"]
+script = ExtResource("2_gt8cx")
+kind = 1
+key = &"ditch_left_to_fill"
+
+[sub_resource type="Resource" id="Resource_ma4ev"]
+script = ExtResource("2_gt8cx")
+text = "The ditch filled when it liked and drained when it liked, and was a pond in spring and a dry gully by autumn."
+
+[sub_resource type="Resource" id="Resource_vu8t4"]
+script = ExtResource("1_ar5gw")
+id = &"let_it_fill"
+label = "Let it fill when it likes"
+effects = Array[ExtResource("2_gt8cx")]([SubResource("Resource_omvu4"), SubResource("Resource_ma4ev")])
+
+[sub_resource type="Resource" id="Resource_vrc2x"]
+script = ExtResource("3_7eupx")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_r0ivk"]
+script = ExtResource("3_7eupx")
+kind = 11
+amount = 130
+
+[sub_resource type="Resource" id="Resource_1yk7y"]
+script = ExtResource("3_7eupx")
+kind = 9
+key = &"the_hill_fort"
+
+[resource]
+script = ExtResource("4_j35l0")
+id = &"water_in_the_ditch"
+title = "Water in the ditch"
+body = "The deep ditch has filled after the rain, and a frog has moved in, and the question is whether it should be allowed to."
+category = &"settlement"
+requires = Array[ExtResource("3_7eupx")]([SubResource("Resource_vrc2x"), SubResource("Resource_r0ivk"), SubResource("Resource_1yk7y")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ar5gw")]([SubResource("Resource_43src"), SubResource("Resource_vu8t4")])

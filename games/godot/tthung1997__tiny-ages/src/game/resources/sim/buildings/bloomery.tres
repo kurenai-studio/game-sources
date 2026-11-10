@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_e0w6q"]
+
+[resource]
+script = ExtResource("1_e0w6q")
+id = &"bloomery"
+display_name = "Bloomery"
+description = "A tall clay furnace with a pair of bellows: a place to turn red ore into iron."
+cost = Dictionary[StringName, int]({
+&"wood": 18
+})
+work_required = 44
+daily_output = Dictionary[StringName, float]({
+&"wood": 0.5
+})
+tags = Array[StringName]([&"exposed"])
+completion_achievement = &"first_bloom"
+completion_achievement_title = "The First Bloom"

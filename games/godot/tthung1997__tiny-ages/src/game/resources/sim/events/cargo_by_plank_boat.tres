@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8t08q"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_j7sfu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_f3mfx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_vdb13"]
+
+[sub_resource type="Resource" id="Resource_gbdh7"]
+script = ExtResource("2_j7sfu")
+kind = 1
+key = &"cargo_sailed"
+
+[sub_resource type="Resource" id="Resource_6vg7c"]
+script = ExtResource("2_j7sfu")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_8w7mi"]
+script = ExtResource("2_j7sfu")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_hs2wx"]
+script = ExtResource("2_j7sfu")
+text = "The boat crossed in two days and came home in three, low with strange goods and high with news, and the far shore had been told the name."
+
+[sub_resource type="Resource" id="Resource_crdd5"]
+script = ExtResource("1_8t08q")
+id = &"sail_it_over"
+label = "Sail it over, and ask for the market"
+effects = Array[ExtResource("2_j7sfu")]([SubResource("Resource_gbdh7"), SubResource("Resource_6vg7c"), SubResource("Resource_8w7mi"), SubResource("Resource_hs2wx")])
+
+[sub_resource type="Resource" id="Resource_s2eys"]
+script = ExtResource("2_j7sfu")
+kind = 1
+key = &"cargo_guided"
+
+[sub_resource type="Resource" id="Resource_7eqw0"]
+script = ExtResource("2_j7sfu")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_8p0i6"]
+script = ExtResource("2_j7sfu")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_pcy5b"]
+script = ExtResource("2_j7sfu")
+text = "The boat went with a guide who had the words, and the market on the far shore was found at once, and so was a friend."
+
+[sub_resource type="Resource" id="Resource_8ryct"]
+script = ExtResource("1_8t08q")
+id = &"send_it_with_a_guide"
+label = "Send it with someone who has the words"
+effects = Array[ExtResource("2_j7sfu")]([SubResource("Resource_s2eys"), SubResource("Resource_7eqw0"), SubResource("Resource_8p0i6"), SubResource("Resource_pcy5b")])
+
+[sub_resource type="Resource" id="Resource_3lp8e"]
+script = ExtResource("3_f3mfx")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_6m6hv"]
+script = ExtResource("3_f3mfx")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_coadi"]
+script = ExtResource("3_f3mfx")
+kind = 9
+key = &"name_abroad"
+negate = true
+
+[sub_resource type="Resource" id="Resource_aprs0"]
+script = ExtResource("3_f3mfx")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_uj78r"]
+script = ExtResource("3_f3mfx")
+key = &"dugout_canoe"
+
+[sub_resource type="Resource" id="Resource_sdeaf"]
+script = ExtResource("3_f3mfx")
+kind = 7
+
+[resource]
+script = ExtResource("4_vdb13")
+id = &"cargo_by_plank_boat"
+title = "Goods for the far shore"
+body = "The planked boat has been loaded and unloaded so often that it has begun to know the way, and the load this time is meant for someone who has never seen it."
+category = &"exploration"
+requires = Array[ExtResource("3_f3mfx")]([SubResource("Resource_3lp8e"), SubResource("Resource_6m6hv"), SubResource("Resource_coadi"), SubResource("Resource_aprs0"), SubResource("Resource_uj78r")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_f3mfx")]([SubResource("Resource_sdeaf")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_8t08q")]([SubResource("Resource_crdd5"), SubResource("Resource_8ryct")])

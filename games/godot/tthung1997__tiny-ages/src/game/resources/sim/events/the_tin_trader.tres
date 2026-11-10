@@ -1,0 +1,81 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y42dl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_cq7jc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vqwg3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0u8ox"]
+
+[sub_resource type="Resource" id="Resource_rglrk"]
+script = ExtResource("2_cq7jc")
+kind = 0
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_at281"]
+script = ExtResource("2_cq7jc")
+kind = 1
+key = &"iron_for_tin"
+
+[sub_resource type="Resource" id="Resource_pnr1g"]
+script = ExtResource("2_cq7jc")
+text = "Iron was offered in place of tin, and the trader looked at it for a long time and then went away to think about her prices."
+
+[sub_resource type="Resource" id="Resource_dt56y"]
+script = ExtResource("1_y42dl")
+id = &"offer_iron_for_tin"
+label = "Offer iron in place of tin"
+effects = Array[ExtResource("2_cq7jc")]([SubResource("Resource_rglrk"), SubResource("Resource_at281"), SubResource("Resource_pnr1g")])
+
+[sub_resource type="Resource" id="Resource_c4qc4"]
+script = ExtResource("2_cq7jc")
+kind = 0
+key = &"food"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_35lh4"]
+script = ExtResource("2_cq7jc")
+kind = 1
+key = &"bronze_for_fine_work"
+
+[sub_resource type="Resource" id="Resource_it55x"]
+script = ExtResource("2_cq7jc")
+text = "Tin was bought for the fine work, a little at a time, and the trader left happier than she had arrived."
+
+[sub_resource type="Resource" id="Resource_e2iyb"]
+script = ExtResource("3_vqwg3")
+kind = 2
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_kr6ox"]
+script = ExtResource("1_y42dl")
+id = &"keep_buying_bronze"
+label = "Keep buying bronze for the fine work"
+requires = Array[ExtResource("3_vqwg3")]([SubResource("Resource_e2iyb")])
+effects = Array[ExtResource("2_cq7jc")]([SubResource("Resource_c4qc4"), SubResource("Resource_35lh4"), SubResource("Resource_it55x")])
+
+[sub_resource type="Resource" id="Resource_ax14o"]
+script = ExtResource("3_vqwg3")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_u1p07"]
+script = ExtResource("3_vqwg3")
+kind = 11
+amount = 98
+
+[sub_resource type="Resource" id="Resource_iqpdy"]
+script = ExtResource("3_vqwg3")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_0u8ox")
+id = &"the_tin_trader"
+title = "The tin trader"
+body = "The tin trader is back, with her donkeys and a long face, and has noticed that she is being asked a good deal less than she used to be."
+category = &"settlement"
+requires = Array[ExtResource("3_vqwg3")]([SubResource("Resource_ax14o"), SubResource("Resource_u1p07"), SubResource("Resource_iqpdy")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_y42dl")]([SubResource("Resource_dt56y"), SubResource("Resource_kr6ox")])

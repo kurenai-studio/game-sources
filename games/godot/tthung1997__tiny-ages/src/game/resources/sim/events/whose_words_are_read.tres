@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_q801q"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_tv35x"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mvkux"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4j6iu"]
+
+[sub_resource type="Resource" id="Resource_srp7k"]
+script = ExtResource("2_tv35x")
+kind = 1
+key = &"one_reader"
+
+[sub_resource type="Resource" id="Resource_umn8j"]
+script = ExtResource("2_tv35x")
+text = "The clearest voice was asked to read, and read so well that people came from other streets to listen, and some of them even heard the laws."
+
+[sub_resource type="Resource" id="Resource_yw43r"]
+script = ExtResource("1_q801q")
+id = &"the_clearest_voice"
+label = "Let the clearest voice read, always"
+effects = Array[ExtResource("2_tv35x")]([SubResource("Resource_srp7k"), SubResource("Resource_umn8j")])
+
+[sub_resource type="Resource" id="Resource_n6u1k"]
+script = ExtResource("2_tv35x")
+kind = 1
+key = &"everyone_reads"
+
+[sub_resource type="Resource" id="Resource_bggf0"]
+script = ExtResource("2_tv35x")
+text = "Everyone read a line in turn, and the laws were read with a variety of voices, and a child read the longest word and was applauded."
+
+[sub_resource type="Resource" id="Resource_017hx"]
+script = ExtResource("1_q801q")
+id = &"everyone_reads_a_line"
+label = "Let everyone read a line, in turn"
+effects = Array[ExtResource("2_tv35x")]([SubResource("Resource_n6u1k"), SubResource("Resource_bggf0")])
+
+[sub_resource type="Resource" id="Resource_b1r72"]
+script = ExtResource("3_mvkux")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_rpalg"]
+script = ExtResource("3_mvkux")
+kind = 11
+amount = 114
+
+[sub_resource type="Resource" id="Resource_0710c"]
+script = ExtResource("3_mvkux")
+kind = 9
+key = &"written_law"
+
+[sub_resource type="Resource" id="Resource_a2fqk"]
+script = ExtResource("3_mvkux")
+kind = 7
+
+[resource]
+script = ExtResource("4_4j6iu")
+id = &"whose_words_are_read"
+title = "Whose words are read aloud"
+body = "The written laws are read aloud, and {subject} has noticed that the voice that reads them shapes how they sound."
+requires = Array[ExtResource("3_mvkux")]([SubResource("Resource_b1r72"), SubResource("Resource_rpalg"), SubResource("Resource_0710c")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_mvkux")]([SubResource("Resource_a2fqk")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_q801q")]([SubResource("Resource_yw43r"), SubResource("Resource_017hx")])

@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_oea1b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_tcxvp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_yudrg"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_g00gj"]
+
+[sub_resource type="Resource" id="Resource_fcaun"]
+script = ExtResource("2_tcxvp")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_nwtdq"]
+script = ExtResource("2_tcxvp")
+kind = 1
+key = &"bank_beans"
+
+[sub_resource type="Resource" id="Resource_pj22y"]
+script = ExtResource("2_tcxvp")
+text = "The bank was planted with beans, and in July it was a green wall, and in September it was dinner."
+
+[sub_resource type="Resource" id="Resource_hriwd"]
+script = ExtResource("1_oea1b")
+id = &"plant_the_bank_with_beans"
+label = "Plant the bank with beans"
+effects = Array[ExtResource("2_tcxvp")]([SubResource("Resource_fcaun"), SubResource("Resource_nwtdq"), SubResource("Resource_pj22y")])
+
+[sub_resource type="Resource" id="Resource_ta6el"]
+script = ExtResource("2_tcxvp")
+kind = 1
+key = &"bank_grass"
+
+[sub_resource type="Resource" id="Resource_iaqj2"]
+script = ExtResource("2_tcxvp")
+text = "The bank was left to the grass, which came up thick and green and was visited by every cricket in the valley."
+
+[sub_resource type="Resource" id="Resource_cc2jv"]
+script = ExtResource("1_oea1b")
+id = &"leave_it_to_the_grass"
+label = "Leave it to the grass"
+effects = Array[ExtResource("2_tcxvp")]([SubResource("Resource_ta6el"), SubResource("Resource_iaqj2")])
+
+[sub_resource type="Resource" id="Resource_loarx"]
+script = ExtResource("3_yudrg")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_8jwlh"]
+script = ExtResource("3_yudrg")
+kind = 11
+amount = 140
+
+[sub_resource type="Resource" id="Resource_ocn8y"]
+script = ExtResource("3_yudrg")
+kind = 9
+key = &"the_hill_fort"
+
+[sub_resource type="Resource" id="Resource_kwpho"]
+script = ExtResource("3_yudrg")
+key = &"path_agriculture"
+
+[resource]
+script = ExtResource("4_g00gj")
+id = &"beans_on_the_bank"
+title = "Beans on the bank"
+body = "The bank round the fort is bare earth, and somebody has pointed out that nothing grows on bare earth except resentment."
+category = &"settlement"
+requires = Array[ExtResource("3_yudrg")]([SubResource("Resource_loarx"), SubResource("Resource_8jwlh"), SubResource("Resource_ocn8y"), SubResource("Resource_kwpho")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_oea1b")]([SubResource("Resource_hriwd"), SubResource("Resource_cc2jv")])

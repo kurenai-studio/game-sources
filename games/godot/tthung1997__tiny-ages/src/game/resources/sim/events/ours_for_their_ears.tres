@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_3y2b4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gotgp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_tfxgt"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rforu"]
+
+[sub_resource type="Resource" id="Resource_tg7st"]
+script = ExtResource("2_gotgp")
+kind = 1
+key = &"primer_written"
+
+[sub_resource type="Resource" id="Resource_rlcx1"]
+script = ExtResource("2_gotgp")
+kind = 10
+key = &"lamp_and_stage"
+text = "The Lamp and the Stage"
+
+[sub_resource type="Resource" id="Resource_c031j"]
+script = ExtResource("2_gotgp")
+text = "A primer of the town's words was written, with pictures, and the first copy was borrowed and returned with two pages of questions."
+
+[sub_resource type="Resource" id="Resource_ntha8"]
+script = ExtResource("1_3y2b4")
+id = &"write_ours_for_visitors"
+label = "Write a primer of the town's words"
+effects = Array[ExtResource("2_gotgp")]([SubResource("Resource_tg7st"), SubResource("Resource_rlcx1"), SubResource("Resource_c031j")])
+
+[sub_resource type="Resource" id="Resource_pqgp1"]
+script = ExtResource("2_gotgp")
+kind = 1
+key = &"teaching_court"
+
+[sub_resource type="Resource" id="Resource_efxay"]
+script = ExtResource("2_gotgp")
+kind = 10
+key = &"lamp_and_stage"
+text = "The Lamp and the Stage"
+
+[sub_resource type="Resource" id="Resource_dn73e"]
+script = ExtResource("2_gotgp")
+text = "A court was set aside where anyone might come and learn, and it was so full on the first day that the lesson moved outside."
+
+[sub_resource type="Resource" id="Resource_mcnkh"]
+script = ExtResource("1_3y2b4")
+id = &"host_a_teaching_court"
+label = "Host a court where anyone may come and learn"
+effects = Array[ExtResource("2_gotgp")]([SubResource("Resource_pqgp1"), SubResource("Resource_efxay"), SubResource("Resource_dn73e")])
+
+[sub_resource type="Resource" id="Resource_orhtq"]
+script = ExtResource("3_tfxgt")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_n4kku"]
+script = ExtResource("3_tfxgt")
+kind = 11
+amount = 216
+
+[sub_resource type="Resource" id="Resource_ucyvr"]
+script = ExtResource("3_tfxgt")
+kind = 9
+key = &"lamp_and_stage"
+negate = true
+
+[sub_resource type="Resource" id="Resource_d3tmq"]
+script = ExtResource("3_tfxgt")
+kind = 9
+key = &"the_square"
+
+[sub_resource type="Resource" id="Resource_hp8if"]
+script = ExtResource("3_tfxgt")
+key = &"taught_words"
+
+[sub_resource type="Resource" id="Resource_yra17"]
+script = ExtResource("3_tfxgt")
+kind = 7
+
+[resource]
+script = ExtResource("4_rforu")
+id = &"ours_for_their_ears"
+title = "Ours, for their ears"
+body = "The visitors have learned the town's words, and are asking whether they could have them written down, and the town has realised that it could."
+requires = Array[ExtResource("3_tfxgt")]([SubResource("Resource_orhtq"), SubResource("Resource_n4kku"), SubResource("Resource_ucyvr"), SubResource("Resource_d3tmq"), SubResource("Resource_hp8if")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_tfxgt")]([SubResource("Resource_yra17")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_3y2b4")]([SubResource("Resource_ntha8"), SubResource("Resource_mcnkh")])

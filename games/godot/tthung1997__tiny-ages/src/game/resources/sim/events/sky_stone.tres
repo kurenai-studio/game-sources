@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_rgaop"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gqpqy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_0sgq3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mbohb"]
+
+[sub_resource type="Resource" id="Resource_8mqif"]
+script = ExtResource("2_gqpqy")
+kind = 1
+key = &"sky_stone_kept"
+
+[sub_resource type="Resource" id="Resource_mq7si"]
+script = ExtResource("2_gqpqy")
+text = "Four of them carried the black stone to the cave, and it sat by the fire like a guest."
+
+[sub_resource type="Resource" id="Resource_w37a8"]
+script = ExtResource("1_rgaop")
+id = &"keep_the_sky_stone"
+label = "Carry it back and keep it by the fire"
+effects = Array[ExtResource("2_gqpqy")]([SubResource("Resource_8mqif"), SubResource("Resource_mq7si")])
+
+[sub_resource type="Resource" id="Resource_rep5b"]
+script = ExtResource("2_gqpqy")
+kind = 1
+key = &"sky_stone_marked"
+
+[sub_resource type="Resource" id="Resource_23rvi"]
+script = ExtResource("2_gqpqy")
+text = "They ringed the black stone with white pebbles, and left it to the sky."
+
+[sub_resource type="Resource" id="Resource_kio87"]
+script = ExtResource("1_rgaop")
+id = &"mark_the_sky_stone"
+label = "Leave it where it fell, and ring it with white stones"
+effects = Array[ExtResource("2_gqpqy")]([SubResource("Resource_rep5b"), SubResource("Resource_23rvi")])
+
+[sub_resource type="Resource" id="Resource_x3588"]
+script = ExtResource("3_0sgq3")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_1y4ky"]
+script = ExtResource("3_0sgq3")
+kind = 5
+amount = 331
+
+[resource]
+script = ExtResource("4_mbohb")
+id = &"sky_stone"
+title = "A stone from the sky"
+body = "A streak of light crossed the sky in the night, and in the morning there is a heavy black stone in the meadow, still warm."
+category = &"nature"
+requires = Array[ExtResource("3_0sgq3")]([SubResource("Resource_x3588"), SubResource("Resource_1y4ky")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_rgaop")]([SubResource("Resource_w37a8"), SubResource("Resource_kio87")])

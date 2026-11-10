@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_kixve"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2lawd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_c7eo0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_a3rub"]
+
+[sub_resource type="Resource" id="Resource_q8gmt"]
+script = ExtResource("2_2lawd")
+text = "The new families laughed loudly in the hut, and the old ones laughed back."
+
+[sub_resource type="Resource" id="Resource_n4r7n"]
+script = ExtResource("3_c7eo0")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_yim08"]
+script = ExtResource("3_c7eo0")
+key = &"families_taken_in"
+
+[resource]
+script = ExtResource("4_a3rub")
+id = &"families_inside"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_c7eo0")]([SubResource("Resource_n4r7n"), SubResource("Resource_yim08")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_2lawd")]([SubResource("Resource_q8gmt")])

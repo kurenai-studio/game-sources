@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_da3or"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mvbp5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_og7g0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_naoia"]
+
+[sub_resource type="Resource" id="Resource_1bqsj"]
+script = ExtResource("2_mvbp5")
+kind = 1
+key = &"standing_stone"
+
+[sub_resource type="Resource" id="Resource_va513"]
+script = ExtResource("2_mvbp5")
+text = "The stone was stood up at the crossing and the name was cut into it, and travellers stopped to read it with an expression of someone who has arrived."
+
+[sub_resource type="Resource" id="Resource_unrru"]
+script = ExtResource("1_da3or")
+id = &"stand_it_at_the_crossing"
+label = "Stand it up at the crossing"
+effects = Array[ExtResource("2_mvbp5")]([SubResource("Resource_1bqsj"), SubResource("Resource_va513")])
+
+[sub_resource type="Resource" id="Resource_r7lmn"]
+script = ExtResource("2_mvbp5")
+kind = 1
+key = &"gate_name"
+
+[sub_resource type="Resource" id="Resource_uyjfb"]
+script = ExtResource("2_mvbp5")
+text = "The stone was set over the gate and the name was cut into it, and the gate was suddenly much more of a gate."
+
+[sub_resource type="Resource" id="Resource_jvc8u"]
+script = ExtResource("1_da3or")
+id = &"cut_it_over_the_gate"
+label = "Cut it into the stone over the gate"
+effects = Array[ExtResource("2_mvbp5")]([SubResource("Resource_r7lmn"), SubResource("Resource_uyjfb")])
+
+[sub_resource type="Resource" id="Resource_4maqj"]
+script = ExtResource("3_og7g0")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_mlr86"]
+script = ExtResource("3_og7g0")
+kind = 11
+amount = 312
+
+[sub_resource type="Resource" id="Resource_pdxeg"]
+script = ExtResource("3_og7g0")
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_geuau"]
+script = ExtResource("3_og7g0")
+kind = 8
+amount = 4
+negate = true
+
+[sub_resource type="Resource" id="Resource_xei2b"]
+script = ExtResource("3_og7g0")
+kind = 7
+
+[resource]
+script = ExtResource("4_naoia")
+id = &"a_stone_with_a_name"
+title = "A stone with a name"
+body = "{subject} has found a long flat stone at the quarry, and a good deal of enthusiasm for having something say who we are."
+category = &"exploration"
+requires = Array[ExtResource("3_og7g0")]([SubResource("Resource_4maqj"), SubResource("Resource_mlr86"), SubResource("Resource_pdxeg"), SubResource("Resource_geuau")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_og7g0")]([SubResource("Resource_xei2b")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_da3or")]([SubResource("Resource_unrru"), SubResource("Resource_jvc8u")])

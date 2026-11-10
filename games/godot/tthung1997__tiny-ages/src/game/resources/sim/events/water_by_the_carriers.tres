@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ylejl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qicmm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_b4n4s"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_a2hh2"]
+
+[sub_resource type="Resource" id="Resource_cff3t"]
+script = ExtResource("2_qicmm")
+kind = 1
+key = &"spring_arches"
+
+[sub_resource type="Resource" id="Resource_kjtrx"]
+script = ExtResource("2_qicmm")
+kind = 0
+key = &"wood"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_whicp"]
+script = ExtResource("2_qicmm")
+kind = 10
+key = &"water_from_afar"
+text = "Water from Afar"
+
+[sub_resource type="Resource" id="Resource_bocla"]
+script = ExtResource("2_qicmm")
+text = "Arches marched down from the spring toward the town, one a day, and the carriers stood under them and looked up, slightly lost."
+
+[sub_resource type="Resource" id="Resource_pb2bs"]
+script = ExtResource("3_b4n4s")
+kind = 2
+key = &"wood"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_urndv"]
+script = ExtResource("1_ylejl")
+id = &"raise_arches_from_the_spring"
+label = "Raise arches and bring the spring in"
+requires = Array[ExtResource("3_b4n4s")]([SubResource("Resource_pb2bs")])
+effects = Array[ExtResource("2_qicmm")]([SubResource("Resource_cff3t"), SubResource("Resource_kjtrx"), SubResource("Resource_whicp"), SubResource("Resource_bocla")])
+
+[sub_resource type="Resource" id="Resource_c80v3"]
+script = ExtResource("2_qicmm")
+kind = 1
+key = &"covered_channel"
+
+[sub_resource type="Resource" id="Resource_filmr"]
+script = ExtResource("2_qicmm")
+kind = 10
+key = &"water_from_afar"
+text = "Water from Afar"
+
+[sub_resource type="Resource" id="Resource_voe4b"]
+script = ExtResource("2_qicmm")
+text = "A covered channel was laid along the ground from the spring, so quiet that on the first day half the town stood over it listening."
+
+[sub_resource type="Resource" id="Resource_m5loo"]
+script = ExtResource("1_ylejl")
+id = &"lay_a_covered_channel"
+label = "Lay a low covered channel along the ground"
+effects = Array[ExtResource("2_qicmm")]([SubResource("Resource_c80v3"), SubResource("Resource_filmr"), SubResource("Resource_voe4b")])
+
+[sub_resource type="Resource" id="Resource_pjt3n"]
+script = ExtResource("3_b4n4s")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_6h72g"]
+script = ExtResource("3_b4n4s")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_c3238"]
+script = ExtResource("3_b4n4s")
+kind = 9
+key = &"water_from_afar"
+negate = true
+
+[sub_resource type="Resource" id="Resource_eclxv"]
+script = ExtResource("3_b4n4s")
+key = &"well_carriers"
+
+[sub_resource type="Resource" id="Resource_1and7"]
+script = ExtResource("3_b4n4s")
+kind = 7
+
+[resource]
+script = ExtResource("4_a2hh2")
+id = &"water_by_the_carriers"
+title = "Water by the carriers"
+body = "The water-carriers have carried water to the town for years, and have begun to mention, in passing, how far the spring is, and how heavy a bucket is."
+category = &"nature"
+requires = Array[ExtResource("3_b4n4s")]([SubResource("Resource_pjt3n"), SubResource("Resource_6h72g"), SubResource("Resource_c3238"), SubResource("Resource_eclxv")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_b4n4s")]([SubResource("Resource_1and7")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_ylejl")]([SubResource("Resource_urndv"), SubResource("Resource_m5loo")])

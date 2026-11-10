@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8pbgh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gfefw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_wj3ko"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_157eu"]
+
+[sub_resource type="Resource" id="Resource_xidp8"]
+script = ExtResource("2_gfefw")
+text = "Two neighbours argued over a fence, and went to the readers, and came home talking, and the fence was moved a hand's breadth."
+
+[sub_resource type="Resource" id="Resource_puo05"]
+script = ExtResource("3_wj3ko")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_5qkth"]
+script = ExtResource("3_wj3ko")
+kind = 9
+key = &"written_law"
+
+[resource]
+script = ExtResource("4_157eu")
+id = &"a_dispute_settled"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_wj3ko")]([SubResource("Resource_puo05"), SubResource("Resource_5qkth")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_gfefw")]([SubResource("Resource_xidp8")])

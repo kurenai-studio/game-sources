@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_onccm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mdteq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_4c80u"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_2iq01"]
+
+[sub_resource type="Resource" id="Resource_6xwhy"]
+script = ExtResource("2_mdteq")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_q45yg"]
+script = ExtResource("2_mdteq")
+kind = 1
+key = &"street_gutters"
+
+[sub_resource type="Resource" id="Resource_ytu33"]
+script = ExtResource("2_mdteq")
+text = "A gutter was cut along the lane's edge, and the next rain ran neatly into it, and the children floated sticks down it, and held races."
+
+[sub_resource type="Resource" id="Resource_7bkq7"]
+script = ExtResource("3_4c80u")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_2vv08"]
+script = ExtResource("1_onccm")
+id = &"cut_a_gutter"
+label = "Cut a gutter along the lane's edge"
+requires = Array[ExtResource("3_4c80u")]([SubResource("Resource_7bkq7")])
+effects = Array[ExtResource("2_mdteq")]([SubResource("Resource_6xwhy"), SubResource("Resource_q45yg"), SubResource("Resource_ytu33")])
+
+[sub_resource type="Resource" id="Resource_2eje1"]
+script = ExtResource("2_mdteq")
+kind = 1
+key = &"street_tilted"
+
+[sub_resource type="Resource" id="Resource_eag33"]
+script = ExtResource("2_mdteq")
+text = "The lane was tilted toward the river a little more each week, and the rain learned the way, and the lane was dry by noon."
+
+[sub_resource type="Resource" id="Resource_86je0"]
+script = ExtResource("1_onccm")
+id = &"let_it_run_to_the_water"
+label = "Let it run, and tilt the lane toward the river"
+effects = Array[ExtResource("2_mdteq")]([SubResource("Resource_2eje1"), SubResource("Resource_eag33")])
+
+[sub_resource type="Resource" id="Resource_cgbr0"]
+script = ExtResource("3_4c80u")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_arqeq"]
+script = ExtResource("3_4c80u")
+kind = 11
+amount = 24
+
+[sub_resource type="Resource" id="Resource_v8tx8"]
+script = ExtResource("3_4c80u")
+kind = 9
+key = &"paved_streets"
+
+[resource]
+script = ExtResource("4_2iq01")
+id = &"rain_on_the_paving"
+title = "Rain on the paving"
+body = "The first heavy rain on the new paving made a river of the lane, which was paved, and so ran very fast."
+category = &"nature"
+requires = Array[ExtResource("3_4c80u")]([SubResource("Resource_cgbr0"), SubResource("Resource_arqeq"), SubResource("Resource_v8tx8")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_onccm")]([SubResource("Resource_2vv08"), SubResource("Resource_86je0")])

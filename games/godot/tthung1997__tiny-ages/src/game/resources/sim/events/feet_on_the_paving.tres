@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_rf7xv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1qnvo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_u2kv5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_twpio"]
+
+[sub_resource type="Resource" id="Resource_c57el"]
+script = ExtResource("2_1qnvo")
+text = "The first dry morning on the new paving, the whole town walked up and down it for no reason, listening to its own feet."
+
+[sub_resource type="Resource" id="Resource_m17ge"]
+script = ExtResource("3_u2kv5")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_m6yo6"]
+script = ExtResource("3_u2kv5")
+kind = 9
+key = &"paved_streets"
+
+[resource]
+script = ExtResource("4_twpio")
+id = &"feet_on_the_paving"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_u2kv5")]([SubResource("Resource_m17ge"), SubResource("Resource_m6yo6")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_1qnvo")]([SubResource("Resource_c57el")])

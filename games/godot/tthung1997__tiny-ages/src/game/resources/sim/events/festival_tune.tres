@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6pw5u"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lsrw7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7ofqj"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0t0kk"]
+
+[sub_resource type="Resource" id="Resource_ja3o3"]
+script = ExtResource("2_lsrw7")
+text = "Someone began humming the festival tune, and was joined within a bar."
+
+[sub_resource type="Resource" id="Resource_1r612"]
+script = ExtResource("3_7ofqj")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_mj7ee"]
+script = ExtResource("3_7ofqj")
+key = &"festival"
+
+[resource]
+script = ExtResource("4_0t0kk")
+id = &"festival_tune"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_7ofqj")]([SubResource("Resource_1r612"), SubResource("Resource_mj7ee")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_lsrw7")]([SubResource("Resource_ja3o3")])

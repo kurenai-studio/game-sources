@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vdo7a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_c68f2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_e861m"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_j0mlt"]
+
+[sub_resource type="Resource" id="Resource_85by5"]
+script = ExtResource("2_c68f2")
+kind = 1
+key = &"market_gate"
+
+[sub_resource type="Resource" id="Resource_40vmf"]
+script = ExtResource("2_c68f2")
+kind = 1
+key = &"market_day"
+
+[sub_resource type="Resource" id="Resource_jdayg"]
+script = ExtResource("2_c68f2")
+kind = 10
+key = &"a_town"
+text = "A Town"
+
+[sub_resource type="Resource" id="Resource_k782q"]
+script = ExtResource("2_c68f2")
+text = "Market day was set by the gate, and by noon there were more people in the lane than the lane had been built for."
+
+[sub_resource type="Resource" id="Resource_7vmfm"]
+script = ExtResource("1_vdo7a")
+id = &"market_at_the_gate"
+label = "Set it by the gate"
+effects = Array[ExtResource("2_c68f2")]([SubResource("Resource_85by5"), SubResource("Resource_40vmf"), SubResource("Resource_jdayg"), SubResource("Resource_k782q")])
+
+[sub_resource type="Resource" id="Resource_pnfhi"]
+script = ExtResource("2_c68f2")
+kind = 1
+key = &"market_crossing"
+
+[sub_resource type="Resource" id="Resource_dndb2"]
+script = ExtResource("2_c68f2")
+kind = 1
+key = &"market_day"
+
+[sub_resource type="Resource" id="Resource_8hjeg"]
+script = ExtResource("2_c68f2")
+kind = 10
+key = &"a_town"
+text = "A Town"
+
+[sub_resource type="Resource" id="Resource_5w62f"]
+script = ExtResource("2_c68f2")
+text = "Market day was set at the crossing, and the river got used to a great deal of shouting."
+
+[sub_resource type="Resource" id="Resource_r1cpx"]
+script = ExtResource("1_vdo7a")
+id = &"market_at_the_crossing"
+label = "Set it at the crossing"
+effects = Array[ExtResource("2_c68f2")]([SubResource("Resource_pnfhi"), SubResource("Resource_dndb2"), SubResource("Resource_8hjeg"), SubResource("Resource_5w62f")])
+
+[sub_resource type="Resource" id="Resource_bqlfy"]
+script = ExtResource("3_e861m")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_c2qfh"]
+script = ExtResource("3_e861m")
+kind = 11
+amount = 216
+
+[sub_resource type="Resource" id="Resource_2ywdh"]
+script = ExtResource("3_e861m")
+kind = 9
+key = &"a_town"
+negate = true
+
+[sub_resource type="Resource" id="Resource_nagk7"]
+script = ExtResource("3_e861m")
+kind = 9
+key = &"wheel_and_road"
+
+[sub_resource type="Resource" id="Resource_1n5ks"]
+script = ExtResource("3_e861m")
+kind = 7
+
+[resource]
+script = ExtResource("4_j0mlt")
+id = &"market_day"
+title = "A day for the road to come in"
+body = "Strangers come up the road at all hours, and the village never knows whether to feed them or sell them something. A day, someone says, would settle it."
+category = &"settlement"
+requires = Array[ExtResource("3_e861m")]([SubResource("Resource_bqlfy"), SubResource("Resource_c2qfh"), SubResource("Resource_2ywdh"), SubResource("Resource_nagk7")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_e861m")]([SubResource("Resource_1n5ks")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_vdo7a")]([SubResource("Resource_7vmfm"), SubResource("Resource_r1cpx")])

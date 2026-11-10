@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_dctrs"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vayus"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6dqyk"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3hafb"]
+
+[sub_resource type="Resource" id="Resource_s72sb"]
+script = ExtResource("2_vayus")
+kind = 1
+key = &"copying_room"
+
+[sub_resource type="Resource" id="Resource_kibp8"]
+script = ExtResource("2_vayus")
+text = "A room was set aside where books were copied, and a smell of ink and warm wax settled over it, and nobody was allowed to hurry."
+
+[sub_resource type="Resource" id="Resource_irtoq"]
+script = ExtResource("1_dctrs")
+id = &"a_copying_room"
+label = "Set a room aside where books are copied"
+effects = Array[ExtResource("2_vayus")]([SubResource("Resource_s72sb"), SubResource("Resource_kibp8")])
+
+[sub_resource type="Resource" id="Resource_3igo8"]
+script = ExtResource("2_vayus")
+kind = 1
+key = &"travelling_teachers"
+
+[sub_resource type="Resource" id="Resource_b0u3k"]
+script = ExtResource("2_vayus")
+text = "Teachers were trained to carry their lessons with them, and set off in pairs with satchels, and returned with more lessons than they had left with."
+
+[sub_resource type="Resource" id="Resource_uqfck"]
+script = ExtResource("1_dctrs")
+id = &"travelling_teachers"
+label = "Train teachers who carry their lessons with them"
+effects = Array[ExtResource("2_vayus")]([SubResource("Resource_3igo8"), SubResource("Resource_b0u3k")])
+
+[sub_resource type="Resource" id="Resource_2jorv"]
+script = ExtResource("3_6dqyk")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_6gjlm"]
+script = ExtResource("3_6dqyk")
+kind = 11
+amount = 326
+
+[sub_resource type="Resource" id="Resource_yfmvy"]
+script = ExtResource("3_6dqyk")
+kind = 9
+key = &"lamp_and_stage"
+
+[resource]
+script = ExtResource("4_3hafb")
+id = &"a_book_for_the_journey"
+title = "A book for the journey"
+body = "The books are good and heavy, and the people who travel have begun to ask for one that can go with them."
+category = &"settlement"
+requires = Array[ExtResource("3_6dqyk")]([SubResource("Resource_2jorv"), SubResource("Resource_6gjlm"), SubResource("Resource_yfmvy")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_dctrs")]([SubResource("Resource_irtoq"), SubResource("Resource_uqfck")])

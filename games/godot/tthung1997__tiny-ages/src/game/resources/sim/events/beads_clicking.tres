@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_xufdg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_h76qg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_eme5f"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_87rwq"]
+
+[sub_resource type="Resource" id="Resource_kimpa"]
+script = ExtResource("2_h76qg")
+text = "Green beads clicked softly as people walked, a small sound the whole camp shared."
+
+[sub_resource type="Resource" id="Resource_c028i"]
+script = ExtResource("3_eme5f")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_ult3f"]
+script = ExtResource("3_eme5f")
+key = &"green_beads"
+
+[resource]
+script = ExtResource("4_87rwq")
+id = &"beads_clicking"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_eme5f")]([SubResource("Resource_c028i"), SubResource("Resource_ult3f")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_h76qg")]([SubResource("Resource_kimpa")])

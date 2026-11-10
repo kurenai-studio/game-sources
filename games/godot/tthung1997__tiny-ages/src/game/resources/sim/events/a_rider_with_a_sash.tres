@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_l022a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ey6pg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_87me8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_el4df"]
+
+[sub_resource type="Resource" id="Resource_qkmlk"]
+script = ExtResource("2_ey6pg")
+kind = 1
+key = &"envoy_guided"
+
+[sub_resource type="Resource" id="Resource_4pgib"]
+script = ExtResource("2_ey6pg")
+text = "A guide was sent out to meet the rider, and the two came in together, talking, and the rider's horse was given the best stall in the village."
+
+[sub_resource type="Resource" id="Resource_ho0a1"]
+script = ExtResource("1_l022a")
+id = &"send_a_guide"
+label = "Send a guide to meet them on the road"
+effects = Array[ExtResource("2_ey6pg")]([SubResource("Resource_qkmlk"), SubResource("Resource_4pgib")])
+
+[sub_resource type="Resource" id="Resource_j3hwy"]
+script = ExtResource("2_ey6pg")
+kind = 1
+key = &"envoy_waited"
+
+[sub_resource type="Resource" id="Resource_bm83v"]
+script = ExtResource("2_ey6pg")
+text = "The village waited at the gate, and the rider arrived a day late, and was greeted as if she had been exactly on time."
+
+[sub_resource type="Resource" id="Resource_d8u1n"]
+script = ExtResource("1_l022a")
+id = &"wait_at_the_gate_for_them"
+label = "Wait for them at the gate"
+effects = Array[ExtResource("2_ey6pg")]([SubResource("Resource_j3hwy"), SubResource("Resource_bm83v")])
+
+[sub_resource type="Resource" id="Resource_yj3gl"]
+script = ExtResource("3_87me8")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_6qkxa"]
+script = ExtResource("3_87me8")
+kind = 11
+amount = 330
+
+[sub_resource type="Resource" id="Resource_qk5uf"]
+script = ExtResource("3_87me8")
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_qrtl5"]
+script = ExtResource("3_87me8")
+kind = 8
+amount = 4
+negate = true
+
+[resource]
+script = ExtResource("4_el4df")
+id = &"a_rider_with_a_sash"
+title = "A rider with a sash"
+body = "A rider in a bright sash has come up the road with word from beyond the sea: the town has been talked about, and somebody would like to come and look."
+category = &"settlement"
+requires = Array[ExtResource("3_87me8")]([SubResource("Resource_yj3gl"), SubResource("Resource_6qkxa"), SubResource("Resource_qk5uf"), SubResource("Resource_qrtl5")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_l022a")]([SubResource("Resource_ho0a1"), SubResource("Resource_d8u1n")])

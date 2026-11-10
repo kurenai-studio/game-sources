@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8yujt"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_4weyd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_w034p"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_6m1os"]
+
+[sub_resource type="Resource" id="Resource_12beh"]
+script = ExtResource("2_4weyd")
+text = "The rain drummed on the thatch, and the thatch said nothing, and stayed dry."
+
+[sub_resource type="Resource" id="Resource_lkalm"]
+script = ExtResource("3_w034p")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_5uf0w"]
+script = ExtResource("3_w034p")
+key = &"thatched_roofs"
+
+[resource]
+script = ExtResource("4_6m1os")
+id = &"thatch_dry"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_w034p")]([SubResource("Resource_lkalm"), SubResource("Resource_5uf0w")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_4weyd")]([SubResource("Resource_12beh")])

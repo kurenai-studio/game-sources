@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_sjqrq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_puenp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_by77f"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4fxxh"]
+
+[sub_resource type="Resource" id="Resource_vgpk4"]
+script = ExtResource("2_puenp")
+text = "A spindle turned in the shade, and the thread grew longer than anyone had noticed."
+
+[sub_resource type="Resource" id="Resource_8f4ld"]
+script = ExtResource("3_by77f")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_26pfh"]
+script = ExtResource("3_by77f")
+kind = 9
+key = &"woven_cloth"
+
+[resource]
+script = ExtResource("4_4fxxh")
+id = &"spindle_turns"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_by77f")]([SubResource("Resource_8f4ld"), SubResource("Resource_26pfh")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_puenp")]([SubResource("Resource_vgpk4")])

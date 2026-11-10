@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_id8f6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qgrti"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jogkq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_m8735"]
+
+[sub_resource type="Resource" id="Resource_vp34j"]
+script = ExtResource("2_qgrti")
+text = "A spindle whirred by a doorway, and the thread coming off it was very even."
+
+[sub_resource type="Resource" id="Resource_dp8sx"]
+script = ExtResource("3_jogkq")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_c2xs7"]
+script = ExtResource("3_jogkq")
+key = &"spindle_only"
+
+[resource]
+script = ExtResource("4_m8735")
+id = &"spindle_whirr"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_jogkq")]([SubResource("Resource_dp8sx"), SubResource("Resource_c2xs7")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_qgrti")]([SubResource("Resource_vp34j")])

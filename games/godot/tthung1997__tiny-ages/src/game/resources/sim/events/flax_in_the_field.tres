@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ru42b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lhnuw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_a1j3v"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_lxr3m"]
+
+[sub_resource type="Resource" id="Resource_e7qkl"]
+script = ExtResource("2_lhnuw")
+kind = 1
+key = &"flax_thread"
+
+[sub_resource type="Resource" id="Resource_8mm88"]
+script = ExtResource("2_lhnuw")
+kind = 10
+key = &"woven_cloth"
+text = "Woven Cloth"
+
+[sub_resource type="Resource" id="Resource_upcn7"]
+script = ExtResource("2_lhnuw")
+text = "{subject} twisted the fibres into thread, and the thread into a first rough strip of cloth. It was crooked, and everyone wanted a piece."
+
+[sub_resource type="Resource" id="Resource_7oog8"]
+script = ExtResource("1_ru42b")
+id = &"twist_the_fibres"
+label = "Twist the fibres into thread"
+effects = Array[ExtResource("2_lhnuw")]([SubResource("Resource_e7qkl"), SubResource("Resource_8mm88"), SubResource("Resource_upcn7")])
+
+[sub_resource type="Resource" id="Resource_pqrag"]
+script = ExtResource("2_lhnuw")
+kind = 1
+key = &"flax_beaten"
+
+[sub_resource type="Resource" id="Resource_4a1kl"]
+script = ExtResource("2_lhnuw")
+kind = 10
+key = &"woven_cloth"
+text = "Woven Cloth"
+
+[sub_resource type="Resource" id="Resource_dlf0t"]
+script = ExtResource("2_lhnuw")
+text = "{subject} beat the fibres soft on a flat stone and wove them over and under, and the cloth that came out was coarse, and stood up by itself."
+
+[sub_resource type="Resource" id="Resource_w4meb"]
+script = ExtResource("1_ru42b")
+id = &"leave_it_standing"
+label = "Beat the fibres soft and weave them straight"
+effects = Array[ExtResource("2_lhnuw")]([SubResource("Resource_pqrag"), SubResource("Resource_4a1kl"), SubResource("Resource_dlf0t")])
+
+[sub_resource type="Resource" id="Resource_563jl"]
+script = ExtResource("3_a1j3v")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_jw010"]
+script = ExtResource("3_a1j3v")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_4olb6"]
+script = ExtResource("3_a1j3v")
+kind = 9
+key = &"woven_cloth"
+negate = true
+
+[sub_resource type="Resource" id="Resource_drs0c"]
+script = ExtResource("3_a1j3v")
+key = &"path_agriculture"
+
+[sub_resource type="Resource" id="Resource_0ed2j"]
+script = ExtResource("3_a1j3v")
+kind = 7
+
+[resource]
+script = ExtResource("4_lxr3m")
+id = &"flax_in_the_field"
+title = "Something in the field"
+body = "Among the sown seeds, {subject} noticed a tall plant with pale blue flowers. When the stems rot in the river, they peel into long, strong fibres."
+category = &"nature"
+requires = Array[ExtResource("3_a1j3v")]([SubResource("Resource_563jl"), SubResource("Resource_jw010"), SubResource("Resource_4olb6"), SubResource("Resource_drs0c")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_a1j3v")]([SubResource("Resource_0ed2j")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_ru42b")]([SubResource("Resource_7oog8"), SubResource("Resource_w4meb")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_awy2j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_fxow6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jccjd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_qug2i"]
+
+[sub_resource type="Resource" id="Resource_wqurg"]
+script = ExtResource("2_fxow6")
+text = "Breath hung in the air this morning, and the ground rang underfoot."
+
+[sub_resource type="Resource" id="Resource_hqxgq"]
+script = ExtResource("3_jccjd")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_besb4"]
+script = ExtResource("3_jccjd")
+kind = 13
+amount = 3
+
+[resource]
+script = ExtResource("4_qug2i")
+id = &"winter_breath"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_jccjd")]([SubResource("Resource_hqxgq"), SubResource("Resource_besb4")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_fxow6")]([SubResource("Resource_wqurg")])

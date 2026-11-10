@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_wql7f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_uo3us"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_libt4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_c5rfc"]
+
+[sub_resource type="Resource" id="Resource_xx40v"]
+script = ExtResource("2_uo3us")
+text = "The lane glittered like wet glass after the rain."
+
+[sub_resource type="Resource" id="Resource_qp7to"]
+script = ExtResource("3_libt4")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_glrl3"]
+script = ExtResource("3_libt4")
+key = &"slag_lane"
+
+[resource]
+script = ExtResource("4_c5rfc")
+id = &"glass_in_the_lane"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_libt4")]([SubResource("Resource_qp7to"), SubResource("Resource_glrl3")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_uo3us")]([SubResource("Resource_xx40v")])

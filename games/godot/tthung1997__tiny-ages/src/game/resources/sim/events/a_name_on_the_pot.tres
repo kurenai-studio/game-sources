@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_i8pdi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ay1pe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hiejr"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_at0mq"]
+
+[sub_resource type="Resource" id="Resource_gi0e7"]
+script = ExtResource("2_ay1pe")
+kind = 1
+key = &"pressed_marks"
+
+[sub_resource type="Resource" id="Resource_vvvs5"]
+script = ExtResource("2_ay1pe")
+text = "Every pot got its mark pressed into the clay before it was fired, and some of the marks looked remarkably like faces."
+
+[sub_resource type="Resource" id="Resource_xh8fu"]
+script = ExtResource("1_i8pdi")
+id = &"press_the_mark"
+label = "Press a mark into the clay"
+effects = Array[ExtResource("2_ay1pe")]([SubResource("Resource_gi0e7"), SubResource("Resource_vvvs5")])
+
+[sub_resource type="Resource" id="Resource_aatl3"]
+script = ExtResource("2_ay1pe")
+kind = 1
+key = &"knotted_marks"
+
+[sub_resource type="Resource" id="Resource_njw2o"]
+script = ExtResource("2_ay1pe")
+text = "Every pot got a cord, and the cords got knots, and the knots got names."
+
+[sub_resource type="Resource" id="Resource_7bxvi"]
+script = ExtResource("1_i8pdi")
+id = &"tie_a_cord"
+label = "Tie a cord round the neck"
+effects = Array[ExtResource("2_ay1pe")]([SubResource("Resource_aatl3"), SubResource("Resource_njw2o")])
+
+[sub_resource type="Resource" id="Resource_nhp7m"]
+script = ExtResource("3_hiejr")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_ta1at"]
+script = ExtResource("3_hiejr")
+kind = 11
+amount = 228
+
+[sub_resource type="Resource" id="Resource_8k6py"]
+script = ExtResource("3_hiejr")
+key = &"pot_marks"
+
+[resource]
+script = ExtResource("4_at0mq")
+id = &"a_name_on_the_pot"
+title = "A name on the pot"
+body = "A pot has been carried off by the wrong family twice this month, with real conviction both times."
+category = &"settlement"
+requires = Array[ExtResource("3_hiejr")]([SubResource("Resource_nhp7m"), SubResource("Resource_ta1at"), SubResource("Resource_8k6py")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_i8pdi")]([SubResource("Resource_xh8fu"), SubResource("Resource_7bxvi")])

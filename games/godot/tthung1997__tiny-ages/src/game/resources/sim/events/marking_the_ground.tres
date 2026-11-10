@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_cc2ob"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1cubr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_uilnf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_14wlv"]
+
+[sub_resource type="Resource" id="Resource_psg4g"]
+script = ExtResource("2_1cubr")
+kind = 0
+key = &"wood"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_sq0ye"]
+script = ExtResource("2_1cubr")
+kind = 1
+key = &"boundary_stones"
+
+[sub_resource type="Resource" id="Resource_b88l4"]
+script = ExtResource("2_1cubr")
+text = "A stone went into every corner, and for a week people walked the lines to look at them."
+
+[sub_resource type="Resource" id="Resource_ogafr"]
+script = ExtResource("3_uilnf")
+kind = 2
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_idwq7"]
+script = ExtResource("1_cc2ob")
+id = &"set_boundary_stones"
+label = "Set a stone at every corner"
+requires = Array[ExtResource("3_uilnf")]([SubResource("Resource_ogafr")])
+effects = Array[ExtResource("2_1cubr")]([SubResource("Resource_psg4g"), SubResource("Resource_sq0ye"), SubResource("Resource_b88l4")])
+
+[sub_resource type="Resource" id="Resource_jvgcf"]
+script = ExtResource("2_1cubr")
+kind = 1
+key = &"open_ground"
+
+[sub_resource type="Resource" id="Resource_wj71q"]
+script = ExtResource("2_1cubr")
+text = "The ground stayed open, and every dispute was settled over a meal."
+
+[sub_resource type="Resource" id="Resource_fq8m7"]
+script = ExtResource("1_cc2ob")
+id = &"leave_it_open"
+label = "Leave the ground open and sort it out as it comes"
+effects = Array[ExtResource("2_1cubr")]([SubResource("Resource_jvgcf"), SubResource("Resource_wj71q")])
+
+[sub_resource type="Resource" id="Resource_phiab"]
+script = ExtResource("3_uilnf")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_hkch2"]
+script = ExtResource("3_uilnf")
+kind = 11
+amount = 8
+
+[resource]
+script = ExtResource("4_14wlv")
+id = &"marking_the_ground"
+title = "Whose ground"
+body = "Everyone has begun to say \"my plot\" and \"your plot\", and nobody can say where one ends."
+category = &"settlement"
+requires = Array[ExtResource("3_uilnf")]([SubResource("Resource_phiab"), SubResource("Resource_hkch2")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_cc2ob")]([SubResource("Resource_idwq7"), SubResource("Resource_fq8m7")])

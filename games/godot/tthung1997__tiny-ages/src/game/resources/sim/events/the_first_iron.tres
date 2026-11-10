@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ytfu4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_phy02"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_uj1wy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_nqcf0"]
+
+[sub_resource type="Resource" id="Resource_eqe8e"]
+script = ExtResource("2_phy02")
+kind = 1
+key = &"iron_knives"
+
+[sub_resource type="Resource" id="Resource_k1hbt"]
+script = ExtResource("2_phy02")
+text = "Every household got a knife, and for a week the whole village cut things that did not need cutting."
+
+[sub_resource type="Resource" id="Resource_cdytr"]
+script = ExtResource("1_ytfu4")
+id = &"a_knife_for_everyone"
+label = "A knife for everyone"
+effects = Array[ExtResource("2_phy02")]([SubResource("Resource_eqe8e"), SubResource("Resource_k1hbt")])
+
+[sub_resource type="Resource" id="Resource_dv1rp"]
+script = ExtResource("2_phy02")
+kind = 0
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_3bnnc"]
+script = ExtResource("2_phy02")
+kind = 1
+key = &"iron_axehead"
+
+[sub_resource type="Resource" id="Resource_yb7gv"]
+script = ExtResource("2_phy02")
+text = "One good axe head was made, and was passed from hand to hand, and the pines retreated with a kind of dignity."
+
+[sub_resource type="Resource" id="Resource_fex1u"]
+script = ExtResource("1_ytfu4")
+id = &"one_good_axe_head"
+label = "One good axe head, for the forest"
+effects = Array[ExtResource("2_phy02")]([SubResource("Resource_dv1rp"), SubResource("Resource_3bnnc"), SubResource("Resource_yb7gv")])
+
+[sub_resource type="Resource" id="Resource_u1eim"]
+script = ExtResource("3_uj1wy")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_pe3yl"]
+script = ExtResource("3_uj1wy")
+kind = 11
+amount = 32
+
+[sub_resource type="Resource" id="Resource_cjtdy"]
+script = ExtResource("3_uj1wy")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_nqcf0")
+id = &"the_first_iron"
+title = "The first iron"
+body = "There is enough iron for a first thing, and the first thing is a matter of some debate."
+category = &"settlement"
+requires = Array[ExtResource("3_uj1wy")]([SubResource("Resource_u1eim"), SubResource("Resource_pe3yl"), SubResource("Resource_cjtdy")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ytfu4")]([SubResource("Resource_cdytr"), SubResource("Resource_fex1u")])

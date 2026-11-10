@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_g8d33"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_hvng6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7pxkr"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_oldma"]
+
+[sub_resource type="Resource" id="Resource_d0ikk"]
+script = ExtResource("2_hvng6")
+kind = 1
+key = &"council_of_elders"
+
+[sub_resource type="Resource" id="Resource_p2g8j"]
+script = ExtResource("2_hvng6")
+kind = 1
+key = &"council"
+
+[sub_resource type="Resource" id="Resource_772wl"]
+script = ExtResource("2_hvng6")
+kind = 10
+key = &"a_town"
+text = "A Town"
+
+[sub_resource type="Resource" id="Resource_ycapi"]
+script = ExtResource("2_hvng6")
+text = "The elders met at the gate and decided, at length, and the decision was announced with some ceremony and one cough."
+
+[sub_resource type="Resource" id="Resource_kecyk"]
+script = ExtResource("1_g8d33")
+id = &"council_of_elders"
+label = "Let the elders decide"
+effects = Array[ExtResource("2_hvng6")]([SubResource("Resource_d0ikk"), SubResource("Resource_p2g8j"), SubResource("Resource_772wl"), SubResource("Resource_ycapi")])
+
+[sub_resource type="Resource" id="Resource_2qval"]
+script = ExtResource("2_hvng6")
+kind = 1
+key = &"council_of_households"
+
+[sub_resource type="Resource" id="Resource_k7o0n"]
+script = ExtResource("2_hvng6")
+kind = 1
+key = &"council"
+
+[sub_resource type="Resource" id="Resource_we4vp"]
+script = ExtResource("2_hvng6")
+kind = 10
+key = &"a_town"
+text = "A Town"
+
+[sub_resource type="Resource" id="Resource_ahddw"]
+script = ExtResource("2_hvng6")
+text = "Every household sent someone, and the council lasted until dark. Nobody was happy, which was agreed to be fair."
+
+[sub_resource type="Resource" id="Resource_8ta0x"]
+script = ExtResource("1_g8d33")
+id = &"council_of_households"
+label = "A voice from every household"
+effects = Array[ExtResource("2_hvng6")]([SubResource("Resource_2qval"), SubResource("Resource_k7o0n"), SubResource("Resource_we4vp"), SubResource("Resource_ahddw")])
+
+[sub_resource type="Resource" id="Resource_vci4p"]
+script = ExtResource("3_7pxkr")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_lhteg"]
+script = ExtResource("3_7pxkr")
+kind = 11
+amount = 216
+
+[sub_resource type="Resource" id="Resource_15qly"]
+script = ExtResource("3_7pxkr")
+kind = 9
+key = &"a_town"
+negate = true
+
+[sub_resource type="Resource" id="Resource_f315h"]
+script = ExtResource("3_7pxkr")
+kind = 9
+key = &"mud_brick_walls"
+
+[sub_resource type="Resource" id="Resource_pa2yp"]
+script = ExtResource("3_7pxkr")
+kind = 7
+
+[resource]
+script = ExtResource("4_oldma")
+id = &"council_at_the_gate"
+title = "Who decides"
+body = "There are twice as many households as there were, and three different opinions about where the new gate should open. Somebody says someone should decide."
+category = &"settlement"
+requires = Array[ExtResource("3_7pxkr")]([SubResource("Resource_vci4p"), SubResource("Resource_lhteg"), SubResource("Resource_15qly"), SubResource("Resource_f315h")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_7pxkr")]([SubResource("Resource_pa2yp")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_g8d33")]([SubResource("Resource_kecyk"), SubResource("Resource_8ta0x")])

@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_v76rl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_aaeey"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rpqud"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_amh52"]
+
+[sub_resource type="Resource" id="Resource_bst8c"]
+script = ExtResource("2_aaeey")
+kind = 1
+key = &"iron_shears_made"
+
+[sub_resource type="Resource" id="Resource_7h2jc"]
+script = ExtResource("2_aaeey")
+kind = 1
+key = &"iron_shears"
+
+[sub_resource type="Resource" id="Resource_bjwln"]
+script = ExtResource("2_aaeey")
+kind = 10
+key = &"fuller_harvest"
+text = "A Fuller Harvest"
+
+[sub_resource type="Resource" id="Resource_v50so"]
+script = ExtResource("2_aaeey")
+text = "Iron shears were made, and the flock was clipped in a morning, and the sheep went about for days looking surprised and cold."
+
+[sub_resource type="Resource" id="Resource_vwf3r"]
+script = ExtResource("1_v76rl")
+id = &"iron_shears"
+label = "Make iron shears"
+effects = Array[ExtResource("2_aaeey")]([SubResource("Resource_bst8c"), SubResource("Resource_7h2jc"), SubResource("Resource_bjwln"), SubResource("Resource_v50so")])
+
+[sub_resource type="Resource" id="Resource_fmegd"]
+script = ExtResource("2_aaeey")
+kind = 1
+key = &"iron_knife_clip"
+
+[sub_resource type="Resource" id="Resource_8v7xg"]
+script = ExtResource("2_aaeey")
+kind = 1
+key = &"iron_shears"
+
+[sub_resource type="Resource" id="Resource_sh0v5"]
+script = ExtResource("2_aaeey")
+kind = 10
+key = &"fuller_harvest"
+text = "A Fuller Harvest"
+
+[sub_resource type="Resource" id="Resource_2jk2o"]
+script = ExtResource("2_aaeey")
+text = "The knife was kept sharp and the flock was done sheep by sheep, and the wool came away cleaner than it ever had."
+
+[sub_resource type="Resource" id="Resource_0wec8"]
+script = ExtResource("1_v76rl")
+id = &"iron_knife_and_patience"
+label = "Keep to a knife, and take it slowly"
+effects = Array[ExtResource("2_aaeey")]([SubResource("Resource_fmegd"), SubResource("Resource_8v7xg"), SubResource("Resource_sh0v5"), SubResource("Resource_2jk2o")])
+
+[sub_resource type="Resource" id="Resource_wqlb2"]
+script = ExtResource("3_rpqud")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_gp5h6"]
+script = ExtResource("3_rpqud")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_e1h3b"]
+script = ExtResource("3_rpqud")
+kind = 9
+key = &"fuller_harvest"
+negate = true
+
+[sub_resource type="Resource" id="Resource_0st34"]
+script = ExtResource("3_rpqud")
+kind = 9
+key = &"first_bloom"
+
+[sub_resource type="Resource" id="Resource_btwsc"]
+script = ExtResource("3_rpqud")
+key = &"path_herding"
+
+[sub_resource type="Resource" id="Resource_6vq3v"]
+script = ExtResource("3_rpqud")
+kind = 7
+
+[resource]
+script = ExtResource("4_amh52")
+id = &"sharper_shears"
+title = "A sharper edge for the flock"
+body = "The flock is bigger than the shears can bear. {subject} has been looking at the iron knife and then at the sheep, and the sheep have noticed."
+category = &"nature"
+requires = Array[ExtResource("3_rpqud")]([SubResource("Resource_wqlb2"), SubResource("Resource_gp5h6"), SubResource("Resource_e1h3b"), SubResource("Resource_0st34"), SubResource("Resource_btwsc")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_rpqud")]([SubResource("Resource_6vq3v")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_v76rl")]([SubResource("Resource_vwf3r"), SubResource("Resource_0wec8")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_iu65n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dqgcg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ibyjy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_flcfv"]
+
+[sub_resource type="Resource" id="Resource_uqcot"]
+script = ExtResource("2_dqgcg")
+text = "Someone looked toward the ridge for the smoke again, and then for visitors."
+
+[sub_resource type="Resource" id="Resource_1xa01"]
+script = ExtResource("3_ibyjy")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_rcdke"]
+script = ExtResource("3_ibyjy")
+key = &"waited_for_visitors"
+
+[resource]
+script = ExtResource("4_flcfv")
+id = &"smoke_watchers"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ibyjy")]([SubResource("Resource_1xa01"), SubResource("Resource_rcdke")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_dqgcg")]([SubResource("Resource_uqcot")])

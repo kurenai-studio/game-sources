@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_n0if7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_6t0e3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_2c11j"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_icjkg"]
+
+[sub_resource type="Resource" id="Resource_4ydwb"]
+script = ExtResource("2_6t0e3")
+text = "A swallow flew in and out of the rafters, past the hanging baskets, as if it owned them."
+
+[sub_resource type="Resource" id="Resource_wogy4"]
+script = ExtResource("3_2c11j")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_8dov7"]
+script = ExtResource("3_2c11j")
+key = &"hanging_baskets"
+
+[resource]
+script = ExtResource("4_icjkg")
+id = &"swallows_in_the_rafters"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_2c11j")]([SubResource("Resource_wogy4"), SubResource("Resource_8dov7")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_6t0e3")]([SubResource("Resource_4ydwb")])

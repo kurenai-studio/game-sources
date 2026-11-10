@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hms8f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1lcyh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_elgly"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7qt5f"]
+
+[sub_resource type="Resource" id="Resource_4pts6"]
+script = ExtResource("2_1lcyh")
+text = "Wool thread twisted down a spindle, and a ball of it grew in somebody's lap."
+
+[sub_resource type="Resource" id="Resource_jvxsd"]
+script = ExtResource("3_elgly")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_lgbwp"]
+script = ExtResource("3_elgly")
+key = &"wool_spun"
+
+[resource]
+script = ExtResource("4_7qt5f")
+id = &"wool_spun_fine"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_elgly")]([SubResource("Resource_jvxsd"), SubResource("Resource_lgbwp")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_1lcyh")]([SubResource("Resource_4pts6")])

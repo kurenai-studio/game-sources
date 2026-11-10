@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ytq8w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_564df"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_es5i8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_pb6rr"]
+
+[sub_resource type="Resource" id="Resource_rak6o"]
+script = ExtResource("2_564df")
+text = "A lamp burned late in a window of the learning room, and a second joined it, and a third, and the street was lit in the oddest way."
+
+[sub_resource type="Resource" id="Resource_7l576"]
+script = ExtResource("3_es5i8")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_vepft"]
+script = ExtResource("3_es5i8")
+kind = 9
+key = &"lamp_and_stage"
+
+[resource]
+script = ExtResource("4_pb6rr")
+id = &"a_lamp_in_the_window"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_es5i8")]([SubResource("Resource_7l576"), SubResource("Resource_vepft")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_564df")]([SubResource("Resource_rak6o")])

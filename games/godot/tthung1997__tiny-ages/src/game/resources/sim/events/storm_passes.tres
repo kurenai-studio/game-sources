@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_3fnbb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_kg1xk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lr7aw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_416xw"]
+
+[sub_resource type="Resource" id="Resource_xbmmx"]
+script = ExtResource("2_kg1xk")
+kind = 15
+key = &"storm"
+
+[sub_resource type="Resource" id="Resource_ltdqe"]
+script = ExtResource("2_kg1xk")
+text = "A storm rolled over the valley and went away again. Nobody went far until it had."
+
+[sub_resource type="Resource" id="Resource_ftsdd"]
+script = ExtResource("3_lr7aw")
+kind = 13
+amount = 1
+
+[sub_resource type="Resource" id="Resource_m2ig7"]
+script = ExtResource("3_lr7aw")
+kind = 14
+
+[sub_resource type="Resource" id="Resource_ict3y"]
+script = ExtResource("3_lr7aw")
+kind = 15
+key = &"exposed"
+negate = true
+
+[resource]
+script = ExtResource("4_416xw")
+id = &"storm_passes"
+title = "A storm passes"
+category = &"nature"
+requires = Array[ExtResource("3_lr7aw")]([SubResource("Resource_ftsdd"), SubResource("Resource_m2ig7"), SubResource("Resource_ict3y")])
+chance_per_tick = 0.0025
+cooldown_ticks = 960
+effects = Array[ExtResource("2_kg1xk")]([SubResource("Resource_xbmmx"), SubResource("Resource_ltdqe")])

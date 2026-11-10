@@ -1,0 +1,39 @@
+# Godot 4+ (project lives in game/) ------------------------------------------
+# Import cache, editor state, generated shader cache. Fully reproducible.
+game/.godot/
+game/.import/
+game/export.cfg
+
+# The Godot AI plugin (game/addons/godot_ai/) is committed, along with the
+# [autoload] and [editor_plugins] entries it writes into game/project.godot, so
+# every clone and worktree opens with it enabled. Its updater keeps local state
+# and backups here.
+game/addons/.godot_ai_update/
+
+# Export presets are committed (game/export_presets.cfg): they hold no keys or machine paths.
+# Keep signing keys and store credentials out of them, and out of git.
+
+# Build output
+game/build/
+game/export/
+
+# Art tooling output (regenerate with tools/art/bundle.py)
+tools/art/dist/
+__pycache__/
+
+# Editors / OS ---------------------------------------------------------------
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs / local scratch -------------------------------------------------------
+*.log
+/local/
+
+# Blank canvas the villager art script opens (the real output goes to game/assets)
+art/reference/cave_villagers.png

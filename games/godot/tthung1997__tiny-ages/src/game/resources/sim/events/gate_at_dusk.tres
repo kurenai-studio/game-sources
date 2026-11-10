@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_am4kh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_o0g5g"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mvkf0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5tl2h"]
+
+[sub_resource type="Resource" id="Resource_vx1fy"]
+script = ExtResource("2_o0g5g")
+text = "The gate was shut at dusk with a sound that had not existed before, and everyone slept a little differently."
+
+[sub_resource type="Resource" id="Resource_oj3vx"]
+script = ExtResource("3_mvkf0")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_iv68w"]
+script = ExtResource("3_mvkf0")
+key = &"town_wall"
+
+[resource]
+script = ExtResource("4_5tl2h")
+id = &"gate_at_dusk"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_mvkf0")]([SubResource("Resource_oj3vx"), SubResource("Resource_iv68w")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_o0g5g")]([SubResource("Resource_vx1fy")])

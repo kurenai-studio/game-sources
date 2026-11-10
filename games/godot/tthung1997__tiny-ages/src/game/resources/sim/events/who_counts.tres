@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_sskug"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_575qk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_e4m6h"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_nkvy8"]
+
+[sub_resource type="Resource" id="Resource_bh3mh"]
+script = ExtResource("2_575qk")
+kind = 1
+key = &"keeper_of_the_count"
+
+[sub_resource type="Resource" id="Resource_ma10m"]
+script = ExtResource("2_575qk")
+text = "{subject} kept the count, in a small room with a small door, and came out with ink on one finger, and a new look."
+
+[sub_resource type="Resource" id="Resource_5ox60"]
+script = ExtResource("1_sskug")
+id = &"a_keeper_of_the_count"
+label = "Let them keep the count"
+effects = Array[ExtResource("2_575qk")]([SubResource("Resource_bh3mh"), SubResource("Resource_ma10m")])
+
+[sub_resource type="Resource" id="Resource_dg288"]
+script = ExtResource("2_575qk")
+kind = 1
+key = &"count_aloud"
+
+[sub_resource type="Resource" id="Resource_qq5n6"]
+script = ExtResource("2_575qk")
+text = "The count was done aloud in the lane, all together, every month, and became the closest thing the village had to a song."
+
+[sub_resource type="Resource" id="Resource_jcs8j"]
+script = ExtResource("1_sskug")
+id = &"count_aloud_together"
+label = "Count aloud, all together"
+effects = Array[ExtResource("2_575qk")]([SubResource("Resource_dg288"), SubResource("Resource_qq5n6")])
+
+[sub_resource type="Resource" id="Resource_pqdad"]
+script = ExtResource("3_e4m6h")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_jacuu"]
+script = ExtResource("3_e4m6h")
+kind = 11
+amount = 174
+
+[sub_resource type="Resource" id="Resource_1rx4w"]
+script = ExtResource("3_e4m6h")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_0qjw1"]
+script = ExtResource("3_e4m6h")
+kind = 7
+
+[resource]
+script = ExtResource("4_nkvy8")
+id = &"who_counts"
+title = "Who counts"
+body = "The silver has to be counted, and {subject} has been counting it already, out of habit, in a murmur."
+requires = Array[ExtResource("3_e4m6h")]([SubResource("Resource_pqdad"), SubResource("Resource_jacuu"), SubResource("Resource_1rx4w")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_e4m6h")]([SubResource("Resource_0qjw1")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_sskug")]([SubResource("Resource_5ox60"), SubResource("Resource_jcs8j")])

@@ -1,0 +1,87 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_l1ole"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_yql54"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mh25p"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4fy2e"]
+
+[sub_resource type="Resource" id="Resource_gcp20"]
+script = ExtResource("2_yql54")
+kind = 1
+key = &"cast_hot"
+
+[sub_resource type="Resource" id="Resource_cw6hy"]
+script = ExtResource("2_yql54")
+kind = 10
+key = &"first_casting"
+text = "The First Casting"
+
+[sub_resource type="Resource" id="Resource_hsqgb"]
+script = ExtResource("2_yql54")
+text = "{subject} poured the bright liquid into the mould while the whole village held its breath. It came out a blade, a little lopsided and entirely beautiful."
+
+[sub_resource type="Resource" id="Resource_5dfnl"]
+script = ExtResource("1_l1ole")
+id = &"pour_while_hot"
+label = "Pour while the kiln is still hot"
+effects = Array[ExtResource("2_yql54")]([SubResource("Resource_gcp20"), SubResource("Resource_cw6hy"), SubResource("Resource_hsqgb")])
+
+[sub_resource type="Resource" id="Resource_58ipi"]
+script = ExtResource("2_yql54")
+kind = 1
+key = &"cast_cool"
+
+[sub_resource type="Resource" id="Resource_eybl3"]
+script = ExtResource("2_yql54")
+kind = 10
+key = &"first_casting"
+text = "The First Casting"
+
+[sub_resource type="Resource" id="Resource_4fm8k"]
+script = ExtResource("2_yql54")
+text = "The mould sat overnight. In the morning {subject} broke it open and there it was, a blade, with the print of the clay still on it."
+
+[sub_resource type="Resource" id="Resource_ia31f"]
+script = ExtResource("1_l1ole")
+id = &"let_it_cool"
+label = "Let it cool, then break the mould open"
+effects = Array[ExtResource("2_yql54")]([SubResource("Resource_58ipi"), SubResource("Resource_eybl3"), SubResource("Resource_4fm8k")])
+
+[sub_resource type="Resource" id="Resource_qhvuw"]
+script = ExtResource("3_mh25p")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_lx0tc"]
+script = ExtResource("3_mh25p")
+kind = 11
+amount = 48
+
+[sub_resource type="Resource" id="Resource_hipxd"]
+script = ExtResource("3_mh25p")
+kind = 9
+key = &"first_casting"
+negate = true
+
+[sub_resource type="Resource" id="Resource_n44dw"]
+script = ExtResource("3_mh25p")
+key = &"path_trading"
+
+[sub_resource type="Resource" id="Resource_kbmmi"]
+script = ExtResource("3_mh25p")
+kind = 7
+
+[resource]
+script = ExtResource("4_4fy2e")
+id = &"first_pour_slow"
+title = "A mould in the kiln"
+body = "{subject} has pressed a hollow into a block of clay and baked it hard. It is shaped, roughly, like an axe. All it needs is the green stone, made liquid."
+requires = Array[ExtResource("3_mh25p")]([SubResource("Resource_qhvuw"), SubResource("Resource_lx0tc"), SubResource("Resource_hipxd"), SubResource("Resource_n44dw")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_mh25p")]([SubResource("Resource_kbmmi")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_l1ole")]([SubResource("Resource_5dfnl"), SubResource("Resource_ia31f")])

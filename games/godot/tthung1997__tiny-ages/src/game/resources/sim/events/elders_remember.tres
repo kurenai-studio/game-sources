@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_oxlir"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_s7hgc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_baruf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_kq503"]
+
+[sub_resource type="Resource" id="Resource_0mvxi"]
+script = ExtResource("2_s7hgc")
+text = "One of the elders turned a green bead in her fingers, and said she knew a stream."
+
+[sub_resource type="Resource" id="Resource_hhj2w"]
+script = ExtResource("3_baruf")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_ij6g5"]
+script = ExtResource("3_baruf")
+key = &"bead_shown"
+
+[resource]
+script = ExtResource("4_kq503")
+id = &"elders_remember"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_baruf")]([SubResource("Resource_hhj2w"), SubResource("Resource_ij6g5")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_s7hgc")]([SubResource("Resource_0mvxi")])

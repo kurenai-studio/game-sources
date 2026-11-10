@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_fljwx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_cqkpx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1r078"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p0nhd"]
+
+[sub_resource type="Resource" id="Resource_w0h8v"]
+script = ExtResource("2_cqkpx")
+text = "The water came down the channel at dawn, so clear that the town's reflection ran along it upside-down."
+
+[sub_resource type="Resource" id="Resource_qddsx"]
+script = ExtResource("3_1r078")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_eaxbr"]
+script = ExtResource("3_1r078")
+kind = 9
+key = &"water_from_afar"
+
+[resource]
+script = ExtResource("4_p0nhd")
+id = &"water_in_the_morning"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_1r078")]([SubResource("Resource_qddsx"), SubResource("Resource_eaxbr")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_cqkpx")]([SubResource("Resource_w0h8v")])

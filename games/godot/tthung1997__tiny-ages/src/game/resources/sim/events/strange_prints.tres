@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bt5n3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_sgqjx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_r7yg1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_scf0c"]
+
+[sub_resource type="Resource" id="Resource_1j8of"]
+script = ExtResource("2_sgqjx")
+kind = 6
+key = &"western_forest"
+amount = 18
+
+[sub_resource type="Resource" id="Resource_4lvpd"]
+script = ExtResource("2_sgqjx")
+kind = 7
+key = &"prints_end"
+amount = 18
+
+[sub_resource type="Resource" id="Resource_ojbe8"]
+script = ExtResource("2_sgqjx")
+text = "{subject} set off into the western forest after the prints."
+
+[sub_resource type="Resource" id="Resource_82ulj"]
+script = ExtResource("1_bt5n3")
+id = &"follow_the_prints"
+label = "Let them follow the prints"
+effects = Array[ExtResource("2_sgqjx")]([SubResource("Resource_1j8of"), SubResource("Resource_4lvpd"), SubResource("Resource_ojbe8")])
+
+[sub_resource type="Resource" id="Resource_g5upw"]
+script = ExtResource("2_sgqjx")
+kind = 1
+key = &"prints_read"
+
+[sub_resource type="Resource" id="Resource_vn3pf"]
+script = ExtResource("2_sgqjx")
+text = "The group pressed ash over the prints at dawn and read them together: a bear, and an old one."
+
+[sub_resource type="Resource" id="Resource_3tyfm"]
+script = ExtResource("1_bt5n3")
+id = &"read_the_prints"
+label = "Wait for daylight and read the prints together"
+effects = Array[ExtResource("2_sgqjx")]([SubResource("Resource_g5upw"), SubResource("Resource_vn3pf")])
+
+[sub_resource type="Resource" id="Resource_qyqtj"]
+script = ExtResource("3_r7yg1")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_trtps"]
+script = ExtResource("3_r7yg1")
+kind = 5
+amount = 42
+
+[sub_resource type="Resource" id="Resource_733q3"]
+script = ExtResource("3_r7yg1")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_vfs2j"]
+script = ExtResource("3_r7yg1")
+kind = 6
+key = &"curious"
+
+[resource]
+script = ExtResource("4_scf0c")
+id = &"strange_prints"
+title = "Strange prints"
+body = "{subject} found a line of strange prints at the edge of the western forest, and wants to follow them."
+category = &"exploration"
+requires = Array[ExtResource("3_r7yg1")]([SubResource("Resource_qyqtj"), SubResource("Resource_trtps")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_r7yg1")]([SubResource("Resource_733q3"), SubResource("Resource_vfs2j")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_bt5n3")]([SubResource("Resource_82ulj"), SubResource("Resource_3tyfm")])

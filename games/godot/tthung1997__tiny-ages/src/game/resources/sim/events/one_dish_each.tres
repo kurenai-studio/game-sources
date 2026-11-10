@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qjsqr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_kcsxh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jn2jd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_hcu0k"]
+
+[sub_resource type="Resource" id="Resource_t0al8"]
+script = ExtResource("2_kcsxh")
+text = "A dozen different dishes came to the old fire, and every one was tasted by every one."
+
+[sub_resource type="Resource" id="Resource_rcbbu"]
+script = ExtResource("3_jn2jd")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_aj6wa"]
+script = ExtResource("3_jn2jd")
+key = &"dish_supper"
+
+[resource]
+script = ExtResource("4_hcu0k")
+id = &"one_dish_each"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_jn2jd")]([SubResource("Resource_rcbbu"), SubResource("Resource_aj6wa")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_kcsxh")]([SubResource("Resource_t0al8")])

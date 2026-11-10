@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y41ji"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8h82c"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jc1sj"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_jr8ii"]
+
+[sub_resource type="Resource" id="Resource_00p5y"]
+script = ExtResource("2_8h82c")
+text = "The stone weir on the flats held a silver heap of fish, and the gulls complained."
+
+[sub_resource type="Resource" id="Resource_6qcfc"]
+script = ExtResource("3_jc1sj")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_n16ch"]
+script = ExtResource("3_jc1sj")
+key = &"tide_weir"
+
+[resource]
+script = ExtResource("4_jr8ii")
+id = &"weir_full"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_jc1sj")]([SubResource("Resource_6qcfc"), SubResource("Resource_n16ch")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_8h82c")]([SubResource("Resource_00p5y")])

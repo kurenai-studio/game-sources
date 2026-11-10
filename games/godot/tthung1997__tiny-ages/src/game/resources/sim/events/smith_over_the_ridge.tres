@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s4t4m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_v6wli"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_87jk2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4u2um"]
+
+[sub_resource type="Resource" id="Resource_01row"]
+script = ExtResource("2_v6wli")
+kind = 1
+key = &"visiting_smith"
+
+[sub_resource type="Resource" id="Resource_qls1w"]
+script = ExtResource("2_v6wli")
+kind = 10
+key = &"first_casting"
+text = "The First Casting"
+
+[sub_resource type="Resource" id="Resource_0r2g1"]
+script = ExtResource("2_v6wli")
+text = "The stranger worked at the kiln for two days and talked the whole time. By the second night there was a blade, and everyone had held it."
+
+[sub_resource type="Resource" id="Resource_lsv1t"]
+script = ExtResource("1_s4t4m")
+id = &"let_them_work"
+label = "Let them work at the kiln"
+effects = Array[ExtResource("2_v6wli")]([SubResource("Resource_01row"), SubResource("Resource_qls1w"), SubResource("Resource_0r2g1")])
+
+[sub_resource type="Resource" id="Resource_ijw3v"]
+script = ExtResource("2_v6wli")
+kind = 1
+key = &"copied_the_smith"
+
+[sub_resource type="Resource" id="Resource_omaul"]
+script = ExtResource("2_v6wli")
+kind = 10
+key = &"first_casting"
+text = "The First Casting"
+
+[sub_resource type="Resource" id="Resource_rpytc"]
+script = ExtResource("2_v6wli")
+text = "The group watched from a polite distance, and by the end of the week was casting things a little worse than the stranger and a good deal prouder."
+
+[sub_resource type="Resource" id="Resource_vi2yd"]
+script = ExtResource("1_s4t4m")
+id = &"copy_the_smith"
+label = "Watch from a distance, and copy what they do"
+effects = Array[ExtResource("2_v6wli")]([SubResource("Resource_ijw3v"), SubResource("Resource_omaul"), SubResource("Resource_rpytc")])
+
+[sub_resource type="Resource" id="Resource_tidmf"]
+script = ExtResource("3_87jk2")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_li4ww"]
+script = ExtResource("3_87jk2")
+kind = 11
+amount = 18
+
+[sub_resource type="Resource" id="Resource_pmyox"]
+script = ExtResource("3_87jk2")
+kind = 9
+key = &"first_casting"
+negate = true
+
+[sub_resource type="Resource" id="Resource_jl0e8"]
+script = ExtResource("3_87jk2")
+key = &"good_neighbours"
+
+[sub_resource type="Resource" id="Resource_hktcn"]
+script = ExtResource("3_87jk2")
+kind = 7
+
+[resource]
+script = ExtResource("4_4u2um")
+id = &"smith_over_the_ridge"
+title = "A stranger with a leather roll"
+body = "A stranger has come over the ridge with a roll of tools and a great deal of interest in the green stone. Where they come from, they say, metal has been cast for years."
+category = &"settlement"
+requires = Array[ExtResource("3_87jk2")]([SubResource("Resource_tidmf"), SubResource("Resource_li4ww"), SubResource("Resource_pmyox"), SubResource("Resource_jl0e8")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_87jk2")]([SubResource("Resource_hktcn")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_s4t4m")]([SubResource("Resource_lsv1t"), SubResource("Resource_vi2yd")])

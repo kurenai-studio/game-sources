@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_kg56w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ew6u2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_4xm40"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_or4e4"]
+
+[sub_resource type="Resource" id="Resource_a108a"]
+script = ExtResource("2_ew6u2")
+kind = 1
+key = &"bricks_roofed"
+
+[sub_resource type="Resource" id="Resource_cc3mn"]
+script = ExtResource("2_ew6u2")
+text = "The bricks were roofed with reeds, and the rain drummed on the reeds, and the bricks stayed exactly as they were."
+
+[sub_resource type="Resource" id="Resource_2b405"]
+script = ExtResource("1_kg56w")
+id = &"roof_the_bricks"
+label = "Roof them over with reeds"
+effects = Array[ExtResource("2_ew6u2")]([SubResource("Resource_a108a"), SubResource("Resource_cc3mn")])
+
+[sub_resource type="Resource" id="Resource_ahx0h"]
+script = ExtResource("2_ew6u2")
+kind = 1
+key = &"bricks_turned"
+
+[sub_resource type="Resource" id="Resource_mkm47"]
+script = ExtResource("2_ew6u2")
+text = "The bricks were turned one by one, and by the end every hand was the colour of the bricks."
+
+[sub_resource type="Resource" id="Resource_pyae1"]
+script = ExtResource("1_kg56w")
+id = &"turn_the_bricks"
+label = "Turn them as they dry"
+effects = Array[ExtResource("2_ew6u2")]([SubResource("Resource_ahx0h"), SubResource("Resource_mkm47")])
+
+[sub_resource type="Resource" id="Resource_mscfs"]
+script = ExtResource("3_4xm40")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_orwgg"]
+script = ExtResource("3_4xm40")
+kind = 11
+amount = 90
+
+[sub_resource type="Resource" id="Resource_fjmtt"]
+script = ExtResource("3_4xm40")
+kind = 13
+amount = 2
+
+[sub_resource type="Resource" id="Resource_elg5y"]
+script = ExtResource("3_4xm40")
+kind = 9
+key = &"mud_brick_walls"
+
+[resource]
+script = ExtResource("4_or4e4")
+id = &"rain_on_the_bricks"
+title = "Rain on the new bricks"
+body = "The sky has gone grey, and the new bricks are still soft."
+category = &"settlement"
+requires = Array[ExtResource("3_4xm40")]([SubResource("Resource_mscfs"), SubResource("Resource_orwgg"), SubResource("Resource_fjmtt"), SubResource("Resource_elg5y")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_kg56w")]([SubResource("Resource_2b405"), SubResource("Resource_pyae1")])

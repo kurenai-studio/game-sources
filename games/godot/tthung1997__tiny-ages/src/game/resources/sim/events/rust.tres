@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s7gwe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_fr0xx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_iphh4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e6uvs"]
+
+[sub_resource type="Resource" id="Resource_cupbq"]
+script = ExtResource("2_fr0xx")
+kind = 0
+key = &"food"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_2wt3c"]
+script = ExtResource("2_fr0xx")
+kind = 1
+key = &"tools_greased"
+
+[sub_resource type="Resource" id="Resource_fncia"]
+script = ExtResource("2_fr0xx")
+text = "The tools were greased every evening with fat, and the cooking suffered, and the tools did not."
+
+[sub_resource type="Resource" id="Resource_5wmqa"]
+script = ExtResource("3_iphh4")
+kind = 2
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_ic0dj"]
+script = ExtResource("1_s7gwe")
+id = &"grease_the_tools"
+label = "Grease the tools every evening"
+requires = Array[ExtResource("3_iphh4")]([SubResource("Resource_5wmqa")])
+effects = Array[ExtResource("2_fr0xx")]([SubResource("Resource_cupbq"), SubResource("Resource_2wt3c"), SubResource("Resource_fncia")])
+
+[sub_resource type="Resource" id="Resource_h5o41"]
+script = ExtResource("2_fr0xx")
+kind = 1
+key = &"tools_in_the_cave"
+
+[sub_resource type="Resource" id="Resource_j6hxk"]
+script = ExtResource("2_fr0xx")
+text = "The tools were carried to the cave each night and brought back each morning, and the walk became part of the day."
+
+[sub_resource type="Resource" id="Resource_pb23s"]
+script = ExtResource("1_s7gwe")
+id = &"keep_them_dry_in_the_cave"
+label = "Keep them dry in the cave"
+effects = Array[ExtResource("2_fr0xx")]([SubResource("Resource_h5o41"), SubResource("Resource_j6hxk")])
+
+[sub_resource type="Resource" id="Resource_mf4pd"]
+script = ExtResource("3_iphh4")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_cbixt"]
+script = ExtResource("3_iphh4")
+kind = 11
+amount = 78
+
+[sub_resource type="Resource" id="Resource_mcv4i"]
+script = ExtResource("3_iphh4")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_e6uvs")
+id = &"rust"
+title = "Rust"
+body = "The first tools have started to turn brown at the edges, and nobody can think what they have done to deserve it."
+category = &"settlement"
+requires = Array[ExtResource("3_iphh4")]([SubResource("Resource_mf4pd"), SubResource("Resource_cbixt"), SubResource("Resource_mcv4i")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_s7gwe")]([SubResource("Resource_ic0dj"), SubResource("Resource_pb23s")])

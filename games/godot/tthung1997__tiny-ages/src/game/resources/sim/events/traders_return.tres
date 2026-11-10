@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_uydqx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_03aws"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vstwm"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_t5lce"]
+
+[sub_resource type="Resource" id="Resource_pt61y"]
+script = ExtResource("2_03aws")
+text = "Someone looked down the road for the traveller, and then looked again."
+
+[sub_resource type="Resource" id="Resource_gtpyb"]
+script = ExtResource("3_vstwm")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_pt56e"]
+script = ExtResource("3_vstwm")
+key = &"traders_asked"
+
+[resource]
+script = ExtResource("4_t5lce")
+id = &"traders_return"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_vstwm")]([SubResource("Resource_gtpyb"), SubResource("Resource_pt56e")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_03aws")]([SubResource("Resource_pt61y")])

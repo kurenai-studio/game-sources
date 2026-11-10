@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_t43x2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ahddm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mrvxe"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_yeb8t"]
+
+[sub_resource type="Resource" id="Resource_8p38j"]
+script = ExtResource("2_ahddm")
+kind = 1
+key = &"reading_bench"
+
+[sub_resource type="Resource" id="Resource_t32jp"]
+script = ExtResource("2_ahddm")
+kind = 10
+key = &"lamp_and_stage"
+text = "The Lamp and the Stage"
+
+[sub_resource type="Resource" id="Resource_aowoi"]
+script = ExtResource("2_ahddm")
+text = "A long bench was put in the shade, and was occupied from morning to evening by people reading very slowly, and nodding."
+
+[sub_resource type="Resource" id="Resource_i3gqm"]
+script = ExtResource("1_t43x2")
+id = &"a_reading_bench"
+label = "Put a long bench under the colonnade or a tree"
+effects = Array[ExtResource("2_ahddm")]([SubResource("Resource_8p38j"), SubResource("Resource_t32jp"), SubResource("Resource_aowoi")])
+
+[sub_resource type="Resource" id="Resource_wr47s"]
+script = ExtResource("2_ahddm")
+kind = 1
+key = &"teaching_table"
+
+[sub_resource type="Resource" id="Resource_uot7y"]
+script = ExtResource("2_ahddm")
+kind = 10
+key = &"lamp_and_stage"
+text = "The Lamp and the Stage"
+
+[sub_resource type="Resource" id="Resource_xw20b"]
+script = ExtResource("2_ahddm")
+text = "A table was set out with a lamp and a few tablets, and anyone might sit and ask, and the questions were better than the answers."
+
+[sub_resource type="Resource" id="Resource_geyy0"]
+script = ExtResource("1_t43x2")
+id = &"an_open_teaching_table"
+label = "Set out a table where anyone may ask"
+effects = Array[ExtResource("2_ahddm")]([SubResource("Resource_wr47s"), SubResource("Resource_uot7y"), SubResource("Resource_xw20b")])
+
+[sub_resource type="Resource" id="Resource_ku38x"]
+script = ExtResource("3_mrvxe")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_fal4n"]
+script = ExtResource("3_mrvxe")
+kind = 11
+amount = 246
+
+[sub_resource type="Resource" id="Resource_2uknl"]
+script = ExtResource("3_mrvxe")
+kind = 9
+key = &"lamp_and_stage"
+negate = true
+
+[sub_resource type="Resource" id="Resource_d3tmq"]
+script = ExtResource("3_mrvxe")
+kind = 9
+key = &"the_square"
+
+[sub_resource type="Resource" id="Resource_o8ss2"]
+script = ExtResource("3_mrvxe")
+kind = 7
+
+[resource]
+script = ExtResource("4_yeb8t")
+id = &"a_bench_for_reading"
+title = "A bench for reading"
+body = "A lot has been written, and nobody has anywhere comfortable to read it, and a few people have begun to read standing up, reproachfully."
+requires = Array[ExtResource("3_mrvxe")]([SubResource("Resource_ku38x"), SubResource("Resource_fal4n"), SubResource("Resource_2uknl"), SubResource("Resource_d3tmq")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_mrvxe")]([SubResource("Resource_o8ss2")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_t43x2")]([SubResource("Resource_i3gqm"), SubResource("Resource_geyy0")])

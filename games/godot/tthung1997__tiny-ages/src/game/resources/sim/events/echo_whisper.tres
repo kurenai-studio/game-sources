@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_lf8h4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_odetl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_h0ira"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_hh2ln"]
+
+[sub_resource type="Resource" id="Resource_r3ncm"]
+script = ExtResource("2_odetl")
+text = "A whisper came out of the back of the cave, and everyone looked round to see whose."
+
+[sub_resource type="Resource" id="Resource_0wt3t"]
+script = ExtResource("3_h0ira")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_s1unv"]
+script = ExtResource("3_h0ira")
+key = &"echo_whispers"
+
+[resource]
+script = ExtResource("4_hh2ln")
+id = &"echo_whisper"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_h0ira")]([SubResource("Resource_0wt3t"), SubResource("Resource_s1unv")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_odetl")]([SubResource("Resource_r3ncm")])

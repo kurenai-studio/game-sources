@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_fu6te"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_c8wwj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pimkn"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_kpvd8"]
+
+[sub_resource type="Resource" id="Resource_xiww2"]
+script = ExtResource("2_c8wwj")
+text = "{subject} watched swallows nest in the rampart's timbers, and said nothing, and neither did the swallows."
+
+[sub_resource type="Resource" id="Resource_gvttd"]
+script = ExtResource("3_pimkn")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_nvssk"]
+script = ExtResource("3_pimkn")
+kind = 9
+key = &"the_hill_fort"
+
+[sub_resource type="Resource" id="Resource_cu1gd"]
+script = ExtResource("3_pimkn")
+kind = 6
+key = &"nature_loving"
+
+[sub_resource type="Resource" id="Resource_iwomt"]
+script = ExtResource("3_pimkn")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_2gxva"]
+script = ExtResource("3_pimkn")
+kind = 10
+
+[resource]
+script = ExtResource("4_kpvd8")
+id = &"swallows_in_the_rampart"
+title = "A quiet moment"
+requires = Array[ExtResource("3_pimkn")]([SubResource("Resource_gvttd"), SubResource("Resource_nvssk")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_pimkn")]([SubResource("Resource_cu1gd"), SubResource("Resource_iwomt"), SubResource("Resource_2gxva")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_c8wwj")]([SubResource("Resource_xiww2")])

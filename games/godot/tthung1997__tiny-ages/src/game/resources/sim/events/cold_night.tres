@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_obesa"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_eql2i"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_o6vka"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_74dhh"]
+
+[sub_resource type="Resource" id="Resource_cggni"]
+script = ExtResource("2_eql2i")
+text = "A cold night. Everyone drew close around the fire."
+
+[sub_resource type="Resource" id="Resource_04wf5"]
+script = ExtResource("3_o6vka")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_4ymv6"]
+script = ExtResource("3_o6vka")
+kind = 8
+amount = 1
+negate = true
+
+[sub_resource type="Resource" id="Resource_yq8gq"]
+script = ExtResource("3_o6vka")
+kind = 13
+amount = 3
+
+[resource]
+script = ExtResource("4_74dhh")
+id = &"cold_night"
+title = "A cold night"
+category = &"nature"
+requires = Array[ExtResource("3_o6vka")]([SubResource("Resource_04wf5"), SubResource("Resource_4ymv6"), SubResource("Resource_yq8gq")])
+chance_per_tick = 0.005
+cooldown_ticks = 120
+effects = Array[ExtResource("2_eql2i")]([SubResource("Resource_cggni")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6nudi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3xmbh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ihdwr"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_plu4h"]
+
+[sub_resource type="Resource" id="Resource_net4o"]
+script = ExtResource("2_3xmbh")
+text = "A dog sat on the hill above the fold, watching the herd, and did not come closer."
+
+[sub_resource type="Resource" id="Resource_71abb"]
+script = ExtResource("3_ihdwr")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_3vini"]
+script = ExtResource("3_ihdwr")
+key = &"dog_at_a_distance"
+
+[resource]
+script = ExtResource("4_plu4h")
+id = &"dog_on_the_hill"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ihdwr")]([SubResource("Resource_71abb"), SubResource("Resource_3vini")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_3xmbh")]([SubResource("Resource_net4o")])

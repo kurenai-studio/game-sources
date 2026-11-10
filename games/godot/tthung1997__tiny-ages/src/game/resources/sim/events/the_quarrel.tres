@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_4qsu0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lpkph"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_aisao"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bqk76"]
+
+[sub_resource type="Resource" id="Resource_8cye6"]
+script = ExtResource("2_lpkph")
+kind = 1
+key = &"peacemaking"
+
+[sub_resource type="Resource" id="Resource_t22cg"]
+script = ExtResource("2_lpkph")
+text = "{subject} and the neighbour were sat by the fire, and by the third pot they were laughing."
+
+[sub_resource type="Resource" id="Resource_hjcsq"]
+script = ExtResource("1_4qsu0")
+id = &"talk_it_through"
+label = "Sit them down by the fire together"
+effects = Array[ExtResource("2_lpkph")]([SubResource("Resource_8cye6"), SubResource("Resource_t22cg")])
+
+[sub_resource type="Resource" id="Resource_8oad5"]
+script = ExtResource("2_lpkph")
+kind = 1
+key = &"cooled_off"
+
+[sub_resource type="Resource" id="Resource_2g7se"]
+script = ExtResource("2_lpkph")
+text = "It cooled by itself, slowly, and the handspan of ground was never mentioned again."
+
+[sub_resource type="Resource" id="Resource_k68vy"]
+script = ExtResource("1_4qsu0")
+id = &"let_it_cool"
+label = "Let it cool by itself"
+effects = Array[ExtResource("2_lpkph")]([SubResource("Resource_8oad5"), SubResource("Resource_2g7se")])
+
+[sub_resource type="Resource" id="Resource_wht62"]
+script = ExtResource("3_aisao")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_u6rhg"]
+script = ExtResource("3_aisao")
+kind = 11
+amount = 82
+
+[sub_resource type="Resource" id="Resource_a0coi"]
+script = ExtResource("3_aisao")
+kind = 7
+
+[resource]
+script = ExtResource("4_bqk76")
+id = &"the_quarrel"
+title = "Over the fence"
+body = "{subject} and a neighbour are not speaking, over a handspan of ground that both of them are sure is theirs."
+requires = Array[ExtResource("3_aisao")]([SubResource("Resource_wht62"), SubResource("Resource_u6rhg")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_aisao")]([SubResource("Resource_a0coi")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_4qsu0")]([SubResource("Resource_hjcsq"), SubResource("Resource_k68vy")])

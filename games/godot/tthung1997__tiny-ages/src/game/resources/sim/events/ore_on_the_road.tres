@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_dc64o"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qey8h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_33pea"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_keacf"]
+
+[sub_resource type="Resource" id="Resource_kyj8q"]
+script = ExtResource("2_qey8h")
+kind = 1
+key = &"road_ironsmith"
+
+[sub_resource type="Resource" id="Resource_aqkp6"]
+script = ExtResource("2_qey8h")
+kind = 10
+key = &"first_bloom"
+text = "The First Bloom"
+
+[sub_resource type="Resource" id="Resource_8pimc"]
+script = ExtResource("2_qey8h")
+text = "The furnace was the trader's for a night. By morning there was a lump of grey iron in the ashes, and the trader was already explaining how it was done."
+
+[sub_resource type="Resource" id="Resource_hboit"]
+script = ExtResource("1_dc64o")
+id = &"lend_the_furnace"
+label = "Lend the trader the furnace for a night"
+effects = Array[ExtResource("2_qey8h")]([SubResource("Resource_kyj8q"), SubResource("Resource_aqkp6"), SubResource("Resource_8pimc")])
+
+[sub_resource type="Resource" id="Resource_8at11"]
+script = ExtResource("2_qey8h")
+kind = 1
+key = &"taught_the_bloom"
+
+[sub_resource type="Resource" id="Resource_nw0ja"]
+script = ExtResource("2_qey8h")
+kind = 0
+key = &"food"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_lvlut"]
+script = ExtResource("2_qey8h")
+kind = 10
+key = &"first_bloom"
+text = "The First Bloom"
+
+[sub_resource type="Resource" id="Resource_nh4hj"]
+script = ExtResource("2_qey8h")
+text = "Food was paid, and the whole group was shown in an afternoon, and the trader left with a full belly and an air of having given nothing away."
+
+[sub_resource type="Resource" id="Resource_gwysm"]
+script = ExtResource("3_33pea")
+kind = 2
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_2xih1"]
+script = ExtResource("1_dc64o")
+id = &"pay_for_the_secret"
+label = "Pay in food, and ask to be shown"
+requires = Array[ExtResource("3_33pea")]([SubResource("Resource_gwysm")])
+effects = Array[ExtResource("2_qey8h")]([SubResource("Resource_8at11"), SubResource("Resource_nw0ja"), SubResource("Resource_lvlut"), SubResource("Resource_nh4hj")])
+
+[sub_resource type="Resource" id="Resource_im3v3"]
+script = ExtResource("3_33pea")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_okb2k"]
+script = ExtResource("3_33pea")
+kind = 11
+amount = 30
+
+[sub_resource type="Resource" id="Resource_s54l4"]
+script = ExtResource("3_33pea")
+kind = 9
+key = &"first_bloom"
+negate = true
+
+[sub_resource type="Resource" id="Resource_et35g"]
+script = ExtResource("3_33pea")
+key = &"path_ore"
+
+[sub_resource type="Resource" id="Resource_325ec"]
+script = ExtResource("3_33pea")
+kind = 7
+
+[resource]
+script = ExtResource("4_keacf")
+id = &"ore_on_the_road"
+title = "A trader with red lumps"
+body = "A trader on the road has a sack of heavy red lumps and a story about the dark hills, and says that, with a hot enough fire, they turn into something remarkable."
+category = &"settlement"
+requires = Array[ExtResource("3_33pea")]([SubResource("Resource_im3v3"), SubResource("Resource_okb2k"), SubResource("Resource_s54l4"), SubResource("Resource_et35g")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_33pea")]([SubResource("Resource_325ec")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_dc64o")]([SubResource("Resource_hboit"), SubResource("Resource_2xih1")])

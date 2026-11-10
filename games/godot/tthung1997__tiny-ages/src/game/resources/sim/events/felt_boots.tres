@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_udoir"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_p15s3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pdhlx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_onbs4"]
+
+[sub_resource type="Resource" id="Resource_rmw0g"]
+script = ExtResource("2_p15s3")
+text = "Someone tried on a pair of felt boots, stamped, and refused to take them off."
+
+[sub_resource type="Resource" id="Resource_mu6nk"]
+script = ExtResource("3_pdhlx")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_3dt3b"]
+script = ExtResource("3_pdhlx")
+key = &"wool_felted"
+
+[resource]
+script = ExtResource("4_onbs4")
+id = &"felt_boots"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_pdhlx")]([SubResource("Resource_mu6nk"), SubResource("Resource_3dt3b")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_p15s3")]([SubResource("Resource_rmw0g")])

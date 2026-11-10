@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gf38j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2rn4b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fhhkd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gi1uc"]
+
+[sub_resource type="Resource" id="Resource_vyvx0"]
+script = ExtResource("2_2rn4b")
+kind = 0
+key = &"wood"
+amount = -20
+
+[sub_resource type="Resource" id="Resource_pjlay"]
+script = ExtResource("2_2rn4b")
+kind = 1
+key = &"river_bank"
+
+[sub_resource type="Resource" id="Resource_7b11o"]
+script = ExtResource("2_2rn4b")
+text = "A bank of earth and stone went up along the river, and the water stopped at its foot."
+
+[sub_resource type="Resource" id="Resource_vpnpa"]
+script = ExtResource("3_fhhkd")
+kind = 2
+key = &"wood"
+amount = 20
+
+[sub_resource type="Resource" id="Resource_jgmm7"]
+script = ExtResource("1_gf38j")
+id = &"build_a_bank"
+label = "Raise a bank of earth and stone"
+requires = Array[ExtResource("3_fhhkd")]([SubResource("Resource_vpnpa")])
+effects = Array[ExtResource("2_2rn4b")]([SubResource("Resource_vyvx0"), SubResource("Resource_pjlay"), SubResource("Resource_7b11o")])
+
+[sub_resource type="Resource" id="Resource_a7ic2"]
+script = ExtResource("2_2rn4b")
+kind = 1
+key = &"moved_to_high_ground"
+
+[sub_resource type="Resource" id="Resource_sx7h8"]
+script = ExtResource("2_2rn4b")
+text = "They moved what they could to higher ground, and the river went down on its own."
+
+[sub_resource type="Resource" id="Resource_j5fjq"]
+script = ExtResource("1_gf38j")
+id = &"move_what_you_can"
+label = "Move what you can to higher ground"
+effects = Array[ExtResource("2_2rn4b")]([SubResource("Resource_a7ic2"), SubResource("Resource_sx7h8")])
+
+[sub_resource type="Resource" id="Resource_3x1np"]
+script = ExtResource("3_fhhkd")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_xbo6h"]
+script = ExtResource("3_fhhkd")
+kind = 11
+amount = 196
+
+[sub_resource type="Resource" id="Resource_e6uti"]
+script = ExtResource("3_fhhkd")
+kind = 13
+
+[resource]
+script = ExtResource("4_gi1uc")
+id = &"the_flood"
+title = "The river is rising"
+body = "The river has risen to the edge of the fields, and the low plots are under a finger of water."
+category = &"nature"
+requires = Array[ExtResource("3_fhhkd")]([SubResource("Resource_3x1np"), SubResource("Resource_xbo6h"), SubResource("Resource_e6uti")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_gf38j")]([SubResource("Resource_jgmm7"), SubResource("Resource_j5fjq")])

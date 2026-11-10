@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_0kcci"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_241t6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_8ut65"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_eb817"]
+
+[sub_resource type="Resource" id="Resource_tdynu"]
+script = ExtResource("2_241t6")
+kind = 0
+key = &"food"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_asm0k"]
+script = ExtResource("2_241t6")
+kind = 1
+key = &"feast_held"
+
+[sub_resource type="Resource" id="Resource_kt7rp"]
+script = ExtResource("2_241t6")
+text = "The fire was loud that night. Everyone ate until they laughed."
+
+[sub_resource type="Resource" id="Resource_vftdg"]
+script = ExtResource("3_8ut65")
+kind = 2
+key = &"food"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_rnn76"]
+script = ExtResource("1_0kcci")
+id = &"hold_a_feast"
+label = "Hold a feast by the fire"
+requires = Array[ExtResource("3_8ut65")]([SubResource("Resource_vftdg")])
+effects = Array[ExtResource("2_241t6")]([SubResource("Resource_tdynu"), SubResource("Resource_asm0k"), SubResource("Resource_kt7rp")])
+
+[sub_resource type="Resource" id="Resource_fmyg0"]
+script = ExtResource("2_241t6")
+kind = 1
+key = &"food_dried"
+
+[sub_resource type="Resource" id="Resource_jejg1"]
+script = ExtResource("2_241t6")
+text = "The extra was split thin and hung to dry along the cave wall."
+
+[sub_resource type="Resource" id="Resource_7p5wx"]
+script = ExtResource("1_0kcci")
+id = &"dry_the_rest"
+label = "Dry the rest for lean days"
+effects = Array[ExtResource("2_241t6")]([SubResource("Resource_fmyg0"), SubResource("Resource_jejg1")])
+
+[sub_resource type="Resource" id="Resource_rglcx"]
+script = ExtResource("3_8ut65")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_760qm"]
+script = ExtResource("3_8ut65")
+kind = 5
+amount = 60
+
+[sub_resource type="Resource" id="Resource_dw37k"]
+script = ExtResource("3_8ut65")
+kind = 9
+key = &"reliable_food"
+
+[sub_resource type="Resource" id="Resource_iir2i"]
+script = ExtResource("3_8ut65")
+kind = 2
+key = &"food"
+amount = 16
+
+[resource]
+script = ExtResource("4_eb817")
+id = &"too_much_food"
+title = "More than enough"
+body = "There is more food in the cave than the group can eat before it turns."
+category = &"settlement"
+requires = Array[ExtResource("3_8ut65")]([SubResource("Resource_rglcx"), SubResource("Resource_760qm"), SubResource("Resource_dw37k"), SubResource("Resource_iir2i")])
+chance_per_tick = 0.03
+once = true
+choices = Array[ExtResource("1_0kcci")]([SubResource("Resource_rnn76"), SubResource("Resource_7p5wx")])

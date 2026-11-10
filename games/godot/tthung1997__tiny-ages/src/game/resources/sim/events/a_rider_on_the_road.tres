@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vjx1o"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rxgh7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pn03g"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_sj15b"]
+
+[sub_resource type="Resource" id="Resource_f3j1q"]
+script = ExtResource("2_rxgh7")
+kind = 1
+key = &"rider_met"
+
+[sub_resource type="Resource" id="Resource_bdkja"]
+script = ExtResource("2_rxgh7")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_gi1dv"]
+script = ExtResource("2_rxgh7")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_6ie11"]
+script = ExtResource("2_rxgh7")
+text = "A few went out along the road, and the rider got down and walked the last mile with them, leading the horse, and asking about the town."
+
+[sub_resource type="Resource" id="Resource_alro0"]
+script = ExtResource("1_vjx1o")
+id = &"ride_out_to_meet_them"
+label = "Go out along the road to meet them"
+effects = Array[ExtResource("2_rxgh7")]([SubResource("Resource_f3j1q"), SubResource("Resource_bdkja"), SubResource("Resource_gi1dv"), SubResource("Resource_6ie11")])
+
+[sub_resource type="Resource" id="Resource_nxrm6"]
+script = ExtResource("2_rxgh7")
+kind = 1
+key = &"rider_waited"
+
+[sub_resource type="Resource" id="Resource_bd0vs"]
+script = ExtResource("2_rxgh7")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_sa6ep"]
+script = ExtResource("2_rxgh7")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_dgxw0"]
+script = ExtResource("2_rxgh7")
+text = "The town waited at the gate with a bucket, and the horse drank first, and the rider, afterwards, said that she had heard good things."
+
+[sub_resource type="Resource" id="Resource_es726"]
+script = ExtResource("1_vjx1o")
+id = &"wait_at_the_gate"
+label = "Wait for them at the gate, with water"
+effects = Array[ExtResource("2_rxgh7")]([SubResource("Resource_nxrm6"), SubResource("Resource_bd0vs"), SubResource("Resource_sa6ep"), SubResource("Resource_dgxw0")])
+
+[sub_resource type="Resource" id="Resource_11dmn"]
+script = ExtResource("3_pn03g")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_ufvia"]
+script = ExtResource("3_pn03g")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_so8jd"]
+script = ExtResource("3_pn03g")
+kind = 9
+key = &"name_abroad"
+negate = true
+
+[sub_resource type="Resource" id="Resource_aprs0"]
+script = ExtResource("3_pn03g")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_ssvev"]
+script = ExtResource("3_pn03g")
+key = &"road_laid"
+
+[sub_resource type="Resource" id="Resource_0un0s"]
+script = ExtResource("3_pn03g")
+kind = 7
+
+[resource]
+script = ExtResource("4_sj15b")
+id = &"a_rider_on_the_road"
+title = "A rider on the hard road"
+body = "Someone is riding up the hard road on a horse, which nobody here has seen close to, and a number of people have taken a step back and a number a step forward."
+category = &"exploration"
+requires = Array[ExtResource("3_pn03g")]([SubResource("Resource_11dmn"), SubResource("Resource_ufvia"), SubResource("Resource_so8jd"), SubResource("Resource_aprs0"), SubResource("Resource_ssvev")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_pn03g")]([SubResource("Resource_0un0s")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_vjx1o")]([SubResource("Resource_alro0"), SubResource("Resource_es726")])

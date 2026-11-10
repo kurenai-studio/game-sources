@@ -1,0 +1,51 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/dev/window_spike.gd" id="1_spike"]
+[ext_resource type="Script" path="res://scripts/window/desktop_window.gd" id="2_window"]
+[ext_resource type="Texture2D" path="res://assets/preview/strip_sky.png" id="3_sky"]
+[ext_resource type="Texture2D" path="res://assets/preview/strip_far_hills.png" id="4_far"]
+[ext_resource type="Texture2D" path="res://assets/preview/strip_near_hills.png" id="5_near"]
+[ext_resource type="Texture2D" path="res://assets/preview/strip_trees.png" id="6_trees"]
+[ext_resource type="Texture2D" path="res://assets/preview/strip_ground.png" id="7_ground"]
+
+[node name="WindowSpike" type="Node2D"]
+script = ExtResource("1_spike")
+
+[node name="DesktopWindow" type="Node" parent="."]
+script = ExtResource("2_window")
+silhouettes = Array[Texture2D]([ExtResource("5_near"), ExtResource("6_trees"), ExtResource("7_ground")])
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="Sky" type="Sprite2D" parent="World"]
+texture = ExtResource("3_sky")
+centered = false
+
+[node name="FarHills" type="Sprite2D" parent="World"]
+texture = ExtResource("4_far")
+centered = false
+
+[node name="NearHills" type="Sprite2D" parent="World"]
+texture = ExtResource("5_near")
+centered = false
+
+[node name="Trees" type="Sprite2D" parent="World"]
+texture = ExtResource("6_trees")
+centered = false
+
+[node name="Ground" type="Sprite2D" parent="World"]
+texture = ExtResource("7_ground")
+centered = false
+
+[node name="Walker" type="AnimatedSprite2D" parent="World"]
+centered = false
+
+[node name="Hud" type="Label" parent="World"]
+offset_left = 3.0
+offset_top = 2.0
+offset_right = 260.0
+offset_bottom = 40.0
+theme_override_colors/font_outline_color = Color(0.17, 0.18, 0.26, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 7
+text = "HUD"

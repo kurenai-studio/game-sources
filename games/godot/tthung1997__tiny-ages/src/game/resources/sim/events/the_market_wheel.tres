@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_p6kti"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vqyad"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7e3dy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ine5l"]
+
+[sub_resource type="Resource" id="Resource_m37sr"]
+script = ExtResource("2_vqyad")
+text = "The cart that had gone round the circuit of markets came home with a bell on it that nobody had put there, and a story to go with the bell."
+
+[sub_resource type="Resource" id="Resource_wdvsc"]
+script = ExtResource("3_7e3dy")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_sffit"]
+script = ExtResource("3_7e3dy")
+key = &"market_circuit"
+
+[resource]
+script = ExtResource("4_ine5l")
+id = &"the_market_wheel"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_7e3dy")]([SubResource("Resource_wdvsc"), SubResource("Resource_sffit")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_vqyad")]([SubResource("Resource_m37sr")])

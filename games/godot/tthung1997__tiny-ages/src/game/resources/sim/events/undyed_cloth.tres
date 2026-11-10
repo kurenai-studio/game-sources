@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vtnub"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1v2le"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_133ae"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4r0m4"]
+
+[sub_resource type="Resource" id="Resource_koqbo"]
+script = ExtResource("2_1v2le")
+text = "A plain tunic hung on the line, pale as milk, and entirely satisfied with itself."
+
+[sub_resource type="Resource" id="Resource_jj625"]
+script = ExtResource("3_133ae")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_0kuhb"]
+script = ExtResource("3_133ae")
+key = &"plain_cloth"
+
+[resource]
+script = ExtResource("4_4r0m4")
+id = &"undyed_cloth"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_133ae")]([SubResource("Resource_jj625"), SubResource("Resource_0kuhb")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_1v2le")]([SubResource("Resource_koqbo")])

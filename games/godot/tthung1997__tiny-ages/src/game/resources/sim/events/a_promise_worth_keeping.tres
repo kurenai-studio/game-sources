@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_b6kus"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_n3sow"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_g1fk8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_18b66"]
+
+[sub_resource type="Resource" id="Resource_e67vu"]
+script = ExtResource("2_n3sow")
+kind = 1
+key = &"promises_in_stone"
+
+[sub_resource type="Resource" id="Resource_4g45w"]
+script = ExtResource("2_n3sow")
+kind = 10
+key = &"written_law"
+text = "The Law"
+
+[sub_resource type="Resource" id="Resource_2fwxh"]
+script = ExtResource("2_n3sow")
+text = "The promises were recorded in stone, and the first person to break one was gently walked to the stone and asked to read it."
+
+[sub_resource type="Resource" id="Resource_jamyo"]
+script = ExtResource("1_b6kus")
+id = &"record_it_in_stone"
+label = "Record the promises in stone, in the square"
+effects = Array[ExtResource("2_n3sow")]([SubResource("Resource_e67vu"), SubResource("Resource_4g45w"), SubResource("Resource_2fwxh")])
+
+[sub_resource type="Resource" id="Resource_guvu1"]
+script = ExtResource("2_n3sow")
+kind = 1
+key = &"promises_on_tablets"
+
+[sub_resource type="Resource" id="Resource_e6qbe"]
+script = ExtResource("2_n3sow")
+kind = 10
+key = &"written_law"
+text = "The Law"
+
+[sub_resource type="Resource" id="Resource_8yrha"]
+script = ExtResource("2_n3sow")
+text = "The promises were kept on tablets, and a keeper was found who loved tablets, and the town made a note never to lose her."
+
+[sub_resource type="Resource" id="Resource_1b8mb"]
+script = ExtResource("1_b6kus")
+id = &"keep_it_on_tablets"
+label = "Keep them on tablets, in the care of a keeper"
+effects = Array[ExtResource("2_n3sow")]([SubResource("Resource_guvu1"), SubResource("Resource_e6qbe"), SubResource("Resource_8yrha")])
+
+[sub_resource type="Resource" id="Resource_8j1k0"]
+script = ExtResource("3_g1fk8")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_ua6ci"]
+script = ExtResource("3_g1fk8")
+kind = 11
+amount = 144
+
+[sub_resource type="Resource" id="Resource_om332"]
+script = ExtResource("3_g1fk8")
+kind = 9
+key = &"written_law"
+negate = true
+
+[sub_resource type="Resource" id="Resource_mh53m"]
+script = ExtResource("3_g1fk8")
+kind = 9
+key = &"paved_streets"
+
+[sub_resource type="Resource" id="Resource_o6pgf"]
+script = ExtResource("3_g1fk8")
+kind = 7
+
+[resource]
+script = ExtResource("4_18b66")
+id = &"a_promise_worth_keeping"
+title = "A promise worth keeping"
+body = "People have always made promises to each other, and most were kept, and the few that were not are remembered in great detail."
+category = &"settlement"
+requires = Array[ExtResource("3_g1fk8")]([SubResource("Resource_8j1k0"), SubResource("Resource_ua6ci"), SubResource("Resource_om332"), SubResource("Resource_mh53m")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_g1fk8")]([SubResource("Resource_o6pgf")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_b6kus")]([SubResource("Resource_jamyo"), SubResource("Resource_1b8mb")])

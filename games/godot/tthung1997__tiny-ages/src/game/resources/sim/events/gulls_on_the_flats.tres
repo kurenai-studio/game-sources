@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8iw03"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mj3di"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_bsfai"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gm2o8"]
+
+[sub_resource type="Resource" id="Resource_jqksi"]
+script = ExtResource("2_mj3di")
+text = "Gulls stood in rows on the wet flats, all facing the water, all waiting for it."
+
+[sub_resource type="Resource" id="Resource_kpnk3"]
+script = ExtResource("3_bsfai")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_0ckrf"]
+script = ExtResource("3_bsfai")
+kind = 17
+
+[resource]
+script = ExtResource("4_gm2o8")
+id = &"gulls_on_the_flats"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_bsfai")]([SubResource("Resource_kpnk3"), SubResource("Resource_0ckrf")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_mj3di")]([SubResource("Resource_jqksi")])

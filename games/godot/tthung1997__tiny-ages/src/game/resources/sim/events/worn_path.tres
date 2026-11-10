@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_3i6cw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1gs0k"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_xmq65"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_km8nl"]
+
+[sub_resource type="Resource" id="Resource_o1y3x"]
+script = ExtResource("2_1gs0k")
+text = "A path has worn itself between the huts and the river, deep enough to hold the rain."
+
+[sub_resource type="Resource" id="Resource_mwnog"]
+script = ExtResource("3_xmq65")
+kind = 8
+amount = 1
+
+[resource]
+script = ExtResource("4_km8nl")
+id = &"worn_path"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_xmq65")]([SubResource("Resource_mwnog")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_1gs0k")]([SubResource("Resource_o1y3x")])

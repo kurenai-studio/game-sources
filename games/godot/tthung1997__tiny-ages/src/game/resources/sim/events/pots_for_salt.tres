@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_78nfx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_nam6p"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7agdf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_phsxc"]
+
+[sub_resource type="Resource" id="Resource_qdoin"]
+script = ExtResource("2_nam6p")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_fu1km"]
+script = ExtResource("2_nam6p")
+kind = 1
+key = &"salt"
+
+[sub_resource type="Resource" id="Resource_qjopo"]
+script = ExtResource("2_nam6p")
+text = "The pots went off on a donkey, and the salt made the winter meat last until spring."
+
+[sub_resource type="Resource" id="Resource_pehcx"]
+script = ExtResource("1_78nfx")
+id = &"trade_pots_for_salt"
+label = "Trade a load of pots for the salt"
+effects = Array[ExtResource("2_nam6p")]([SubResource("Resource_qdoin"), SubResource("Resource_fu1km"), SubResource("Resource_qjopo")])
+
+[sub_resource type="Resource" id="Resource_beryq"]
+script = ExtResource("2_nam6p")
+kind = 1
+key = &"pots_kept"
+
+[sub_resource type="Resource" id="Resource_272ht"]
+script = ExtResource("2_nam6p")
+text = "The pots were kept, and the trader went away with a polite face and no pots."
+
+[sub_resource type="Resource" id="Resource_i24cu"]
+script = ExtResource("1_78nfx")
+id = &"keep_the_pots"
+label = "Keep the pots"
+effects = Array[ExtResource("2_nam6p")]([SubResource("Resource_beryq"), SubResource("Resource_272ht")])
+
+[sub_resource type="Resource" id="Resource_hwcpw"]
+script = ExtResource("3_7agdf")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_cw1xy"]
+script = ExtResource("3_7agdf")
+kind = 11
+amount = 226
+
+[sub_resource type="Resource" id="Resource_7p5k8"]
+script = ExtResource("3_7agdf")
+kind = 9
+key = &"fired_clay"
+
+[resource]
+script = ExtResource("4_phsxc")
+id = &"pots_for_salt"
+title = "Salt"
+body = "A trader from the coast has offered a bag of grey salt for a load of fired pots."
+category = &"exploration"
+requires = Array[ExtResource("3_7agdf")]([SubResource("Resource_hwcpw"), SubResource("Resource_cw1xy"), SubResource("Resource_7p5k8")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_78nfx")]([SubResource("Resource_pehcx"), SubResource("Resource_i24cu")])

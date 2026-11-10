@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_usvmo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qul3k"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_qjpnl"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ndkhh"]
+
+[sub_resource type="Resource" id="Resource_t6atx"]
+script = ExtResource("2_qul3k")
+text = "{subject} counted the roofs twice and got two different answers, and counted them a third time."
+
+[sub_resource type="Resource" id="Resource_8r2o7"]
+script = ExtResource("3_qjpnl")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_4ctg2"]
+script = ExtResource("3_qjpnl")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_3np74"]
+script = ExtResource("3_qjpnl")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_gukma"]
+script = ExtResource("3_qjpnl")
+kind = 10
+
+[resource]
+script = ExtResource("4_ndkhh")
+id = &"counting_roofs"
+title = "A quiet moment"
+requires = Array[ExtResource("3_qjpnl")]([SubResource("Resource_8r2o7")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_qjpnl")]([SubResource("Resource_4ctg2"), SubResource("Resource_3np74"), SubResource("Resource_gukma")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_qul3k")]([SubResource("Resource_t6atx")])

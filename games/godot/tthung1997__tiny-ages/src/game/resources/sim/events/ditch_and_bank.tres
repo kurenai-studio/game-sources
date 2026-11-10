@@ -1,0 +1,94 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_h8ga0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_x0mqa"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_54xt2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_sxe7g"]
+
+[sub_resource type="Resource" id="Resource_ug8y0"]
+script = ExtResource("2_x0mqa")
+kind = 1
+key = &"dug_deep"
+
+[sub_resource type="Resource" id="Resource_lk02r"]
+script = ExtResource("2_x0mqa")
+kind = 1
+key = &"dug_in"
+
+[sub_resource type="Resource" id="Resource_516il"]
+script = ExtResource("2_x0mqa")
+kind = 10
+key = &"mud_brick_walls"
+text = "Mud-brick Walls"
+
+[sub_resource type="Resource" id="Resource_r8bqu"]
+script = ExtResource("2_x0mqa")
+text = "The ditch went down as deep as a tall person, and the bank grew behind it. The first rain filled it, and the children were thrilled."
+
+[sub_resource type="Resource" id="Resource_o0wb4"]
+script = ExtResource("1_h8ga0")
+id = &"dig_it_deep"
+label = "Dig it deep, and heap the earth inside"
+effects = Array[ExtResource("2_x0mqa")]([SubResource("Resource_ug8y0"), SubResource("Resource_lk02r"), SubResource("Resource_516il"), SubResource("Resource_r8bqu")])
+
+[sub_resource type="Resource" id="Resource_h5g1u"]
+script = ExtResource("2_x0mqa")
+kind = 1
+key = &"dug_wide"
+
+[sub_resource type="Resource" id="Resource_8hky2"]
+script = ExtResource("2_x0mqa")
+kind = 1
+key = &"dug_in"
+
+[sub_resource type="Resource" id="Resource_bxnbm"]
+script = ExtResource("2_x0mqa")
+kind = 10
+key = &"mud_brick_walls"
+text = "Mud-brick Walls"
+
+[sub_resource type="Resource" id="Resource_u325f"]
+script = ExtResource("2_x0mqa")
+text = "The ditch was dug wide and let the river in at one end, and the village sat on an island that no one had planned."
+
+[sub_resource type="Resource" id="Resource_25dt4"]
+script = ExtResource("1_h8ga0")
+id = &"dig_it_wide"
+label = "Dig it wide, and let the water in"
+effects = Array[ExtResource("2_x0mqa")]([SubResource("Resource_h5g1u"), SubResource("Resource_8hky2"), SubResource("Resource_bxnbm"), SubResource("Resource_u325f")])
+
+[sub_resource type="Resource" id="Resource_g8pms"]
+script = ExtResource("3_54xt2")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_t6xkf"]
+script = ExtResource("3_54xt2")
+kind = 11
+amount = 144
+
+[sub_resource type="Resource" id="Resource_1mtbt"]
+script = ExtResource("3_54xt2")
+kind = 9
+key = &"mud_brick_walls"
+negate = true
+
+[sub_resource type="Resource" id="Resource_6nt1g"]
+script = ExtResource("3_54xt2")
+kind = 7
+
+[resource]
+script = ExtResource("4_sxe7g")
+id = &"ditch_and_bank"
+title = "A ditch and a bank"
+body = "Nobody has the wood for a wall just now, but everybody has a spade."
+category = &"settlement"
+requires = Array[ExtResource("3_54xt2")]([SubResource("Resource_g8pms"), SubResource("Resource_t6xkf"), SubResource("Resource_1mtbt")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_54xt2")]([SubResource("Resource_6nt1g")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_h8ga0")]([SubResource("Resource_o0wb4"), SubResource("Resource_25dt4")])

@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_xn06y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_m6gl7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nmvdp"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_a2kux"]
+
+[sub_resource type="Resource" id="Resource_0t6ju"]
+script = ExtResource("2_m6gl7")
+kind = 0
+key = &"wood"
+amount = -5
+
+[sub_resource type="Resource" id="Resource_0emjt"]
+script = ExtResource("2_m6gl7")
+kind = 1
+key = &"iron_cauldron"
+
+[sub_resource type="Resource" id="Resource_nxxkr"]
+script = ExtResource("2_m6gl7")
+text = "An iron cauldron hung from a hook over the fire, black as a beetle, and the soup was never quite the same, or at all bad."
+
+[sub_resource type="Resource" id="Resource_25con"]
+script = ExtResource("3_nmvdp")
+kind = 2
+key = &"wood"
+amount = 5
+
+[sub_resource type="Resource" id="Resource_brjfg"]
+script = ExtResource("1_xn06y")
+id = &"hang_an_iron_cauldron"
+label = "Hang an iron cauldron over the fire"
+requires = Array[ExtResource("3_nmvdp")]([SubResource("Resource_25con")])
+effects = Array[ExtResource("2_m6gl7")]([SubResource("Resource_0t6ju"), SubResource("Resource_0emjt"), SubResource("Resource_nxxkr")])
+
+[sub_resource type="Resource" id="Resource_0smix"]
+script = ExtResource("2_m6gl7")
+kind = 1
+key = &"clay_pots_kept"
+
+[sub_resource type="Resource" id="Resource_xwuwv"]
+script = ExtResource("2_m6gl7")
+text = "The clay pots were kept, because they were what the soup was used to, and because the cauldron would cost."
+
+[sub_resource type="Resource" id="Resource_4vxb5"]
+script = ExtResource("1_xn06y")
+id = &"keep_the_clay_pots"
+label = "Keep to the clay pots"
+effects = Array[ExtResource("2_m6gl7")]([SubResource("Resource_0smix"), SubResource("Resource_xwuwv")])
+
+[sub_resource type="Resource" id="Resource_r2c15"]
+script = ExtResource("3_nmvdp")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vb135"]
+script = ExtResource("3_nmvdp")
+kind = 11
+amount = 66
+
+[sub_resource type="Resource" id="Resource_71l7t"]
+script = ExtResource("3_nmvdp")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_a2kux")
+id = &"a_pot_that_does_not_break"
+title = "A pot that does not break"
+body = "The clay pots crack in the cold and the iron one has never cracked, and everyone has been looking at the iron one."
+category = &"settlement"
+requires = Array[ExtResource("3_nmvdp")]([SubResource("Resource_r2c15"), SubResource("Resource_vb135"), SubResource("Resource_71l7t")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_xn06y")]([SubResource("Resource_brjfg"), SubResource("Resource_4vxb5")])

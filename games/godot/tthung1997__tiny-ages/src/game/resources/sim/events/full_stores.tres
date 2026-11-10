@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y3qls"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_elxq1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_v6ro0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_vdijj"]
+
+[sub_resource type="Resource" id="Resource_tc0en"]
+script = ExtResource("2_elxq1")
+text = "Somebody checked the stores again, found them full, and was visibly cheered."
+
+[sub_resource type="Resource" id="Resource_8tg8g"]
+script = ExtResource("3_v6ro0")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_c7gss"]
+script = ExtResource("3_v6ro0")
+key = &"laid_by"
+
+[resource]
+script = ExtResource("4_vdijj")
+id = &"full_stores"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_v6ro0")]([SubResource("Resource_8tg8g"), SubResource("Resource_c7gss")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_elxq1")]([SubResource("Resource_tc0en")])

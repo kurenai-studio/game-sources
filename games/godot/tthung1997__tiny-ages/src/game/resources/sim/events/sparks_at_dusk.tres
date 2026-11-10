@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_o6cqn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_od3g0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_g3tcc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ehx6n"]
+
+[sub_resource type="Resource" id="Resource_40rk3"]
+script = ExtResource("2_od3g0")
+text = "Sparks went up from the furnace at dusk in a long orange fountain, and the children counted them until they lost count."
+
+[sub_resource type="Resource" id="Resource_xtj4v"]
+script = ExtResource("3_g3tcc")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_2w3am"]
+script = ExtResource("3_g3tcc")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_ehx6n")
+id = &"sparks_at_dusk"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_g3tcc")]([SubResource("Resource_xtj4v"), SubResource("Resource_2w3am")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_od3g0")]([SubResource("Resource_40rk3")])

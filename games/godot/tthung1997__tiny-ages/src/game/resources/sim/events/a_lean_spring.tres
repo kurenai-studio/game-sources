@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_kvr08"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_l2r4h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_unvny"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_aui83"]
+
+[sub_resource type="Resource" id="Resource_40b80"]
+script = ExtResource("2_l2r4h")
+kind = 0
+key = &"food"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_paydb"]
+script = ExtResource("2_l2r4h")
+kind = 1
+key = &"lean_spring_worked"
+
+[sub_resource type="Resource" id="Resource_hbg0k"]
+script = ExtResource("2_l2r4h")
+text = "Everyone went out to the river and the fields, and the baskets came home heavy."
+
+[sub_resource type="Resource" id="Resource_yvnfw"]
+script = ExtResource("1_kvr08")
+id = &"work_the_river_and_fields"
+label = "Send everyone out to the river and the fields for a day"
+effects = Array[ExtResource("2_l2r4h")]([SubResource("Resource_40b80"), SubResource("Resource_paydb"), SubResource("Resource_hbg0k")])
+
+[sub_resource type="Resource" id="Resource_av5cp"]
+script = ExtResource("2_l2r4h")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_qrne0"]
+script = ExtResource("2_l2r4h")
+kind = 1
+key = &"lean_spring_rationed"
+
+[sub_resource type="Resource" id="Resource_winij"]
+script = ExtResource("2_l2r4h")
+text = "The winter store was opened and every portion was counted out, and nobody went to bed hungry."
+
+[sub_resource type="Resource" id="Resource_icbbe"]
+script = ExtResource("1_kvr08")
+id = &"open_the_winter_store"
+label = "Open the winter store and ration it"
+effects = Array[ExtResource("2_l2r4h")]([SubResource("Resource_av5cp"), SubResource("Resource_qrne0"), SubResource("Resource_winij")])
+
+[sub_resource type="Resource" id="Resource_hr3h4"]
+script = ExtResource("3_unvny")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_mydhw"]
+script = ExtResource("3_unvny")
+kind = 11
+amount = 224
+
+[sub_resource type="Resource" id="Resource_s7l3m"]
+script = ExtResource("3_unvny")
+kind = 9
+key = &"a_village"
+
+[sub_resource type="Resource" id="Resource_dmrt5"]
+script = ExtResource("3_unvny")
+kind = 2
+key = &"food"
+amount = 24
+negate = true
+
+[sub_resource type="Resource" id="Resource_u7w0s"]
+script = ExtResource("3_unvny")
+kind = 13
+
+[resource]
+script = ExtResource("4_aui83")
+id = &"a_lean_spring"
+title = "A lean spring"
+body = "The stores are low and the new grain is not yet up. The village is bigger than it has ever been, and everyone is counting."
+category = &"settlement"
+requires = Array[ExtResource("3_unvny")]([SubResource("Resource_hr3h4"), SubResource("Resource_mydhw"), SubResource("Resource_s7l3m"), SubResource("Resource_dmrt5"), SubResource("Resource_u7w0s")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_kvr08")]([SubResource("Resource_yvnfw"), SubResource("Resource_icbbe")])

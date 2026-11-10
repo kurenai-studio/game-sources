@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_2mf8h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_iofur"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_cf1hm"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_s05th"]
+
+[sub_resource type="Resource" id="Resource_8unl5"]
+script = ExtResource("2_iofur")
+text = "The best pots stood in a row on the shelf, and were taken down only for guests."
+
+[sub_resource type="Resource" id="Resource_2ccla"]
+script = ExtResource("3_cf1hm")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_1id5n"]
+script = ExtResource("3_cf1hm")
+key = &"pots_kept"
+
+[resource]
+script = ExtResource("4_s05th")
+id = &"pots_on_the_shelf"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_cf1hm")]([SubResource("Resource_2ccla"), SubResource("Resource_1id5n")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_iofur")]([SubResource("Resource_8unl5")])

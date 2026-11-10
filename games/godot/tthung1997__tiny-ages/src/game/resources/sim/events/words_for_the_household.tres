@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_kr263"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vwqn0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6cm4a"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gq2a2"]
+
+[sub_resource type="Resource" id="Resource_shdlp"]
+script = ExtResource("2_vwqn0")
+kind = 1
+key = &"agreements_cut"
+
+[sub_resource type="Resource" id="Resource_nfsi0"]
+script = ExtResource("2_vwqn0")
+kind = 10
+key = &"written_law"
+text = "The Law"
+
+[sub_resource type="Resource" id="Resource_ci5l1"]
+script = ExtResource("2_vwqn0")
+text = "The agreements were cut into a wall of stone in the square, and a small crowd gathered to check that they were as they remembered."
+
+[sub_resource type="Resource" id="Resource_m7xk3"]
+script = ExtResource("1_kr263")
+id = &"cut_the_agreements"
+label = "Cut the agreements into stone, where all can read"
+effects = Array[ExtResource("2_vwqn0")]([SubResource("Resource_shdlp"), SubResource("Resource_nfsi0"), SubResource("Resource_ci5l1")])
+
+[sub_resource type="Resource" id="Resource_gyw0k"]
+script = ExtResource("2_vwqn0")
+kind = 1
+key = &"rotating_readers"
+
+[sub_resource type="Resource" id="Resource_ed30o"]
+script = ExtResource("2_vwqn0")
+kind = 10
+key = &"written_law"
+text = "The Law"
+
+[sub_resource type="Resource" id="Resource_4nq7b"]
+script = ExtResource("2_vwqn0")
+text = "Readers were appointed by turns, and each took the job very seriously, and one added a pause that everyone now expects."
+
+[sub_resource type="Resource" id="Resource_nbug8"]
+script = ExtResource("1_kr263")
+id = &"appoint_readers"
+label = "Appoint readers, by turns, to say them aloud"
+effects = Array[ExtResource("2_vwqn0")]([SubResource("Resource_gyw0k"), SubResource("Resource_ed30o"), SubResource("Resource_4nq7b")])
+
+[sub_resource type="Resource" id="Resource_pi54i"]
+script = ExtResource("3_6cm4a")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_1ltas"]
+script = ExtResource("3_6cm4a")
+kind = 11
+amount = 108
+
+[sub_resource type="Resource" id="Resource_lhufo"]
+script = ExtResource("3_6cm4a")
+kind = 9
+key = &"written_law"
+negate = true
+
+[sub_resource type="Resource" id="Resource_mh53m"]
+script = ExtResource("3_6cm4a")
+kind = 9
+key = &"paved_streets"
+
+[sub_resource type="Resource" id="Resource_5smtj"]
+script = ExtResource("3_6cm4a")
+key = &"path_assembly"
+
+[sub_resource type="Resource" id="Resource_kl3pw"]
+script = ExtResource("3_6cm4a")
+kind = 7
+
+[resource]
+script = ExtResource("4_gq2a2")
+id = &"words_for_the_household"
+title = "What the households agreed"
+body = "The town agreed a great deal in one long afternoon, and has begun to disagree about what it agreed, and the writing is the obvious answer."
+requires = Array[ExtResource("3_6cm4a")]([SubResource("Resource_pi54i"), SubResource("Resource_1ltas"), SubResource("Resource_lhufo"), SubResource("Resource_mh53m"), SubResource("Resource_5smtj")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_6cm4a")]([SubResource("Resource_kl3pw")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_kr263")]([SubResource("Resource_m7xk3"), SubResource("Resource_nbug8")])

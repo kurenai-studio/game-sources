@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ua1bj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lf4g5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_xxjj2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1yylr"]
+
+[sub_resource type="Resource" id="Resource_l8rhh"]
+script = ExtResource("2_lf4g5")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_ubhs8"]
+script = ExtResource("2_lf4g5")
+kind = 1
+key = &"furnace_kept_lit"
+
+[sub_resource type="Resource" id="Resource_s4kh2"]
+script = ExtResource("2_lf4g5")
+text = "The furnace was kept lit all winter, fed a little at a time, and was the warmest place in the village and, for that reason, the busiest."
+
+[sub_resource type="Resource" id="Resource_jpy05"]
+script = ExtResource("3_xxjj2")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_vwp4n"]
+script = ExtResource("1_ua1bj")
+id = &"keep_it_lit_all_winter"
+label = "Keep it lit all winter"
+requires = Array[ExtResource("3_xxjj2")]([SubResource("Resource_jpy05")])
+effects = Array[ExtResource("2_lf4g5")]([SubResource("Resource_l8rhh"), SubResource("Resource_ubhs8"), SubResource("Resource_s4kh2")])
+
+[sub_resource type="Resource" id="Resource_n7ket"]
+script = ExtResource("2_lf4g5")
+kind = 1
+key = &"furnace_banked"
+
+[sub_resource type="Resource" id="Resource_0llt3"]
+script = ExtResource("2_lf4g5")
+text = "The furnace was banked under clay and straw, and sat all winter like a sleeping animal, and woke up grumpy in the spring."
+
+[sub_resource type="Resource" id="Resource_c0p50"]
+script = ExtResource("1_ua1bj")
+id = &"bank_it_and_wait"
+label = "Bank it, and wait for the spring"
+effects = Array[ExtResource("2_lf4g5")]([SubResource("Resource_n7ket"), SubResource("Resource_0llt3")])
+
+[sub_resource type="Resource" id="Resource_w7dal"]
+script = ExtResource("3_xxjj2")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vx4ow"]
+script = ExtResource("3_xxjj2")
+kind = 11
+amount = 90
+
+[sub_resource type="Resource" id="Resource_t6viw"]
+script = ExtResource("3_xxjj2")
+kind = 13
+amount = 3
+
+[sub_resource type="Resource" id="Resource_hcx0u"]
+script = ExtResource("3_xxjj2")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_1yylr")
+id = &"frost_in_the_furnace"
+title = "Frost in the furnace"
+body = "The first hard frost has come, and the furnace is cold at the edges, and iron does not like a cold furnace."
+category = &"settlement"
+requires = Array[ExtResource("3_xxjj2")]([SubResource("Resource_w7dal"), SubResource("Resource_vx4ow"), SubResource("Resource_t6viw"), SubResource("Resource_hcx0u")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ua1bj")]([SubResource("Resource_vwp4n"), SubResource("Resource_c0p50")])

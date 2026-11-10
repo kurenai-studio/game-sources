@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_educu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_j4h6n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_efx1k"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_kgv5s"]
+
+[sub_resource type="Resource" id="Resource_g541b"]
+script = ExtResource("2_j4h6n")
+text = "A child leaned into the cistern and called, and the cistern called back a good deal more deeply, and the child ran."
+
+[sub_resource type="Resource" id="Resource_wnlbu"]
+script = ExtResource("3_efx1k")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_gjiwu"]
+script = ExtResource("3_efx1k")
+key = &"cistern_dug"
+
+[resource]
+script = ExtResource("4_kgv5s")
+id = &"cistern_echo"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_efx1k")]([SubResource("Resource_wnlbu"), SubResource("Resource_gjiwu")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_j4h6n")]([SubResource("Resource_g541b")])

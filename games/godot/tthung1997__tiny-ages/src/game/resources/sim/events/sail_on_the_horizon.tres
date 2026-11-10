@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_t8aji"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3mb2w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_33fox"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7s3ya"]
+
+[sub_resource type="Resource" id="Resource_3dx73"]
+script = ExtResource("2_3mb2w")
+text = "A sail crossed the horizon at noon, small and white, and half the village stopped and watched it go."
+
+[sub_resource type="Resource" id="Resource_n6ga2"]
+script = ExtResource("3_33fox")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_u6kmh"]
+script = ExtResource("3_33fox")
+key = &"far_shore"
+
+[resource]
+script = ExtResource("4_7s3ya")
+id = &"sail_on_the_horizon"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_33fox")]([SubResource("Resource_n6ga2"), SubResource("Resource_u6kmh")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_3mb2w")]([SubResource("Resource_3dx73")])

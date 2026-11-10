@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_h773i"]
+
+[resource]
+script = ExtResource("1_h773i")
+id = &"hut"
+display_name = "Hut"
+description = "A proper shelter, built where the group means to stay."
+cost = Dictionary[StringName, int]({
+&"wood": 14
+})
+work_required = 40
+housing = 3
+tags = Array[StringName]([&"exposed"])
+completion_achievement = &"first_roof"
+completion_achievement_title = "A Roof of Your Own"

@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_igj7e"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_g3jjp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_yw0ie"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_sq20c"]
+
+[sub_resource type="Resource" id="Resource_f6fa7"]
+script = ExtResource("2_g3jjp")
+text = "The bee tree hummed on in the western wood, and someone nodded to it passing."
+
+[sub_resource type="Resource" id="Resource_uypmy"]
+script = ExtResource("3_yw0ie")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_hc1bj"]
+script = ExtResource("3_yw0ie")
+key = &"honey_shared"
+
+[resource]
+script = ExtResource("4_sq20c")
+id = &"bees_still_there"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_yw0ie")]([SubResource("Resource_uypmy"), SubResource("Resource_hc1bj")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_g3jjp")]([SubResource("Resource_f6fa7")])

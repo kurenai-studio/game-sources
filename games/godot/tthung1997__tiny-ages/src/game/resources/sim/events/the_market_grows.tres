@@ -1,0 +1,106 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_f6g3a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_x7xyj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_o42ko"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mndof"]
+
+[sub_resource type="Resource" id="Resource_sky0e"]
+script = ExtResource("2_x7xyj")
+kind = 1
+key = &"awning_market"
+
+[sub_resource type="Resource" id="Resource_misg5"]
+script = ExtResource("2_x7xyj")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_ihali"]
+script = ExtResource("2_x7xyj")
+kind = 10
+key = &"the_square"
+text = "The Square"
+
+[sub_resource type="Resource" id="Resource_luhyb"]
+script = ExtResource("2_x7xyj")
+text = "The stalls were given awnings and a paved floor, and the market became a place with a roof of coloured cloth that glowed on bright days."
+
+[sub_resource type="Resource" id="Resource_3dq5h"]
+script = ExtResource("3_o42ko")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_ic6uw"]
+script = ExtResource("1_f6g3a")
+id = &"stalls_under_awnings"
+label = "Give the stalls awnings and a paved floor"
+requires = Array[ExtResource("3_o42ko")]([SubResource("Resource_3dq5h")])
+effects = Array[ExtResource("2_x7xyj")]([SubResource("Resource_sky0e"), SubResource("Resource_misg5"), SubResource("Resource_ihali"), SubResource("Resource_luhyb")])
+
+[sub_resource type="Resource" id="Resource_c278y"]
+script = ExtResource("2_x7xyj")
+kind = 1
+key = &"shared_meal_day"
+
+[sub_resource type="Resource" id="Resource_2l8qw"]
+script = ExtResource("2_x7xyj")
+kind = 10
+key = &"the_square"
+text = "The Square"
+
+[sub_resource type="Resource" id="Resource_wcddp"]
+script = ExtResource("2_x7xyj")
+text = "The market day became a day when everyone brought a dish, and a table ran down the middle of the market, and nobody left hungry."
+
+[sub_resource type="Resource" id="Resource_xdy1q"]
+script = ExtResource("1_f6g3a")
+id = &"a_shared_meal_day"
+label = "Make the market day a day of shared meals"
+effects = Array[ExtResource("2_x7xyj")]([SubResource("Resource_c278y"), SubResource("Resource_2l8qw"), SubResource("Resource_wcddp")])
+
+[sub_resource type="Resource" id="Resource_vx1nt"]
+script = ExtResource("3_o42ko")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_f4e22"]
+script = ExtResource("3_o42ko")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_5l86g"]
+script = ExtResource("3_o42ko")
+kind = 9
+key = &"the_square"
+negate = true
+
+[sub_resource type="Resource" id="Resource_xada2"]
+script = ExtResource("3_o42ko")
+kind = 9
+key = &"written_law"
+
+[sub_resource type="Resource" id="Resource_fv63x"]
+script = ExtResource("3_o42ko")
+key = &"market_day"
+
+[sub_resource type="Resource" id="Resource_5m5vd"]
+script = ExtResource("3_o42ko")
+kind = 7
+
+[resource]
+script = ExtResource("4_mndof")
+id = &"the_market_grows"
+title = "The market grows"
+body = "The market day has outgrown the lane it began in, and the stalls have begun to spill into the street, and the street has opinions."
+category = &"settlement"
+requires = Array[ExtResource("3_o42ko")]([SubResource("Resource_vx1nt"), SubResource("Resource_f4e22"), SubResource("Resource_5l86g"), SubResource("Resource_xada2"), SubResource("Resource_fv63x")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_o42ko")]([SubResource("Resource_5m5vd")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_f6g3a")]([SubResource("Resource_ic6uw"), SubResource("Resource_xdy1q")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_pblgb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ptsh1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nhg3l"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_r0vcq"]
+
+[sub_resource type="Resource" id="Resource_8b1jp"]
+script = ExtResource("2_ptsh1")
+text = "Someone straightened up from the digging with a hand on their back, and groaned."
+
+[sub_resource type="Resource" id="Resource_er3ft"]
+script = ExtResource("3_nhg3l")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_dw5t8"]
+script = ExtResource("3_nhg3l")
+key = &"hand_dug"
+
+[resource]
+script = ExtResource("4_r0vcq")
+id = &"hands_in_the_soil"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_nhg3l")]([SubResource("Resource_er3ft"), SubResource("Resource_dw5t8")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ptsh1")]([SubResource("Resource_8b1jp")])

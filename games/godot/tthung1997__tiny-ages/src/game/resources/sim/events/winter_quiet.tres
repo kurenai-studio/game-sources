@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_twbig"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ye04e"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pp2ok"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_8lk75"]
+
+[sub_resource type="Resource" id="Resource_2kwwt"]
+script = ExtResource("2_ye04e")
+text = "Not a bird sang all day. The valley was very still under its frost."
+
+[sub_resource type="Resource" id="Resource_qitd4"]
+script = ExtResource("3_pp2ok")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_eyxbm"]
+script = ExtResource("3_pp2ok")
+kind = 13
+amount = 3
+
+[resource]
+script = ExtResource("4_8lk75")
+id = &"winter_quiet"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_pp2ok")]([SubResource("Resource_qitd4"), SubResource("Resource_eyxbm")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ye04e")]([SubResource("Resource_2kwwt")])

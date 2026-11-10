@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_er0ok"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1lpaj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lpfdr"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_2wawa"]
+
+[sub_resource type="Resource" id="Resource_qskj1"]
+script = ExtResource("2_1lpaj")
+text = "Somebody remembered the first bright dribble of metal in the ash, and said it had been a good deal smaller than they thought."
+
+[sub_resource type="Resource" id="Resource_yui2m"]
+script = ExtResource("3_lpfdr")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_gj26f"]
+script = ExtResource("3_lpfdr")
+key = &"copper_tried"
+
+[resource]
+script = ExtResource("4_2wawa")
+id = &"dribble_remembered"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_lpfdr")]([SubResource("Resource_yui2m"), SubResource("Resource_gj26f")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_1lpaj")]([SubResource("Resource_qskj1")])

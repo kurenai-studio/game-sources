@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ilewn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_bkcjj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_351q3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_s20rm"]
+
+[sub_resource type="Resource" id="Resource_7bhui"]
+script = ExtResource("2_bkcjj")
+kind = 1
+key = &"stone_weights"
+
+[sub_resource type="Resource" id="Resource_npbpn"]
+script = ExtResource("2_bkcjj")
+text = "A set of river stones was picked out, one for each size of argument, and the arguments, to everyone's surprise, got smaller."
+
+[sub_resource type="Resource" id="Resource_pt1di"]
+script = ExtResource("1_ilewn")
+id = &"weigh_by_the_stone"
+label = "Weigh by the stone"
+effects = Array[ExtResource("2_bkcjj")]([SubResource("Resource_7bhui"), SubResource("Resource_npbpn")])
+
+[sub_resource type="Resource" id="Resource_wbcrk"]
+script = ExtResource("2_bkcjj")
+kind = 1
+key = &"handful_weights"
+
+[sub_resource type="Resource" id="Resource_cx300"]
+script = ExtResource("2_bkcjj")
+text = "The village weighed by the handful, and the size of the hand became a matter of some delicacy."
+
+[sub_resource type="Resource" id="Resource_ckmr4"]
+script = ExtResource("1_ilewn")
+id = &"weigh_by_the_handful"
+label = "Weigh by the handful"
+effects = Array[ExtResource("2_bkcjj")]([SubResource("Resource_wbcrk"), SubResource("Resource_cx300")])
+
+[sub_resource type="Resource" id="Resource_28v07"]
+script = ExtResource("3_351q3")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_lxkjj"]
+script = ExtResource("3_351q3")
+kind = 11
+amount = 140
+
+[sub_resource type="Resource" id="Resource_m6vk3"]
+script = ExtResource("3_351q3")
+kind = 9
+key = &"bronze_alloy"
+
+[resource]
+script = ExtResource("4_s20rm")
+id = &"stones_for_weights"
+title = "Stones for weights"
+body = "Two people have swapped a bag of grain for a lump of bronze, and are both sure that they were cheated."
+category = &"settlement"
+requires = Array[ExtResource("3_351q3")]([SubResource("Resource_28v07"), SubResource("Resource_lxkjj"), SubResource("Resource_m6vk3")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ilewn")]([SubResource("Resource_pt1di"), SubResource("Resource_ckmr4")])

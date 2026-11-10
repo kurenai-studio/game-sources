@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_37v1s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_uifsa"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jqvf4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_fhbxi"]
+
+[sub_resource type="Resource" id="Resource_oeg60"]
+script = ExtResource("2_uifsa")
+kind = 1
+key = &"hide_floor"
+
+[sub_resource type="Resource" id="Resource_e8vh0"]
+script = ExtResource("2_uifsa")
+text = "The hides went down in rows, and the cave smelled of animals and was a good deal warmer."
+
+[sub_resource type="Resource" id="Resource_i0j6w"]
+script = ExtResource("1_37v1s")
+id = &"hang_hides"
+label = "Spread the spare hides over the floor"
+effects = Array[ExtResource("2_uifsa")]([SubResource("Resource_oeg60"), SubResource("Resource_e8vh0")])
+
+[sub_resource type="Resource" id="Resource_ovd0c"]
+script = ExtResource("2_uifsa")
+kind = 1
+key = &"reed_beds"
+
+[sub_resource type="Resource" id="Resource_i1y8r"]
+script = ExtResource("2_uifsa")
+text = "Armfuls of reeds were carried up from the river, and everyone slept on a rustling bed."
+
+[sub_resource type="Resource" id="Resource_vj0k5"]
+script = ExtResource("1_37v1s")
+id = &"cut_reeds"
+label = "Cut reeds from the river for bedding"
+effects = Array[ExtResource("2_uifsa")]([SubResource("Resource_ovd0c"), SubResource("Resource_i1y8r")])
+
+[sub_resource type="Resource" id="Resource_uyi7g"]
+script = ExtResource("3_jqvf4")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_p4jij"]
+script = ExtResource("3_jqvf4")
+kind = 5
+amount = 11
+
+[resource]
+script = ExtResource("4_fhbxi")
+id = &"cold_floors"
+title = "The cold floor"
+body = "The cave floor is bare rock, and the nights have been cold underneath."
+category = &"settlement"
+requires = Array[ExtResource("3_jqvf4")]([SubResource("Resource_uyi7g"), SubResource("Resource_p4jij")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_37v1s")]([SubResource("Resource_i0j6w"), SubResource("Resource_vj0k5")])

@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bvyst"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1h4mm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hviw8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_l37gc"]
+
+[sub_resource type="Resource" id="Resource_a6enx"]
+script = ExtResource("2_1h4mm")
+kind = 1
+key = &"evening_tales"
+
+[sub_resource type="Resource" id="Resource_c3l7g"]
+script = ExtResource("2_1h4mm")
+text = "Each person told one story in turn round the hearth, and the oldest ones had never been told aloud before."
+
+[sub_resource type="Resource" id="Resource_uamrp"]
+script = ExtResource("1_bvyst")
+id = &"tell_in_turns"
+label = "Tell a story each, in turns, round the hearth"
+effects = Array[ExtResource("2_1h4mm")]([SubResource("Resource_a6enx"), SubResource("Resource_c3l7g")])
+
+[sub_resource type="Resource" id="Resource_jvklj"]
+script = ExtResource("2_1h4mm")
+kind = 1
+key = &"evening_work"
+
+[sub_resource type="Resource" id="Resource_fa1wv"]
+script = ExtResource("2_1h4mm")
+text = "Everyone brought their mending to the fire, and the talk went along with the needles."
+
+[sub_resource type="Resource" id="Resource_ayue2"]
+script = ExtResource("1_bvyst")
+id = &"work_by_the_fire"
+label = "Bring the mending to the fire and work together"
+effects = Array[ExtResource("2_1h4mm")]([SubResource("Resource_jvklj"), SubResource("Resource_fa1wv")])
+
+[sub_resource type="Resource" id="Resource_yao7s"]
+script = ExtResource("3_hviw8")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_c1jy4"]
+script = ExtResource("3_hviw8")
+kind = 11
+amount = 322
+
+[resource]
+script = ExtResource("4_l37gc")
+id = &"long_evenings"
+title = "The long evenings"
+body = "The evenings have grown long, and nobody quite knows what to do with them."
+requires = Array[ExtResource("3_hviw8")]([SubResource("Resource_yao7s"), SubResource("Resource_c1jy4")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_bvyst")]([SubResource("Resource_uamrp"), SubResource("Resource_ayue2")])

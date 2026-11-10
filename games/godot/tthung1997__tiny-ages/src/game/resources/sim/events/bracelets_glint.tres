@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_jedg1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8tknv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ob25u"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e3bhn"]
+
+[sub_resource type="Resource" id="Resource_eppfe"]
+script = ExtResource("2_8tknv")
+text = "Light flashed from every wrist, and the children had learned to signal across the lane with them."
+
+[sub_resource type="Resource" id="Resource_fbics"]
+script = ExtResource("3_ob25u")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_xdyrl"]
+script = ExtResource("3_ob25u")
+key = &"bracelets"
+
+[resource]
+script = ExtResource("4_e3bhn")
+id = &"bracelets_glint"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ob25u")]([SubResource("Resource_fbics"), SubResource("Resource_xdyrl")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_8tknv")]([SubResource("Resource_eppfe")])

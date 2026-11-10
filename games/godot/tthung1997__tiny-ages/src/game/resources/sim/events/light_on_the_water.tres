@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_x84c5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_uowix"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1byjf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_yiqag"]
+
+[sub_resource type="Resource" id="Resource_3if6t"]
+script = ExtResource("2_uowix")
+kind = 0
+key = &"food"
+amount = 5
+
+[sub_resource type="Resource" id="Resource_xri75"]
+script = ExtResource("2_uowix")
+kind = 1
+key = &"night_fishing"
+
+[sub_resource type="Resource" id="Resource_owunx"]
+script = ExtResource("2_uowix")
+text = "The boats went out with torches and came back low in the water, and the river was full of small gold lights."
+
+[sub_resource type="Resource" id="Resource_4mhyi"]
+script = ExtResource("1_x84c5")
+id = &"fish_by_night"
+label = "Fish by torchlight from the boat"
+effects = Array[ExtResource("2_uowix")]([SubResource("Resource_3if6t"), SubResource("Resource_xri75"), SubResource("Resource_owunx")])
+
+[sub_resource type="Resource" id="Resource_6t1hr"]
+script = ExtResource("2_uowix")
+kind = 0
+key = &"wood"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_lotvn"]
+script = ExtResource("2_uowix")
+kind = 1
+key = &"river_lamp"
+
+[sub_resource type="Resource" id="Resource_kyufw"]
+script = ExtResource("2_uowix")
+text = "A lamp of oil and a wick was set on a pole at the river mouth, and every boat that came home that month steered for it."
+
+[sub_resource type="Resource" id="Resource_g0y54"]
+script = ExtResource("3_1byjf")
+kind = 2
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_dhkqg"]
+script = ExtResource("1_x84c5")
+id = &"a_lamp_at_the_mouth"
+label = "Set a lamp at the river mouth"
+requires = Array[ExtResource("3_1byjf")]([SubResource("Resource_g0y54")])
+effects = Array[ExtResource("2_uowix")]([SubResource("Resource_6t1hr"), SubResource("Resource_lotvn"), SubResource("Resource_kyufw")])
+
+[sub_resource type="Resource" id="Resource_5im68"]
+script = ExtResource("3_1byjf")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_000sl"]
+script = ExtResource("3_1byjf")
+kind = 11
+amount = 286
+
+[sub_resource type="Resource" id="Resource_t71ak"]
+script = ExtResource("3_1byjf")
+key = &"far_shore"
+
+[resource]
+script = ExtResource("4_yiqag")
+id = &"light_on_the_water"
+title = "A different light on the water"
+body = "The boats come home later than they used to, and the river mouth is very dark."
+category = &"settlement"
+requires = Array[ExtResource("3_1byjf")]([SubResource("Resource_5im68"), SubResource("Resource_000sl"), SubResource("Resource_t71ak")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_x84c5")]([SubResource("Resource_4mhyi"), SubResource("Resource_dhkqg")])

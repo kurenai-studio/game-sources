@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_mxyvt"]
+
+[resource]
+script = ExtResource("1_mxyvt")
+id = &"trading_post"
+display_name = "Trading Post"
+description = "A stall by the road where whatever the group lacks changes hands."
+cost = Dictionary[StringName, int]({
+&"wood": 14
+})
+work_required = 36
+daily_output = Dictionary[StringName, float]({
+&"food": 0.4,
+&"wood": 0.4
+})
+tags = Array[StringName]([&"exposed"])

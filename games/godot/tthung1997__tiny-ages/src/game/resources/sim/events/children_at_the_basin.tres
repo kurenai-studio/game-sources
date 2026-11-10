@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_msede"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_a6by2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fsc5l"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_od25u"]
+
+[sub_resource type="Resource" id="Resource_v7t0n"]
+script = ExtResource("2_a6by2")
+text = "The children floated bark boats on the basin until the water ran off them, and then, in a stunned silence, they started again."
+
+[sub_resource type="Resource" id="Resource_242mm"]
+script = ExtResource("3_fsc5l")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_aap73"]
+script = ExtResource("3_fsc5l")
+kind = 9
+key = &"water_from_afar"
+
+[resource]
+script = ExtResource("4_od25u")
+id = &"children_at_the_basin"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_fsc5l")]([SubResource("Resource_242mm"), SubResource("Resource_aap73")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_a6by2")]([SubResource("Resource_v7t0n")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_jfa3m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_td5x1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_txuu1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_eb6lj"]
+
+[sub_resource type="Resource" id="Resource_c471n"]
+script = ExtResource("2_td5x1")
+text = "On market day the lane was so loud that the herons left."
+
+[sub_resource type="Resource" id="Resource_kdy4a"]
+script = ExtResource("3_txuu1")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_lgxd1"]
+script = ExtResource("3_txuu1")
+key = &"market_gate"
+
+[resource]
+script = ExtResource("4_eb6lj")
+id = &"market_noise"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_txuu1")]([SubResource("Resource_kdy4a"), SubResource("Resource_lgxd1")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_td5x1")]([SubResource("Resource_c471n")])

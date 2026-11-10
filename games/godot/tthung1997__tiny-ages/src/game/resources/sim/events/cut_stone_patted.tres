@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_i52or"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ri7dy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vuadj"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bb2vn"]
+
+[sub_resource type="Resource" id="Resource_d85gg"]
+script = ExtResource("2_ri7dy")
+text = "Cut stone stood at the foot of the gate, pale and square, and was patted by everyone who passed."
+
+[sub_resource type="Resource" id="Resource_4xak6"]
+script = ExtResource("3_vuadj")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_mgjgh"]
+script = ExtResource("3_vuadj")
+key = &"cut_stone"
+
+[resource]
+script = ExtResource("4_bb2vn")
+id = &"cut_stone_patted"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_vuadj")]([SubResource("Resource_4xak6"), SubResource("Resource_mgjgh")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ri7dy")]([SubResource("Resource_d85gg")])

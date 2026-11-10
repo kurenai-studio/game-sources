@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_5bupl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_m071f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_18cfx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_c8wod"]
+
+[sub_resource type="Resource" id="Resource_5tqmw"]
+script = ExtResource("2_m071f")
+kind = 1
+key = &"forked_plough"
+
+[sub_resource type="Resource" id="Resource_3ahm4"]
+script = ExtResource("2_m071f")
+text = "Six people dragged a forked branch across the field, and the furrow ran almost straight."
+
+[sub_resource type="Resource" id="Resource_8b7hh"]
+script = ExtResource("1_5bupl")
+id = &"drag_a_branch"
+label = "Drag a forked branch through the soil together"
+effects = Array[ExtResource("2_m071f")]([SubResource("Resource_5tqmw"), SubResource("Resource_3ahm4")])
+
+[sub_resource type="Resource" id="Resource_4nlun"]
+script = ExtResource("2_m071f")
+kind = 1
+key = &"hand_dug"
+
+[sub_resource type="Resource" id="Resource_rux1r"]
+script = ExtResource("2_m071f")
+text = "The digging went on by hand, slowly, and everyone's back knew about it."
+
+[sub_resource type="Resource" id="Resource_dnb0w"]
+script = ExtResource("1_5bupl")
+id = &"dig_by_hand"
+label = "Keep digging by hand"
+effects = Array[ExtResource("2_m071f")]([SubResource("Resource_4nlun"), SubResource("Resource_rux1r")])
+
+[sub_resource type="Resource" id="Resource_i0ets"]
+script = ExtResource("3_18cfx")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_4pc5m"]
+script = ExtResource("3_18cfx")
+kind = 11
+amount = 14
+
+[sub_resource type="Resource" id="Resource_mal5w"]
+script = ExtResource("3_18cfx")
+key = &"path_agriculture"
+
+[resource]
+script = ExtResource("4_c8wod")
+id = &"first_furrows"
+title = "The digging sticks"
+body = "The seed is sown, but the ground fights back, and another digging stick has snapped."
+category = &"settlement"
+requires = Array[ExtResource("3_18cfx")]([SubResource("Resource_i0ets"), SubResource("Resource_4pc5m"), SubResource("Resource_mal5w")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_5bupl")]([SubResource("Resource_8b7hh"), SubResource("Resource_dnb0w")])

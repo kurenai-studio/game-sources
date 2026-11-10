@@ -1,0 +1,97 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_eof2o"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ecdnk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_x786q"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ci2us"]
+
+[sub_resource type="Resource" id="Resource_x684u"]
+script = ExtResource("2_ecdnk")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_7se5i"]
+script = ExtResource("2_ecdnk")
+kind = 1
+key = &"lean_to"
+
+[sub_resource type="Resource" id="Resource_rhqsu"]
+script = ExtResource("2_ecdnk")
+text = "A lean-to of poles and hides went up against the cave mouth, and there was room again."
+
+[sub_resource type="Resource" id="Resource_qu4fr"]
+script = ExtResource("3_x786q")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_jxucw"]
+script = ExtResource("1_eof2o")
+id = &"raise_a_lean_to"
+label = "Raise a lean-to against the cave mouth"
+requires = Array[ExtResource("3_x786q")]([SubResource("Resource_qu4fr")])
+effects = Array[ExtResource("2_ecdnk")]([SubResource("Resource_x684u"), SubResource("Resource_7se5i"), SubResource("Resource_rhqsu")])
+
+[sub_resource type="Resource" id="Resource_lyf4w"]
+script = ExtResource("2_ecdnk")
+kind = 14
+amount = 2
+
+[sub_resource type="Resource" id="Resource_p0vxh"]
+script = ExtResource("2_ecdnk")
+kind = 1
+key = &"kin_by_the_river"
+
+[sub_resource type="Resource" id="Resource_8or1g"]
+script = ExtResource("2_ecdnk")
+text = "A family took what was theirs and went down to the river to make their own camp. Their smoke could be seen from the cave mouth on still evenings."
+
+[sub_resource type="Resource" id="Resource_ufyqv"]
+script = ExtResource("1_eof2o")
+id = &"a_family_goes"
+label = "Let a family go and make their own camp by the river"
+effects = Array[ExtResource("2_ecdnk")]([SubResource("Resource_lyf4w"), SubResource("Resource_p0vxh"), SubResource("Resource_8or1g")])
+
+[sub_resource type="Resource" id="Resource_ourfj"]
+script = ExtResource("3_x786q")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_7u68b"]
+script = ExtResource("3_x786q")
+kind = 5
+amount = 196
+
+[sub_resource type="Resource" id="Resource_4upy1"]
+script = ExtResource("3_x786q")
+kind = 8
+amount = 1
+negate = true
+
+[sub_resource type="Resource" id="Resource_mt6yb"]
+script = ExtResource("3_x786q")
+kind = 9
+key = &"bigger_group"
+
+[sub_resource type="Resource" id="Resource_3owxf"]
+script = ExtResource("3_x786q")
+kind = 12
+amount = 1
+negate = true
+
+[sub_resource type="Resource" id="Resource_mgj0g"]
+script = ExtResource("3_x786q")
+kind = 2
+key = &"wood"
+amount = 8
+
+[resource]
+script = ExtResource("4_ci2us")
+id = &"too_many_for_the_cave"
+title = "Too many for the cave"
+body = "There is no more room by the fire. People sleep with their feet in each other's hair, and the mornings are loud."
+category = &"settlement"
+requires = Array[ExtResource("3_x786q")]([SubResource("Resource_ourfj"), SubResource("Resource_7u68b"), SubResource("Resource_4upy1"), SubResource("Resource_mt6yb"), SubResource("Resource_3owxf"), SubResource("Resource_mgj0g")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_eof2o")]([SubResource("Resource_jxucw"), SubResource("Resource_ufyqv")])

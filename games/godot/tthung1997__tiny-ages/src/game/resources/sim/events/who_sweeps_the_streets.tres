@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_rnbey"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8xyen"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_i3ptd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1kbla"]
+
+[sub_resource type="Resource" id="Resource_hiv7y"]
+script = ExtResource("2_8xyen")
+kind = 1
+key = &"street_turns"
+
+[sub_resource type="Resource" id="Resource_y64tv"]
+script = ExtResource("2_8xyen")
+text = "The neighbours took turns, a day each, and the sweeping was done with a great deal of conversation and not much sweeping."
+
+[sub_resource type="Resource" id="Resource_7que4"]
+script = ExtResource("1_rnbey")
+id = &"neighbours_take_turns"
+label = "Let the neighbours take turns, a day each"
+effects = Array[ExtResource("2_8xyen")]([SubResource("Resource_hiv7y"), SubResource("Resource_y64tv")])
+
+[sub_resource type="Resource" id="Resource_t7b4y"]
+script = ExtResource("2_8xyen")
+kind = 0
+key = &"food"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_ul8cd"]
+script = ExtResource("2_8xyen")
+kind = 1
+key = &"street_sweeper"
+
+[sub_resource type="Resource" id="Resource_muv7b"]
+script = ExtResource("2_8xyen")
+text = "Someone was found who would sweep every day for a share of food, and the lane became so clean that people began to remove their shoes."
+
+[sub_resource type="Resource" id="Resource_60v51"]
+script = ExtResource("3_i3ptd")
+kind = 2
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_hagha"]
+script = ExtResource("1_rnbey")
+id = &"share_to_a_sweeper"
+label = "Give a share of food to someone who will do it every day"
+requires = Array[ExtResource("3_i3ptd")]([SubResource("Resource_60v51")])
+effects = Array[ExtResource("2_8xyen")]([SubResource("Resource_t7b4y"), SubResource("Resource_ul8cd"), SubResource("Resource_muv7b")])
+
+[sub_resource type="Resource" id="Resource_u4s8b"]
+script = ExtResource("3_i3ptd")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_bn71q"]
+script = ExtResource("3_i3ptd")
+kind = 11
+amount = 8
+
+[sub_resource type="Resource" id="Resource_5fi3h"]
+script = ExtResource("3_i3ptd")
+kind = 9
+key = &"paved_streets"
+
+[sub_resource type="Resource" id="Resource_p48p5"]
+script = ExtResource("3_i3ptd")
+kind = 7
+
+[resource]
+script = ExtResource("4_1kbla")
+id = &"who_sweeps_the_streets"
+title = "Who sweeps the first streets"
+body = "A street that is paved is a street that can be swept, and {subject} has noticed that nobody has said who sweeps it."
+requires = Array[ExtResource("3_i3ptd")]([SubResource("Resource_u4s8b"), SubResource("Resource_bn71q"), SubResource("Resource_5fi3h")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_i3ptd")]([SubResource("Resource_p48p5")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_rnbey")]([SubResource("Resource_7que4"), SubResource("Resource_hagha")])

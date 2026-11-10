@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ra1go"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_41dgr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_0qt6x"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_nt1y8"]
+
+[sub_resource type="Resource" id="Resource_iokag"]
+script = ExtResource("2_41dgr")
+text = "{subject} told a joke by the fire. Nobody remembers the joke; everybody remembers the laughing."
+
+[sub_resource type="Resource" id="Resource_cv8as"]
+script = ExtResource("3_0qt6x")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_crycp"]
+script = ExtResource("3_0qt6x")
+kind = 6
+key = &"social"
+
+[sub_resource type="Resource" id="Resource_44hkm"]
+script = ExtResource("3_0qt6x")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_millu"]
+script = ExtResource("3_0qt6x")
+kind = 10
+
+[resource]
+script = ExtResource("4_nt1y8")
+id = &"a_joke"
+title = "A quiet moment"
+requires = Array[ExtResource("3_0qt6x")]([SubResource("Resource_cv8as")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_0qt6x")]([SubResource("Resource_crycp"), SubResource("Resource_44hkm"), SubResource("Resource_millu")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_41dgr")]([SubResource("Resource_iokag")])

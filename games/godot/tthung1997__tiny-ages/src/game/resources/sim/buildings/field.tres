@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_jnpy3"]
+
+[resource]
+script = ExtResource("1_jnpy3")
+id = &"field"
+display_name = "Field"
+description = "Ground cleared and sown, feeding the group season after season."
+cost = Dictionary[StringName, int]({
+&"wood": 12
+})
+work_required = 36
+daily_output = Dictionary[StringName, float]({
+&"food": 3.0
+})
+tags = Array[StringName]([&"river", &"dry"])
+completion_achievement = &"first_harvest"
+completion_achievement_title = "The First Harvest"

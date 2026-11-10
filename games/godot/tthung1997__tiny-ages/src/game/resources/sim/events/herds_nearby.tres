@@ -1,0 +1,86 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_j0jhr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lp8yw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_f3qdt"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ecaum"]
+
+[sub_resource type="Resource" id="Resource_gskgd"]
+script = ExtResource("2_lp8yw")
+kind = 1
+key = &"path_hunting"
+
+[sub_resource type="Resource" id="Resource_5xv1d"]
+script = ExtResource("2_lp8yw")
+text = "The group carved spears and brought down a deer together. There was meat for everyone."
+
+[sub_resource type="Resource" id="Resource_1kmkv"]
+script = ExtResource("2_lp8yw")
+kind = 10
+key = &"reliable_food"
+text = "Enough to Eat"
+
+[sub_resource type="Resource" id="Resource_1yjxt"]
+script = ExtResource("1_j0jhr")
+id = &"hunt"
+label = "Make spears and hunt together"
+effects = Array[ExtResource("2_lp8yw")]([SubResource("Resource_gskgd"), SubResource("Resource_5xv1d"), SubResource("Resource_1kmkv")])
+
+[sub_resource type="Resource" id="Resource_sqbeo"]
+script = ExtResource("2_lp8yw")
+kind = 1
+key = &"path_foraging"
+
+[sub_resource type="Resource" id="Resource_c1nta"]
+script = ExtResource("2_lp8yw")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_7465g"]
+script = ExtResource("2_lp8yw")
+text = "The group wove reed baskets and spent the day gathering along the river."
+
+[sub_resource type="Resource" id="Resource_1a8h2"]
+script = ExtResource("2_lp8yw")
+kind = 7
+key = &"baskets_keep"
+amount = 96
+
+[sub_resource type="Resource" id="Resource_tx76g"]
+script = ExtResource("1_j0jhr")
+id = &"forage"
+label = "Weave baskets and gather instead"
+effects = Array[ExtResource("2_lp8yw")]([SubResource("Resource_sqbeo"), SubResource("Resource_c1nta"), SubResource("Resource_7465g"), SubResource("Resource_1a8h2")])
+
+[sub_resource type="Resource" id="Resource_ujdoq"]
+script = ExtResource("3_f3qdt")
+kind = 9
+key = &"stone_tools"
+
+[sub_resource type="Resource" id="Resource_5kknf"]
+script = ExtResource("3_f3qdt")
+kind = 9
+key = &"reliable_food"
+negate = true
+
+[sub_resource type="Resource" id="Resource_2i0db"]
+script = ExtResource("3_f3qdt")
+key = &"path_foraging"
+negate = true
+
+[sub_resource type="Resource" id="Resource_rw8wq"]
+script = ExtResource("3_f3qdt")
+kind = 5
+amount = 54
+
+[resource]
+script = ExtResource("4_ecaum")
+id = &"herds_nearby"
+title = "The herds are close"
+body = "A herd has wandered into the valley below the cave. Food has been uncertain for days, and this might be the chance to change that."
+category = &"exploration"
+requires = Array[ExtResource("3_f3qdt")]([SubResource("Resource_ujdoq"), SubResource("Resource_5kknf"), SubResource("Resource_2i0db"), SubResource("Resource_rw8wq")])
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_j0jhr")]([SubResource("Resource_1yjxt"), SubResource("Resource_tx76g")])

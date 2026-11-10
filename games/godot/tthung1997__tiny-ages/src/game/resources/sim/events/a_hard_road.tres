@@ -1,0 +1,107 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_oje7v"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_spgxu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rfqf4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_us7xy"]
+
+[sub_resource type="Resource" id="Resource_4l2ko"]
+script = ExtResource("2_spgxu")
+kind = 1
+key = &"stone_road"
+
+[sub_resource type="Resource" id="Resource_p7dxf"]
+script = ExtResource("2_spgxu")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_p330a"]
+script = ExtResource("2_spgxu")
+kind = 1
+key = &"road_laid"
+
+[sub_resource type="Resource" id="Resource_e6wy4"]
+script = ExtResource("2_spgxu")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_nc7w0"]
+script = ExtResource("2_spgxu")
+text = "Flat stones were laid one beside the next, and for the first time the whole road could be walked in wet shoes without regretting it."
+
+[sub_resource type="Resource" id="Resource_mh7fa"]
+script = ExtResource("3_rfqf4")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_u4fxx"]
+script = ExtResource("1_oje7v")
+id = &"lay_a_stone_road"
+label = "Lay a road of flat stones"
+requires = Array[ExtResource("3_rfqf4")]([SubResource("Resource_mh7fa")])
+effects = Array[ExtResource("2_spgxu")]([SubResource("Resource_4l2ko"), SubResource("Resource_p7dxf"), SubResource("Resource_p330a"), SubResource("Resource_e6wy4"), SubResource("Resource_nc7w0")])
+
+[sub_resource type="Resource" id="Resource_43m0a"]
+script = ExtResource("2_spgxu")
+kind = 1
+key = &"gravel_track"
+
+[sub_resource type="Resource" id="Resource_5oh07"]
+script = ExtResource("2_spgxu")
+kind = 1
+key = &"road_laid"
+
+[sub_resource type="Resource" id="Resource_hul4t"]
+script = ExtResource("2_spgxu")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_3ifqx"]
+script = ExtResource("2_spgxu")
+text = "A track of gravel was beaten hard by a great many feet over a great many evenings, and was exactly as good as the evenings."
+
+[sub_resource type="Resource" id="Resource_llek1"]
+script = ExtResource("1_oje7v")
+id = &"beat_a_gravel_track"
+label = "Beat a hard track of gravel"
+effects = Array[ExtResource("2_spgxu")]([SubResource("Resource_43m0a"), SubResource("Resource_5oh07"), SubResource("Resource_hul4t"), SubResource("Resource_3ifqx")])
+
+[sub_resource type="Resource" id="Resource_3rxsf"]
+script = ExtResource("3_rfqf4")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_b3kv6"]
+script = ExtResource("3_rfqf4")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_vyfbg"]
+script = ExtResource("3_rfqf4")
+kind = 9
+key = &"wheel_and_road"
+negate = true
+
+[sub_resource type="Resource" id="Resource_sa8a5"]
+script = ExtResource("3_rfqf4")
+kind = 7
+
+[resource]
+script = ExtResource("4_us7xy")
+id = &"a_hard_road"
+title = "A road toward the hills"
+body = "The way to the hills is a different bog every spring. Someone has said that it doesn't need to be."
+category = &"settlement"
+requires = Array[ExtResource("3_rfqf4")]([SubResource("Resource_3rxsf"), SubResource("Resource_b3kv6"), SubResource("Resource_vyfbg")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_rfqf4")]([SubResource("Resource_sa8a5")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_oje7v")]([SubResource("Resource_u4fxx"), SubResource("Resource_llek1")])

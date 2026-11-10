@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_d5qom"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_hbb63"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gwsnq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_h2x5p"]
+
+[sub_resource type="Resource" id="Resource_j3bb4"]
+script = ExtResource("2_hbb63")
+text = "The dugout rocked at the bank, and every child had been told twice to stay out of it."
+
+[sub_resource type="Resource" id="Resource_vxqmc"]
+script = ExtResource("3_gwsnq")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_ixn4a"]
+script = ExtResource("3_gwsnq")
+key = &"dugout_canoe"
+
+[resource]
+script = ExtResource("4_h2x5p")
+id = &"dugout_at_the_bank"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_gwsnq")]([SubResource("Resource_vxqmc"), SubResource("Resource_ixn4a")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_hbb63")]([SubResource("Resource_j3bb4")])

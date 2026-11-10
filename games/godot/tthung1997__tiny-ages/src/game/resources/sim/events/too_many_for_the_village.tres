@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_o2k5y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_4swn5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_xdtff"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rqqpq"]
+
+[sub_resource type="Resource" id="Resource_nprfg"]
+script = ExtResource("2_4swn5")
+kind = 0
+key = &"wood"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_nj7ds"]
+script = ExtResource("2_4swn5")
+kind = 1
+key = &"extra_roofs"
+
+[sub_resource type="Resource" id="Resource_u0bty"]
+script = ExtResource("2_4swn5")
+text = "Another roof went up at the end of the row, and the village had room again."
+
+[sub_resource type="Resource" id="Resource_l6twb"]
+script = ExtResource("3_xdtff")
+kind = 2
+key = &"wood"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_n541n"]
+script = ExtResource("1_o2k5y")
+id = &"raise_another_roof"
+label = "Raise another roof"
+requires = Array[ExtResource("3_xdtff")]([SubResource("Resource_l6twb")])
+effects = Array[ExtResource("2_4swn5")]([SubResource("Resource_nprfg"), SubResource("Resource_nj7ds"), SubResource("Resource_u0bty")])
+
+[sub_resource type="Resource" id="Resource_fkwva"]
+script = ExtResource("2_4swn5")
+kind = 14
+amount = 2
+
+[sub_resource type="Resource" id="Resource_vcu60"]
+script = ExtResource("2_4swn5")
+kind = 1
+key = &"kin_moved_on"
+
+[sub_resource type="Resource" id="Resource_6202r"]
+script = ExtResource("2_4swn5")
+text = "A family loaded a cart and went to start a village of their own, a good day's walk down the river. They promised to send word."
+
+[sub_resource type="Resource" id="Resource_o7b2k"]
+script = ExtResource("1_o2k5y")
+id = &"a_family_moves_on"
+label = "Let a family go and start a village of their own"
+effects = Array[ExtResource("2_4swn5")]([SubResource("Resource_fkwva"), SubResource("Resource_vcu60"), SubResource("Resource_6202r")])
+
+[sub_resource type="Resource" id="Resource_dijbp"]
+script = ExtResource("3_xdtff")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_08a10"]
+script = ExtResource("3_xdtff")
+kind = 11
+amount = 236
+
+[sub_resource type="Resource" id="Resource_yopyk"]
+script = ExtResource("3_xdtff")
+kind = 9
+key = &"a_village"
+
+[sub_resource type="Resource" id="Resource_0cg8n"]
+script = ExtResource("3_xdtff")
+kind = 12
+amount = 1
+negate = true
+
+[sub_resource type="Resource" id="Resource_6ctv8"]
+script = ExtResource("3_xdtff")
+kind = 2
+key = &"wood"
+amount = 12
+
+[resource]
+script = ExtResource("4_rqqpq")
+id = &"too_many_for_the_village"
+title = "Too many for the village"
+body = "The huts are full, and the paths between them are never quiet. Everyone agrees something has to give."
+category = &"settlement"
+requires = Array[ExtResource("3_xdtff")]([SubResource("Resource_dijbp"), SubResource("Resource_08a10"), SubResource("Resource_yopyk"), SubResource("Resource_0cg8n"), SubResource("Resource_6ctv8")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_o2k5y")]([SubResource("Resource_n541n"), SubResource("Resource_o7b2k")])

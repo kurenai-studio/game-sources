@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_uixi5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_800fd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_qskhk"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_xvkhl"]
+
+[sub_resource type="Resource" id="Resource_h85uf"]
+script = ExtResource("2_800fd")
+kind = 1
+key = &"ridge_footprints"
+
+[sub_resource type="Resource" id="Resource_so5yx"]
+script = ExtResource("2_800fd")
+text = "{subject} found a cold ring of stones and many footprints on the ridge, and came home thoughtful."
+
+[resource]
+script = ExtResource("4_xvkhl")
+id = &"ridge_empty"
+title = "The cold fire"
+category = &"exploration"
+needs_subject = true
+effects = Array[ExtResource("2_800fd")]([SubResource("Resource_h85uf"), SubResource("Resource_so5yx")])

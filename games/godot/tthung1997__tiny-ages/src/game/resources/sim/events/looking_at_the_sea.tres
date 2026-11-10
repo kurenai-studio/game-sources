@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_5tunr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_q5iw8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_he6ex"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dxf4w"]
+
+[sub_resource type="Resource" id="Resource_yocoa"]
+script = ExtResource("2_q5iw8")
+kind = 1
+key = &"far_dune"
+
+[sub_resource type="Resource" id="Resource_yhb8o"]
+script = ExtResource("2_q5iw8")
+text = "{subject} climbed the highest dune and saw, very far off, a thin dark line that might have been land."
+
+[sub_resource type="Resource" id="Resource_2pnhw"]
+script = ExtResource("1_5tunr")
+id = &"climb_the_dune"
+label = "Climb the highest dune"
+effects = Array[ExtResource("2_q5iw8")]([SubResource("Resource_yocoa"), SubResource("Resource_yhb8o")])
+
+[sub_resource type="Resource" id="Resource_fxav1"]
+script = ExtResource("2_q5iw8")
+kind = 1
+key = &"followed_coast"
+
+[sub_resource type="Resource" id="Resource_xojr3"]
+script = ExtResource("2_q5iw8")
+text = "{subject} followed the coast for two days and came back with a pocket of strange shells and nothing to say about any of them."
+
+[sub_resource type="Resource" id="Resource_jgrrl"]
+script = ExtResource("1_5tunr")
+id = &"follow_the_coast"
+label = "Follow the coast"
+effects = Array[ExtResource("2_q5iw8")]([SubResource("Resource_fxav1"), SubResource("Resource_xojr3")])
+
+[sub_resource type="Resource" id="Resource_cbjea"]
+script = ExtResource("3_he6ex")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_8garm"]
+script = ExtResource("3_he6ex")
+kind = 11
+amount = 262
+
+[sub_resource type="Resource" id="Resource_wa42i"]
+script = ExtResource("3_he6ex")
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_gbymj"]
+script = ExtResource("3_he6ex")
+kind = 7
+
+[resource]
+script = ExtResource("4_dxf4w")
+id = &"looking_at_the_sea"
+title = "Looking at the sea"
+body = "{subject} has been walking out to the dunes in the evenings, and standing there a long time with one hand over the eyes."
+category = &"exploration"
+requires = Array[ExtResource("3_he6ex")]([SubResource("Resource_cbjea"), SubResource("Resource_8garm"), SubResource("Resource_wa42i")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_he6ex")]([SubResource("Resource_gbymj")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_5tunr")]([SubResource("Resource_2pnhw"), SubResource("Resource_jgrrl")])

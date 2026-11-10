@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qeh74"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_q67bn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rp2to"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_aracw"]
+
+[sub_resource type="Resource" id="Resource_8w5uq"]
+script = ExtResource("2_q67bn")
+kind = 1
+key = &"star_names"
+
+[sub_resource type="Resource" id="Resource_llqm4"]
+script = ExtResource("2_q67bn")
+text = "They lay on the cold ground and named what they saw: the Hunter, the River, the Long Road."
+
+[sub_resource type="Resource" id="Resource_m11pp"]
+script = ExtResource("1_qeh74")
+id = &"name_the_shapes"
+label = "Stay up together and name the shapes"
+effects = Array[ExtResource("2_q67bn")]([SubResource("Resource_8w5uq"), SubResource("Resource_llqm4")])
+
+[sub_resource type="Resource" id="Resource_rfabi"]
+script = ExtResource("2_q67bn")
+kind = 1
+key = &"stars_private"
+
+[sub_resource type="Resource" id="Resource_8nkac"]
+script = ExtResource("2_q67bn")
+text = "{subject} kept the stars private, and seemed happier for it."
+
+[sub_resource type="Resource" id="Resource_hrmek"]
+script = ExtResource("1_qeh74")
+id = &"keep_it_theirs"
+label = "Let them keep the sky to themselves"
+effects = Array[ExtResource("2_q67bn")]([SubResource("Resource_rfabi"), SubResource("Resource_8nkac")])
+
+[sub_resource type="Resource" id="Resource_lskgu"]
+script = ExtResource("3_rp2to")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_agh4g"]
+script = ExtResource("3_rp2to")
+kind = 5
+amount = 294
+
+[sub_resource type="Resource" id="Resource_y41p0"]
+script = ExtResource("3_rp2to")
+kind = 7
+
+[resource]
+script = ExtResource("4_aracw")
+id = &"star_watching"
+title = "Counting stars"
+body = "{subject} has taken to lying awake outside, counting the stars, and losing count."
+requires = Array[ExtResource("3_rp2to")]([SubResource("Resource_lskgu"), SubResource("Resource_agh4g")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_rp2to")]([SubResource("Resource_y41p0")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_qeh74")]([SubResource("Resource_m11pp"), SubResource("Resource_hrmek")])

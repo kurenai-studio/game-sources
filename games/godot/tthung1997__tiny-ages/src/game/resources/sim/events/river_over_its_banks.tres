@@ -1,0 +1,102 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_c66ma"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qiud6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_c7qla"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4tpmx"]
+
+[sub_resource type="Resource" id="Resource_x2tps"]
+script = ExtResource("2_qiud6")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_ijqlh"]
+script = ExtResource("2_qiud6")
+kind = 18
+
+[sub_resource type="Resource" id="Resource_nf4wi"]
+script = ExtResource("2_qiud6")
+kind = 1
+key = &"raise_it_again"
+
+[sub_resource type="Resource" id="Resource_rquny"]
+script = ExtResource("2_qiud6")
+text = "Wood was cut and poles reset, and the damage was put right before the water was fully down."
+
+[sub_resource type="Resource" id="Resource_akkuw"]
+script = ExtResource("3_c7qla")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_y5gaj"]
+script = ExtResource("1_c66ma")
+id = &"raise_it_again"
+label = "Cut wood and set it right now"
+requires = Array[ExtResource("3_c7qla")]([SubResource("Resource_akkuw")])
+effects = Array[ExtResource("2_qiud6")]([SubResource("Resource_x2tps"), SubResource("Resource_ijqlh"), SubResource("Resource_nf4wi"), SubResource("Resource_rquny")])
+
+[sub_resource type="Resource" id="Resource_6xgto"]
+script = ExtResource("2_qiud6")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_keqfn"]
+script = ExtResource("2_qiud6")
+kind = 1
+key = &"wait_for_the_water"
+
+[sub_resource type="Resource" id="Resource_wnogv"]
+script = ExtResource("2_qiud6")
+text = "They waited for the river to fall and gathered the fish it left in the grass. The damage would be mended by hand in time."
+
+[sub_resource type="Resource" id="Resource_l0s87"]
+script = ExtResource("1_c66ma")
+id = &"wait_for_the_water"
+label = "Wait for the water to drop"
+effects = Array[ExtResource("2_qiud6")]([SubResource("Resource_6xgto"), SubResource("Resource_keqfn"), SubResource("Resource_wnogv")])
+
+[sub_resource type="Resource" id="Resource_ecmic"]
+script = ExtResource("2_qiud6")
+kind = 15
+key = &"flood"
+
+[sub_resource type="Resource" id="Resource_0hywi"]
+script = ExtResource("2_qiud6")
+kind = 17
+key = &"river"
+text = "The flood reached the {building} and left it battered."
+
+[sub_resource type="Resource" id="Resource_gqlfx"]
+script = ExtResource("3_c7qla")
+kind = 14
+key = &"rain"
+
+[sub_resource type="Resource" id="Resource_22l67"]
+script = ExtResource("3_c7qla")
+key = &"stores_on_ledge"
+negate = true
+
+[sub_resource type="Resource" id="Resource_2p2s3"]
+script = ExtResource("3_c7qla")
+key = &"river_bank"
+negate = true
+
+[sub_resource type="Resource" id="Resource_fvc7v"]
+script = ExtResource("3_c7qla")
+kind = 15
+key = &"river"
+
+[resource]
+script = ExtResource("4_4tpmx")
+id = &"river_over_its_banks"
+title = "The river is over its banks"
+body = "The rain has not let up, and the river has climbed out of its bed and into the low ground. Whatever stands by the water is standing in it."
+category = &"nature"
+requires = Array[ExtResource("3_c7qla")]([SubResource("Resource_gqlfx"), SubResource("Resource_22l67"), SubResource("Resource_2p2s3"), SubResource("Resource_fvc7v")])
+chance_per_tick = 0.012
+cooldown_ticks = 960
+effects = Array[ExtResource("2_qiud6")]([SubResource("Resource_ecmic"), SubResource("Resource_0hywi")])
+choices = Array[ExtResource("1_c66ma")]([SubResource("Resource_y5gaj"), SubResource("Resource_l0s87")])

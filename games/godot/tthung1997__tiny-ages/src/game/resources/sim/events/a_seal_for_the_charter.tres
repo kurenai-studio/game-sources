@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6j8v7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_to7tp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ktfwp"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_a25mx"]
+
+[sub_resource type="Resource" id="Resource_awkdc"]
+script = ExtResource("2_to7tp")
+kind = 1
+key = &"seal_tree"
+
+[sub_resource type="Resource" id="Resource_4i6cr"]
+script = ExtResource("2_to7tp")
+text = "The seal was cut as a tree, and the first law sealed with it was a law about trees, which was thought to be funny."
+
+[sub_resource type="Resource" id="Resource_g6lvp"]
+script = ExtResource("1_6j8v7")
+id = &"the_trees_seal"
+label = "Cut the seal as a tree"
+effects = Array[ExtResource("2_to7tp")]([SubResource("Resource_awkdc"), SubResource("Resource_4i6cr")])
+
+[sub_resource type="Resource" id="Resource_fst5m"]
+script = ExtResource("2_to7tp")
+kind = 1
+key = &"seal_face"
+
+[sub_resource type="Resource" id="Resource_hnr5l"]
+script = ExtResource("2_to7tp")
+text = "The seal was cut as a face, and the first law sealed with it was one about faces, and nobody thought it was funny at all."
+
+[sub_resource type="Resource" id="Resource_opdu3"]
+script = ExtResource("1_6j8v7")
+id = &"the_faces_seal"
+label = "Cut the seal as a face"
+effects = Array[ExtResource("2_to7tp")]([SubResource("Resource_fst5m"), SubResource("Resource_hnr5l")])
+
+[sub_resource type="Resource" id="Resource_e0prr"]
+script = ExtResource("3_ktfwp")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_m8jwk"]
+script = ExtResource("3_ktfwp")
+kind = 11
+amount = 126
+
+[sub_resource type="Resource" id="Resource_osy1u"]
+script = ExtResource("3_ktfwp")
+kind = 9
+key = &"written_law"
+
+[resource]
+script = ExtResource("4_a25mx")
+id = &"a_seal_for_the_charter"
+title = "A seal for the charter"
+body = "The laws have been written, and a great many of them need a mark to show that they are the town's, and somebody has suggested the old coin."
+category = &"settlement"
+requires = Array[ExtResource("3_ktfwp")]([SubResource("Resource_e0prr"), SubResource("Resource_m8jwk"), SubResource("Resource_osy1u")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_6j8v7")]([SubResource("Resource_g6lvp"), SubResource("Resource_opdu3")])

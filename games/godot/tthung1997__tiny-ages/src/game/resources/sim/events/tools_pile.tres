@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qfc1r"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_pbpqu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mb7ib"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_b7ch5"]
+
+[sub_resource type="Resource" id="Resource_m8bwp"]
+script = ExtResource("2_pbpqu")
+kind = 1
+key = &"sorted_tools"
+
+[sub_resource type="Resource" id="Resource_lkuq3"]
+script = ExtResource("2_pbpqu")
+text = "{subject} sorted the pile by evening, and half of it turned out to be good for something."
+
+[sub_resource type="Resource" id="Resource_be1tb"]
+script = ExtResource("1_qfc1r")
+id = &"sort_it"
+label = "Sort the good stone from the rest"
+effects = Array[ExtResource("2_pbpqu")]([SubResource("Resource_m8bwp"), SubResource("Resource_lkuq3")])
+
+[sub_resource type="Resource" id="Resource_ojo5b"]
+script = ExtResource("2_pbpqu")
+kind = 1
+key = &"buried_tools"
+
+[sub_resource type="Resource" id="Resource_rpnfe"]
+script = ExtResource("2_pbpqu")
+text = "The heap went into the river bank, and the bank is a little higher there now."
+
+[sub_resource type="Resource" id="Resource_qjgtq"]
+script = ExtResource("1_qfc1r")
+id = &"bury_it"
+label = "Bury it in the river bank"
+effects = Array[ExtResource("2_pbpqu")]([SubResource("Resource_ojo5b"), SubResource("Resource_rpnfe")])
+
+[sub_resource type="Resource" id="Resource_nk5ui"]
+script = ExtResource("3_mb7ib")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_4me2q"]
+script = ExtResource("3_mb7ib")
+kind = 5
+amount = 342
+
+[sub_resource type="Resource" id="Resource_0tkog"]
+script = ExtResource("3_mb7ib")
+kind = 9
+key = &"stone_tools"
+
+[sub_resource type="Resource" id="Resource_2tc4c"]
+script = ExtResource("3_mb7ib")
+kind = 7
+
+[resource]
+script = ExtResource("4_b7ch5")
+id = &"tools_pile"
+title = "The pile by the cave"
+body = "The heap of blunt and broken stone tools by the cave mouth has grown tall. {subject} wants to do something about it."
+requires = Array[ExtResource("3_mb7ib")]([SubResource("Resource_nk5ui"), SubResource("Resource_4me2q"), SubResource("Resource_0tkog")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_mb7ib")]([SubResource("Resource_2tc4c")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_qfc1r")]([SubResource("Resource_be1tb"), SubResource("Resource_qjgtq")])

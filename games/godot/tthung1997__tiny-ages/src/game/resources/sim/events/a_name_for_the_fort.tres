@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_5wypi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mk5a8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_o6f4j"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7ntws"]
+
+[sub_resource type="Resource" id="Resource_n0ene"]
+script = ExtResource("2_mk5a8")
+kind = 1
+key = &"fort_named_for_hill"
+
+[sub_resource type="Resource" id="Resource_4jtt8"]
+script = ExtResource("2_mk5a8")
+text = "The fort was named for the hill, and the hill, for a moment, looked slightly smug."
+
+[sub_resource type="Resource" id="Resource_0fdl1"]
+script = ExtResource("1_5wypi")
+id = &"after_the_hill"
+label = "After the hill"
+effects = Array[ExtResource("2_mk5a8")]([SubResource("Resource_n0ene"), SubResource("Resource_4jtt8")])
+
+[sub_resource type="Resource" id="Resource_6ba4q"]
+script = ExtResource("2_mk5a8")
+kind = 1
+key = &"fort_named_for_family"
+
+[sub_resource type="Resource" id="Resource_a0y54"]
+script = ExtResource("2_mk5a8")
+text = "The fort was named for the first family to have lived here, and their grandchildren pretended not to be pleased."
+
+[sub_resource type="Resource" id="Resource_wsphv"]
+script = ExtResource("1_5wypi")
+id = &"after_the_first_family"
+label = "After the first family"
+effects = Array[ExtResource("2_mk5a8")]([SubResource("Resource_6ba4q"), SubResource("Resource_a0y54")])
+
+[sub_resource type="Resource" id="Resource_bagfv"]
+script = ExtResource("3_o6f4j")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_diqfr"]
+script = ExtResource("3_o6f4j")
+kind = 11
+amount = 120
+
+[sub_resource type="Resource" id="Resource_7lw6x"]
+script = ExtResource("3_o6f4j")
+kind = 9
+key = &"the_hill_fort"
+
+[sub_resource type="Resource" id="Resource_yuov7"]
+script = ExtResource("3_o6f4j")
+kind = 7
+
+[resource]
+script = ExtResource("4_7ntws")
+id = &"a_name_for_the_fort"
+title = "A name for the fort"
+body = "The strangers on the road have started calling the town 'the fort', and {subject} feels it deserves better."
+requires = Array[ExtResource("3_o6f4j")]([SubResource("Resource_bagfv"), SubResource("Resource_diqfr"), SubResource("Resource_7lw6x")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_o6f4j")]([SubResource("Resource_yuov7")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_5wypi")]([SubResource("Resource_0fdl1"), SubResource("Resource_wsphv")])

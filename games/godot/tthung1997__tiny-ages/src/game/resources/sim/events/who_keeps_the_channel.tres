@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_mt5yp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_6gife"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vcndj"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_o4wuf"]
+
+[sub_resource type="Resource" id="Resource_jeq08"]
+script = ExtResource("2_6gife")
+kind = 1
+key = &"channel_turns"
+
+[sub_resource type="Resource" id="Resource_y6vgh"]
+script = ExtResource("2_6gife")
+text = "A keeper was named by turns, a month each, and the channel was never clearer, and each keeper's month was remembered for its particular leaf."
+
+[sub_resource type="Resource" id="Resource_hvigh"]
+script = ExtResource("1_mt5yp")
+id = &"a_keeper_by_turns"
+label = "A keeper by turns, a month each"
+effects = Array[ExtResource("2_6gife")]([SubResource("Resource_jeq08"), SubResource("Resource_y6vgh")])
+
+[sub_resource type="Resource" id="Resource_ayn42"]
+script = ExtResource("2_6gife")
+kind = 1
+key = &"channel_stretches"
+
+[sub_resource type="Resource" id="Resource_feowv"]
+script = ExtResource("2_6gife")
+text = "Every house cleared its own stretch, and the stretches were kept with different degrees of care, and the town ran a friendly competition."
+
+[sub_resource type="Resource" id="Resource_sac78"]
+script = ExtResource("1_mt5yp")
+id = &"every_house_clears_its_own"
+label = "Every house clears its own stretch"
+effects = Array[ExtResource("2_6gife")]([SubResource("Resource_ayn42"), SubResource("Resource_feowv")])
+
+[sub_resource type="Resource" id="Resource_nf0qu"]
+script = ExtResource("3_vcndj")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_uludt"]
+script = ExtResource("3_vcndj")
+kind = 11
+amount = 72
+
+[sub_resource type="Resource" id="Resource_qtm6p"]
+script = ExtResource("3_vcndj")
+kind = 9
+key = &"water_from_afar"
+
+[sub_resource type="Resource" id="Resource_1tb54"]
+script = ExtResource("3_vcndj")
+kind = 7
+
+[resource]
+script = ExtResource("4_o4wuf")
+id = &"who_keeps_the_channel"
+title = "Who keeps the channel clear"
+body = "The water runs, and leaves collect in it, and {subject} has been seen fishing them out in a martyred way."
+requires = Array[ExtResource("3_vcndj")]([SubResource("Resource_nf0qu"), SubResource("Resource_uludt"), SubResource("Resource_qtm6p")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_vcndj")]([SubResource("Resource_1tb54")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_mt5yp")]([SubResource("Resource_hvigh"), SubResource("Resource_sac78")])

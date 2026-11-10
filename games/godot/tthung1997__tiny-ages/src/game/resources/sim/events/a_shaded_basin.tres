@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8lw48"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_nkf23"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jkhn1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_74nil"]
+
+[sub_resource type="Resource" id="Resource_jhupy"]
+script = ExtResource("2_nkf23")
+kind = 1
+key = &"basin_trees"
+
+[sub_resource type="Resource" id="Resource_ljos7"]
+script = ExtResource("2_nkf23")
+text = "Shade trees were planted round the basin, and for a few years looked like twigs, and then, suddenly, like a grove."
+
+[sub_resource type="Resource" id="Resource_piu6u"]
+script = ExtResource("1_8lw48")
+id = &"plant_it_with_shade"
+label = "Plant it round with shade trees"
+effects = Array[ExtResource("2_nkf23")]([SubResource("Resource_jhupy"), SubResource("Resource_ljos7")])
+
+[sub_resource type="Resource" id="Resource_1ccdt"]
+script = ExtResource("2_nkf23")
+kind = 0
+key = &"wood"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_dnm6v"]
+script = ExtResource("2_nkf23")
+kind = 1
+key = &"basin_bench"
+
+[sub_resource type="Resource" id="Resource_wuij1"]
+script = ExtResource("2_nkf23")
+text = "A bench of stone was set beside the basin, and was occupied from the first morning, and a small queue formed for the best end."
+
+[sub_resource type="Resource" id="Resource_y6sdm"]
+script = ExtResource("3_jkhn1")
+kind = 2
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_ofl1l"]
+script = ExtResource("1_8lw48")
+id = &"build_it_a_bench"
+label = "Set a bench of stone beside it"
+requires = Array[ExtResource("3_jkhn1")]([SubResource("Resource_y6sdm")])
+effects = Array[ExtResource("2_nkf23")]([SubResource("Resource_1ccdt"), SubResource("Resource_dnm6v"), SubResource("Resource_wuij1")])
+
+[sub_resource type="Resource" id="Resource_2lxal"]
+script = ExtResource("3_jkhn1")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_qw0qq"]
+script = ExtResource("3_jkhn1")
+kind = 11
+amount = 84
+
+[sub_resource type="Resource" id="Resource_qecge"]
+script = ExtResource("3_jkhn1")
+kind = 9
+key = &"water_from_afar"
+
+[resource]
+script = ExtResource("4_74nil")
+id = &"a_shaded_basin"
+title = "A place by the basin"
+body = "The basin is the coolest place in town, and the whole town has noticed, and there is nowhere to sit."
+category = &"nature"
+requires = Array[ExtResource("3_jkhn1")]([SubResource("Resource_2lxal"), SubResource("Resource_qw0qq"), SubResource("Resource_qecge")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_8lw48")]([SubResource("Resource_piu6u"), SubResource("Resource_ofl1l")])

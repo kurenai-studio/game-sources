@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qvadl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_4elcg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_8yxdc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ptaq3"]
+
+[sub_resource type="Resource" id="Resource_0ilmq"]
+script = ExtResource("2_4elcg")
+text = "The reed beds rustled all night, and someone swore they could hear the river in them."
+
+[sub_resource type="Resource" id="Resource_w87n3"]
+script = ExtResource("3_8yxdc")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_nnr13"]
+script = ExtResource("3_8yxdc")
+key = &"reed_beds"
+
+[resource]
+script = ExtResource("4_ptaq3")
+id = &"reeds_rustle"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_8yxdc")]([SubResource("Resource_w87n3"), SubResource("Resource_nnr13")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_4elcg")]([SubResource("Resource_0ilmq")])

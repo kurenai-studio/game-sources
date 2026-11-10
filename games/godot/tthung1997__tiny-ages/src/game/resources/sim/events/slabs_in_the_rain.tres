@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_0xoc1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_x455f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_g84xa"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_c6kyt"]
+
+[sub_resource type="Resource" id="Resource_8tb0a"]
+script = ExtResource("2_x455f")
+text = "Rain ran off the broad slabs in sheets, and the lane gleamed, and a child wrote a name on it with a wet finger."
+
+[sub_resource type="Resource" id="Resource_tyu40"]
+script = ExtResource("3_g84xa")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_8grhb"]
+script = ExtResource("3_g84xa")
+key = &"streets_slabbed"
+
+[resource]
+script = ExtResource("4_c6kyt")
+id = &"slabs_in_the_rain"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_g84xa")]([SubResource("Resource_tyu40"), SubResource("Resource_8grhb")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_x455f")]([SubResource("Resource_8tb0a")])

@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_pdasg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7ou8t"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_v8c76"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ob8nt"]
+
+[sub_resource type="Resource" id="Resource_gwaio"]
+script = ExtResource("2_7ou8t")
+kind = 0
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_xu5su"]
+script = ExtResource("2_7ou8t")
+kind = 1
+key = &"bronze_axe"
+
+[sub_resource type="Resource" id="Resource_oheuy"]
+script = ExtResource("2_7ou8t")
+text = "The bronze went into an axe, and the forest edge retreated by a little more every evening."
+
+[sub_resource type="Resource" id="Resource_g548y"]
+script = ExtResource("1_pdasg")
+id = &"an_axe"
+label = "An axe for the forest"
+effects = Array[ExtResource("2_7ou8t")]([SubResource("Resource_gwaio"), SubResource("Resource_xu5su"), SubResource("Resource_oheuy")])
+
+[sub_resource type="Resource" id="Resource_qucdw"]
+script = ExtResource("2_7ou8t")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_upfd6"]
+script = ExtResource("2_7ou8t")
+kind = 1
+key = &"bronze_sickle"
+
+[sub_resource type="Resource" id="Resource_l51yg"]
+script = ExtResource("2_7ou8t")
+text = "The bronze went into a curved sickle, and the harvest was cut in half the time and twice the singing."
+
+[sub_resource type="Resource" id="Resource_x86lj"]
+script = ExtResource("1_pdasg")
+id = &"a_sickle"
+label = "A sickle for the field"
+effects = Array[ExtResource("2_7ou8t")]([SubResource("Resource_qucdw"), SubResource("Resource_upfd6"), SubResource("Resource_l51yg")])
+
+[sub_resource type="Resource" id="Resource_me8qs"]
+script = ExtResource("3_v8c76")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_56f6s"]
+script = ExtResource("3_v8c76")
+kind = 11
+amount = 66
+
+[sub_resource type="Resource" id="Resource_uxihg"]
+script = ExtResource("3_v8c76")
+kind = 9
+key = &"bronze_alloy"
+
+[resource]
+script = ExtResource("4_ob8nt")
+id = &"a_blade_for_what"
+title = "A blade for what"
+body = "There is now enough bronze for a single good blade, and an argument about what shape it should be."
+category = &"settlement"
+requires = Array[ExtResource("3_v8c76")]([SubResource("Resource_me8qs"), SubResource("Resource_56f6s"), SubResource("Resource_uxihg")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_pdasg")]([SubResource("Resource_g548y"), SubResource("Resource_x86lj")])

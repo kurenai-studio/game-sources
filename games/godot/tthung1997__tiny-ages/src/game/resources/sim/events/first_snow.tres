@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_grorw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_hv4xe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_y6vf1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_i5ute"]
+
+[sub_resource type="Resource" id="Resource_wq0yk"]
+script = ExtResource("2_hv4xe")
+kind = 1
+key = &"snow_figure"
+
+[sub_resource type="Resource" id="Resource_01vvu"]
+script = ExtResource("2_hv4xe")
+text = "A snow figure with a stick for an arm stood at the cave mouth, and nobody would say who had made it."
+
+[sub_resource type="Resource" id="Resource_bfbo4"]
+script = ExtResource("1_grorw")
+id = &"build_a_snow_figure"
+label = "Build something in the snow at the cave mouth"
+effects = Array[ExtResource("2_hv4xe")]([SubResource("Resource_wq0yk"), SubResource("Resource_01vvu")])
+
+[sub_resource type="Resource" id="Resource_wbptk"]
+script = ExtResource("2_hv4xe")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vgg1v"]
+script = ExtResource("2_hv4xe")
+kind = 1
+key = &"snow_tracks"
+
+[sub_resource type="Resource" id="Resource_3rys0"]
+script = ExtResource("2_hv4xe")
+text = "They followed the tracks of a hare, a fox, and one that nobody could name."
+
+[sub_resource type="Resource" id="Resource_tt7fq"]
+script = ExtResource("1_grorw")
+id = &"read_the_tracks"
+label = "Walk out and read what has crossed the snow"
+effects = Array[ExtResource("2_hv4xe")]([SubResource("Resource_wbptk"), SubResource("Resource_vgg1v"), SubResource("Resource_3rys0")])
+
+[sub_resource type="Resource" id="Resource_vqd0a"]
+script = ExtResource("3_y6vf1")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_ft7w8"]
+script = ExtResource("3_y6vf1")
+kind = 5
+amount = 285
+
+[sub_resource type="Resource" id="Resource_iq8no"]
+script = ExtResource("3_y6vf1")
+kind = 13
+amount = 3
+
+[resource]
+script = ExtResource("4_i5ute")
+id = &"first_snow"
+title = "The first snow"
+body = "Snow fell in the night, and the whole valley is white and silent."
+category = &"nature"
+requires = Array[ExtResource("3_y6vf1")]([SubResource("Resource_vqd0a"), SubResource("Resource_ft7w8"), SubResource("Resource_iq8no")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_grorw")]([SubResource("Resource_bfbo4"), SubResource("Resource_tt7fq")])

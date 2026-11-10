@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gdnru"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_fbasb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lcbrf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_h31mv"]
+
+[sub_resource type="Resource" id="Resource_lsbvi"]
+script = ExtResource("2_fbasb")
+text = "The log over the river creaked under three people at once, and held."
+
+[sub_resource type="Resource" id="Resource_ihtnh"]
+script = ExtResource("3_lcbrf")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_pbsqc"]
+script = ExtResource("3_lcbrf")
+key = &"log_bridge"
+
+[resource]
+script = ExtResource("4_h31mv")
+id = &"log_bridge_creaks"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_lcbrf")]([SubResource("Resource_ihtnh"), SubResource("Resource_pbsqc")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_fbasb")]([SubResource("Resource_lsbvi")])

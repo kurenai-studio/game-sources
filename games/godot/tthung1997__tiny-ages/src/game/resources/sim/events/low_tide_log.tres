@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ngxvx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_yr3u5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_m7nmp"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_wcu1l"]
+
+[sub_resource type="Resource" id="Resource_mpi81"]
+script = ExtResource("2_yr3u5")
+kind = 0
+key = &"food"
+amount = 5
+
+[sub_resource type="Resource" id="Resource_slx5p"]
+script = ExtResource("2_yr3u5")
+kind = 1
+key = &"shellfish_gathered"
+
+[sub_resource type="Resource" id="Resource_am5e1"]
+script = ExtResource("2_yr3u5")
+text = "Everyone went out onto the flats with baskets, and came back before the water did, heavy and wet."
+
+[sub_resource type="Resource" id="Resource_t3rc5"]
+script = ExtResource("1_ngxvx")
+id = &"gather_shellfish"
+label = "Go out onto the flats for shellfish"
+effects = Array[ExtResource("2_yr3u5")]([SubResource("Resource_mpi81"), SubResource("Resource_slx5p"), SubResource("Resource_am5e1")])
+
+[sub_resource type="Resource" id="Resource_0clhn"]
+script = ExtResource("2_yr3u5")
+kind = 0
+key = &"wood"
+amount = 5
+
+[sub_resource type="Resource" id="Resource_wyvk3"]
+script = ExtResource("2_yr3u5")
+kind = 1
+key = &"driftwood_gathered"
+
+[sub_resource type="Resource" id="Resource_prwkv"]
+script = ExtResource("2_yr3u5")
+text = "The tideline was littered with pale, salt-dry wood, and it was carried back by the armful."
+
+[sub_resource type="Resource" id="Resource_xg448"]
+script = ExtResource("1_ngxvx")
+id = &"comb_the_tideline"
+label = "Walk the tideline for driftwood"
+effects = Array[ExtResource("2_yr3u5")]([SubResource("Resource_0clhn"), SubResource("Resource_wyvk3"), SubResource("Resource_prwkv")])
+
+[sub_resource type="Resource" id="Resource_r5tnw"]
+script = ExtResource("3_m7nmp")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_0l2q2"]
+script = ExtResource("3_m7nmp")
+kind = 5
+amount = 215
+
+[sub_resource type="Resource" id="Resource_arkn7"]
+script = ExtResource("3_m7nmp")
+key = &"log_bridge"
+
+[sub_resource type="Resource" id="Resource_xq5is"]
+script = ExtResource("3_m7nmp")
+kind = 17
+
+[resource]
+script = ExtResource("4_wcu1l")
+id = &"low_tide_log"
+title = "The sea has gone out"
+body = "The sea has gone a long way out beyond the spit, and the wet sand ticks and glitters. It will not stay out for long."
+category = &"nature"
+requires = Array[ExtResource("3_m7nmp")]([SubResource("Resource_r5tnw"), SubResource("Resource_0l2q2"), SubResource("Resource_arkn7"), SubResource("Resource_xq5is")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ngxvx")]([SubResource("Resource_t3rc5"), SubResource("Resource_xg448")])

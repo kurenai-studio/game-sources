@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vni8j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_w7l0k"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_xq8hu"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_8ck1n"]
+
+[sub_resource type="Resource" id="Resource_7svil"]
+script = ExtResource("2_w7l0k")
+kind = 1
+key = &"cistern_dug"
+
+[sub_resource type="Resource" id="Resource_hp7v7"]
+script = ExtResource("2_w7l0k")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_lksn3"]
+script = ExtResource("2_w7l0k")
+kind = 10
+key = &"water_from_afar"
+text = "Water from Afar"
+
+[sub_resource type="Resource" id="Resource_hat08"]
+script = ExtResource("2_w7l0k")
+text = "The well was widened and deepened and roofed in stone, and the first bucket drawn from the cistern was passed round like a prize."
+
+[sub_resource type="Resource" id="Resource_ryncc"]
+script = ExtResource("3_xq8hu")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_ron3j"]
+script = ExtResource("1_vni8j")
+id = &"deepen_into_a_cistern"
+label = "Deepen it into a cistern with a vaulted roof"
+requires = Array[ExtResource("3_xq8hu")]([SubResource("Resource_ryncc")])
+effects = Array[ExtResource("2_w7l0k")]([SubResource("Resource_7svil"), SubResource("Resource_hp7v7"), SubResource("Resource_lksn3"), SubResource("Resource_hat08")])
+
+[sub_resource type="Resource" id="Resource_t2qod"]
+script = ExtResource("2_w7l0k")
+kind = 1
+key = &"well_channel"
+
+[sub_resource type="Resource" id="Resource_3sic7"]
+script = ExtResource("2_w7l0k")
+kind = 10
+key = &"water_from_afar"
+text = "Water from Afar"
+
+[sub_resource type="Resource" id="Resource_d0t5f"]
+script = ExtResource("2_w7l0k")
+text = "A narrow channel was led out from the well along the lane, and children followed the first trickle of water all the way to the end."
+
+[sub_resource type="Resource" id="Resource_h65b3"]
+script = ExtResource("1_vni8j")
+id = &"lead_a_channel_from_it"
+label = "Lead a channel out from it into the lane"
+effects = Array[ExtResource("2_w7l0k")]([SubResource("Resource_t2qod"), SubResource("Resource_3sic7"), SubResource("Resource_d0t5f")])
+
+[sub_resource type="Resource" id="Resource_6eiis"]
+script = ExtResource("3_xq8hu")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_nsc4o"]
+script = ExtResource("3_xq8hu")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_hdy5u"]
+script = ExtResource("3_xq8hu")
+kind = 9
+key = &"water_from_afar"
+negate = true
+
+[sub_resource type="Resource" id="Resource_x6v8j"]
+script = ExtResource("3_xq8hu")
+key = &"well_dug"
+
+[sub_resource type="Resource" id="Resource_67v51"]
+script = ExtResource("3_xq8hu")
+kind = 7
+
+[resource]
+script = ExtResource("4_8ck1n")
+id = &"the_old_well_grows"
+title = "The old well"
+body = "The well is deep and cold and reliable, and the town has outgrown it, and a long queue has begun to form at it each morning."
+category = &"nature"
+requires = Array[ExtResource("3_xq8hu")]([SubResource("Resource_6eiis"), SubResource("Resource_nsc4o"), SubResource("Resource_hdy5u"), SubResource("Resource_x6v8j")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_xq8hu")]([SubResource("Resource_67v51")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_vni8j")]([SubResource("Resource_ron3j"), SubResource("Resource_h65b3")])

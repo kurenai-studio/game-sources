@@ -1,0 +1,111 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_g2wyp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2fi1l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_c0om0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_71g6t"]
+
+[sub_resource type="Resource" id="Resource_srmy4"]
+script = ExtResource("2_2fi1l")
+kind = 1
+key = &"plank_boat"
+
+[sub_resource type="Resource" id="Resource_vhbct"]
+script = ExtResource("2_2fi1l")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_kaqds"]
+script = ExtResource("2_2fi1l")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_3ff4d"]
+script = ExtResource("2_2fi1l")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_6brax"]
+script = ExtResource("2_2fi1l")
+text = "Planks were pegged along the sides and a square of woven cloth went up a pole. The boat leaned, thought about it, and went."
+
+[sub_resource type="Resource" id="Resource_t2dnw"]
+script = ExtResource("3_c0om0")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_d3goi"]
+script = ExtResource("1_g2wyp")
+id = &"plank_and_sail"
+label = "Add planks and a square sail"
+requires = Array[ExtResource("3_c0om0")]([SubResource("Resource_t2dnw")])
+effects = Array[ExtResource("2_2fi1l")]([SubResource("Resource_srmy4"), SubResource("Resource_vhbct"), SubResource("Resource_kaqds"), SubResource("Resource_3ff4d"), SubResource("Resource_6brax")])
+
+[sub_resource type="Resource" id="Resource_8irp5"]
+script = ExtResource("2_2fi1l")
+kind = 1
+key = &"coast_paddling"
+
+[sub_resource type="Resource" id="Resource_eiaqo"]
+script = ExtResource("2_2fi1l")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_d7ny2"]
+script = ExtResource("2_2fi1l")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_77cdh"]
+script = ExtResource("2_2fi1l")
+text = "The dugout was pitched and paddled along the coast, and was home by dark with a full account of what lay beyond the second headland."
+
+[sub_resource type="Resource" id="Resource_eh6d7"]
+script = ExtResource("1_g2wyp")
+id = &"paddle_the_coast"
+label = "Pitch it, and paddle along the coast"
+effects = Array[ExtResource("2_2fi1l")]([SubResource("Resource_8irp5"), SubResource("Resource_eiaqo"), SubResource("Resource_d7ny2"), SubResource("Resource_77cdh")])
+
+[sub_resource type="Resource" id="Resource_bnjea"]
+script = ExtResource("3_c0om0")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_w63n8"]
+script = ExtResource("3_c0om0")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_pf3rp"]
+script = ExtResource("3_c0om0")
+kind = 9
+key = &"beyond_the_water"
+negate = true
+
+[sub_resource type="Resource" id="Resource_tbao3"]
+script = ExtResource("3_c0om0")
+key = &"dugout_canoe"
+
+[sub_resource type="Resource" id="Resource_lrwgx"]
+script = ExtResource("3_c0om0")
+kind = 7
+
+[resource]
+script = ExtResource("4_71g6t")
+id = &"planks_for_the_dugout"
+title = "More than a river"
+body = "The dugout is as good a boat as a log can be. It has also begun to look at the mouth of the river in a way that boats sometimes do."
+category = &"exploration"
+requires = Array[ExtResource("3_c0om0")]([SubResource("Resource_bnjea"), SubResource("Resource_w63n8"), SubResource("Resource_pf3rp"), SubResource("Resource_tbao3")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_c0om0")]([SubResource("Resource_lrwgx")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_g2wyp")]([SubResource("Resource_d3goi"), SubResource("Resource_eh6d7")])

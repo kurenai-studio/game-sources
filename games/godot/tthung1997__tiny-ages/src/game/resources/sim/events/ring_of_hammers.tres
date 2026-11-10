@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hh8th"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2xr2i"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_wv8gt"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_o24xg"]
+
+[sub_resource type="Resource" id="Resource_u4jwb"]
+script = ExtResource("2_2xr2i")
+text = "From the edge of the village came the sound of a small hammer, over and over, like a very patient woodpecker."
+
+[sub_resource type="Resource" id="Resource_3q66g"]
+script = ExtResource("3_wv8gt")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_y4pkh"]
+script = ExtResource("3_wv8gt")
+kind = 9
+key = &"first_casting"
+
+[resource]
+script = ExtResource("4_o24xg")
+id = &"ring_of_hammers"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_wv8gt")]([SubResource("Resource_3q66g"), SubResource("Resource_y4pkh")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_2xr2i")]([SubResource("Resource_u4jwb")])

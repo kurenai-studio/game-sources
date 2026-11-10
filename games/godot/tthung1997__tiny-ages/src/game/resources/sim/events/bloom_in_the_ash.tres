@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_q1t1l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vv6va"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rrysy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7tbqf"]
+
+[sub_resource type="Resource" id="Resource_esju4"]
+script = ExtResource("2_vv6va")
+text = "A grey sponge of iron came out of the furnace, glowing, ugly and astonishingly heavy, and was hit by everyone who could reach it."
+
+[sub_resource type="Resource" id="Resource_isahh"]
+script = ExtResource("3_rrysy")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_exi0s"]
+script = ExtResource("3_rrysy")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_7tbqf")
+id = &"bloom_in_the_ash"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_rrysy")]([SubResource("Resource_isahh"), SubResource("Resource_exi0s")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_vv6va")]([SubResource("Resource_esju4")])

@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_2k485"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dt626"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_37i4v"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bj1tn"]
+
+[sub_resource type="Resource" id="Resource_p578w"]
+script = ExtResource("2_dt626")
+kind = 1
+key = &"cave_store"
+
+[sub_resource type="Resource" id="Resource_bun2p"]
+script = ExtResource("2_dt626")
+text = "Baskets and jars were carried up to the cave, where the cool dark kept them all winter."
+
+[sub_resource type="Resource" id="Resource_sixry"]
+script = ExtResource("1_2k485")
+id = &"cave_for_stores"
+label = "Make it the winter store"
+effects = Array[ExtResource("2_dt626")]([SubResource("Resource_p578w"), SubResource("Resource_bun2p")])
+
+[sub_resource type="Resource" id="Resource_mofot"]
+script = ExtResource("2_dt626")
+kind = 1
+key = &"cave_kept"
+
+[sub_resource type="Resource" id="Resource_xv38i"]
+script = ExtResource("2_dt626")
+text = "The cave stayed a place to sleep and to tell the old stories, and the huts filled with the young."
+
+[sub_resource type="Resource" id="Resource_t30ct"]
+script = ExtResource("1_2k485")
+id = &"cave_for_elders"
+label = "Keep it for sleeping and for the old stories"
+effects = Array[ExtResource("2_dt626")]([SubResource("Resource_mofot"), SubResource("Resource_xv38i")])
+
+[sub_resource type="Resource" id="Resource_n0hbv"]
+script = ExtResource("3_37i4v")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_pk3py"]
+script = ExtResource("3_37i4v")
+kind = 11
+amount = 2
+
+[resource]
+script = ExtResource("4_bj1tn")
+id = &"what_the_cave_is_for"
+title = "What the cave is for"
+body = "The cave is still there, dry and deep, and the group has begun to wonder what it is now for."
+category = &"settlement"
+requires = Array[ExtResource("3_37i4v")]([SubResource("Resource_n0hbv"), SubResource("Resource_pk3py")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_2k485")]([SubResource("Resource_sixry"), SubResource("Resource_t30ct")])

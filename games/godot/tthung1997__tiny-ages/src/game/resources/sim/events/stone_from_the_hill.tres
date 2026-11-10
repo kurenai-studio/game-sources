@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_k6x40"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_tsuv4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_3suw5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_qjqak"]
+
+[sub_resource type="Resource" id="Resource_ur72w"]
+script = ExtResource("2_tsuv4")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_hcbgc"]
+script = ExtResource("2_tsuv4")
+kind = 1
+key = &"cut_stone"
+
+[sub_resource type="Resource" id="Resource_dtowg"]
+script = ExtResource("2_tsuv4")
+text = "A few blocks were wedged out of the hill with iron and set at the gate's foot, pale and square, and every passer-by stopped to pat them."
+
+[sub_resource type="Resource" id="Resource_6hyah"]
+script = ExtResource("3_3suw5")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_neuim"]
+script = ExtResource("1_k6x40")
+id = &"wedge_out_blocks"
+label = "Wedge out a few blocks with iron, and set them at the gate"
+requires = Array[ExtResource("3_3suw5")]([SubResource("Resource_6hyah")])
+effects = Array[ExtResource("2_tsuv4")]([SubResource("Resource_ur72w"), SubResource("Resource_hcbgc"), SubResource("Resource_dtowg")])
+
+[sub_resource type="Resource" id="Resource_tira0"]
+script = ExtResource("2_tsuv4")
+kind = 1
+key = &"timber_town"
+
+[sub_resource type="Resource" id="Resource_vea3j"]
+script = ExtResource("2_tsuv4")
+text = "The gate stayed timber and earth, and was mended every spring, and was, in a sense, always new."
+
+[sub_resource type="Resource" id="Resource_fclrt"]
+script = ExtResource("1_k6x40")
+id = &"keep_to_timber_and_earth"
+label = "Keep to timber and earth"
+effects = Array[ExtResource("2_tsuv4")]([SubResource("Resource_tira0"), SubResource("Resource_vea3j")])
+
+[sub_resource type="Resource" id="Resource_7tmv3"]
+script = ExtResource("3_3suw5")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_jb8b0"]
+script = ExtResource("3_3suw5")
+kind = 11
+amount = 240
+
+[sub_resource type="Resource" id="Resource_2fsai"]
+script = ExtResource("3_3suw5")
+kind = 9
+key = &"the_hill_fort"
+
+[resource]
+script = ExtResource("4_qjqak")
+id = &"stone_from_the_hill"
+title = "Stone from the hill"
+body = "The gate's feet are timber, and timber rots, and the hill above the town is entirely stone."
+category = &"settlement"
+requires = Array[ExtResource("3_3suw5")]([SubResource("Resource_7tmv3"), SubResource("Resource_jb8b0"), SubResource("Resource_2fsai")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_k6x40")]([SubResource("Resource_neuim"), SubResource("Resource_fclrt")])

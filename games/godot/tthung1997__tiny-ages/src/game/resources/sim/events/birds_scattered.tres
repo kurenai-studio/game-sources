@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_w2q3l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_a5xbj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1tb51"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7d8su"]
+
+[sub_resource type="Resource" id="Resource_pcw7m"]
+script = ExtResource("2_a5xbj")
+text = "A flock of birds went up from the field, and so did a shout."
+
+[sub_resource type="Resource" id="Resource_67d44"]
+script = ExtResource("3_1tb51")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_q84gb"]
+script = ExtResource("3_1tb51")
+key = &"field_watchers"
+
+[resource]
+script = ExtResource("4_7d8su")
+id = &"birds_scattered"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_1tb51")]([SubResource("Resource_67d44"), SubResource("Resource_q84gb")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_a5xbj")]([SubResource("Resource_pcw7m")])

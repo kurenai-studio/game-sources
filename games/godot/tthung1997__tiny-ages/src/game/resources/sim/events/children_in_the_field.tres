@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_5i5xy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_do607"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gv07u"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_x2s0s"]
+
+[sub_resource type="Resource" id="Resource_qk5da"]
+script = ExtResource("2_do607")
+kind = 1
+key = &"young_helpers"
+
+[sub_resource type="Resource" id="Resource_hsomf"]
+script = ExtResource("2_do607")
+text = "Each child was given a job, and took it with such seriousness that it was nearly useful."
+
+[sub_resource type="Resource" id="Resource_tv4gf"]
+script = ExtResource("1_5i5xy")
+id = &"give_them_jobs"
+label = "Give each of them a small job"
+effects = Array[ExtResource("2_do607")]([SubResource("Resource_qk5da"), SubResource("Resource_hsomf")])
+
+[sub_resource type="Resource" id="Resource_j3guc"]
+script = ExtResource("2_do607")
+kind = 1
+key = &"sheaf_fort"
+
+[sub_resource type="Resource" id="Resource_mfqni"]
+script = ExtResource("2_do607")
+text = "The children built a fort of sheaves at the field's edge, and defended it all afternoon."
+
+[sub_resource type="Resource" id="Resource_ix3dp"]
+script = ExtResource("1_5i5xy")
+id = &"let_them_play"
+label = "Let them make a game of the sheaves"
+effects = Array[ExtResource("2_do607")]([SubResource("Resource_j3guc"), SubResource("Resource_mfqni")])
+
+[sub_resource type="Resource" id="Resource_lahp2"]
+script = ExtResource("3_gv07u")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_0enx0"]
+script = ExtResource("3_gv07u")
+kind = 11
+amount = 274
+
+[resource]
+script = ExtResource("4_x2s0s")
+id = &"children_in_the_field"
+title = "Small hands"
+body = "The children follow the harvest from field to field, getting under every foot."
+requires = Array[ExtResource("3_gv07u")]([SubResource("Resource_lahp2"), SubResource("Resource_0enx0")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_5i5xy")]([SubResource("Resource_tv4gf"), SubResource("Resource_ix3dp")])

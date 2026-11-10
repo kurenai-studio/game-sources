@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gv1vp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7m61h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_i13lc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_es6yb"]
+
+[sub_resource type="Resource" id="Resource_ry1q1"]
+script = ExtResource("2_7m61h")
+text = "A cart went down the paved lane with a noise like a small thunderstorm, and everyone came to the doors to see who had made it."
+
+[sub_resource type="Resource" id="Resource_pf4ff"]
+script = ExtResource("3_i13lc")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_frhar"]
+script = ExtResource("3_i13lc")
+kind = 9
+key = &"paved_streets"
+
+[resource]
+script = ExtResource("4_es6yb")
+id = &"a_cart_on_the_stones"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_i13lc")]([SubResource("Resource_pf4ff"), SubResource("Resource_frhar")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_7m61h")]([SubResource("Resource_ry1q1")])

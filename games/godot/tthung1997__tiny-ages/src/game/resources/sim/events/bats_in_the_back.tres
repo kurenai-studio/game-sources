@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ec1xe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mr8s1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_siyif"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_yg51v"]
+
+[sub_resource type="Resource" id="Resource_obqrw"]
+script = ExtResource("2_mr8s1")
+kind = 0
+key = &"wood"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_d7fe5"]
+script = ExtResource("2_mr8s1")
+kind = 1
+key = &"bats_smoked"
+
+[sub_resource type="Resource" id="Resource_mux0k"]
+script = ExtResource("2_mr8s1")
+text = "A green fire at the back of the cave sent the bats out in a long dark stream."
+
+[sub_resource type="Resource" id="Resource_srekh"]
+script = ExtResource("3_siyif")
+kind = 2
+key = &"wood"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_jvorj"]
+script = ExtResource("1_ec1xe")
+id = &"smoke_them_out"
+label = "Smoke them out with a green fire"
+requires = Array[ExtResource("3_siyif")]([SubResource("Resource_srekh")])
+effects = Array[ExtResource("2_mr8s1")]([SubResource("Resource_obqrw"), SubResource("Resource_d7fe5"), SubResource("Resource_mux0k")])
+
+[sub_resource type="Resource" id="Resource_weofu"]
+script = ExtResource("2_mr8s1")
+kind = 1
+key = &"bats_kept"
+
+[sub_resource type="Resource" id="Resource_imi7h"]
+script = ExtResource("2_mr8s1")
+text = "The bats stayed, and the cave stopped being full of midges at dusk."
+
+[sub_resource type="Resource" id="Resource_7fej6"]
+script = ExtResource("1_ec1xe")
+id = &"keep_the_bats"
+label = "Leave them, and be glad of the quiet midges"
+effects = Array[ExtResource("2_mr8s1")]([SubResource("Resource_weofu"), SubResource("Resource_imi7h")])
+
+[sub_resource type="Resource" id="Resource_is8yf"]
+script = ExtResource("3_siyif")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_dbl8h"]
+script = ExtResource("3_siyif")
+kind = 5
+amount = 204
+
+[resource]
+script = ExtResource("4_yg51v")
+id = &"bats_in_the_back"
+title = "Bats in the back"
+body = "Bats have moved into the back of the cave, and hang from the roof all day in a twitching row."
+category = &"nature"
+requires = Array[ExtResource("3_siyif")]([SubResource("Resource_is8yf"), SubResource("Resource_dbl8h")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ec1xe")]([SubResource("Resource_jvorj"), SubResource("Resource_7fej6")])

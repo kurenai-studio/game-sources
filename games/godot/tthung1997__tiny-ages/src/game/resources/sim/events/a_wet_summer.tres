@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vi2sw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7h26c"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7kdei"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_c1ggp"]
+
+[sub_resource type="Resource" id="Resource_p6rsu"]
+script = ExtResource("2_7h26c")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_qy5fg"]
+script = ExtResource("2_7h26c")
+kind = 1
+key = &"ditch"
+
+[sub_resource type="Resource" id="Resource_brska"]
+script = ExtResource("2_7h26c")
+text = "A ditch carried the water off to the river, and the pond sulked and shrank."
+
+[sub_resource type="Resource" id="Resource_kxkgg"]
+script = ExtResource("3_7kdei")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_s04bk"]
+script = ExtResource("1_vi2sw")
+id = &"dig_a_ditch"
+label = "Dig a ditch to carry the water away"
+requires = Array[ExtResource("3_7kdei")]([SubResource("Resource_kxkgg")])
+effects = Array[ExtResource("2_7h26c")]([SubResource("Resource_p6rsu"), SubResource("Resource_qy5fg"), SubResource("Resource_brska")])
+
+[sub_resource type="Resource" id="Resource_2xgyv"]
+script = ExtResource("2_7h26c")
+kind = 1
+key = &"waited_out_rain"
+
+[sub_resource type="Resource" id="Resource_6rwj2"]
+script = ExtResource("2_7h26c")
+text = "The rain stopped on the eleventh day, and the pond took a week to leave."
+
+[sub_resource type="Resource" id="Resource_oa47m"]
+script = ExtResource("1_vi2sw")
+id = &"wait_it_out"
+label = "Wait for the rain to stop"
+effects = Array[ExtResource("2_7h26c")]([SubResource("Resource_2xgyv"), SubResource("Resource_6rwj2")])
+
+[sub_resource type="Resource" id="Resource_8vurv"]
+script = ExtResource("3_7kdei")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_q73yh"]
+script = ExtResource("3_7kdei")
+kind = 11
+amount = 130
+
+[sub_resource type="Resource" id="Resource_x6rci"]
+script = ExtResource("3_7kdei")
+kind = 13
+amount = 1
+
+[resource]
+script = ExtResource("4_c1ggp")
+id = &"a_wet_summer"
+title = "Nine days of rain"
+body = "The rain has not stopped for nine days, and the low ground by the river has become a pond."
+category = &"nature"
+requires = Array[ExtResource("3_7kdei")]([SubResource("Resource_8vurv"), SubResource("Resource_q73yh"), SubResource("Resource_x6rci")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_vi2sw")]([SubResource("Resource_s04bk"), SubResource("Resource_oa47m")])

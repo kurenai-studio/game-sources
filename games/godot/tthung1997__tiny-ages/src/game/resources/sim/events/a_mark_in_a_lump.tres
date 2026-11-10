@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vkyiu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_w1qbx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_uox27"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_457d6"]
+
+[sub_resource type="Resource" id="Resource_7ia2y"]
+script = ExtResource("2_w1qbx")
+kind = 1
+key = &"coin_lump_marked"
+
+[sub_resource type="Resource" id="Resource_jern3"]
+script = ExtResource("2_w1qbx")
+kind = 1
+key = &"coin_struck"
+
+[sub_resource type="Resource" id="Resource_6ulbt"]
+script = ExtResource("2_w1qbx")
+kind = 10
+key = &"silver_by_weight"
+text = "Silver by Weight"
+
+[sub_resource type="Resource" id="Resource_ccsls"]
+script = ExtResource("2_w1qbx")
+text = "A mark was pressed into a lump of silver, and it was agreed, loudly, to be worth a day's grain, and after that it was."
+
+[sub_resource type="Resource" id="Resource_lhnel"]
+script = ExtResource("1_vkyiu")
+id = &"press_a_mark_in_it"
+label = "Press a mark in a lump, and agree its worth"
+effects = Array[ExtResource("2_w1qbx")]([SubResource("Resource_7ia2y"), SubResource("Resource_jern3"), SubResource("Resource_6ulbt"), SubResource("Resource_ccsls")])
+
+[sub_resource type="Resource" id="Resource_pxp0m"]
+script = ExtResource("2_w1qbx")
+kind = 1
+key = &"coin_standard"
+
+[sub_resource type="Resource" id="Resource_4fbif"]
+script = ExtResource("2_w1qbx")
+kind = 1
+key = &"coin_struck"
+
+[sub_resource type="Resource" id="Resource_kl8ck"]
+script = ExtResource("2_w1qbx")
+kind = 10
+key = &"silver_by_weight"
+text = "Silver by Weight"
+
+[sub_resource type="Resource" id="Resource_3ktft"]
+script = ExtResource("2_w1qbx")
+text = "A single lump was set in a niche by the gate as the standard, and everything was weighed against it, and it grew shiny from being touched."
+
+[sub_resource type="Resource" id="Resource_6o7gh"]
+script = ExtResource("1_vkyiu")
+id = &"keep_a_standard_lump"
+label = "Keep a standard lump by the gate"
+effects = Array[ExtResource("2_w1qbx")]([SubResource("Resource_pxp0m"), SubResource("Resource_4fbif"), SubResource("Resource_kl8ck"), SubResource("Resource_3ktft")])
+
+[sub_resource type="Resource" id="Resource_q8x7s"]
+script = ExtResource("3_uox27")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_7hmt0"]
+script = ExtResource("3_uox27")
+kind = 11
+amount = 198
+
+[sub_resource type="Resource" id="Resource_p2cd7"]
+script = ExtResource("3_uox27")
+kind = 9
+key = &"silver_by_weight"
+negate = true
+
+[sub_resource type="Resource" id="Resource_fnht8"]
+script = ExtResource("3_uox27")
+kind = 9
+key = &"fuller_harvest"
+
+[sub_resource type="Resource" id="Resource_1dvuy"]
+script = ExtResource("3_uox27")
+kind = 7
+
+[resource]
+script = ExtResource("4_457d6")
+id = &"a_mark_in_a_lump"
+title = "A day's grain"
+body = "There is more silver about than there are names for it, and a good deal of grain changing hands for it. Somebody thinks it should be agreed, once, what it is worth."
+category = &"settlement"
+requires = Array[ExtResource("3_uox27")]([SubResource("Resource_q8x7s"), SubResource("Resource_7hmt0"), SubResource("Resource_p2cd7"), SubResource("Resource_fnht8")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_uox27")]([SubResource("Resource_1dvuy")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_vkyiu")]([SubResource("Resource_lhnel"), SubResource("Resource_6o7gh")])

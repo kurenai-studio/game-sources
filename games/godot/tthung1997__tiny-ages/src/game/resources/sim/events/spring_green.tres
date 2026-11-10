@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_5evi4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ev2ys"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jce70"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_neotg"]
+
+[sub_resource type="Resource" id="Resource_vbhkj"]
+script = ExtResource("2_ev2ys")
+text = "Green shoots were coming up through last year's dead grass."
+
+[sub_resource type="Resource" id="Resource_3s4xq"]
+script = ExtResource("3_jce70")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_42fxo"]
+script = ExtResource("3_jce70")
+kind = 13
+
+[resource]
+script = ExtResource("4_neotg")
+id = &"spring_green"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_jce70")]([SubResource("Resource_3s4xq"), SubResource("Resource_42fxo")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ev2ys")]([SubResource("Resource_vbhkj")])

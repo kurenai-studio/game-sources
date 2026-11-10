@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8p8ev"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3jfyr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ujkwg"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e7c73"]
+
+[sub_resource type="Resource" id="Resource_x1ub6"]
+script = ExtResource("2_3jfyr")
+text = "The black touchstone by the market had been rubbed so bright that it threw light."
+
+[sub_resource type="Resource" id="Resource_fp33k"]
+script = ExtResource("3_ujkwg")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vgstf"]
+script = ExtResource("3_ujkwg")
+key = &"touchstone"
+
+[resource]
+script = ExtResource("4_e7c73")
+id = &"the_touchstone_shines"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ujkwg")]([SubResource("Resource_fp33k"), SubResource("Resource_vgstf")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_3jfyr")]([SubResource("Resource_x1ub6")])

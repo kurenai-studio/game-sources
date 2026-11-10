@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_yh841"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_xjmai"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_migjb"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ippca"]
+
+[sub_resource type="Resource" id="Resource_xcvcr"]
+script = ExtResource("2_xjmai")
+kind = 1
+key = &"tales_told"
+
+[sub_resource type="Resource" id="Resource_knoha"]
+script = ExtResource("2_xjmai")
+text = "{subject} told the story of the day, and soon everyone was adding to it. By the end they told it the same way each night."
+
+[sub_resource type="Resource" id="Resource_r3ted"]
+script = ExtResource("2_xjmai")
+kind = 10
+key = &"shared_stories"
+text = "Shared Stories"
+
+[sub_resource type="Resource" id="Resource_q3sdm"]
+script = ExtResource("1_yh841")
+id = &"tell_it"
+label = "Gather everyone to listen"
+effects = Array[ExtResource("2_xjmai")]([SubResource("Resource_xcvcr"), SubResource("Resource_knoha"), SubResource("Resource_r3ted")])
+
+[sub_resource type="Resource" id="Resource_ssyy1"]
+script = ExtResource("2_xjmai")
+kind = 1
+key = &"songs_sung"
+
+[sub_resource type="Resource" id="Resource_1x1dx"]
+script = ExtResource("2_xjmai")
+text = "{subject} sang the story of the day, and one by one the others found the tune. By the end they sang it the same way each night."
+
+[sub_resource type="Resource" id="Resource_8resg"]
+script = ExtResource("2_xjmai")
+kind = 10
+key = &"shared_stories"
+text = "Shared Stories"
+
+[sub_resource type="Resource" id="Resource_vdjin"]
+script = ExtResource("1_yh841")
+id = &"sing_it"
+label = "Let them sing it instead"
+effects = Array[ExtResource("2_xjmai")]([SubResource("Resource_ssyy1"), SubResource("Resource_1x1dx"), SubResource("Resource_8resg")])
+
+[sub_resource type="Resource" id="Resource_4ixx8"]
+script = ExtResource("3_migjb")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_e2jdv"]
+script = ExtResource("3_migjb")
+kind = 9
+key = &"shared_stories"
+negate = true
+
+[sub_resource type="Resource" id="Resource_lya7x"]
+script = ExtResource("3_migjb")
+kind = 5
+amount = 108
+
+[sub_resource type="Resource" id="Resource_mwpdt"]
+script = ExtResource("3_migjb")
+kind = 7
+
+[resource]
+script = ExtResource("4_ippca")
+id = &"stories_by_the_fire"
+title = "A story by the fire"
+body = "{subject} has started telling the others about the day, and for once nobody is eager to sleep."
+requires = Array[ExtResource("3_migjb")]([SubResource("Resource_4ixx8"), SubResource("Resource_e2jdv"), SubResource("Resource_lya7x")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_migjb")]([SubResource("Resource_mwpdt")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_yh841")]([SubResource("Resource_q3sdm"), SubResource("Resource_vdjin")])

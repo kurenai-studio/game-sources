@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ufc7j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_xg45b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_45nes"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_17iio"]
+
+[sub_resource type="Resource" id="Resource_sqn5h"]
+script = ExtResource("2_xg45b")
+kind = 1
+key = &"fixed_tale"
+
+[sub_resource type="Resource" id="Resource_wecjb"]
+script = ExtResource("2_xg45b")
+text = "They argued until it had one shape, and from then on it was told the same way every night."
+
+[sub_resource type="Resource" id="Resource_mndir"]
+script = ExtResource("1_ufc7j")
+id = &"one_telling"
+label = "Agree on one way to tell it"
+effects = Array[ExtResource("2_xg45b")]([SubResource("Resource_sqn5h"), SubResource("Resource_wecjb")])
+
+[sub_resource type="Resource" id="Resource_u0pi7"]
+script = ExtResource("2_xg45b")
+kind = 1
+key = &"living_tale"
+
+[sub_resource type="Resource" id="Resource_3nqbh"]
+script = ExtResource("2_xg45b")
+text = "The story grew a new piece every night, and someone swore it had always had a giant bird in it."
+
+[sub_resource type="Resource" id="Resource_yns3q"]
+script = ExtResource("1_ufc7j")
+id = &"let_it_change"
+label = "Let it change with every telling"
+effects = Array[ExtResource("2_xg45b")]([SubResource("Resource_u0pi7"), SubResource("Resource_3nqbh")])
+
+[sub_resource type="Resource" id="Resource_bnwub"]
+script = ExtResource("3_45nes")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_tb3k0"]
+script = ExtResource("3_45nes")
+kind = 5
+amount = 126
+
+[sub_resource type="Resource" id="Resource_8608u"]
+script = ExtResource("3_45nes")
+kind = 9
+key = &"shared_stories"
+
+[sub_resource type="Resource" id="Resource_p5ic4"]
+script = ExtResource("3_45nes")
+key = &"cave_art"
+negate = true
+
+[resource]
+script = ExtResource("4_17iio")
+id = &"living_story"
+title = "The long story"
+body = "The story told by the fire has grown long. Everyone has added a piece, and they no longer agree on how it goes."
+requires = Array[ExtResource("3_45nes")]([SubResource("Resource_bnwub"), SubResource("Resource_tb3k0"), SubResource("Resource_8608u"), SubResource("Resource_p5ic4")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ufc7j")]([SubResource("Resource_mndir"), SubResource("Resource_yns3q")])

@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bhm5j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_cepng"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_8bv1l"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_c6mky"]
+
+[sub_resource type="Resource" id="Resource_vywgb"]
+script = ExtResource("2_cepng")
+kind = 1
+key = &"edge_cleared"
+
+[sub_resource type="Resource" id="Resource_wum64"]
+script = ExtResource("2_cepng")
+kind = 10
+key = &"fuller_harvest"
+text = "A Fuller Harvest"
+
+[sub_resource type="Resource" id="Resource_nkock"]
+script = ExtResource("2_cepng")
+text = "A strip of pines came down in a week, and the sown ground grew by a tenth, and the squirrels moved out in protest."
+
+[sub_resource type="Resource" id="Resource_66gmo"]
+script = ExtResource("1_bhm5j")
+id = &"clear_the_edge"
+label = "Clear a strip, and sow it"
+effects = Array[ExtResource("2_cepng")]([SubResource("Resource_vywgb"), SubResource("Resource_wum64"), SubResource("Resource_nkock")])
+
+[sub_resource type="Resource" id="Resource_r5tw3"]
+script = ExtResource("2_cepng")
+kind = 1
+key = &"stumps_burned"
+
+[sub_resource type="Resource" id="Resource_cl0el"]
+script = ExtResource("2_cepng")
+kind = 10
+key = &"fuller_harvest"
+text = "A Fuller Harvest"
+
+[sub_resource type="Resource" id="Resource_usyms"]
+script = ExtResource("2_cepng")
+text = "The stumps were burned and the field planted in their ashes, and the first crop was greener than anything the village had grown."
+
+[sub_resource type="Resource" id="Resource_fkgnp"]
+script = ExtResource("1_bhm5j")
+id = &"burn_the_stumps"
+label = "Burn the stumps, and plant between the ashes"
+effects = Array[ExtResource("2_cepng")]([SubResource("Resource_r5tw3"), SubResource("Resource_cl0el"), SubResource("Resource_usyms")])
+
+[sub_resource type="Resource" id="Resource_scqd7"]
+script = ExtResource("3_8bv1l")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_37v0y"]
+script = ExtResource("3_8bv1l")
+kind = 11
+amount = 90
+
+[sub_resource type="Resource" id="Resource_lem36"]
+script = ExtResource("3_8bv1l")
+kind = 9
+key = &"fuller_harvest"
+negate = true
+
+[sub_resource type="Resource" id="Resource_c4dn0"]
+script = ExtResource("3_8bv1l")
+kind = 9
+key = &"first_bloom"
+
+[sub_resource type="Resource" id="Resource_42ks0"]
+script = ExtResource("3_8bv1l")
+kind = 7
+
+[resource]
+script = ExtResource("4_c6mky")
+id = &"an_axe_at_the_pines"
+title = "The edge of the pines"
+body = "The pines come right up to the edge of the field, and an iron axe has made it very clear that they do not have to."
+category = &"settlement"
+requires = Array[ExtResource("3_8bv1l")]([SubResource("Resource_scqd7"), SubResource("Resource_37v0y"), SubResource("Resource_lem36"), SubResource("Resource_c4dn0")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_8bv1l")]([SubResource("Resource_42ks0")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_bhm5j")]([SubResource("Resource_66gmo"), SubResource("Resource_fkgnp")])

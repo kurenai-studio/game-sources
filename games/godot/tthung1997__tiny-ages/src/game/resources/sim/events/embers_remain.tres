@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_uoen1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_g4gmw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_o453s"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7gbrp"]
+
+[sub_resource type="Resource" id="Resource_0wcny"]
+script = ExtResource("2_g4gmw")
+kind = 1
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_wrcj5"]
+script = ExtResource("2_g4gmw")
+text = "In the grey morning the group went back for the last glowing embers, and carried the first fire home."
+
+[sub_resource type="Resource" id="Resource_l03fi"]
+script = ExtResource("2_g4gmw")
+kind = 10
+key = &"fire"
+text = "Fire"
+
+[sub_resource type="Resource" id="Resource_xw0mb"]
+script = ExtResource("3_o453s")
+key = &"fire_found"
+negate = true
+
+[resource]
+script = ExtResource("4_7gbrp")
+id = &"embers_remain"
+title = "Embers"
+category = &"nature"
+requires = Array[ExtResource("3_o453s")]([SubResource("Resource_xw0mb")])
+effects = Array[ExtResource("2_g4gmw")]([SubResource("Resource_0wcny"), SubResource("Resource_wrcj5"), SubResource("Resource_l03fi")])

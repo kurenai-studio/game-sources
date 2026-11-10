@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_nk0wb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_4n47t"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_y6tyi"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dgg44"]
+
+[sub_resource type="Resource" id="Resource_f1ill"]
+script = ExtResource("2_4n47t")
+text = "A warm wind came up the valley, and for a day everyone sat outside."
+
+[sub_resource type="Resource" id="Resource_yml5n"]
+script = ExtResource("3_y6tyi")
+kind = 5
+amount = 10
+
+[resource]
+script = ExtResource("4_dgg44")
+id = &"warm_wind"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_y6tyi")]([SubResource("Resource_yml5n")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_4n47t")]([SubResource("Resource_f1ill")])

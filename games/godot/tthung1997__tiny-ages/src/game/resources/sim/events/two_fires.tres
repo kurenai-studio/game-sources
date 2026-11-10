@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_660f7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vxrjt"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lfr2k"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_g3mmc"]
+
+[sub_resource type="Resource" id="Resource_0xg8v"]
+script = ExtResource("2_vxrjt")
+text = "Two fires burned in the camp that evening, and each had a story going."
+
+[sub_resource type="Resource" id="Resource_r8cp4"]
+script = ExtResource("3_lfr2k")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_i0mu3"]
+script = ExtResource("3_lfr2k")
+key = &"second_hearth"
+
+[resource]
+script = ExtResource("4_g3mmc")
+id = &"two_fires"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_lfr2k")]([SubResource("Resource_r8cp4"), SubResource("Resource_i0mu3")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_vxrjt")]([SubResource("Resource_0xg8v")])

@@ -1,0 +1,98 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_xa07l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_n3whm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1m4ra"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rp174"]
+
+[sub_resource type="Resource" id="Resource_bev5a"]
+script = ExtResource("2_n3whm")
+kind = 1
+key = &"pack_donkeys"
+
+[sub_resource type="Resource" id="Resource_qphlp"]
+script = ExtResource("2_n3whm")
+kind = 1
+key = &"donkeys"
+
+[sub_resource type="Resource" id="Resource_babw2"]
+script = ExtResource("2_n3whm")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_b4e3x"]
+script = ExtResource("2_n3whm")
+text = "Two donkeys were trained to the pack, a process that mostly consisted of being patient, and carrots."
+
+[sub_resource type="Resource" id="Resource_jgv8r"]
+script = ExtResource("1_xa07l")
+id = &"train_two_donkeys"
+label = "Train two donkeys to the pack"
+effects = Array[ExtResource("2_n3whm")]([SubResource("Resource_bev5a"), SubResource("Resource_qphlp"), SubResource("Resource_babw2"), SubResource("Resource_b4e3x")])
+
+[sub_resource type="Resource" id="Resource_1p8jx"]
+script = ExtResource("2_n3whm")
+kind = 1
+key = &"borrowed_donkeys"
+
+[sub_resource type="Resource" id="Resource_7077j"]
+script = ExtResource("2_n3whm")
+kind = 1
+key = &"donkeys"
+
+[sub_resource type="Resource" id="Resource_bexwy"]
+script = ExtResource("2_n3whm")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_4g6yn"]
+script = ExtResource("2_n3whm")
+text = "The trader's string of donkeys was borrowed for a season, and returned with a note, which nobody could read, and an extra donkey."
+
+[sub_resource type="Resource" id="Resource_gyd5c"]
+script = ExtResource("1_xa07l")
+id = &"borrow_the_string"
+label = "Borrow the trader's string of donkeys"
+effects = Array[ExtResource("2_n3whm")]([SubResource("Resource_1p8jx"), SubResource("Resource_7077j"), SubResource("Resource_bexwy"), SubResource("Resource_4g6yn")])
+
+[sub_resource type="Resource" id="Resource_52u4a"]
+script = ExtResource("3_1m4ra")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_c4u40"]
+script = ExtResource("3_1m4ra")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_jo3x7"]
+script = ExtResource("3_1m4ra")
+kind = 9
+key = &"wheel_and_road"
+negate = true
+
+[sub_resource type="Resource" id="Resource_g5yg3"]
+script = ExtResource("3_1m4ra")
+key = &"path_herding"
+
+[sub_resource type="Resource" id="Resource_8sp5u"]
+script = ExtResource("3_1m4ra")
+kind = 7
+
+[resource]
+script = ExtResource("4_rp174")
+id = &"donkeys_to_the_pack"
+title = "The trader's donkey"
+body = "The donkey that carried the salt is back, and it has taken a strong dislike to being led and a stronger liking for the herd."
+category = &"nature"
+requires = Array[ExtResource("3_1m4ra")]([SubResource("Resource_52u4a"), SubResource("Resource_c4u40"), SubResource("Resource_jo3x7"), SubResource("Resource_g5yg3")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_1m4ra")]([SubResource("Resource_8sp5u")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_xa07l")]([SubResource("Resource_jgv8r"), SubResource("Resource_gyd5c")])

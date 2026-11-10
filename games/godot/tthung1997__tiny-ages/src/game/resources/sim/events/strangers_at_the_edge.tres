@@ -1,0 +1,81 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_l1kqq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_twp0s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_cqbf4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mkrts"]
+
+[sub_resource type="Resource" id="Resource_yoajj"]
+script = ExtResource("2_twp0s")
+kind = 1
+key = &"strangers_welcomed"
+
+[sub_resource type="Resource" id="Resource_gdio1"]
+script = ExtResource("2_twp0s")
+kind = 13
+amount = 2
+
+[sub_resource type="Resource" id="Resource_tvk6s"]
+script = ExtResource("2_twp0s")
+text = "The two strangers came down from the ridge, and the group grew."
+
+[sub_resource type="Resource" id="Resource_h4lu7"]
+script = ExtResource("2_twp0s")
+kind = 10
+key = &"bigger_group"
+text = "A Bigger Group"
+
+[sub_resource type="Resource" id="Resource_clbmf"]
+script = ExtResource("1_l1kqq")
+id = &"welcome_them"
+label = "Welcome them to the fire"
+effects = Array[ExtResource("2_twp0s")]([SubResource("Resource_yoajj"), SubResource("Resource_gdio1"), SubResource("Resource_tvk6s"), SubResource("Resource_h4lu7")])
+
+[sub_resource type="Resource" id="Resource_11tgp"]
+script = ExtResource("2_twp0s")
+kind = 1
+key = &"strangers_courted"
+
+[sub_resource type="Resource" id="Resource_xhaj2"]
+script = ExtResource("2_twp0s")
+text = "A bundle of food was left at the edge of the light, and the strangers watched it for a long time."
+
+[sub_resource type="Resource" id="Resource_j8ypc"]
+script = ExtResource("2_twp0s")
+kind = 7
+key = &"strangers_come"
+amount = 72
+
+[sub_resource type="Resource" id="Resource_1s72i"]
+script = ExtResource("1_l1kqq")
+id = &"leave_food"
+label = "Leave food at the edge of the light"
+effects = Array[ExtResource("2_twp0s")]([SubResource("Resource_11tgp"), SubResource("Resource_xhaj2"), SubResource("Resource_j8ypc")])
+
+[sub_resource type="Resource" id="Resource_y3a7t"]
+script = ExtResource("3_cqbf4")
+kind = 0
+key = &"lookout"
+negate = true
+
+[sub_resource type="Resource" id="Resource_nvmks"]
+script = ExtResource("3_cqbf4")
+kind = 9
+key = &"bigger_group"
+negate = true
+
+[sub_resource type="Resource" id="Resource_ki4rq"]
+script = ExtResource("3_cqbf4")
+kind = 5
+amount = 192
+
+[resource]
+script = ExtResource("4_mkrts")
+id = &"strangers_at_the_edge"
+title = "Strangers at the edge"
+body = "Two strangers have been seen at dusk, just beyond the firelight, watching the smoke of the cave fire. They have kept their distance for two days."
+category = &"exploration"
+requires = Array[ExtResource("3_cqbf4")]([SubResource("Resource_y3a7t"), SubResource("Resource_nvmks"), SubResource("Resource_ki4rq")])
+chance_per_tick = 0.02
+cooldown_ticks = 72
+choices = Array[ExtResource("1_l1kqq")]([SubResource("Resource_clbmf"), SubResource("Resource_1s72i")])

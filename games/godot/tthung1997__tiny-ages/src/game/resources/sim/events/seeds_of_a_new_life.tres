@@ -1,0 +1,58 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_48jrg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_f2obp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hlmcw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_g7lis"]
+
+[sub_resource type="Resource" id="Resource_mf78r"]
+script = ExtResource("2_f2obp")
+kind = 1
+key = &"path_agriculture"
+
+[sub_resource type="Resource" id="Resource_a58yr"]
+script = ExtResource("2_f2obp")
+kind = 12
+key = &"settled"
+
+[sub_resource type="Resource" id="Resource_4fa3f"]
+script = ExtResource("2_f2obp")
+kind = 10
+key = &"the_first_field"
+text = "The First Field"
+
+[sub_resource type="Resource" id="Resource_0tvtd"]
+script = ExtResource("1_48jrg")
+id = &"settle_field"
+label = "Sow the seeds and settle by the field"
+effects = Array[ExtResource("2_f2obp")]([SubResource("Resource_mf78r"), SubResource("Resource_a58yr"), SubResource("Resource_4fa3f")])
+
+[sub_resource type="Resource" id="Resource_av210"]
+script = ExtResource("2_f2obp")
+kind = 1
+key = &"path_herding"
+
+[sub_resource type="Resource" id="Resource_h81lb"]
+script = ExtResource("2_f2obp")
+kind = 12
+key = &"settled"
+
+[sub_resource type="Resource" id="Resource_71g3m"]
+script = ExtResource("2_f2obp")
+kind = 10
+key = &"a_place_to_stay"
+text = "A Place to Stay"
+
+[sub_resource type="Resource" id="Resource_5mkjn"]
+script = ExtResource("1_48jrg")
+id = &"settle_herds"
+label = "Settle where the herds winter, and sow a small plot"
+effects = Array[ExtResource("2_f2obp")]([SubResource("Resource_av210"), SubResource("Resource_h81lb"), SubResource("Resource_71g3m")])
+
+[resource]
+script = ExtResource("4_g7lis")
+id = &"seeds_of_a_new_life"
+title = "Seeds of a new life"
+body = "The plant by the cave has gone to seed: enough to sow a whole field. The herds still move through the valley, and the group has learned enough to stay."
+category = &"settlement"
+choices = Array[ExtResource("1_48jrg")]([SubResource("Resource_0tvtd"), SubResource("Resource_5mkjn")])

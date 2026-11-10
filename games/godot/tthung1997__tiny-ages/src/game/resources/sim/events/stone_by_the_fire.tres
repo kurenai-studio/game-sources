@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_m3dad"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rbdpg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_q3h4x"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5tvsc"]
+
+[sub_resource type="Resource" id="Resource_u2hvd"]
+script = ExtResource("2_rbdpg")
+text = "The black stone by the fire was warm to the touch long after the fire had burned low."
+
+[sub_resource type="Resource" id="Resource_pdy75"]
+script = ExtResource("3_q3h4x")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_bjsm5"]
+script = ExtResource("3_q3h4x")
+key = &"sky_stone_kept"
+
+[resource]
+script = ExtResource("4_5tvsc")
+id = &"stone_by_the_fire"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_q3h4x")]([SubResource("Resource_pdy75"), SubResource("Resource_bjsm5")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_rbdpg")]([SubResource("Resource_u2hvd")])

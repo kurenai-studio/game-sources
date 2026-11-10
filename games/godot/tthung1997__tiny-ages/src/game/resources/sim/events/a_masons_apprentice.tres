@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_u8rfn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_q0kuk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_t2dyr"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_a8syd"]
+
+[sub_resource type="Resource" id="Resource_ytppk"]
+script = ExtResource("2_q0kuk")
+kind = 1
+key = &"mason_apprentice"
+
+[sub_resource type="Resource" id="Resource_31l24"]
+script = ExtResource("2_q0kuk")
+text = "{subject} became the masons' apprentice, and for the first month did nothing but sweep, and for the second month, polish, and was happier than anyone."
+
+[sub_resource type="Resource" id="Resource_hjv67"]
+script = ExtResource("1_u8rfn")
+id = &"take_them_on"
+label = "Take them on as the masons' apprentice"
+effects = Array[ExtResource("2_q0kuk")]([SubResource("Resource_ytppk"), SubResource("Resource_31l24")])
+
+[sub_resource type="Resource" id="Resource_b4udi"]
+script = ExtResource("2_q0kuk")
+kind = 1
+key = &"stonework_shared"
+
+[sub_resource type="Resource" id="Resource_sfurr"]
+script = ExtResource("2_q0kuk")
+text = "Every household learned a little stonework, mostly how not to drop a block on a foot, and the town's doorsteps improved sharply."
+
+[sub_resource type="Resource" id="Resource_vnwih"]
+script = ExtResource("1_u8rfn")
+id = &"every_household_learns_stone"
+label = "Let every household learn a little stonework"
+effects = Array[ExtResource("2_q0kuk")]([SubResource("Resource_b4udi"), SubResource("Resource_sfurr")])
+
+[sub_resource type="Resource" id="Resource_24mwd"]
+script = ExtResource("3_t2dyr")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_efrhq"]
+script = ExtResource("3_t2dyr")
+kind = 11
+amount = 14
+
+[sub_resource type="Resource" id="Resource_ap7gt"]
+script = ExtResource("3_t2dyr")
+kind = 7
+
+[resource]
+script = ExtResource("4_a8syd")
+id = &"a_masons_apprentice"
+title = "A mason's apprentice"
+body = "{subject} has been following the masons about, handing them things before they ask, and has begun to explain to others how the stone wants to be cut."
+requires = Array[ExtResource("3_t2dyr")]([SubResource("Resource_24mwd"), SubResource("Resource_efrhq")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_t2dyr")]([SubResource("Resource_ap7gt")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_u8rfn")]([SubResource("Resource_hjv67"), SubResource("Resource_vnwih")])

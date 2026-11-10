@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_cp2mw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_m0p20"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_i7ghs"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_anprl"]
+
+[sub_resource type="Resource" id="Resource_jx4yu"]
+script = ExtResource("2_m0p20")
+text = "Someone leaned on the low wall at dusk and looked toward the hills for a long time."
+
+[sub_resource type="Resource" id="Resource_73ry4"]
+script = ExtResource("3_i7ghs")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_3la5k"]
+script = ExtResource("3_i7ghs")
+key = &"low_wall"
+
+[resource]
+script = ExtResource("4_anprl")
+id = &"wall_at_dusk"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_i7ghs")]([SubResource("Resource_73ry4"), SubResource("Resource_3la5k")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_m0p20")]([SubResource("Resource_jx4yu")])

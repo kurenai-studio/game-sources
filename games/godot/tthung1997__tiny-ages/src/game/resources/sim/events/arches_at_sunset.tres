@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_jds2v"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_65hda"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fwk1r"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0ao3n"]
+
+[sub_resource type="Resource" id="Resource_tqdb8"]
+script = ExtResource("2_65hda")
+text = "The arches stood in a long gold line at sunset, and somebody counted them aloud, and got a different number each time."
+
+[sub_resource type="Resource" id="Resource_gkle5"]
+script = ExtResource("3_fwk1r")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_o8sc0"]
+script = ExtResource("3_fwk1r")
+key = &"spring_arches"
+
+[resource]
+script = ExtResource("4_0ao3n")
+id = &"arches_at_sunset"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_fwk1r")]([SubResource("Resource_gkle5"), SubResource("Resource_o8sc0")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_65hda")]([SubResource("Resource_tqdb8")])

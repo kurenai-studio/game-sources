@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_2uldr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_bl6lv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_plaj3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_34pmn"]
+
+[sub_resource type="Resource" id="Resource_ur6i4"]
+script = ExtResource("2_bl6lv")
+kind = 1
+key = &"water_stewards"
+
+[sub_resource type="Resource" id="Resource_ngokc"]
+script = ExtResource("2_bl6lv")
+text = "A steward was named for every neighbourhood, and each took up a staff and the job, and the water ran as it always had, only with more opinions."
+
+[sub_resource type="Resource" id="Resource_4yoib"]
+script = ExtResource("1_2uldr")
+id = &"stewards_by_neighbourhood"
+label = "Name a steward for every neighbourhood"
+effects = Array[ExtResource("2_bl6lv")]([SubResource("Resource_ur6i4"), SubResource("Resource_ngokc")])
+
+[sub_resource type="Resource" id="Resource_3vd3m"]
+script = ExtResource("2_bl6lv")
+kind = 1
+key = &"water_craft"
+
+[sub_resource type="Resource" id="Resource_mybnl"]
+script = ExtResource("2_bl6lv")
+text = "The builders of the channels formed a craft, with its own tools and its own habits, and took on apprentices from the first week."
+
+[sub_resource type="Resource" id="Resource_2lp7q"]
+script = ExtResource("1_2uldr")
+id = &"a_craft_of_the_water"
+label = "Let those who build the channels form a craft"
+effects = Array[ExtResource("2_bl6lv")]([SubResource("Resource_3vd3m"), SubResource("Resource_mybnl")])
+
+[sub_resource type="Resource" id="Resource_bt1tx"]
+script = ExtResource("3_plaj3")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_6qssv"]
+script = ExtResource("3_plaj3")
+kind = 11
+amount = 312
+
+[sub_resource type="Resource" id="Resource_c8mlt"]
+script = ExtResource("3_plaj3")
+kind = 9
+key = &"water_from_afar"
+
+[resource]
+script = ExtResource("4_34pmn")
+id = &"who_keeps_the_water_running"
+title = "Who keeps the water running"
+body = "The water has run for a long time now, and people have begun to ask who will keep it running when the ones who built it are old."
+category = &"settlement"
+requires = Array[ExtResource("3_plaj3")]([SubResource("Resource_bt1tx"), SubResource("Resource_6qssv"), SubResource("Resource_c8mlt")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_2uldr")]([SubResource("Resource_4yoib"), SubResource("Resource_2lp7q")])

@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_0ueey"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_54pwx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_44nei"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_eeb7w"]
+
+[sub_resource type="Resource" id="Resource_bjtq6"]
+script = ExtResource("2_54pwx")
+kind = 1
+key = &"daylight_meetings"
+
+[sub_resource type="Resource" id="Resource_afg5r"]
+script = ExtResource("2_54pwx")
+text = "The council kept to daylight, when the square was full, and decisions were made in the presence of a great many onlookers, who sometimes helped."
+
+[sub_resource type="Resource" id="Resource_x7qvo"]
+script = ExtResource("1_0ueey")
+id = &"meet_by_daylight"
+label = "Meet by daylight, when the square is full"
+effects = Array[ExtResource("2_54pwx")]([SubResource("Resource_bjtq6"), SubResource("Resource_afg5r")])
+
+[sub_resource type="Resource" id="Resource_87ex5"]
+script = ExtResource("2_54pwx")
+kind = 0
+key = &"wood"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_m6s3k"]
+script = ExtResource("2_54pwx")
+kind = 1
+key = &"lamplight_meetings"
+
+[sub_resource type="Resource" id="Resource_gn55b"]
+script = ExtResource("2_54pwx")
+text = "The council met by lamplight, with the day's work done, and a good many people arrived with their dinners, and the meetings ran long and warm."
+
+[sub_resource type="Resource" id="Resource_01x2p"]
+script = ExtResource("3_44nei")
+kind = 2
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_iyp1y"]
+script = ExtResource("1_0ueey")
+id = &"meet_by_lamplight"
+label = "Meet by lamplight, when the day's work is done"
+requires = Array[ExtResource("3_44nei")]([SubResource("Resource_01x2p")])
+effects = Array[ExtResource("2_54pwx")]([SubResource("Resource_87ex5"), SubResource("Resource_m6s3k"), SubResource("Resource_gn55b")])
+
+[sub_resource type="Resource" id="Resource_0xuu8"]
+script = ExtResource("3_44nei")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_x6b2f"]
+script = ExtResource("3_44nei")
+kind = 11
+amount = 168
+
+[sub_resource type="Resource" id="Resource_3dcqi"]
+script = ExtResource("3_44nei")
+kind = 9
+key = &"the_square"
+
+[resource]
+script = ExtResource("4_eeb7w")
+id = &"by_daylight_or_lamplight"
+title = "By daylight or by lamplight"
+body = "The square is busy all day, and the evening is when people have time to meet, and the council has been asked whether it ought to sit later."
+category = &"settlement"
+requires = Array[ExtResource("3_44nei")]([SubResource("Resource_0xuu8"), SubResource("Resource_x6b2f"), SubResource("Resource_3dcqi")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_0ueey")]([SubResource("Resource_x7qvo"), SubResource("Resource_iyp1y")])
