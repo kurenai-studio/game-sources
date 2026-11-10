@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"palma_do_coracao"
+display_name = "Palma do Coração"
+kind = 0
+icon = "S_Sword03"
+description = "Golpe que para o coração: 3x dano, atordoa 2s. Se matar, recupera todo Chi. Custa 50 Chi."
+color = Color(1.0, 0.3, 0.5, 1.0)
+damage_mult = 3.0
+cost = 50.0
+cooldown = 18.0
+reach = 35.0
+arc_degrees = 60.0
+stun = 2.0
+sound = &"heart_strike"

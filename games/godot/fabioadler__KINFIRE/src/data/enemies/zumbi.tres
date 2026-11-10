@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+elemental_type = 1
+id = &"zumbi"
+display_name = "Zumbi Pútrido"
+sprite = "zombie"
+behavior = 0
+max_hp = 80.0
+damage = 14.0
+move_speed = 40.0
+xp = 26
+element = "poison"
+min_depth = 4
+spawn_weight = 1.0
+habitats = PackedStringArray("dungeon", "pantano", "corrompido")

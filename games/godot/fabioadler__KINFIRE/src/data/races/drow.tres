@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"drow"
+display_name = "Drow"
+description = "Elfos das profundezas, cruéis e letais nas sombras do Subterrâneo."
+sprite_m = "elf_m"
+sprite_f = "elf_f"
+ability_bonus = {
+"dex": 2,
+"int": 1
+}
+trait_name = "Crueldade"
+trait_description = "+15% de dano contra inimigos atordoados, congelados, lentos ou confusos."
+cc_damage_bonus = 0.15
+tint = Color(0.62, 0.55, 0.85, 1.0)

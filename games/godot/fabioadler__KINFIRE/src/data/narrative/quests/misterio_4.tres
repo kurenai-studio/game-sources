@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_ro4of"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_jpj80"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_xy8og"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_fu37l"]
+
+[sub_resource type="Resource" id="Resource_58jas"]
+script = ExtResource("1_ro4of")
+gold = 210
+item_base = &"boots"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_20n0o"]
+script = ExtResource("4_fu37l")
+type = 0
+target = &"any:capital_*_comum1"
+text = "Ouça a canção de Salomé numa taberna"
+
+[sub_resource type="Resource" id="Resource_obak8"]
+script = ExtResource("3_xy8og")
+description = "Ouça a canção nas tabernas antes que ela suma do repertório. A letra fala de emboscadas em estradas que ainda não ardiam."
+objectives = Array[ExtResource("4_fu37l")]([SubResource("Resource_20n0o")])
+
+[sub_resource type="Resource" id="Resource_qbrah"]
+script = ExtResource("4_fu37l")
+type = 1
+target = &"arqueiro_bandido"
+count = 6
+text = "as emboscadas que a canção denunciou"
+
+[sub_resource type="Resource" id="Resource_l2jbm"]
+script = ExtResource("3_xy8og")
+description = "A canção é uma cifra dos Sussurros. Salomé era espiã do Véu — e se arrependeu. Cada emboscada frustrada prova que a rotina do Véu pode ser lida."
+objectives = Array[ExtResource("4_fu37l")]([SubResource("Resource_qbrah")])
+
+[resource]
+script = ExtResource("2_jpj80")
+id = &"misterio_4"
+title = "O Enigma de Salomé"
+summary = "Uma barda chamada Salomé canta uma canção que prediz emboscadas três dias antes de acontecerem. Se a música prevê, alguém compôs — e o Véu tem rotina."
+act = 2
+quest_level = 12
+chain = &"misterio"
+prerequisites = Array[StringName]([&"ato1_4"])
+stages = Array[ExtResource("3_xy8og")]([SubResource("Resource_obak8"), SubResource("Resource_l2jbm")])
+rewards = SubResource("Resource_58jas")

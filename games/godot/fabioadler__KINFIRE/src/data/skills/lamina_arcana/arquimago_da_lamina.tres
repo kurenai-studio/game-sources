@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"arquimago_da_lamina"
+display_name = "Arquimago da Lâmina"
+kind = 18
+icon = "S_Buff10"
+description = "Forma suprema por 20s: 6 lâminas orbitais auto-atacam (1.5x dano), teleporte livre (sem CD/custo), cooldowns 0. Custa 100 Mana."
+color = Color(0.9, 0.7, 1.0, 1.0)
+damage_mult = 0.0
+cost = 100.0
+cooldown = 180.0
+duration = 20.0
+summon_count = 6
+summon_sprite = "orbiting_blade"
+buff_stat = "free_teleport"
+buff_amount = 1.0
+buff_stat_2 = "cdr"
+buff_amount_2 = 1.0
+sound = &"transform"

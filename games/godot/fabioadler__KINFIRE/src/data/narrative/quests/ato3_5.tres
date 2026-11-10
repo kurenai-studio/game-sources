@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_csgdc"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_7wq0w"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_rdms0"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_5rufj"]
+
+[sub_resource type="Resource" id="Resource_dkua4"]
+script = ExtResource("1_csgdc")
+gold = 380
+item_base = &"ring"
+item_rarity = 3
+
+[sub_resource type="Resource" id="Resource_yjeoi"]
+script = ExtResource("4_5rufj")
+type = 1
+target = &"caranguejo_infernal"
+count = 6
+text = "caranguejos que raspam a fornalha fria"
+
+[sub_resource type="Resource" id="Resource_v82s1"]
+script = ExtResource("4_5rufj")
+type = 1
+target = &"diabrete"
+count = 4
+text = "diabretes que abanam a brasa errada"
+
+[sub_resource type="Resource" id="Resource_75hhw"]
+script = ExtResource("3_rdms0")
+description = "O vulcão esfriou — e esfriar, para um vulcão, é morrer devagar. Kragoth não pede ajuda para viver. Pede testemunhas para a última vez que ele vai queimar."
+objectives = Array[ExtResource("4_5rufj")]([SubResource("Resource_yjeoi"), SubResource("Resource_v82s1")])
+
+[sub_resource type="Resource" id="Resource_ts20j"]
+script = ExtResource("4_5rufj")
+type = 0
+target = &"any:capital_*_lider"
+text = "Relate o que a Chama de Brasa mostrou a um líder"
+
+[sub_resource type="Resource" id="Resource_es1mi"]
+script = ExtResource("3_rdms0")
+description = "Kragoth entra na fornalha sorrindo. 'Eu era o combustível o tempo todo', ele diz. A Chama da Brasa acende vermelha como despedida — e você entende que alguns laços só se religam deixando ir."
+objectives = Array[ExtResource("4_5rufj")]([SubResource("Resource_ts20j")])
+
+[resource]
+script = ExtResource("2_7wq0w")
+id = &"ato3_5"
+title = "A Brasa que Não Morre"
+summary = "Vulcão Vivo: Kragoth se SACRIFICA para religar a Chama — ele ERA o combustível. Não há luta. Há escolha."
+act = 3
+quest_level = 20
+stages = Array[ExtResource("3_rdms0")]([SubResource("Resource_75hhw"), SubResource("Resource_es1mi")])
+rewards = SubResource("Resource_dkua4")
+next = &"ato3_6"

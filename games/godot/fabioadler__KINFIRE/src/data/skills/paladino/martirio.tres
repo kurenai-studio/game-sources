@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"martirio"
+display_name = "Martírio"
+kind = 17
+icon = "S_Holy02"
+description = "Absorve 50% do dano dos aliados em 8m como cura própria. Reduz dano recebido em 20%. Dura 8s. Custa 30 Fé."
+color = Color(1.0, 0.8, 0.4, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 25.0
+duration = 8.0
+buff_stat = "damage_reduction"
+buff_amount = 0.2
+radius = 80.0
+sound = &"buff"

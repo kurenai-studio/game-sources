@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"olho_de_falcao"
+display_name = "Olho de Falcão"
+kind = 17
+icon = "S_Buff06"
+description = "Visão verdadeira por 15s: vê invisíveis, +50% alcance, críticos ignoram armadura. Custa 40 Concentração."
+color = Color(0.9, 0.95, 0.6, 1.0)
+damage_mult = 0.0
+cost = 40.0
+cooldown = 45.0
+duration = 15.0
+buff_stat = "true_sight"
+buff_amount = 1.0
+buff_stat_2 = "reach"
+buff_amount_2 = 0.5
+sound = &"buff"

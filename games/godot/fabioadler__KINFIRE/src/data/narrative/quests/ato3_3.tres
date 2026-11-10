@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_j6imw"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_3hd45"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_mv14x"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_6bjyq"]
+
+[sub_resource type="Resource" id="Resource_oyx7y"]
+script = ExtResource("1_j6imw")
+gold = 340
+item_base = &"helm"
+item_rarity = 3
+
+[sub_resource type="Resource" id="Resource_mh4ln"]
+script = ExtResource("4_6bjyq")
+type = 1
+target = &"zumbi_gelido"
+count = 7
+text = "lembranças congeladas que andam"
+
+[sub_resource type="Resource" id="Resource_1fiec"]
+script = ExtResource("3_mv14x")
+description = "No gelo, cada inimigo tem seu rosto e sua voz — e repete, palavra por palavra, o que você disse em cada encruzilhada. Derrotar suas memórias manipuladas é admitir que foram manipuladas."
+objectives = Array[ExtResource("4_6bjyq")]([SubResource("Resource_mh4ln")])
+
+[sub_resource type="Resource" id="Resource_m7jv8"]
+script = ExtResource("4_6bjyq")
+type = 0
+target = &"any:capital_*_lider"
+text = "Relate o que a Chama de Gelo mostrou a um líder"
+
+[sub_resource type="Resource" id="Resource_r1d3w"]
+script = ExtResource("3_mv14x")
+description = "O gelo derrete só o bastante para escorrer uma lágrima por cada escolha reescrita. A Chama do Gelo acende branca como respiro no inverno. Fale — antes que congele de novo."
+objectives = Array[ExtResource("4_6bjyq")]([SubResource("Resource_m7jv8")])
+
+[resource]
+script = ExtResource("2_3hd45")
+id = &"ato3_3"
+title = "O Gelo que Lembra"
+summary = "Coração da Geleira: memórias congeladas combatem você — o jogo usa suas próprias escolhas anteriores como inimigos."
+act = 3
+quest_level = 18
+stages = Array[ExtResource("3_mv14x")]([SubResource("Resource_1fiec"), SubResource("Resource_r1d3w")])
+rewards = SubResource("Resource_oyx7y")
+next = &"ato3_4"

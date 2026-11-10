@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"mestre_assassino"
+display_name = "Mestre Assassino"
+kind = 17
+icon = "S_Buff10"
+description = "Modo execução por 30s: alvos abaixo de 30% vida podem ser executados instantaneamente (tecla de interação). Custa 50 Energia."
+color = Color(0.5, 0.1, 0.5, 1.0)
+damage_mult = 0.0
+cost = 50.0
+cooldown = 60.0
+duration = 30.0
+buff_stat = "execute_threshold"
+buff_amount = 0.3
+sound = &"shadow_step"

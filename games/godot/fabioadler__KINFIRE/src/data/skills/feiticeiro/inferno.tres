@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"inferno"
+display_name = "Inferno"
+kind = 13
+icon = "S_Fire04"
+description = "Chuva de meteoros em 15m. 8 impactos aleatórios, 2.5x dano fogo, queimadura 8s (5%/s). Custa 60 Mana."
+color = Color(1.0, 0.5, 0.1, 1.0)
+damage_mult = 2.5
+cost = 60.0
+cooldown = 30.0
+radius = 150.0
+duration = 3.0
+hits = 8
+element = "fire"
+sound = &"meteor"

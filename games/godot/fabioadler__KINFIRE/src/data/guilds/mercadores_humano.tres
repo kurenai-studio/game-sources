@@ -1,0 +1,14 @@
+[gd_resource type="GuildData" format=3]
+
+[resource]
+script = SubResource("GDScript_1")
+id = &"mercadores_humano"
+display_name = "Guilda dos Mercadores"
+tipo = 1
+mestre_npc = &"matthias_mercadores"
+descricao = "Guilda {tipo} da classe {cls}"
+requisito_nivel = 1
+beneficios = {"venda_preco_bonus": 0.2, "leilao_slots_bonus": 2}
+
+[sub_resource type="GDScript" id="GDScript_1"]
+script_class = "GuildData"

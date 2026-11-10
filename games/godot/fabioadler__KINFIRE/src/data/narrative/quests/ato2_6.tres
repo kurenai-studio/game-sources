@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_qb7iu"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_c6w3l"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_pu3w3"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_hl2le"]
+
+[sub_resource type="Resource" id="Resource_qb7iu"]
+script = ExtResource("1_qb7iu")
+gold = 185
+item_base = &"orb"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_c6w3l"]
+script = ExtResource("4_hl2le")
+type = 3
+target = &"draconato"
+text = "Viaje às terras dos Draconatos"
+
+[sub_resource type="Resource" id="Resource_pu3w3"]
+script = ExtResource("4_hl2le")
+type = 3
+target = &"gnomo"
+text = "Viaje às terras dos Gnomos"
+
+[sub_resource type="Resource" id="Resource_hl2le"]
+script = ExtResource("3_pu3w3")
+description = "Visite as duas capitais e ouça cada lado da rusga. O ódio deles tem uma versão — e ela não combina."
+objectives = Array[ExtResource("4_hl2le")]([SubResource("Resource_c6w3l"), SubResource("Resource_pu3w3")])
+
+[sub_resource type="Resource" id="Resource_e2gns"]
+script = ExtResource("4_hl2le")
+type = 1
+target = &"diabrete"
+count = 5
+text = "diabretes que sabotam a forja de precisão"
+
+[sub_resource type="Resource" id="Resource_21wgl"]
+script = ExtResource("3_pu3w3")
+description = "Entre as duas capitas, diabretes que sabotam a forja de precisão se alimentam da discórdia — criaturas que só existem enquanto os dois lados acreditam na briga. Afaste-as."
+objectives = Array[ExtResource("4_hl2le")]([SubResource("Resource_e2gns")])
+
+[sub_resource type="Resource" id="Resource_uto6f"]
+script = ExtResource("4_hl2le")
+type = 0
+target = &"any:capital_*_lider"
+text = "Traga a prova aos dois líderes"
+
+[sub_resource type="Resource" id="Resource_kjxdw"]
+script = ExtResource("4_hl2le")
+type = 0
+target = &"any:capital_*_lider"
+text = "Ouça a outra versão da mesma memória"
+
+[sub_resource type="Resource" id="Resource_5sst1"]
+script = ExtResource("3_pu3w3")
+description = "O gnomo projetou a forja original da Chama da Brasa. O draconato guardou o segredo. O Véu separou criador e guardião."
+objectives = Array[ExtResource("4_hl2le")]([SubResource("Resource_uto6f"), SubResource("Resource_kjxdw")])
+
+[resource]
+script = ExtResource("2_c6w3l")
+id = &"ato2_6"
+title = "A Escama que Não Queima"
+summary = "Um dispositivo gnômico e o sopro de um draconato fazem a Escama do Primeiro Vulcão brilhar. Criador e guardião, separados pelo Véu, precisam se reencontrar."
+act = 2
+quest_level = 13
+stages = Array[ExtResource("3_pu3w3")]([SubResource("Resource_hl2le"), SubResource("Resource_21wgl"), SubResource("Resource_5sst1")])
+rewards = SubResource("Resource_qb7iu")
+next = &"ato2_7"

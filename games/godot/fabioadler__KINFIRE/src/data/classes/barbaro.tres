@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/barbaro/golpe_brutal.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/barbaro/martelo_dos_antigos.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/barbaro/salto_furioso.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/barbaro/grito_aterrador.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/barbaro/turbilhao.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/barbaro/furia_berserker.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"barbaro"
+display_name = "Bárbaro"
+role = "Corpo a corpo pesado"
+icon = "S_Axe02"
+description = "Guerreiro selvagem movido pela fúria. Gera Fúria ao golpear e ao apanhar; ela se esvai fora de combate. Maior vida por nível."
+hit_die = 12
+base_hp = 82
+primary_ability = "str"
+recommended = PackedStringArray("str", "con", "dex")
+base_armor = 14
+resource_label = "Fúria"
+resource_color = Color(0.85, 0.2, 0.08, 1.0)
+resource_max = 100.0
+resource_regen = 0.0
+allowed_weapons = PackedStringArray("axe", "mace", "sword")
+allowed_offhands = PackedStringArray()
+starting_weapon = &"great_axe"
+starting_offhand = &""
+resource_decays = true
+gain_on_hurt = 4.0
+base_status = {"forca": 16, "agilidade": 8, "mente": 6, "vitalidade": 14}
+status_growth = {"forca": 1, "agilidade": 0, "mente": 0, "vitalidade": 1}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

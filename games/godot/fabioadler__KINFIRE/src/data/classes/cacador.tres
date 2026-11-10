@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/cacador/flecha_rapida.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/cacador/tiro_perfurante.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/cacador/chamar_lobo.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/cacador/armadilha_explosiva.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/cacador/rajada.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/cacador/chuva_de_flechas.tres" id="7_sk"]
+[ext_resource type="Resource" path="res://data/skills/cacador/ler_o_vento.tres" id="8_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"cacador"
+display_name = "Caçador"
+role = "Distância • Mascote"
+icon = "S_Bow01"
+description = "Atirador dos ermos que luta ao lado de um lobo. Concentração só regenera enquanto parado."
+hit_die = 10
+base_hp = 54
+primary_ability = "dex"
+recommended = PackedStringArray("dex", "wis", "con")
+base_armor = 10
+resource_label = "Concentração"
+resource_color = Color(0.35, 0.85, 0.4, 1.0)
+resource_max = 100.0
+resource_regen = 16.0
+allowed_weapons = PackedStringArray("bow", "spear", "dagger")
+allowed_offhands = PackedStringArray("quiver")
+starting_weapon = &"bow"
+starting_offhand = &"quiver"
+regen_only_still = true
+base_status = {"forca": 9, "agilidade": 14, "mente": 12, "vitalidade": 9}
+status_growth = {"forca": 0, "agilidade": 1, "mente": 1, "vitalidade": 0}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk"), ExtResource("8_sk")])

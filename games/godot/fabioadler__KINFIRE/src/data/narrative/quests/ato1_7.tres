@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_lsfo5"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_wv5sm"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_rl327"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_gjn7l"]
+
+[sub_resource type="Resource" id="Resource_lsfo5"]
+script = ExtResource("1_lsfo5")
+gold = 160
+item_base = &"ring"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_wv5sm"]
+script = ExtResource("4_gjn7l")
+type = 3
+target = &"draconato"
+text = "Escolte a caravana até as terras do Draconato"
+
+[sub_resource type="Resource" id="Resource_rl327"]
+script = ExtResource("4_gjn7l")
+type = 1
+target = &"guerreiro_orc"
+count = 4
+text = "atacantes do seu próprio lado"
+
+[sub_resource type="Resource" id="Resource_gjn7l"]
+script = ExtResource("4_gjn7l")
+type = 1
+target = &"cavaleiro_renegado"
+count = 2
+text = "atacantes do lado de lá"
+
+[sub_resource type="Resource" id="Resource_57ske"]
+script = ExtResource("3_rl327")
+description = "A escolta cruza a muralha rumo a terras estrangeiras. Logo na fronteira, os dois lados atiram ' primeiro."
+objectives = Array[ExtResource("4_gjn7l")]([SubResource("Resource_wv5sm"), SubResource("Resource_rl327"), SubResource("Resource_gjn7l")])
+
+[sub_resource type="Resource" id="Resource_xtcci"]
+script = ExtResource("4_gjn7l")
+type = 0
+target = &"any:capital_*_lider"
+text = "Reporte o fogo amigo ao líder"
+
+[sub_resource type="Resource" id="Resource_jfkk3"]
+script = ExtResource("3_rl327")
+description = "Ninguém assumiu o tiro. Um cartógrafo de Porto Franco jura que os mapas mudam sozinhos à noite. Começa o mistério."
+objectives = Array[ExtResource("4_gjn7l")]([SubResource("Resource_xtcci")])
+
+[resource]
+script = ExtResource("2_wv5sm")
+id = &"ato1_7"
+title = "Além da Muralha"
+summary = "A primeira saída oficial: uma escolta diplomática. OS DOIS LADOS atacam a escolta — fogo amigo orquestrado por alguém que quer a guerra."
+quest_level = 7
+stages = Array[ExtResource("3_rl327")]([SubResource("Resource_57ske"), SubResource("Resource_jfkk3")])
+rewards = SubResource("Resource_lsfo5")

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tempestade_natural"
+display_name = "Tempestade da Natureza"
+kind = 9
+icon = "S_Thunder05"
+description = "Relâmpago que salta entre 8 inimigos."
+unlock_level = 9
+color = Color(0.7, 0.85, 1.0, 1.0)
+element = "lightning"
+damage_mult = 1.8
+cost = 40.0
+cooldown = 4.0
+hits = 8
+reach = 200.0
+radius = 90.0
+sound = &"magic"

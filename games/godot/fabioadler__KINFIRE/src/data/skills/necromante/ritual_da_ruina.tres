@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"ritual_da_ruina"
+display_name = "Ritual da Ruína"
+kind = 8
+icon = "S_Shadow07"
+description = "Canaliza 3s. Explosão 15m: 5x dano sombra, cura minions 50% vida, ressuscita aliados caídos como esqueletos. Custa 80 Mana."
+color = Color(0.6, 0.1, 0.7, 1.0)
+damage_mult = 5.0
+cost = 80.0
+cooldown = 60.0
+radius = 150.0
+duration = 3.0
+element = "shadow"
+sound = &"ritual_cast"

@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_ahxeo"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_qqj2m"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_wf7dx"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_h0fpq"]
+
+[sub_resource type="Resource" id="Resource_4ha5o"]
+script = ExtResource("1_ahxeo")
+gold = 230
+item_base = &"helm"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_l16ik"]
+script = ExtResource("4_h0fpq")
+type = 0
+target = &"any:capital_*_comum2"
+text = "Encontre o agente do colecionador"
+
+[sub_resource type="Resource" id="Resource_arjk1"]
+script = ExtResource("4_h0fpq")
+type = 3
+target = &"anao_montanha"
+text = "Recupere a relíquia da Montanha"
+
+[sub_resource type="Resource" id="Resource_5guhy"]
+script = ExtResource("3_wf7dx")
+description = "O colecionador tem um catálogo das Sete Relíquias — todas com certificado de doação. Os Guardiões entregaram as chaves. Sob o Véu, ninguém assina nada de bom grado."
+objectives = Array[ExtResource("4_h0fpq")]([SubResource("Resource_l16ik"), SubResource("Resource_arjk1")])
+
+[sub_resource type="Resource" id="Resource_6lba7"]
+script = ExtResource("4_h0fpq")
+type = 1
+target = &"necromante_profano"
+count = 4
+text = "profanadores de relíquias"
+
+[sub_resource type="Resource" id="Resource_mm3x6"]
+script = ExtResource("3_wf7dx")
+description = "Cada relíquia devolvida ao povo é uma memória que volta a pertencer a alguém. Profanadores ainda lucram com a doação forçada."
+objectives = Array[ExtResource("4_h0fpq")]([SubResource("Resource_6lba7")])
+
+[resource]
+script = ExtResource("2_qqj2m")
+id = &"misterio_5"
+title = "As Sete Relíquias"
+summary = "Um colecionador em Engrenagem paga fortunas por pedaços de história: as Sete Relíquias dos Guardiões. Elas não foram roubadas — foram DADAS, voluntariamente, sob mentira."
+act = 2
+quest_level = 13
+chain = &"misterio"
+prerequisites = Array[StringName]([&"ato1_5"])
+stages = Array[ExtResource("3_wf7dx")]([SubResource("Resource_5guhy"), SubResource("Resource_mm3x6")])
+rewards = SubResource("Resource_4ha5o")

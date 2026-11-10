@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/bruxo/rajada_mistica.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/bruxo/raio_sombrio.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/bruxo/familiar_demoniaco.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/bruxo/drenar_alma.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/bruxo/maldicao_da_agonia.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/bruxo/portal_infernal.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bruxo"
+display_name = "Bruxo"
+role = "Magia sombria • Risco alto"
+icon = "S_Shadow02"
+description = "Fez um pacto com algo nas trevas. Magias custam vida em vez de mana, mas roubam vida intensamente."
+hit_die = 8
+base_hp = 50
+primary_ability = "cha"
+recommended = PackedStringArray("cha", "con", "dex")
+base_armor = 5
+resource_label = "Pacto"
+resource_color = Color(0.6, 0.1, 0.55, 1.0)
+resource_max = 100.0
+resource_regen = 0.0
+allowed_weapons = PackedStringArray("staff", "dagger")
+allowed_offhands = PackedStringArray("book", "orb")
+starting_weapon = &"staff"
+starting_offhand = &"book"
+costs_life = true
+lifesteal = 0.1
+base_status = {"forca": 7, "agilidade": 9, "mente": 13, "vitalidade": 11}
+status_growth = {"forca": 0, "agilidade": 0, "mente": 1, "vitalidade": 1}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

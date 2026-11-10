@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"familiar_demoniaco"
+display_name = "Familiar Demoníaco"
+kind = 10
+icon = "S_Shadow07"
+description = "Invoca um diabrete que luta por você (máx. 2)."
+unlock_level = 2
+color = Color(1.0, 0.45, 0.1, 1.0)
+cost = 15.0
+cooldown = 15.0
+summon_sprite = "imp"
+summon_count = 1
+summon_max = 2
+summon_hp_mult = 1.0
+sound = &"magic"

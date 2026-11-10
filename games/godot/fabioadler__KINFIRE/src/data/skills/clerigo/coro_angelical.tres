@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"coro_angelical"
+display_name = "Coro Angelical"
+kind = 12
+icon = "S_Summon01"
+description = "Invoca 3 espíritos curadores por 12s. Cada um cura alvo aleatório por 8% vida/s. Custa 50 Fé."
+color = Color(1.0, 0.9, 0.8, 1.0)
+damage_mult = 0.0
+cost = 50.0
+cooldown = 40.0
+duration = 12.0
+summon_count = 3
+summon_sprite = "angel_healer"
+sound = &"summon"

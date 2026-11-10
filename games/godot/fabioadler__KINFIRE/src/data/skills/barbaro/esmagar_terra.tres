@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"esmagar_terra"
+display_name = "Esmagar a Terra"
+kind = 8
+icon = "S_Earth02"
+description = "Salta e esmaga o chão: onda de choque em 6m, dano 2x, atordoa por 1.5s. Custa 30 Fúria."
+color = Color(0.8, 0.6, 0.3, 1.0)
+damage_mult = 2.0
+cost = 30.0
+cooldown = 18.0
+radius = 60.0
+stun = 1.5
+sound = &"explode"

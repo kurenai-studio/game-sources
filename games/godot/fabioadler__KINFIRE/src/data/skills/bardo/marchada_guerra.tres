@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"marchada_guerra"
+display_name = "Marcha da Guerra"
+kind = 16
+icon = "S_Buff07"
+description = "Canção marcial: aliados +20% vel. movimento/ataque, imunes a lentidão. Dura 15s. Custa 25 Inspiração."
+color = Color(0.8, 1.0, 0.6, 1.0)
+damage_mult = 0.0
+cost = 25.0
+cooldown = 20.0
+duration = 15.0
+radius = 120.0
+buff_stat = "move_speed"
+buff_amount = 0.2
+buff_stat_2 = "attack_speed"
+buff_amount_2 = 0.2
+sound = &"buff"

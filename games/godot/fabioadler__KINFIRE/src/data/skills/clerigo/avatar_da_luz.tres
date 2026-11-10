@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"avatar_da_luz"
+display_name = "Avatar da Luz"
+kind = 18
+icon = "S_Buff10"
+description = "Forma angelical por 20s. Voa, imune a controle, aura 20m cura 20% vida/s. Skills custam 0 Fé. Custa 100 Fé."
+color = Color(1.0, 1.0, 0.9, 1.0)
+damage_mult = 0.0
+cost = 100.0
+cooldown = 180.0
+duration = 20.0
+radius = 200.0
+buff_stat = "flight"
+buff_amount = 1.0
+buff_stat_2 = "cc_immunity"
+buff_amount_2 = 1.0
+buff_stat_3 = "mana_free"
+buff_amount_3 = 1.0
+sound = &"transform"

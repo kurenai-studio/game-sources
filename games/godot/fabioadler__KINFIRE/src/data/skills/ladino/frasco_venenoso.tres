@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"frasco_venenoso"
+display_name = "Frasco Venenoso"
+kind = 3
+icon = "S_Poison03"
+description = "Nuvem tóxica que fere e deixa os inimigos lentos."
+unlock_level = 4
+color = Color(0.5, 0.95, 0.3, 1.0)
+element = "poison"
+damage_mult = 2.8
+cost = 25.0
+cooldown = 5.0
+radius = 50.0
+delay = 0.3
+reach = 200.0
+slow = 0.4
+duration = 3.0
+sound = &"explode"

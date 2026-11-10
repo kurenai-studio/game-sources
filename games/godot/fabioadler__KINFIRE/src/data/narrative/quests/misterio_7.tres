@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_jp1ab"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_0qnhd"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_ckroe"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_0ina5"]
+
+[sub_resource type="Resource" id="Resource_61ruk"]
+script = ExtResource("1_jp1ab")
+gold = 350
+item_base = &"plate"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_ha4ls"]
+script = ExtResource("4_0ina5")
+type = 1
+target = &"necromante_profano"
+count = 6
+text = "guardiões indignados das páginas"
+
+[sub_resource type="Resource" id="Resource_ll81a"]
+script = ExtResource("3_ckroe")
+description = "Recupere as páginas nas masmorras onde as Chamas apagaram. A caligrafia é paciente, como quem escreve sabendo que o leitor vai demorar."
+objectives = Array[ExtResource("4_0ina5")]([SubResource("Resource_ha4ls")])
+
+[sub_resource type="Resource" id="Resource_3klkx"]
+script = ExtResource("4_0ina5")
+type = 0
+target = &"cinzento_acampamento"
+text = "Confronte Ithariel com o próprio diário"
+
+[sub_resource type="Resource" id="Resource_purnv"]
+script = ExtResource("3_ckroe")
+description = "A última página é para você. Ele sabia do primeiro dia — do primeiro passo, do primeiro eco. O Cinzento não é o vigia da vila. É o autor da carta."
+objectives = Array[ExtResource("4_0ina5")]([SubResource("Resource_3klkx")])
+
+[resource]
+script = ExtResource("2_0qnhd")
+id = &"misterio_7"
+title = "O Diário de Ithariel"
+summary = "Páginas espalhadas pelas Masmorras-Chama: um diário escrito há 1.133 anos. Ithariel sabia que falharia — e escreveu para o futuro Laço-Vivo. Endereça por um nome que você ainda não tem."
+act = 2
+quest_level = 19
+chain = &"misterio"
+prerequisites = Array[StringName]([&"ato2_8"])
+stages = Array[ExtResource("3_ckroe")]([SubResource("Resource_ll81a"), SubResource("Resource_purnv")])
+rewards = SubResource("Resource_61ruk")

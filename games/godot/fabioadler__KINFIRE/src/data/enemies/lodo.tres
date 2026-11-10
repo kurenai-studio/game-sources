@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"lodo"
+display_name = "Lodo do Pântano"
+sprite = "swampy"
+behavior = 0
+max_hp = 32.0
+damage = 6.0
+move_speed = 40.0
+xp = 8
+element = "poison"
+spawn_weight = 2.0
+habitats = PackedStringArray("dungeon", "pantano")

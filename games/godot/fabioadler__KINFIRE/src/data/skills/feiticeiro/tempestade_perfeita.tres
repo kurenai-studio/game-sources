@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tempestade_perfeita"
+display_name = "Tempestade Perfeita"
+kind = 13
+icon = "S_Lightning03"
+description = "Tempestade de raios em 20m por 10s. A cada 0.5s: raio em inimigo aleatório (2x raio), encadeia 3x. Custa 70 Mana."
+color = Color(0.8, 0.9, 1.0, 1.0)
+damage_mult = 2.0
+cost = 70.0
+cooldown = 40.0
+radius = 200.0
+duration = 10.0
+hits = 20
+element = "lightning"
+sound = &"thunder_storm"

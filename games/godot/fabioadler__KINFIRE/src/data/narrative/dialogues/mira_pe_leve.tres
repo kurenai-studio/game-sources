@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="Choice_veu"]
+script = ExtResource("3_choice")
+text = "Conte-me sobre o Véu"
+next_id = &"veu_hint"
+effects = "guardiao_knowledge +1"
+
+[sub_resource type="Resource" id="Choice_prox"]
+script = ExtResource("3_choice")
+text = "Qual é a próxima chama?"
+next_id = &"goodbye"
+
+[sub_resource type="Resource" id="Node_intro"]
+script = ExtResource("2_node")
+id = &"intro"
+pages = PackedStringArray("Mira aqui?", "Sim. Guardiã das Planícies desde antes do Sussurro. Meus pés ainda lembram todos os caminhos — e o Véu tenta apagar cada um deles toda noite.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_veu"), SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_veu_hint"]
+script = ExtResource("2_node")
+id = &"veu_hint"
+pages = PackedStringArray("O Véu reescreve os mapas das Planícies toda noite. Mas meus pés ainda encontram o caminho porque eu lembro. Enquanto a memória arder, nenhuma mentira nos apaga.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_fragment"]
+script = ExtResource("2_node")
+id = &"fragment"
+pages = PackedStringArray("Este Fragmento é a Chama que o Sussurro tentou apagar. Ela não ardexa no fogo — arde na lembrança. É sua agora. Guarde bem.")
+choices = Array[ExtResource("3_choice")]([])
+
+[sub_resource type="Resource" id="Node_goodbye"]
+script = ExtResource("2_node")
+id = &"goodbye"
+pages = PackedStringArray("O caminho segue pelo fumo. Seis guardiões mais esperam. E no final — o oitavo arde em cinzas.")
+choices = Array[ExtResource("3_choice")]([])
+
+[resource]
+script = ExtResource("1_script")
+id = &"mira_pe_leve"
+display_name = "Mira"
+portrait = "ranger_f"
+start_id = &"intro"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_intro"), SubResource("Node_veu_hint"), SubResource("Node_fragment"), SubResource("Node_goodbye")])

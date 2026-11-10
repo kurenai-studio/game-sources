@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"punho_dos_ceus"
+display_name = "Punho dos Céus"
+kind = 3
+icon = "S_Light03"
+description = "Invoca um raio divino no local apontado."
+unlock_level = 9
+color = Color(1.0, 1.0, 0.6, 1.0)
+element = "holy"
+damage_mult = 4.5
+cost = 40.0
+cooldown = 4.0
+radius = 48.0
+delay = 0.45
+reach = 220.0
+stun = 0.6
+sound = &"explode"

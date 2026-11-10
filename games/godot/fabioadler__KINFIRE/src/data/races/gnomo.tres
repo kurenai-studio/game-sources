@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"gnomo"
+display_name = "Gnomo"
+description = "Inventores engenhosos de mente tão rápida quanto a língua."
+sprite_m = "wizzard_m"
+sprite_f = "wizzard_f"
+ability_bonus = {
+"int": 2
+}
+trait_name = "Mente Rápida"
+trait_description = "Reduz o tempo de recarga de todas as habilidades em 10%."
+cooldown_reduction = 0.1
+body_scale = 0.8
+tint = Color(1.0, 0.92, 0.95, 1.0)

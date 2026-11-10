@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/monge/punhos_do_trovao.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/monge/onda_de_luz.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/monge/chute_voador.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/monge/respiracao_celestial.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/monge/palma_explosiva.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/monge/mil_punhos.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"monge"
+display_name = "Monge"
+role = "Corpo a corpo rápido"
+icon = "S_Buff10"
+description = "Artista marcial que gera Chi golpeando rápido. Todo terceiro golpe é devastador. Curas rápidas e alta esquiva."
+hit_die = 8
+base_hp = 52
+primary_ability = "dex"
+recommended = PackedStringArray("dex", "wis", "con")
+base_armor = 12
+resource_label = "Chi"
+resource_color = Color(0.3, 0.95, 0.9, 1.0)
+resource_max = 100.0
+resource_regen = 0.0
+allowed_weapons = PackedStringArray("fist", "staff")
+allowed_offhands = PackedStringArray()
+starting_weapon = &"fist"
+starting_offhand = &""
+combo_every = 3
+base_status = {"forca": 10, "agilidade": 14, "mente": 12, "vitalidade": 10}
+status_growth = {"forca": 0, "agilidade": 1, "mente": 1, "vitalidade": 0}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

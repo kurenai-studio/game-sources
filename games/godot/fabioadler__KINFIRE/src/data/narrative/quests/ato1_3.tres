@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_50dcy"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_lkvig"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_5kjt1"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_x0w1p"]
+
+[sub_resource type="Resource" id="Resource_50dcy"]
+script = ExtResource("1_50dcy")
+gold = 60
+item_base = &"boots"
+
+[sub_resource type="Resource" id="Resource_lkvig"]
+script = ExtResource("4_x0w1p")
+type = 3
+target = &"golias"
+text = "Viaje às terras frias dos Golias"
+
+[sub_resource type="Resource" id="Resource_5kjt1"]
+script = ExtResource("4_x0w1p")
+type = 1
+target = &"anao_saqueador"
+count = 4
+text = "saqueadores da caravana"
+
+[sub_resource type="Resource" id="Resource_x0w1p"]
+script = ExtResource("3_5kjt1")
+description = "A caravana foi achada despedaçada nas terras frias. Os saqueadores ainda rondam a neve manchada."
+objectives = Array[ExtResource("4_x0w1p")]([SubResource("Resource_lkvig"), SubResource("Resource_5kjt1")])
+
+[sub_resource type="Resource" id="Resource_m586f"]
+script = ExtResource("4_x0w1p")
+type = 0
+target = &"any:capital_*_lider"
+text = "Reporte os rastros ao líder"
+
+[sub_resource type="Resource" id="Resource_8pw50"]
+script = ExtResource("3_5kjt1")
+description = "Pegadas de demônio não existem. Ausência de pegadas é assinatura do Véu. Alguém precisa saber disso."
+objectives = Array[ExtResource("4_x0w1p")]([SubResource("Resource_m586f")])
+
+[resource]
+script = ExtResource("2_lkvig")
+id = &"ato1_3"
+title = "Sangue na Neve"
+summary = "Uma caravana foi atacada na neve. Os rastros param no meio do nada — como se os atacantes tivessem sido apagados do mundo."
+quest_level = 3
+stages = Array[ExtResource("3_5kjt1")]([SubResource("Resource_x0w1p"), SubResource("Resource_8pw50")])
+rewards = SubResource("Resource_50dcy")
+next = &"ato1_4"

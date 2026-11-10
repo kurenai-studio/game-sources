@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+elemental_type = 1
+id = &"zumbi_gelido"
+display_name = "Zumbi Gélido"
+sprite = "ice_zombie"
+behavior = 0
+max_hp = 60.0
+damage = 11.0
+move_speed = 38.0
+xp = 16
+element = "ice"
+min_depth = 3
+spawn_weight = 1.0
+habitats = PackedStringArray("dungeon", "tundra")

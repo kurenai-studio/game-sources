@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="Choice_prox"]
+script = ExtResource("3_choice")
+text = "Próxima chama?"
+next_id = &"goodbye"
+
+[sub_resource type="Resource" id="Node_intro"]
+script = ExtResource("2_node")
+id = &"intro"
+pages = PackedStringArray("No abismo, até a mentira cai. Sou Kael. Guardião da Caverna Obsidiana.", "E guardo a Chama que Maldrach não conseguiu apagar.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_fragment"]
+script = ExtResource("2_node")
+id = &"fragment"
+pages = PackedStringArray("O Fragmento que seguro é o fogo que Maldrach não conseguiu apagar. Ele queimou no vazio e ainda assim não morreu.", "Leve-o fundo no seu peito. No abismo, ele brilhará mais.")
+choices = Array[ExtResource("3_choice")]([])
+
+[sub_resource type="Resource" id="Node_goodbye"]
+script = ExtResource("2_node")
+id = &"goodbye"
+pages = PackedStringArray("Dois guardiões restam. Um no vulcão, outro em cinzas. Encontre-os.")
+choices = Array[ExtResource("3_choice")]([])
+
+[resource]
+script = ExtResource("1_script")
+id = &"kael_abismo"
+display_name = "Kael"
+portrait = "rogue_m"
+start_id = &"intro"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_intro"), SubResource("Node_fragment"), SubResource("Node_goodbye")])

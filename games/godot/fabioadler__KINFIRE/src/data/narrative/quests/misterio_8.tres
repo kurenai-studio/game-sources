@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_okbgq"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_deho2"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_6xlnt"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_dtcq7"]
+
+[sub_resource type="Resource" id="Resource_pxspb"]
+script = ExtResource("1_okbgq")
+gold = 450
+item_base = &"sword"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_iqjux"]
+script = ExtResource("4_dtcq7")
+type = 1
+target = &"lobo_sombrio"
+count = 3
+text = "os lobos da primeira floresta"
+
+[sub_resource type="Resource" id="Resource_pjln6"]
+script = ExtResource("3_6xlnt")
+description = "Siga o Cinzento pela cinza. A floresta é a mesma da Reminiscência — os lobos também. Alguns laços não se quebram nem com o mundo inteiro apagado."
+objectives = Array[ExtResource("4_dtcq7")]([SubResource("Resource_iqjux")])
+
+[sub_resource type="Resource" id="Resource_nc4jw"]
+script = ExtResource("4_dtcq7")
+type = 0
+target = &"cinzento_acampamento"
+text = "Receba do Cinzento o Fragmento final"
+
+[sub_resource type="Resource" id="Resource_j5vhy"]
+script = ExtResource("3_6xlnt")
+description = "No meio da cinza, uma fogueira acesa há 1.133 anos. Seus pais sentam ao lado — não envelheceram um dia. O Fragmento final é a chave para libertá-los."
+objectives = Array[ExtResource("4_dtcq7")]([SubResource("Resource_nc4jw")])
+
+[resource]
+script = ExtResource("2_deho2")
+id = &"misterio_8"
+title = "A Vila que Ninguém Lembrava"
+summary = "Com as sete verdades em mãos, o Cinzento te leva a Vale Cinzento. Não há vila — só cinza. Mas você nasceu aqui. Seus pais ainda estão aqui, presos no loop de Maldrach."
+act = 2
+quest_level = 23
+chain = &"misterio"
+prerequisites = Array[StringName]([&"misterio_1", &"misterio_2", &"misterio_3", &"misterio_4", &"misterio_5", &"misterio_6", &"misterio_7"])
+stages = Array[ExtResource("3_6xlnt")]([SubResource("Resource_pjln6"), SubResource("Resource_j5vhy")])
+rewards = SubResource("Resource_pxspb")

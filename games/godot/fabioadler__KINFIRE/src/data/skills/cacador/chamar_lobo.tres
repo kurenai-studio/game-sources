@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"chamar_lobo"
+display_name = "Chamar Lobo"
+kind = 10
+icon = "I_WolfFur"
+description = "Invoca um lobo companheiro que protege você."
+unlock_level = 2
+color = Color(0.8, 0.9, 1.0, 1.0)
+cost = 20.0
+cooldown = 20.0
+summon_sprite = "wogol"
+summon_count = 1
+summon_max = 1
+summon_hp_mult = 2.2
+sound = &"cloth"

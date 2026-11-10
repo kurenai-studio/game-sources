@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"julgamento"
+display_name = "Julgamento"
+kind = 9
+icon = "S_Holy01"
+description = "Marca inimigo por 10s. Aliados causam +25% dano nele. Acertos curam aliados em 10%. Custa 25 Fé."
+color = Color(1.0, 0.95, 0.5, 1.0)
+damage_mult = 1.0
+cost = 25.0
+cooldown = 15.0
+duration = 10.0
+reach = 50.0
+sound = &"holy"

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"alfa_da_matilha"
+display_name = "Alfa da Matilha"
+kind = 17
+icon = "S_Buff04"
+description = "Lobo vira Alfa por 30s: +50% vida/dano. Uivo concede +15% crítico aos aliados em 15m. Custa 35 Concentração."
+color = Color(0.7, 0.9, 0.5, 1.0)
+damage_mult = 0.0
+cost = 35.0
+cooldown = 40.0
+duration = 30.0
+radius = 150.0
+buff_stat = "crit_chance"
+buff_amount = 0.15
+sound = &"howl"

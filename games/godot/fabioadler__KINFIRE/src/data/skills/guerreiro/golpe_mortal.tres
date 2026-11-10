@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"golpe_mortal"
+display_name = "Golpe Mortal"
+kind = 0
+icon = "S_Sword03"
+description = "Golpe devastador que ignora 50% da armadura. Dano 2.5x. Se matar, cura 15% vida máxima. Custa 50 Vigor."
+color = Color(1.0, 0.3, 0.2, 1.0)
+damage_mult = 2.5
+cost = 50.0
+cooldown = 18.0
+reach = 40.0
+arc_degrees = 90.0
+sound = &"heavy_swing"

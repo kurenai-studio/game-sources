@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/necromante/drenar_vida.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/necromante/lanca_de_ossos.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/necromante/erguer_esqueletos.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/necromante/maldicao_explosiva.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/necromante/golem_de_carne.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/necromante/nevoa_da_morte.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"necromante"
+display_name = "Necromante"
+role = "Invocador"
+icon = "S_Shadow01"
+description = "Senhor dos mortos. Um exército de esqueletos absorve o dano por ele. Ganha Essência quando inimigos morrem."
+hit_die = 6
+base_hp = 36
+primary_ability = "int"
+recommended = PackedStringArray("int", "con", "wis")
+base_armor = 4
+resource_label = "Essência"
+resource_color = Color(0.4, 0.9, 0.6, 1.0)
+resource_max = 100.0
+resource_regen = 2.0
+allowed_weapons = PackedStringArray("staff", "dagger")
+allowed_offhands = PackedStringArray("book", "orb")
+starting_weapon = &"staff"
+starting_offhand = &"book"
+gain_on_kill = 8.0
+lifesteal = 0.04
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

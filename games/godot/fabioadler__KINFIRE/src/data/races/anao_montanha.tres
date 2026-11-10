@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"anao_montanha"
+display_name = "Anão da Montanha"
+description = "Forjados na rocha e no aço, os anões da montanha nunca recuam."
+sprite_m = "dwarf_m"
+sprite_f = "dwarf_f"
+ability_bonus = {
+"con": 2,
+"str": 2,
+"dex": -1
+}
+trait_name = "Pé Firme"
+trait_description = "Imune a empurrões e +10% de armadura. -8% de velocidade."
+knockback_immune = true
+armor_mult = 1.1
+move_speed_mult = 0.92
+physical_resist = 0.05

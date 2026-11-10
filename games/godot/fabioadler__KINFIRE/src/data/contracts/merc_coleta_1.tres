@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ContractData"]
+
+script = SubResource("1")
+
+class_name = "ContractData"
+id = &"merc_coleta_1"
+guilda_id = &"mercadores"
+tipo = 1
+titulo = "Colete Cogumelos Raros"
+descricao = "Plantas medicinais do Pântano são valiosas. Traga 8 cogumelos para o Mestre."
+requisito_nivel = 5
+requisito_reputacao = 0
+recompensas = {"ouro": 150, "xp": 75}
+
+[sub_resource type="GDScript" id="1"]
+script/source = "extends Resource
+class_name ContractData
+
+enum Tipo { COMBATE, COLETA, ESCOLTA, INVESTIGACAO }
+
+@export var id: StringName
+@export var guilda_id: StringName
+@export var tipo: Tipo
+@export var titulo: String
+@export var descricao: String
+@export var requisito_nivel: int = 1
+@export var requisito_reputacao: int = -1
+@export var recompensas: Dictionary = {}
+
+func _init() -> void:
+	resource_name = \"ContractData\"
+"

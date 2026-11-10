@@ -1,0 +1,163 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=31 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="C_sopa_cortesia"]
+script = ExtResource("3_choice")
+text = "(Aceitar a sopa — o primeiro copo é cortesia)"
+condition = "!flag bree_sopa"
+next_id = &"sopa"
+effects = "flag bree_sopa"
+
+[sub_resource type="Resource" id="C_cumprimentar"]
+script = ExtResource("3_choice")
+text = "(Cumprimentar)"
+condition = "!flag bree_apresentada"
+next_id = &"apresentacao"
+effects = "flag bree_apresentada"
+
+[sub_resource type="Resource" id="C_conversar"]
+script = ExtResource("3_choice")
+text = "(Conversar)"
+condition = "flag bree_apresentada"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="Node_inicio"]
+script = ExtResource("2_node")
+id = &"inicio"
+pages = PackedStringArray("Uma panela pequena zumbe sobre a brasa. A cozinheira nem levanta os olhos.", "Fome é a única coisa que o Véu ainda não aprendeu a roubar. Sopa?")
+choices = Array[ExtResource("3_choice")]([SubResource("C_sopa_cortesia"), SubResource("C_cumprimentar"), SubResource("C_conversar")])
+
+[sub_resource type="Resource" id="C_continuar"]
+script = ExtResource("3_choice")
+text = "(Continuar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="Node_apresentacao"]
+script = ExtResource("2_node")
+id = &"apresentacao"
+pages = PackedStringArray("Bree, do Vale dos Sete Ventos. Cozinho para quem ainda tem estômago para lembrar.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_continuar")])
+
+[sub_resource type="Resource" id="C_p_veu"]
+script = ExtResource("3_choice")
+text = "O que aconteceu com o mundo?"
+condition = "ignorancia > 5"
+next_id = &"veu"
+effects = "ignorancia -1"
+
+[sub_resource type="Resource" id="C_p_veu_profundo"]
+script = ExtResource("3_choice")
+text = "Fale do Véu."
+condition = "ignorancia <= 5"
+next_id = &"veu_profundo"
+
+[sub_resource type="Resource" id="C_p_territorios"]
+script = ExtResource("3_choice")
+text = "O que são os territórios?"
+condition = "ignorancia > 5"
+next_id = &"territorios"
+effects = "ignorancia -1"
+
+[sub_resource type="Resource" id="C_p_promessa"]
+script = ExtResource("3_choice")
+text = "O acampamento está seguro comigo."
+condition = "!flag bree_promessa"
+next_id = &"promessa"
+effects = "flag bree_promessa
+rep halfling +1"
+
+[sub_resource type="Resource" id="C_p_partir"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_menu"]
+script = ExtResource("2_node")
+id = &"menu"
+pages = PackedStringArray("Então? A panela não espera a conversa, mas eu espero.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_p_veu"), SubResource("C_p_veu_profundo"), SubResource("C_p_territorios"), SubResource("C_p_promessa"), SubResource("C_p_partir")])
+
+[sub_resource type="Resource" id="C_voltar_sopa"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_sopa"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_sopa"]
+script = ExtResource("2_node")
+id = &"sopa"
+pages = PackedStringArray("Ela serve um copo fundo, o vapor subindo como se tivesse pressa de ser bebido.", "Beba. Sabor é memória — e memória, aqui, vale mais que ouro.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_sopa"), SubResource("C_partir_sopa")])
+
+[sub_resource type="Resource" id="C_voltar_veu"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_veu"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_veu"]
+script = ExtResource("2_node")
+id = &"veu"
+pages = PackedStringArray("O Véu é o silêncio que desceu quando a Kinfire parou de bater. Ninguém viu chegar. Todo mundo viu o resto.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_veu"), SubResource("C_partir_veu")])
+
+[sub_resource type="Resource" id="C_voltar_veup"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_veup"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_veu_profundo"]
+script = ExtResource("2_node")
+id = &"veu_profundo"
+pages = PackedStringArray("Dizem que o Véu não é maldição — é esquecimento com fome. O que ele engole, nunca existiu.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_veup"), SubResource("C_partir_veup")])
+
+[sub_resource type="Resource" id="C_voltar_terr"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_terr"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_territorios"]
+script = ExtResource("2_node")
+id = &"territorios"
+pages = PackedStringArray("Quatorze povos, quatorze jeitos de não morrer. Você escolheu o seu — o resto escolhe o que fazer com você.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_terr"), SubResource("C_partir_terr")])
+
+[sub_resource type="Resource" id="C_voltar_prom"]
+script = ExtResource("3_choice")
+text = "(Voltar)"
+next_id = &"menu"
+
+[sub_resource type="Resource" id="C_partir_prom"]
+script = ExtResource("3_choice")
+text = "(Partir)"
+
+[sub_resource type="Resource" id="Node_promessa"]
+script = ExtResource("2_node")
+id = &"promessa"
+pages = PackedStringArray("Segurança com cheiro de cinza. Aceito: na próxima sopa, a conta é por minha conta.")
+choices = Array[ExtResource("3_choice")]([SubResource("C_voltar_prom"), SubResource("C_partir_prom")])
+
+[resource]
+script = ExtResource("1_script")
+id = &"bree_cozinheira"
+display_name = "Bree"
+portrait = "knight_f"
+start_id = &"inicio"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_inicio"), SubResource("Node_apresentacao"), SubResource("Node_menu"), SubResource("Node_sopa"), SubResource("Node_veu"), SubResource("Node_veu_profundo"), SubResource("Node_territorios"), SubResource("Node_promessa")])

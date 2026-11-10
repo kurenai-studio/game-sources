@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="Node_veu_passado"]
+script = ExtResource("2_node")
+id = &"veu_passado"
+pages = PackedStringArray("Antes de Maldrach ser um nome, antes que a Ausência Andante abraçasse seu próprio vazio...", "Havia uma mentira. Uma só, no início. Aquele que a sussurrou criou o Véu.", "O Véu não é um ser — é a ferramenta. Reescreve o mundo para que Maldrach o controle.", "As sete chamas queimam precisamente porque o Véu quer apagá-las. Você as encontrou apesar de tudo.")
+choices = Array[ExtResource("3_choice")]([])
+
+[resource]
+script = ExtResource("1_script")
+id = &"veu_da_discordia"
+display_name = "O Véu da Discórdia"
+portrait = "shadow"
+start_id = &"veu_passado"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_veu_passado")])

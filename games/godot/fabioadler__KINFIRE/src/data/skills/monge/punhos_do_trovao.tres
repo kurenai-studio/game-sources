@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"punhos_do_trovao"
+display_name = "Punhos do Trovão"
+kind = 0
+icon = "S_Thunder04"
+description = "Socos elétricos. A cada 3º golpe, dano dobrado. Gera 12 de Chi."
+color = Color(0.7, 0.85, 1.0, 1.0)
+element = "lightning"
+damage_mult = 0.9
+generate = 12.0
+reach = 24.0
+arc_degrees = 90.0
+sound = &"hit"

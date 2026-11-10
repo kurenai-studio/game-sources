@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"guardiao_da_floresta"
+display_name = "Guardião da Floresta"
+kind = 12
+icon = "S_Summon02"
+description = "Invoca Ancião da Floresta por 30s. Tanque massivo (500% vida), aura cura 10% vida/s em 10m, raízes atordoam. Custa 60 Mana."
+color = Color(0.4, 0.8, 0.4, 1.0)
+damage_mult = 0.0
+cost = 60.0
+cooldown = 90.0
+duration = 30.0
+summon_count = 1
+summon_sprite = "forest_guardian"
+summon_scale = 2.0
+sound = &"summon"

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"guardiao_de_ferro"
+display_name = "Guardião de Ferro"
+kind = 16
+icon = "S_Holy03"
+description = "Aura de ferro por 12s: aliados na área reduzem dano recebido em 20%. Custa 40 Vigor."
+color = Color(0.7, 0.9, 1.0, 1.0)
+damage_mult = 0.0
+cost = 40.0
+cooldown = 30.0
+radius = 100.0
+duration = 12.0
+buff_stat = "damage_reduction"
+buff_amount = 0.2
+sound = &"holy"

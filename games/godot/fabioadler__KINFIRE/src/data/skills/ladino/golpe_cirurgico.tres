@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"golpe_cirurgico"
+display_name = "Golpe Cirúrgico"
+kind = 0
+icon = "S_Dagger03"
+description = "Golpe preciso: 3x dano, aplica veneno forte (8% vida/s, 6s). Se matar: restaura toda Energia. Custa 40 Energia."
+color = Color(0.6, 0.3, 0.7, 1.0)
+damage_mult = 3.0
+cost = 40.0
+cooldown = 18.0
+reach = 35.0
+arc_degrees = 60.0
+sound = &"backstab"

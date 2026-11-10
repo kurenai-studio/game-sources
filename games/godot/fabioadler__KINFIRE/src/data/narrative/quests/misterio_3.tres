@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_mhcnp"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_sifo8"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_pymyn"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_0hyno"]
+
+[sub_resource type="Resource" id="Resource_etjct"]
+script = ExtResource("1_mhcnp")
+gold = 190
+item_base = &"orb"
+item_rarity = 2
+fragment = true
+
+[sub_resource type="Resource" id="Resource_7nnrb"]
+script = ExtResource("4_0hyno")
+type = 3
+target = &"anao_colinas"
+text = "Viaje às Colinas em surto"
+
+[sub_resource type="Resource" id="Resource_enotr"]
+script = ExtResource("4_0hyno")
+type = 1
+target = &"medico_da_peste"
+count = 4
+text = "médicos sem registro que distribuem a cura"
+
+[sub_resource type="Resource" id="Resource_j6pkp"]
+script = ExtResource("3_pymyn")
+description = "Viaje às Colinas e veja o surto de perto. Os doentes melhoram — e adquirem um esquecimento novo, como se a cura raspasse memórias junto com a febre."
+objectives = Array[ExtResource("4_0hyno")]([SubResource("Resource_7nnrb"), SubResource("Resource_enotr")])
+
+[sub_resource type="Resource" id="Resource_k4aap"]
+script = ExtResource("4_0hyno")
+type = 1
+target = &"zumbi"
+count = 5
+text = "vítimas da cura que já não lembram os próprios nomes"
+
+[sub_resource type="Resource" id="Resource_mg0i4"]
+script = ExtResource("3_pymyn")
+description = "A receita da cura tem a mesma caligrafia da praga. Doença como arma política — e você carrega agora a prova no bolso."
+objectives = Array[ExtResource("4_0hyno")]([SubResource("Resource_k4aap")])
+
+[resource]
+script = ExtResource("2_sifo8")
+id = &"misterio_3"
+title = "A Cura Que Envenena"
+summary = "Surto de praga nas Colinas. A alquimista local entrega a cura com as mãos trêmulas: 'A cura É o veneno. A praga foi engendrada — a receita aponta para uma Torre sem Portas.'"
+act = 2
+quest_level = 11
+chain = &"misterio"
+prerequisites = Array[StringName]([&"ato1_3"])
+stages = Array[ExtResource("3_pymyn")]([SubResource("Resource_j6pkp"), SubResource("Resource_mg0i4")])
+rewards = SubResource("Resource_etjct")

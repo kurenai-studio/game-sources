@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tempo_parado"
+display_name = "Tempo Parado"
+kind = 17
+icon = "S_Time01"
+description = "Para o tempo por 3s. Inimigos paralisados (imunes a dano). Aliados agem normalmente. Custa 80 Carga Arcana."
+color = Color(0.6, 0.8, 1.0, 1.0)
+damage_mult = 0.0
+cost = 80.0
+cooldown = 120.0
+duration = 3.0
+radius = 200.0
+buff_stat = "time_stop"
+buff_amount = 1.0
+sound = &"time_stop"

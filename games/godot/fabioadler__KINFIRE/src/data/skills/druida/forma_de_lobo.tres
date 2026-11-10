@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"forma_de_lobo"
+display_name = "Forma de Lobo"
+kind = 12
+icon = "I_WolfFur"
+description = "Vira um lobo: +40% velocidade de ataque, +10% crítico por 20s."
+unlock_level = 2
+color = Color(0.7, 0.8, 1.0, 1.0)
+cost = 20.0
+cooldown = 25.0
+summon_sprite = "wogol"
+buff_stat = "attack_speed"
+buff_amount = 0.4
+buff_stat_2 = "crit"
+buff_amount_2 = 0.1
+duration = 20.0
+sound = &"cloth"

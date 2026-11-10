@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"golpe_tempestuoso"
+display_name = "Golpe Tempestuoso"
+kind = 0
+icon = "S_Thunder06"
+description = "Golpe elétrico devastador que atordoa."
+unlock_level = 6
+color = Color(0.7, 0.85, 1.0, 1.0)
+element = "lightning"
+damage_mult = 3.2
+cost = 30.0
+cooldown = 3.0
+reach = 32.0
+arc_degrees = 90.0
+stun = 0.5
+sound = &"hit_heavy"

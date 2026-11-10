@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"lorde_da_morte"
+display_name = "Lorde da Morte"
+kind = 18
+icon = "S_Buff10"
+description = "Forma de Lich por 25s. Imune a veneno/sangramento/medo, Mana infinito, minions não morrem (vida mínima 1). Custa 120 Mana."
+color = Color(0.3, 0.1, 0.4, 1.0)
+damage_mult = 0.0
+cost = 120.0
+cooldown = 180.0
+duration = 25.0
+buff_stat = "lich_form"
+buff_amount = 1.0
+buff_stat_2 = "infinite_mana"
+buff_amount_2 = 1.0
+buff_stat_3 = "minion_immortal"
+buff_amount_3 = 1.0
+sound = &"lich_transform"

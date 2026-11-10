@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"senhor_dos_mortos"
+display_name = "Senhor dos Mortos"
+kind = 17
+icon = "S_Summon03"
+description = "Comando absoluto por 20s: minions +100% vida/dano, herdam seus buffs, explodem ao morrer (2x dano em 5m). Custa 50 Mana."
+color = Color(0.4, 0.2, 0.5, 1.0)
+damage_mult = 0.0
+cost = 50.0
+cooldown = 40.0
+duration = 20.0
+buff_stat = "minion_power"
+buff_amount = 1.0
+buff_stat_2 = "minion_inherit"
+buff_amount_2 = 1.0
+buff_stat_3 = "death_explosion"
+buff_amount_3 = 2.0
+sound = &"dark_command"

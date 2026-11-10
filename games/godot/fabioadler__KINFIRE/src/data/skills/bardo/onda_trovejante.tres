@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"onda_trovejante"
+display_name = "Onda Trovejante"
+kind = 14
+icon = "S_Thunder03"
+description = "Uma onda de som em cone que arremessa os inimigos."
+unlock_level = 6
+color = Color(0.7, 0.85, 1.0, 1.0)
+element = "lightning"
+damage_mult = 2.4
+cost = 30.0
+cooldown = 5.0
+radius = 75.0
+arc_degrees = 70.0
+knockback = 180.0
+sound = &"explode"

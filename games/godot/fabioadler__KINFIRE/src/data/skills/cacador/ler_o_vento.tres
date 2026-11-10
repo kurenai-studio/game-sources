@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"ler_o_vento"
+display_name = "Ler o Vento"
+kind = 6
+icon = "S_Wind01"
+description = "Lê as correntes do mundo: o vetor do vento aparece no minimapa e suas flechas voam retas, ignorando o vento, por 30s."
+color = Color(0.6, 0.9, 1.0, 1.0)
+element = "physical"
+unlock_level = 4
+cost = 15.0
+cooldown = 45.0
+buff_stat = "wind_reader"
+buff_amount = 1.0
+duration = 30.0
+sound = &"swing2"

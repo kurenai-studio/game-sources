@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bencao"
+display_name = "Bênção"
+kind = 6
+icon = "S_Buff05"
+description = "+30% de dano por 10s."
+unlock_level = 6
+color = Color(1.0, 0.9, 0.5, 1.0)
+cooldown = 20.0
+buff_stat = "damage"
+buff_amount = 0.3
+duration = 10.0
+sound = &"levelup"

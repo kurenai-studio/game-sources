@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"leque_de_laminas"
+display_name = "Leque de Lâminas"
+kind = 1
+icon = "S_Dagger05"
+description = "Arremessa 5 facas em leque."
+color = Color(0.9, 0.9, 1.0, 1.0)
+damage_mult = 0.9
+cost = 25.0
+projectile_count = 5
+spread_degrees = 50.0
+projectile_sprite = "weapon_knife"
+projectile_speed = 380.0
+reach = 200.0
+sound = &"draw"

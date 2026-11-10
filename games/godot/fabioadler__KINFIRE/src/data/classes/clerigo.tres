@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/clerigo/golpe_sagrado.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/clerigo/chama_sagrada.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/clerigo/palavra_de_cura.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/clerigo/guardioes_espirituais.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/clerigo/bencao.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/clerigo/coluna_de_luz.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"clerigo"
+display_name = "Clérigo"
+role = "Suporte bruto"
+icon = "S_Holy02"
+description = "Canal da vontade divina de armadura pesada. 15% do dano causado volta como cura."
+hit_die = 8
+base_hp = 52
+primary_ability = "wis"
+recommended = PackedStringArray("wis", "con", "str")
+base_armor = 14
+resource_label = "Mana"
+resource_color = Color(0.95, 0.95, 0.7, 1.0)
+resource_max = 100.0
+resource_regen = 9.0
+allowed_weapons = PackedStringArray("mace")
+allowed_offhands = PackedStringArray("shield", "book")
+starting_weapon = &"mace"
+starting_offhand = &"shield_round"
+lifesteal = 0.15
+block_chance = 0.1
+base_status = {"forca": 11, "agilidade": 8, "mente": 14, "vitalidade": 12}
+status_growth = {"forca": 0, "agilidade": 0, "mente": 1, "vitalidade": 1}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

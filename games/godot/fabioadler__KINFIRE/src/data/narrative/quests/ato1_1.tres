@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_fguac"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_ys0b1"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_wr6uh"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_k7hvh"]
+
+[sub_resource type="Resource" id="Resource_fguac"]
+script = ExtResource("1_fguac")
+gold = 30
+item_base = &"leather"
+
+[sub_resource type="Resource" id="Resource_ys0b1"]
+script = ExtResource("4_k7hvh")
+type = 0
+target = &"marn_vigia"
+text = "Apresente-se a Marn, o vigia"
+
+[sub_resource type="Resource" id="Resource_wr6uh"]
+script = ExtResource("4_k7hvh")
+type = 0
+target = &"bree_cozinheira"
+text = "Cumprimente Bree, a cozinheira"
+
+[sub_resource type="Resource" id="Resource_k7hvh"]
+script = ExtResource("3_wr6uh")
+description = "O acampamento ainda é estranho para você. Apresente-se aos que vivem nele — e preste atenção no que dizem."
+objectives = Array[ExtResource("4_k7hvh")]([SubResource("Resource_ys0b1"), SubResource("Resource_wr6uh")])
+
+[sub_resource type="Resource" id="Resource_2s21b"]
+script = ExtResource("4_k7hvh")
+type = 1
+target = &"lobo_sombrio"
+count = 3
+text = "lobos sombrios nas redondezas"
+
+[sub_resource type="Resource" id="Resource_cdugl"]
+script = ExtResource("3_wr6uh")
+description = "Lobos sombrios rondam o vale desde a Reminiscência. O eco do primeiro passo não terminou — afaste-os."
+objectives = Array[ExtResource("4_k7hvh")]([SubResource("Resource_2s21b")])
+
+[sub_resource type="Resource" id="Resource_u3vxt"]
+script = ExtResource("4_k7hvh")
+type = 0
+target = &"cinzento_acampamento"
+text = "Volte ao Cinzento"
+
+[sub_resource type="Resource" id="Resource_0eed5"]
+script = ExtResource("3_wr6uh")
+description = "O Cinzento parece esperar por você desde que abriu os olhos. Volte a ele."
+objectives = Array[ExtResource("4_k7hvh")]([SubResource("Resource_u3vxt")])
+
+[resource]
+script = ExtResource("2_ys0b1")
+id = &"ato1_1"
+title = "O Eco do Primeiro Passo"
+summary = "Acorde de novo — e desta vez repare. Um velho sussurra que você não cheira a recém-chegado. Cheira a cinza."
+start_flag = &"cinzento_primeiro_dialogo"
+stages = Array[ExtResource("3_wr6uh")]([SubResource("Resource_k7hvh"), SubResource("Resource_cdugl"), SubResource("Resource_0eed5")])
+rewards = SubResource("Resource_fguac")
+next = &"ato1_2"

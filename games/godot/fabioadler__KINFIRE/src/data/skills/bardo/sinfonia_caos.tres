@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"sinfonia_caos"
+display_name = "Sinfonia do Caos"
+kind = 8
+icon = "S_Magic05"
+description = "Zona de discórdia 8m por 10s. Inimigos: confusão, -30% precisão, 20% chance de atacar aliados. Custa 40 Inspiração."
+color = Color(0.8, 0.5, 0.9, 1.0)
+damage_mult = 0.0
+cost = 40.0
+cooldown = 35.0
+duration = 10.0
+radius = 80.0
+buff_stat = "confusion"
+buff_amount = 1.0
+sound = &"chaos"

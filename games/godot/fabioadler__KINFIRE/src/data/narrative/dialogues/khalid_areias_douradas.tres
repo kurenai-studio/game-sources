@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="DialogueData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/dialogue_data.gd" id="1_script"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_node.gd" id="2_node"]
+[ext_resource type="Script" path="res://scripts/data/dialogue_choice.gd" id="3_choice"]
+
+[sub_resource type="Resource" id="Choice_prox"]
+script = ExtResource("3_choice")
+text = "Próxima chama?"
+next_id = &"goodbye"
+
+[sub_resource type="Resource" id="Node_intro"]
+script = ExtResource("2_node")
+id = &"intro"
+pages = PackedStringArray("As areias guardam histórias. Eu guardo a Chama do Deserto.", "Sou Khalid. E enquanto a areia correr, nada que o Véu reescreva durará.")
+choices = Array[ExtResource("3_choice")]([SubResource("Choice_prox")])
+
+[sub_resource type="Resource" id="Node_fragment"]
+script = ExtResource("2_node")
+id = &"fragment"
+pages = PackedStringArray("Este Fragmento é ouro. Ouro não arde, mas brilha. Brilha como a memória brilha.", "Leve-o. Os dourados ainda ardem.")
+choices = Array[ExtResource("3_choice")]([])
+
+[sub_resource type="Resource" id="Node_goodbye"]
+script = ExtResource("2_node")
+id = &"goodbye"
+pages = PackedStringArray("Dois guardiões restam. Um no vulcão, outro em cinzas.")
+choices = Array[ExtResource("3_choice")]([])
+
+[resource]
+script = ExtResource("1_script")
+id = &"khalid_areias_douradas"
+display_name = "Khalid"
+portrait = "warrior_m"
+start_id = &"intro"
+nodes = Array[ExtResource("2_node")]([SubResource("Node_intro"), SubResource("Node_fragment"), SubResource("Node_goodbye")])

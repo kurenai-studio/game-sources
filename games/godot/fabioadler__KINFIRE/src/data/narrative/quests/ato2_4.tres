@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="QuestData" format=3]
+
+[ext_resource type="Script" path="res://scripts/data/quest_rewards.gd" id="1_4tm8c"]
+[ext_resource type="Script" path="res://scripts/data/quest_data.gd" id="2_ksa53"]
+[ext_resource type="Script" path="res://scripts/data/quest_stage.gd" id="3_awscc"]
+[ext_resource type="Script" path="res://scripts/data/quest_objective.gd" id="4_sfnc2"]
+
+[sub_resource type="Resource" id="Resource_4tm8c"]
+script = ExtResource("1_4tm8c")
+gold = 155
+item_base = &"ring"
+item_rarity = 2
+
+[sub_resource type="Resource" id="Resource_ksa53"]
+script = ExtResource("4_sfnc2")
+type = 3
+target = &"halfling"
+text = "Viaje às terras dos Halflings"
+
+[sub_resource type="Resource" id="Resource_awscc"]
+script = ExtResource("4_sfnc2")
+type = 3
+target = &"meio_elfo"
+text = "Viaje às terras dos Meio-Elfos"
+
+[sub_resource type="Resource" id="Resource_sfnc2"]
+script = ExtResource("3_awscc")
+description = "Visite as duas capitais e ouça cada lado da rusga. O ódio deles tem uma versão — e ela não combina."
+objectives = Array[ExtResource("4_sfnc2")]([SubResource("Resource_ksa53"), SubResource("Resource_awscc")])
+
+[sub_resource type="Resource" id="Resource_0uqx7"]
+script = ExtResource("4_sfnc2")
+type = 1
+target = &"arqueiro_bandido"
+count = 5
+text = "ladrões de cartas e mensagens"
+
+[sub_resource type="Resource" id="Resource_fn8rc"]
+script = ExtResource("3_awscc")
+description = "Entre as duas capitas, ladrões de cartas e mensagens se alimentam da discórdia — criaturas que só existem enquanto os dois lados acreditam na briga. Afaste-as."
+objectives = Array[ExtResource("4_sfnc2")]([SubResource("Resource_0uqx7")])
+
+[sub_resource type="Resource" id="Resource_5of1b"]
+script = ExtResource("4_sfnc2")
+type = 0
+target = &"any:capital_*_lider"
+text = "Traga a prova aos dois líderes"
+
+[sub_resource type="Resource" id="Resource_jv4os"]
+script = ExtResource("4_sfnc2")
+type = 0
+target = &"any:capital_*_lider"
+text = "Ouça a outra versão da mesma memória"
+
+[sub_resource type="Resource" id="Resource_a1e24"]
+script = ExtResource("3_awscc")
+description = "Meio-elfos não são híbridos. São filhos de laços que o Véu NÃO conseguiu quebrar. Cada meio-elfo é uma vitória contra o Véu."
+objectives = Array[ExtResource("4_sfnc2")]([SubResource("Resource_5of1b"), SubResource("Resource_jv4os")])
+
+[resource]
+script = ExtResource("2_ksa53")
+id = &"ato2_4"
+title = "O Vento que Carrega Nomes"
+summary = "A Pena de Águia-Celeste precisa chegar à Ponte-dos-Mundos. No caminho, o vento sopra nomes de casamentos mistos que alguém apagou dos registros."
+act = 2
+quest_level = 11
+stages = Array[ExtResource("3_awscc")]([SubResource("Resource_sfnc2"), SubResource("Resource_fn8rc"), SubResource("Resource_a1e24")])
+rewards = SubResource("Resource_4tm8c")
+next = &"ato2_5"

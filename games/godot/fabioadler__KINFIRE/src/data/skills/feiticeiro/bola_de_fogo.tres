@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"bola_de_fogo"
+display_name = "Bola de Fogo"
+kind = 1
+icon = "S_Fire05"
+description = "Explode ao atingir, ferindo todos ao redor."
+color = Color(1.0, 0.4, 0.05, 1.0)
+element = "fire"
+damage_mult = 2.4
+cost = 25.0
+projectile_speed = 280.0
+explode_radius = 44.0
+reach = 280.0
+sound = &"explode"

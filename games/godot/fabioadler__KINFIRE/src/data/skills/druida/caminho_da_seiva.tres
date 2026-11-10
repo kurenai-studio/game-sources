@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"caminho_da_seiva"
+display_name = "Caminho da Seiva"
+kind = 16
+icon = "S_Nature03"
+description = "Caminho de seiva conecta aliados em 15m por 15s. Cura e Mana fluem entre eles (compartilham regeneração). Custa 30 Mana."
+color = Color(0.6, 1.0, 0.5, 1.0)
+damage_mult = 0.0
+cost = 30.0
+cooldown = 25.0
+duration = 15.0
+radius = 150.0
+buff_stat = "shared_regen"
+buff_amount = 1.0
+buff_stat_2 = "mana_sharing"
+buff_amount_2 = 1.0
+sound = &"nature_blessing"

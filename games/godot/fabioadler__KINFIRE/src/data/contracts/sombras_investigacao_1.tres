@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ContractData"]
+
+script = SubResource("1")
+
+class_name = "ContractData"
+id = &"sombras_investigacao_1"
+guilda_id = &"sombras"
+tipo = 3
+titulo = "Investigue a Torre Abandonada"
+descricao = "Descubra os segredos guardados na Torre Negra. Volte com informações — não há testemunhas."
+requisito_nivel = 15
+requisito_reputacao = 2
+recompensas = {"ouro": 250, "xp": 150}
+
+[sub_resource type="GDScript" id="1"]
+script/source = "extends Resource
+class_name ContractData
+
+enum Tipo { COMBATE, COLETA, ESCOLTA, INVESTIGACAO }
+
+@export var id: StringName
+@export var guilda_id: StringName
+@export var tipo: Tipo
+@export var titulo: String
+@export var descricao: String
+@export var requisito_nivel: int = 1
+@export var requisito_reputacao: int = -1
+@export var recompensas: Dictionary = {}
+
+func _init() -> void:
+	resource_name = \"ContractData\"
+"

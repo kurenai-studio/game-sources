@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"mago_renegado"
+display_name = "Mago Renegado"
+sprite = "wizzard_m"
+behavior = 1
+max_hp = 30.0
+damage = 11.0
+move_speed = 50.0
+xp = 16
+element = "arcane"
+attack_range = 150.0
+attack_cooldown = 1.9
+min_depth = 2
+spawn_weight = 1.2
+tint = Color(0.7, 0.5, 0.9, 1.0)
+projectile_color = Color(0.8, 0.5, 1.0, 1.0)
+habitats = PackedStringArray("corrompido", "tundra", "planicie")

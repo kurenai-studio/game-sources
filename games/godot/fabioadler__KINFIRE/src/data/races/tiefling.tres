@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tiefling"
+display_name = "Tiefling"
+description = "Marcados por um legado infernal, canalizam um poder sombrio que corre em seu sangue."
+sprite_m = "chort"
+sprite_f = "chort"
+ability_bonus = {
+"int": 2,
+"str": 1
+}
+trait_name = "Pele Infernal"
+trait_description = "25% de resistência a fogo. Devolve 10% do dano físico recebido como dano de fogo."
+fire_resist = 0.25
+thorns = 0.1

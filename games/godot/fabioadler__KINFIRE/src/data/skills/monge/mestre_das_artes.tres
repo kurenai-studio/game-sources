@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"mestre_das_artes"
+display_name = "Mestre das Artes"
+kind = 17
+icon = "S_Buff10"
+description = "Estado de fluxo por 20s: todos golpes são críticos, Chi infinito, imune a controle. Custa 100 Chi."
+color = Color(1.0, 0.8, 0.4, 1.0)
+damage_mult = 0.0
+cost = 100.0
+cooldown = 180.0
+duration = 20.0
+buff_stat = "crit_chance"
+buff_amount = 1.0
+buff_stat_2 = "infinite_chi"
+buff_amount_2 = 1.0
+buff_stat_3 = "cc_immunity"
+buff_amount_3 = 1.0
+sound = &"transform"

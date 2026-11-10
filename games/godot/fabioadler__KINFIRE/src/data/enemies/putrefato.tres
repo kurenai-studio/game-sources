@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+elemental_type = 1
+id = &"putrefato"
+display_name = "Putrefato, o Colosso"
+sprite = "big_zombie"
+behavior = 4
+max_hp = 900.0
+damage = 26.0
+move_speed = 46.0
+xp = 550
+element = "poison"
+armor = 25.0
+attack_range = 26.0
+attack_cooldown = 1.5
+scale = 1.6
+spawn_weight = 0.0
+min_depth = 99
+aggro_range = 260.0
+projectile_color = Color(0.5, 1.0, 0.3, 1.0)
+boss_order = 2
+world_boss = true
+habitats = PackedStringArray("pantano", "corrompido")

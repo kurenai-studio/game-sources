@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"legiao_eterna"
+display_name = "Legião Eterna"
+kind = 12
+icon = "S_Summon04"
+description = "Invoca 10 esqueletos guerreiros + 1 Lich arqueiro por 30s. Lich lança Raio da Morte. Custa 100 Mana."
+color = Color(0.5, 0.3, 0.6, 1.0)
+damage_mult = 0.0
+cost = 100.0
+cooldown = 120.0
+duration = 30.0
+summon_count = 11
+summon_sprite = "skeleton_warrior"
+summon_sprite_2 = "lich_archer"
+sound = &"summon_army"

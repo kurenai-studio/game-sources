@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"rasgo_dimensional"
+display_name = "Rasgo Dimensional"
+kind = 9
+icon = "S_Magic08"
+description = "Cria portal ligando dois pontos (até 50m). Atravessar = teleporte + raio arcano 3x dano na linha. Custa 40 Carga."
+color = Color(0.9, 0.6, 1.0, 1.0)
+damage_mult = 3.0
+cost = 40.0
+cooldown = 25.0
+reach = 500.0
+duration = 5.0
+radius = 20.0
+sound = &"portal"

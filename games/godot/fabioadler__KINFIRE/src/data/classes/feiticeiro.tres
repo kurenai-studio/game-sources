@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/class_data.gd" id="1_script"]
+[ext_resource type="Resource" path="res://data/skills/feiticeiro/raio_de_fogo.tres" id="2_sk"]
+[ext_resource type="Resource" path="res://data/skills/feiticeiro/bola_de_fogo.tres" id="3_sk"]
+[ext_resource type="Resource" path="res://data/skills/feiticeiro/nova_gelida.tres" id="4_sk"]
+[ext_resource type="Resource" path="res://data/skills/feiticeiro/corrente_de_relampagos.tres" id="5_sk"]
+[ext_resource type="Resource" path="res://data/skills/feiticeiro/meteoro.tres" id="6_sk"]
+[ext_resource type="Resource" path="res://data/skills/feiticeiro/nevasca.tres" id="7_sk"]
+[ext_resource type="Script" path="res://scripts/data/skill_data.gd" id="99_skscript"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"feiticeiro"
+display_name = "Feiticeiro"
+role = "Distância • Elemental"
+icon = "S_Fire03"
+description = "Canhão de vidro com magia inata. Mana de regeneração alta, magias de área maciças de fogo, gelo e raio."
+hit_die = 6
+base_hp = 32
+primary_ability = "cha"
+recommended = PackedStringArray("cha", "con", "dex")
+base_armor = 3
+resource_label = "Mana"
+resource_color = Color(0.2, 0.42, 1.0, 1.0)
+resource_max = 130.0
+resource_regen = 14.0
+allowed_weapons = PackedStringArray("staff")
+allowed_offhands = PackedStringArray("orb", "book")
+starting_weapon = &"staff"
+starting_offhand = &"orb"
+base_status = {"forca": 6, "agilidade": 9, "mente": 15, "vitalidade": 7}
+status_growth = {"forca": 0, "agilidade": 0, "mente": 1, "vitalidade": 0}
+skills = Array[ExtResource("99_skscript")]([ExtResource("2_sk"), ExtResource("3_sk"), ExtResource("4_sk"), ExtResource("5_sk"), ExtResource("6_sk"), ExtResource("7_sk")])

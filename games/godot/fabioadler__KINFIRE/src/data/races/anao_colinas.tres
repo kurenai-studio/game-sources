@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"anao_colinas"
+display_name = "Anão das Colinas"
+description = "Sobreviventes teimosos, de saúde inabalável."
+sprite_m = "dwarf_m"
+sprite_f = "dwarf_f"
+ability_bonus = {
+"con": 2,
+"wis": 1
+}
+trait_name = "Resiliência"
+trait_description = "Regeneração de vida fora de combate dobrada e 25% de resistência a veneno."
+ooc_regen_mult = 2.0
+poison_resist = 0.25
+move_speed_mult = 0.94
+tint = Color(1.0, 0.9, 0.8, 1.0)

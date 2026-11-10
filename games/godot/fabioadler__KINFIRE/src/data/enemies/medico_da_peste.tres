@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/enemy_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+elemental_type = 1
+id = &"medico_da_peste"
+display_name = "Médico da Peste"
+sprite = "doc"
+behavior = 1
+max_hp = 36.0
+damage = 10.0
+move_speed = 48.0
+xp = 17
+element = "poison"
+attack_range = 145.0
+attack_cooldown = 1.8
+min_depth = 3
+spawn_weight = 1.0
+projectile_color = Color(0.5, 1.0, 0.3, 1.0)
+habitats = PackedStringArray("pantano", "corrompido")

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RaceData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/race_data.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+id = &"tabaxi"
+display_name = "Tabaxi"
+description = "Felinos curiosos e velozes, caçadores natos."
+sprite_m = "goblin"
+sprite_f = "goblin"
+ability_bonus = {
+"dex": 2
+}
+trait_name = "Arrancada Feroz"
+trait_description = "Ao acertar 5 ataques seguidos, ganha +40% de velocidade de movimento e de ataque por 4s."
+frenzy_hits = 5
+tint = Color(1.0, 0.75, 0.45, 1.0)
