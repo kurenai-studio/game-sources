@@ -1,0 +1,57 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="On The Clock"
+config/description="A looming deadline, a ticking clock."
+run/main_scene="uid://cfce8rl3gvf5u"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="uid://d350268cmyjtj"
+
+[audio]
+
+buses/default_bus_layout="uid://bddw1ugdrjprw"
+
+[autoload]
+
+GameManager="*uid://dtnxmryvuac7n"
+
+[display]
+
+window/size/viewport_width=800
+window/size/viewport_height=600
+window/stretch/mode="viewport"
+mouse_cursor/custom_image="uid://bqwuj6mv048j2"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_super-wakatime/plugin.cfg")
+
+[global_group]
+
+windows=""
+wrongsfx=""
+winsfx=""
+
+[gui]
+
+theme/custom_font="uid://dvlbnu5giiesy"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

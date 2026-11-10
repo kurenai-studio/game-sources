@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://bm3c1sofck16"]
+
+[ext_resource type="Script" uid="uid://bkyam1b1yxprv" path="res://scripts/minigames/mg_word.gd" id="1_xq22r"]
+[ext_resource type="Texture2D" uid="uid://g7g0583s6gnr" path="res://assets/images/minigames/word_new.png" id="2_fdlv7"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6sj1v"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8tn5n"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ai6g8"]
+
+[node name="MG_Word" type="Control" unique_id=622303260]
+clip_contents = true
+layout_mode = 3
+anchor_right = 0.81900007
+anchor_bottom = 1.0
+offset_right = 144.79993
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_xq22r")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=964442895]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+scale = Vector2(2, 2)
+texture = ExtResource("2_fdlv7")
+
+[node name="Center" type="ColorRect" parent="." unique_id=488042521]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.011000001
+anchor_top = 0.116000004
+anchor_right = 0.96700007
+anchor_bottom = 0.9
+grow_horizontal = 2
+grow_vertical = 0
+color = Color(1, 1, 1, 0)
+
+[node name="Hide" type="TextEdit" parent="Center" unique_id=2071477794]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 64.0
+offset_top = 64.0
+offset_right = -64.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.875, 0.875, 0.875, 1)
+theme_override_colors/font_readonly_color = Color(0.42745098, 0.52156866, 0.56078434, 1)
+theme_override_constants/line_spacing = 3
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxEmpty_6sj1v")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_8tn5n")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_ai6g8")
+text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec dui quam, vestibulum sit amet lacus non, iaculis imperdiet sem. Maecenas ut semper nisi, at efficitur nunc. Aliquam dictum commodo purus. Quisque ultrices id purus ac tempus. Vestibulum hendrerit pretium leo, vitae hendrerit ipsum vulputate vulputate. Nullam malesuada nunc fermentum tellus finibus rhoncus quis eget nulla. Fusce sit amet bibendum arcu. Sed elementum sodales sodales. Sed ac suscipit leo. Vestibulum sodales libero elit, quis imperdiet nisi scelerisque nec. Curabitur ultricies ante nec tincidunt elementum. Proin eget diam blandit, vestibulum nunc at, mollis turpis."
+editable = false
+context_menu_enabled = false
+emoji_menu_enabled = false
+shortcut_keys_enabled = false
+selecting_enabled = false
+deselect_on_focus_loss_enabled = false
+drag_and_drop_selection_enabled = false
+empty_selection_clipboard_enabled = false
+wrap_mode = 1
+autowrap_mode = 2
+tab_input_mode = false
+
+[node name="Input" type="TextEdit" parent="Center" unique_id=1936206850]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 64.0
+offset_top = 64.0
+offset_right = -64.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_constants/line_spacing = 3
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxEmpty_6sj1v")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_8tn5n")
+theme_override_styles/read_only = SubResource("StyleBoxEmpty_ai6g8")
+text = "Lorem ipsum dolor sit amet, cons"
+context_menu_enabled = false
+emoji_menu_enabled = false
+shortcut_keys_enabled = false
+selecting_enabled = false
+drag_and_drop_selection_enabled = false
+wrap_mode = 1
+autowrap_mode = 2
+tab_input_mode = false
