@@ -1,0 +1,127 @@
+[gd_scene load_steps=9 format=3 uid="uid://ksmxfy2mhi8a"]
+
+[ext_resource type="Script" path="res://game/level.gd" id="1_2ydpd"]
+[ext_resource type="Texture2D" uid="uid://dfg08e31v64vb" path="res://assets/images/cell.svg" id="2_hjom3"]
+[ext_resource type="PackedScene" uid="uid://dyvakus2uhyay" path="res://game/block.tscn" id="3_yrxl1"]
+[ext_resource type="PackedScene" uid="uid://br6g6ah8hgvd0" path="res://game/obstacle.tscn" id="4_mg4bb"]
+[ext_resource type="PackedScene" uid="uid://bgomyojoa86d7" path="res://game/coin.tscn" id="5_fbvo2"]
+[ext_resource type="Script" path="res://game/victory_area_collision_shape.gd" id="6_uiy47"]
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_k7hj2"]
+a = Vector2(-240, 0)
+b = Vector2(11200, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3fhg4"]
+size = Vector2(221.5, 207.75)
+
+[node name="Level2" type="Node2D" node_paths=PackedStringArray("victory_area")]
+script = ExtResource("1_2ydpd")
+level_number = 3
+speed_multiplier = 2.0
+victory_area = NodePath("VictoryArea2D")
+
+[node name="GridPaper" type="Sprite2D" parent="."]
+z_index = -1
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("2_hjom3")
+centered = false
+offset = Vector2(-240, -768)
+region_enabled = true
+region_rect = Rect2(0, 0, 10240, 1536)
+metadata/_edit_lock_ = true
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(0, 4)
+metadata/erasable = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("SegmentShape2D_k7hj2")
+one_way_collision = true
+
+[node name="Line2D" type="Line2D" parent="Floor"]
+points = PackedVector2Array(-240, 0, 11200, 0)
+width = 8.0
+default_color = Color(0.376028, 0.376029, 0.376028, 1)
+
+[node name="Blocks" type="Node2D" parent="."]
+
+[node name="Block" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(2093, -51)
+
+[node name="Block2" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(2093, -173)
+
+[node name="Block7" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(2408, -173)
+
+[node name="Block8" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(2577, -285)
+
+[node name="Block9" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(2909, -288)
+
+[node name="Block3" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(2094, -297)
+
+[node name="Block4" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(1827, -52)
+
+[node name="Block5" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(1827, -174)
+
+[node name="Block6" parent="Blocks" instance=ExtResource("3_yrxl1")]
+position = Vector2(1828, -298)
+
+[node name="Obstacles" type="Node2D" parent="."]
+
+[node name="Obstacle" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(848, -50)
+
+[node name="Obstacle2" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(1060, -162)
+
+[node name="Obstacle3" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(1301, -51)
+
+[node name="Obstacle6" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(1495, -172)
+
+[node name="Obstacle4" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(3143, -178)
+
+[node name="Obstacle9" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(3352, -49)
+
+[node name="Obstacle10" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(3561, -184)
+
+[node name="Obstacle11" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(3760, -54)
+
+[node name="Obstacle7" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(2095, -49)
+
+[node name="Obstacle8" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(2917, -49)
+
+[node name="Obstacle5" parent="Obstacles" instance=ExtResource("4_mg4bb")]
+position = Vector2(2723, -178)
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin" parent="Coins" instance=ExtResource("5_fbvo2")]
+position = Vector2(1827, -172)
+
+[node name="Coin2" parent="Coins" instance=ExtResource("5_fbvo2")]
+position = Vector2(2095, -302)
+
+[node name="Coin3" parent="Coins" instance=ExtResource("5_fbvo2")]
+position = Vector2(2305, -370)
+
+[node name="VictoryArea2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VictoryArea2D"]
+position = Vector2(4197, -105)
+shape = SubResource("RectangleShape2D_3fhg4")
+script = ExtResource("6_uiy47")

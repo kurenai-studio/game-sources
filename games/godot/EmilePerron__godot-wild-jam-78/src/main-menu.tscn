@@ -1,0 +1,191 @@
+[gd_scene load_steps=11 format=3 uid="uid://b44e868pxmcoj"]
+
+[ext_resource type="Script" path="res://main_menu.gd" id="1_ga5a4"]
+[ext_resource type="Texture2D" uid="uid://dfg08e31v64vb" path="res://assets/images/cell.svg" id="1_ridsi"]
+[ext_resource type="FontFile" uid="uid://ccjm25febi27g" path="res://assets/fonts/IndieFlower-Regular.ttf" id="2_3268u"]
+[ext_resource type="Texture2D" uid="uid://cg8s8jtipgtpr" path="res://assets/images/logo-optimized.png" id="3_nnksj"]
+[ext_resource type="Texture2D" uid="uid://bngjifo0q3vqc" path="res://assets/images/popsicle-stick-optimized.png" id="5_dusgn"]
+[ext_resource type="Texture2D" uid="uid://dln4h6c7yh2v8" path="res://assets/images/character-rough-optimized.png" id="6_mkamb"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_4j7au"]
+font = ExtResource("2_3268u")
+font_size = 32
+font_color = Color(0, 0, 0, 1)
+
+[sub_resource type="Animation" id="Animation_pp0d3"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-471, -99)]
+}
+
+[sub_resource type="Animation" id="Animation_550fn"]
+resource_name = "menu_character_move_around"
+length = 5.3
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:rotation")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1, 2.06667, 3.46667, 5.31195),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1),
+"update": 0,
+"values": [0.0, 0.0872665, -0.0698132, 0.0872665, 0.0]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:position")
+tracks/1/interp = 2
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 1, 3.46667, 5.31195),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector2(-471, -99), Vector2(-418, -67), Vector2(-425, -449), Vector2(-471, -99)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_e3t4w"]
+_data = {
+"RESET": SubResource("Animation_pp0d3"),
+"menu_character_move_around": SubResource("Animation_550fn")
+}
+
+[node name="Main-menu" type="Node2D"]
+script = ExtResource("1_ga5a4")
+
+[node name="GridPaper" type="Sprite2D" parent="."]
+z_index = -1
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("1_ridsi")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 1024, 768)
+metadata/_edit_lock_ = true
+
+[node name="Title" type="Sprite2D" parent="."]
+position = Vector2(712, 254)
+scale = Vector2(0.398217, 0.398217)
+texture = ExtResource("3_nnksj")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+offset_left = 385.0
+offset_top = 441.0
+offset_right = 1025.0
+offset_bottom = 605.0
+
+[node name="PlayButton" type="TextureButton" parent="VBoxContainer"]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Label" type="Label" parent="VBoxContainer/PlayButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -24.0
+offset_right = 28.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Play"
+label_settings = SubResource("LabelSettings_4j7au")
+metadata/_edit_lock_ = true
+
+[node name="TutorialButton" type="TextureButton" parent="VBoxContainer"]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Label" type="Label" parent="VBoxContainer/TutorialButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -24.0
+offset_right = 28.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Tutorial"
+label_settings = SubResource("LabelSettings_4j7au")
+metadata/_edit_lock_ = true
+
+[node name="SettingsButton" type="TextureButton" parent="VBoxContainer"]
+custom_minimum_size = Vector2(200, 80)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Label" type="Label" parent="VBoxContainer/SettingsButton"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -28.0
+offset_top = -24.0
+offset_right = 28.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Settings"
+label_settings = SubResource("LabelSettings_4j7au")
+metadata/_edit_lock_ = true
+
+[node name="Character" type="Node2D" parent="."]
+position = Vector2(-471, -99)
+
+[node name="Popsicle-stick-optimized" type="Sprite2D" parent="Character"]
+position = Vector2(502, 580)
+rotation = -0.032487
+scale = Vector2(0.717817, 0.717817)
+texture = ExtResource("5_dusgn")
+
+[node name="Character-rough-optimized" type="Sprite2D" parent="Character"]
+position = Vector2(746, 572)
+scale = Vector2(0.138445, 0.138445)
+texture = ExtResource("6_mkamb")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Character"]
+libraries = {
+"": SubResource("AnimationLibrary_e3t4w")
+}
+autoplay = "menu_character_move_around"
+
+[connection signal="pressed" from="VBoxContainer/PlayButton" to="." method="_on_play_button_pressed"]
+[connection signal="pressed" from="VBoxContainer/TutorialButton" to="." method="_on_tutorial_button_pressed"]

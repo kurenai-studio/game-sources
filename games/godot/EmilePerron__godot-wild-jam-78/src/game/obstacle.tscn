@@ -1,0 +1,26 @@
+[gd_scene load_steps=4 format=3 uid="uid://br6g6ah8hgvd0"]
+
+[ext_resource type="Script" path="res://game/obstacle.gd" id="1_asai7"]
+[ext_resource type="Texture2D" uid="uid://n6ui7ybkrm44" path="res://assets/images/skull-circle-optimized.png" id="2_is4ju"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_t1tpi"]
+radius = 14.0357
+
+[node name="Node2D" type="Node2D"]
+
+[node name="Obstacle" type="Node2D" parent="."]
+script = ExtResource("1_asai7")
+metadata/erasable = true
+
+[node name="Sprite2D" type="Sprite2D" parent="Obstacle"]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_is4ju")
+
+[node name="Area2D" type="Area2D" parent="Obstacle/Sprite2D"]
+scale = Vector2(20, 20)
+metadata/is_obstacle_area2d = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Obstacle/Sprite2D/Area2D"]
+shape = SubResource("CircleShape2D_t1tpi")
+
+[connection signal="body_entered" from="Obstacle/Sprite2D/Area2D" to="Obstacle" method="_on_area_2d_body_entered"]

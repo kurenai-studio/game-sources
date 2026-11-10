@@ -1,0 +1,139 @@
+[gd_scene load_steps=12 format=3 uid="uid://cp8erxw60ltvb"]
+
+[ext_resource type="Script" path="res://game/level.gd" id="1_rqyhv"]
+[ext_resource type="Texture2D" uid="uid://dfg08e31v64vb" path="res://assets/images/cell.svg" id="2_bsl8d"]
+[ext_resource type="PackedScene" uid="uid://br6g6ah8hgvd0" path="res://game/obstacle.tscn" id="3_a7euj"]
+[ext_resource type="PackedScene" uid="uid://dyvakus2uhyay" path="res://game/block.tscn" id="3_vj5xm"]
+[ext_resource type="PackedScene" uid="uid://bgomyojoa86d7" path="res://game/coin.tscn" id="5_q07l5"]
+[ext_resource type="Script" path="res://game/victory_area_collision_shape.gd" id="6_qejvp"]
+[ext_resource type="FontFile" uid="uid://ccjm25febi27g" path="res://assets/fonts/IndieFlower-Regular.ttf" id="7_0rnab"]
+
+[sub_resource type="SegmentShape2D" id="SegmentShape2D_k7hj2"]
+a = Vector2(-240, 0)
+b = Vector2(11200, 0)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5ivgq"]
+size = Vector2(221.5, 207.75)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_a80rn"]
+size = Vector2(221.5, 207.75)
+
+[sub_resource type="LabelSettings" id="LabelSettings_jxdbx"]
+font = ExtResource("7_0rnab")
+font_size = 32
+font_color = Color(0, 0, 0, 1)
+
+[node name="Level" type="Node2D" node_paths=PackedStringArray("victory_area")]
+script = ExtResource("1_rqyhv")
+level_number = 1
+victory_area = NodePath("VictoryArea2D")
+
+[node name="GridPaper" type="Sprite2D" parent="."]
+z_index = -1
+texture_filter = 1
+texture_repeat = 2
+texture = ExtResource("2_bsl8d")
+centered = false
+offset = Vector2(-240, -768)
+region_enabled = true
+region_rect = Rect2(0, 0, 10240, 1536)
+metadata/_edit_lock_ = true
+
+[node name="Floor" type="StaticBody2D" parent="."]
+position = Vector2(0, 4)
+metadata/erasable = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Floor"]
+shape = SubResource("SegmentShape2D_k7hj2")
+
+[node name="Line2D" type="Line2D" parent="Floor"]
+points = PackedVector2Array(-240, 0, 11200, 0)
+width = 8.0
+default_color = Color(0.376028, 0.376029, 0.376028, 1)
+
+[node name="Blocks" type="Node2D" parent="."]
+
+[node name="Block" parent="Blocks" instance=ExtResource("3_vj5xm")]
+position = Vector2(1188, -44)
+
+[node name="Block2" parent="Blocks" instance=ExtResource("3_vj5xm")]
+position = Vector2(1965, -45)
+
+[node name="Block3" parent="Blocks" instance=ExtResource("3_vj5xm")]
+position = Vector2(1965, -167)
+
+[node name="Block7" parent="Blocks" instance=ExtResource("3_vj5xm")]
+position = Vector2(3413, -47)
+
+[node name="Block8" parent="Blocks" instance=ExtResource("3_vj5xm")]
+position = Vector2(3523, -154)
+
+[node name="Block9" parent="Blocks" instance=ExtResource("3_vj5xm")]
+position = Vector2(3661, -262)
+
+[node name="Block6" parent="Blocks" instance=ExtResource("3_vj5xm")]
+position = Vector2(1963, -292)
+
+[node name="Obstacles" type="Node2D" parent="."]
+
+[node name="Obstacle2" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(528, -62)
+
+[node name="Obstacle5" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(1559, -52)
+
+[node name="Obstacle3" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(798, -61)
+
+[node name="Obstacle6" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(1186, -206)
+
+[node name="Obstacle7" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(2287, -54)
+
+[node name="Obstacle8" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(2483, -191)
+
+[node name="Obstacle9" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(2673, -61)
+
+[node name="Obstacle10" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(2886, -190)
+
+[node name="Obstacle12" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(5035, -58)
+
+[node name="Obstacle11" parent="Obstacles" instance=ExtResource("3_a7euj")]
+position = Vector2(3087, -59)
+
+[node name="Coins" type="Node2D" parent="."]
+
+[node name="Coin" parent="Coins" instance=ExtResource("5_q07l5")]
+position = Vector2(798, -148)
+
+[node name="Coin3" parent="Coins" instance=ExtResource("5_q07l5")]
+position = Vector2(5160, -59)
+
+[node name="Coin2" parent="Coins" instance=ExtResource("5_q07l5")]
+position = Vector2(1965, -166)
+
+[node name="VictoryArea2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="VictoryArea2D"]
+position = Vector2(3851, -461)
+shape = SubResource("RectangleShape2D_5ivgq")
+script = ExtResource("6_qejvp")
+
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="VictoryArea2D"]
+position = Vector2(5529, -105)
+shape = SubResource("RectangleShape2D_a80rn")
+script = ExtResource("6_qejvp")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 4997.0
+offset_top = 32.0
+offset_right = 5419.0
+offset_bottom = 131.0
+text = "Exploration and experimentation
+can be rewarding!"
+label_settings = SubResource("LabelSettings_jxdbx")
