@@ -1,0 +1,57 @@
+[gd_scene load_steps=7 format=3 uid="uid://dqgsorwmwmfle"]
+
+[ext_resource type="Script" uid="uid://dc1led15ud3x0" path="res://components/scripts/ice_block.gd" id="1_2prkr"]
+[ext_resource type="Texture2D" uid="uid://c64ha33by25qk" path="res://assets/spritesheet.png" id="2_75cto"]
+[ext_resource type="AudioStream" uid="uid://dgcgeoitmf1e2" path="res://assets/IceSmash.wav" id="2_nereo"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hn12h"]
+size = Vector2(16, 16)
+
+[sub_resource type="Gradient" id="Gradient_ihfcg"]
+colors = PackedColorArray(0.74, 0.8743333, 1, 1, 0.5921569, 0.78039217, 1, 0)
+
+[sub_resource type="Gradient" id="Gradient_rka8t"]
+colors = PackedColorArray(0.6075, 0.65024996, 0.75, 1, 1, 1, 1, 1)
+
+[node name="IceBlock" type="StaticBody2D"]
+collision_layer = 33
+collision_mask = 33
+script = ExtResource("1_2prkr")
+
+[node name="SmashSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_nereo")
+volume_db = -5.0
+bus = &"SFX"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_hn12h")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_75cto")
+region_enabled = true
+region_rect = Rect2(64, 16, 16, 16)
+
+[node name="Particles" type="CPUParticles2D" parent="."]
+process_mode = 3
+emitting = false
+amount = 16
+lifetime = 0.5
+one_shot = true
+explosiveness = 0.95
+fixed_fps = 30
+draw_order = 1
+emission_shape = 3
+emission_rect_extents = Vector2(8, 8)
+direction = Vector2(0, 1)
+spread = 180.0
+gravity = Vector2(0, 49)
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+angle_min = -179.99998
+angle_max = 180.00002
+scale_amount_min = 2.0
+scale_amount_max = 2.0
+color_ramp = SubResource("Gradient_ihfcg")
+color_initial_ramp = SubResource("Gradient_rka8t")
+
+[connection signal="finished" from="Particles" to="." method="_on_particles_finished"]

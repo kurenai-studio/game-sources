@@ -1,0 +1,122 @@
+[gd_scene load_steps=9 format=3 uid="uid://bcg7o6vjsgfdh"]
+
+[ext_resource type="Script" uid="uid://btj2k3ur6pt8o" path="res://ui/controls_menu/controls_menu.gd" id="1_ie8b1"]
+[ext_resource type="Script" uid="uid://y2bps88yqewi" path="res://ui/controls_menu/remap_button.gd" id="2_hi6wq"]
+[ext_resource type="Script" uid="uid://biou3daqhc60m" path="res://ui/controls_menu/controls_reset_button.gd" id="3_5m5dm"]
+[ext_resource type="Script" uid="uid://cusvsithditi2" path="res://ui/back_button.gd" id="4_ie8b1"]
+
+[sub_resource type="InputEventAction" id="InputEventAction_3tsog"]
+action = &"menu_toggle"
+
+[sub_resource type="Shortcut" id="Shortcut_mj2de"]
+events = [SubResource("InputEventAction_3tsog")]
+
+[sub_resource type="InputEventAction" id="InputEventAction_ie8b1"]
+action = &"menu_toggle"
+
+[sub_resource type="Shortcut" id="Shortcut_3tsog"]
+events = [SubResource("InputEventAction_ie8b1")]
+
+[node name="ControlsMenu" type="PanelContainer"]
+script = ExtResource("1_ie8b1")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Controls"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+columns = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Left"
+
+[node name="Left" type="Button" parent="VBoxContainer/GridContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_neighbor_left = NodePath("../../HBoxContainer/Back")
+focus_neighbor_right = NodePath("../Right")
+toggle_mode = true
+script = ExtResource("2_hi6wq")
+action = &"move_left"
+
+[node name="Label2" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Right"
+
+[node name="Right" type="Button" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+focus_neighbor_left = NodePath("../Left")
+focus_neighbor_right = NodePath("../Jump")
+toggle_mode = true
+script = ExtResource("2_hi6wq")
+action = &"move_right"
+
+[node name="Label3" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Jump"
+
+[node name="Jump" type="Button" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+focus_neighbor_left = NodePath("../Right")
+focus_neighbor_right = NodePath("../Restart")
+toggle_mode = true
+script = ExtResource("2_hi6wq")
+action = &"jump"
+
+[node name="Label4" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Restart"
+
+[node name="Restart" type="Button" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+focus_neighbor_left = NodePath("../Jump")
+focus_neighbor_right = NodePath("../Pause")
+toggle_mode = true
+script = ExtResource("2_hi6wq")
+action = &"restart"
+
+[node name="Label5" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Menu/Pause"
+
+[node name="Pause" type="Button" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+focus_neighbor_left = NodePath("../Restart")
+focus_neighbor_right = NodePath("../../HBoxContainer/Reset")
+toggle_mode = true
+script = ExtResource("2_hi6wq")
+action = &"menu_toggle"
+
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="Reset" type="Button" parent="VBoxContainer/HBoxContainer" groups=["ui_buttons"]]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_neighbor_left = NodePath("../../GridContainer/Pause")
+shortcut = SubResource("Shortcut_mj2de")
+text = "Reset"
+script = ExtResource("3_5m5dm")
+
+[node name="Back" type="Button" parent="VBoxContainer/HBoxContainer" groups=["ui_buttons"]]
+layout_mode = 2
+size_flags_horizontal = 3
+focus_neighbor_right = NodePath("../../GridContainer/Left")
+shortcut = SubResource("Shortcut_3tsog")
+text = "Back
+"
+script = ExtResource("4_ie8b1")

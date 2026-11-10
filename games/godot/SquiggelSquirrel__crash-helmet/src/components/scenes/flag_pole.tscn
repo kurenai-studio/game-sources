@@ -1,0 +1,87 @@
+[gd_scene load_steps=12 format=3 uid="uid://dvqo41ivng0sj"]
+
+[ext_resource type="Texture2D" uid="uid://c64ha33by25qk" path="res://assets/spritesheet.png" id="1_4mkk3"]
+[ext_resource type="Script" uid="uid://swc2ox6fq4hr" path="res://components/scripts/flag_pole.gd" id="1_a28ua"]
+[ext_resource type="AudioStream" uid="uid://cdnluu7fd85u7" path="res://assets/Goal.wav" id="3_7fumx"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_5rr72"]
+size = Vector2(8, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5rr72"]
+atlas = ExtResource("1_4mkk3")
+region = Rect2(16, 128, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gyffv"]
+atlas = ExtResource("1_4mkk3")
+region = Rect2(32, 128, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1pe0h"]
+atlas = ExtResource("1_4mkk3")
+region = Rect2(48, 128, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_27bay"]
+atlas = ExtResource("1_4mkk3")
+region = Rect2(64, 128, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sof0w"]
+atlas = ExtResource("1_4mkk3")
+region = Rect2(80, 128, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ggavl"]
+atlas = ExtResource("1_4mkk3")
+region = Rect2(96, 128, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ubhxj"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5rr72")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_gyffv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1pe0h")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_27bay")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sof0w")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ggavl")
+}],
+"loop": true,
+"name": &"default",
+"speed": 12.0
+}]
+
+[node name="FlagPole" type="Area2D"]
+collision_layer = 64
+collision_mask = 66
+script = ExtResource("1_a28ua")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -8)
+texture = ExtResource("1_4mkk3")
+region_enabled = true
+region_rect = Rect2(0, 128, 16, 32)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-4, -8)
+shape = SubResource("RectangleShape2D_5rr72")
+
+[node name="Flag" type="AnimatedSprite2D" parent="."]
+process_mode = 3
+visible = false
+position = Vector2(0, -16)
+sprite_frames = SubResource("SpriteFrames_ubhxj")
+autoplay = "default"
+frame_progress = 0.9682883
+
+[node name="Ding" type="AudioStreamPlayer" parent="."]
+unique_name_in_owner = true
+stream = ExtResource("3_7fumx")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

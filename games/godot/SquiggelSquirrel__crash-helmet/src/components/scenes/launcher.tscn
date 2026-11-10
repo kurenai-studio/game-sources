@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://pspalhtf3iyu"]
+
+[ext_resource type="Script" uid="uid://b6a0mg88arxi7" path="res://components/scripts/launcher.gd" id="1_4emaf"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ihfcg"]
+radius = 8.0
+
+[node name="Launcher" type="Area2D"]
+collision_layer = 2
+collision_mask = 2
+monitorable = false
+script = ExtResource("1_4emaf")
+right = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_ihfcg")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3 uid="uid://drhv3362ixbk1"]
+
+[ext_resource type="Script" uid="uid://deg0v2n4m8hgi" path="res://components/scripts/spring.gd" id="1_boyml"]
+[ext_resource type="Texture2D" uid="uid://c64ha33by25qk" path="res://assets/spritesheet.png" id="2_hpppm"]
+[ext_resource type="AudioStream" uid="uid://bn3vyj5aedqel" path="res://assets/Jump.wav" id="3_bi4w4"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_3a0n3"]
+radius = 8.0
+height = 22.0
+
+[node name="Spring" type="Area2D"]
+collision_layer = 2
+collision_mask = 2
+script = ExtResource("1_boyml")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-6, 0)
+rotation = -1.5707964
+shape = SubResource("CapsuleShape2D_3a0n3")
+
+[node name="Bouncer" type="Sprite2D" parent="."]
+texture = ExtResource("2_hpppm")
+region_enabled = true
+region_rect = Rect2(112, 16, 16, 16)
+
+[node name="Sound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_bi4w4")
+pitch_scale = 0.7
+bus = &"SFX"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

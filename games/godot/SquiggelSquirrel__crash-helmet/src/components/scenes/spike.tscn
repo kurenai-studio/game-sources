@@ -1,0 +1,73 @@
+[gd_scene load_steps=8 format=3 uid="uid://ci6w4ed7kkjrb"]
+
+[ext_resource type="Script" uid="uid://dhrsibod26yl7" path="res://components/scripts/spike.gd" id="1_7k7bx"]
+[ext_resource type="Texture2D" uid="uid://c64ha33by25qk" path="res://assets/spritesheet.png" id="1_8ryga"]
+[ext_resource type="AudioStream" uid="uid://dgcgeoitmf1e2" path="res://assets/IceSmash.wav" id="2_ok1g2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_j7kpp"]
+size = Vector2(6, 16)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_7k7bx"]
+radius = 4.0
+
+[sub_resource type="Gradient" id="Gradient_7k7bx"]
+colors = PackedColorArray(0.74, 0.8743333, 1, 1, 0.5921569, 0.78039217, 1, 0)
+
+[sub_resource type="Gradient" id="Gradient_tggh8"]
+colors = PackedColorArray(0.6075, 0.65024996, 0.75, 1, 1, 1, 1, 1)
+
+[node name="Spike" type="CharacterBody2D"]
+disable_mode = 1
+collision_layer = 16
+collision_mask = 17
+script = ExtResource("1_7k7bx")
+
+[node name="SmashSound" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_ok1g2")
+bus = &"SFX"
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("1_8ryga")
+region_enabled = true
+region_rect = Rect2(0, 96, 16, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_j7kpp")
+
+[node name="FloorFinder" type="RayCast2D" parent="."]
+position = Vector2(0, 8)
+target_position = Vector2(0, 400)
+
+[node name="Trigger" type="Area2D" parent="."]
+position = Vector2(0, 18)
+collision_layer = 2
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Trigger"]
+shape = SubResource("CircleShape2D_7k7bx")
+
+[node name="Particles" type="CPUParticles2D" parent="."]
+process_mode = 3
+emitting = false
+amount = 16
+lifetime = 0.5
+one_shot = true
+explosiveness = 0.95
+fixed_fps = 30
+draw_order = 1
+emission_shape = 3
+emission_rect_extents = Vector2(3, 8)
+direction = Vector2(0, 1)
+spread = 180.0
+gravity = Vector2(0, 49)
+initial_velocity_min = 10.0
+initial_velocity_max = 20.0
+angle_min = -179.99998
+angle_max = 180.00002
+scale_amount_min = 2.0
+scale_amount_max = 2.0
+color_ramp = SubResource("Gradient_7k7bx")
+color_initial_ramp = SubResource("Gradient_tggh8")
+
+[connection signal="body_entered" from="Trigger" to="." method="_on_trigger_body_entered"]
+[connection signal="finished" from="Particles" to="." method="_on_particles_finished"]

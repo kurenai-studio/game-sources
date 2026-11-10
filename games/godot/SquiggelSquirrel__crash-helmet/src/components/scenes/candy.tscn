@@ -1,0 +1,66 @@
+[gd_scene load_steps=10 format=3 uid="uid://d4ka3m62s1gsc"]
+
+[ext_resource type="Script" uid="uid://c20jafcf21qce" path="res://components/scripts/candy.gd" id="1_pqqre"]
+[ext_resource type="Texture2D" uid="uid://c64ha33by25qk" path="res://assets/spritesheet.png" id="2_37cvb"]
+[ext_resource type="AudioStream" uid="uid://3emrt150vfki" path="res://assets/PowerUp.wav" id="3_ag4ft"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bjebc"]
+atlas = ExtResource("2_37cvb")
+region = Rect2(0, 80, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5rr72"]
+atlas = ExtResource("2_37cvb")
+region = Rect2(16, 80, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gyffv"]
+atlas = ExtResource("2_37cvb")
+region = Rect2(32, 80, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1pe0h"]
+atlas = ExtResource("2_37cvb")
+region = Rect2(48, 80, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_27bay"]
+animations = [{
+"frames": [{
+"duration": 3.0,
+"texture": SubResource("AtlasTexture_bjebc")
+}, {
+"duration": 2.0,
+"texture": SubResource("AtlasTexture_5rr72")
+}, {
+"duration": 3.0,
+"texture": SubResource("AtlasTexture_gyffv")
+}, {
+"duration": 2.0,
+"texture": SubResource("AtlasTexture_1pe0h")
+}],
+"loop": true,
+"name": &"default",
+"speed": 6.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bjebc"]
+radius = 4.5
+
+[node name="Candy" type="Area2D" groups=["candies"]]
+collision_layer = 64
+collision_mask = 66
+script = ExtResource("1_pqqre")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_27bay")
+autoplay = "default"
+frame_progress = 0.051877756
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0.5, -0.5)
+shape = SubResource("CircleShape2D_bjebc")
+
+[node name="Collect" type="AudioStreamPlayer" parent="."]
+process_mode = 3
+stream = ExtResource("3_ag4ft")
+bus = &"SFX"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="finished" from="Collect" to="." method="_on_collect_finished"]

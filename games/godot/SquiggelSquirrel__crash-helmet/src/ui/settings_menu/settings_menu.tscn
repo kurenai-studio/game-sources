@@ -1,0 +1,79 @@
+[gd_scene load_steps=6 format=3 uid="uid://dacdj2mwp52fo"]
+
+[ext_resource type="Script" uid="uid://cusvsithditi2" path="res://ui/back_button.gd" id="1_cobfr"]
+[ext_resource type="Script" uid="uid://bafq8vwiqaywb" path="res://ui/settings_menu/settings_menu.gd" id="1_kvsec"]
+[ext_resource type="Script" uid="uid://c10wqvohyyrou" path="res://ui/settings_menu/volume_slider.gd" id="2_2adas"]
+
+[sub_resource type="InputEventAction" id="InputEventAction_2adas"]
+action = &"menu_toggle"
+
+[sub_resource type="Shortcut" id="Shortcut_424ss"]
+events = [SubResource("InputEventAction_2adas")]
+
+[node name="SettingsMenu" type="PanelContainer"]
+script = ExtResource("1_kvsec")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="VBoxContainer"]
+layout_mode = 2
+columns = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Overall Volume"
+
+[node name="MasterVolume" type="HSlider" parent="VBoxContainer/GridContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+script = ExtResource("2_2adas")
+
+[node name="Label3" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Music Volume"
+
+[node name="MusicVolume" type="HSlider" parent="VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+script = ExtResource("2_2adas")
+audio_bus = "Music"
+
+[node name="Label2" type="Label" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+text = "Sounds Volume"
+
+[node name="SFXVolume" type="HSlider" parent="VBoxContainer/GridContainer"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 1.0
+script = ExtResource("2_2adas")
+audio_bus = "SFX"
+
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="VBoxContainer/HBoxContainer" groups=["ui_buttons"]]
+layout_mode = 2
+shortcut = SubResource("Shortcut_424ss")
+text = "Back"
+script = ExtResource("1_cobfr")

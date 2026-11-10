@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3 uid="uid://dfup8lo2ylqox"]
+
+[ext_resource type="Script" uid="uid://damlokd347ajo" path="res://ui/victory_dialog/victory_dialog.gd" id="1_x37e2"]
+[ext_resource type="Script" uid="uid://cktbrsodttrae" path="res://ui/victory_dialog/continue.gd" id="2_rcrrl"]
+
+[node name="VictoryDialog" type="PanelContainer" node_paths=PackedStringArray("candy_count_label")]
+script = ExtResource("1_x37e2")
+candy_count_label = NodePath("VBoxContainer/CandyCountLabel")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Level Complete!"
+horizontal_alignment = 1
+
+[node name="CandyCountLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="Continue" type="Button" parent="VBoxContainer/HBoxContainer" groups=["ui_buttons"]]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Continue"
+script = ExtResource("2_rcrrl")
