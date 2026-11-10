@@ -1,0 +1,91 @@
+[gd_scene format=3 uid="uid://de33ptcfn88oo"]
+
+[ext_resource type="Script" uid="uid://dtemb22o0ql22" path="res://src/main.gd" id="1_eewff"]
+[ext_resource type="PackedScene" uid="uid://crwfr8v6acr44" path="res://map/map.tscn" id="2_gh0ne"]
+[ext_resource type="PackedScene" uid="uid://dx2w5piqqnpr8" path="res://src/text_box.tscn" id="3_3cfgd"]
+[ext_resource type="Texture2D" uid="uid://u1pcrqbwa24d" path="res://bkg/bkg_tiles.png" id="4_fyndt"]
+[ext_resource type="Texture2D" uid="uid://c12hhbvtth236" path="res://bkg/bkg_logo.png" id="4_kmhfv"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_gh0ne"]
+size = Vector2(32, 32)
+
+[node name="Main" type="Node" unique_id=1532415616]
+script = ExtResource("1_eewff")
+
+[node name="Map" parent="." unique_id=775644409 instance=ExtResource("2_gh0ne")]
+
+[node name="CoffeeMakerArea" type="Area2D" parent="." unique_id=1673121503]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CoffeeMakerArea" unique_id=1186274627]
+position = Vector2(124, 31)
+shape = SubResource("RectangleShape2D_gh0ne")
+
+[node name="EspressoArea" type="Area2D" parent="." unique_id=2078689544]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EspressoArea" unique_id=1823963366]
+position = Vector2(220, 31)
+shape = SubResource("RectangleShape2D_gh0ne")
+
+[node name="BeanBagArea" type="Area2D" parent="." unique_id=1056816998]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BeanBagArea" unique_id=2084553196]
+position = Vector2(31, 60)
+shape = SubResource("RectangleShape2D_gh0ne")
+
+[node name="MinifridgeArea" type="Area2D" parent="." unique_id=505103134]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="MinifridgeArea" unique_id=1227293046]
+position = Vector2(290, 84)
+shape = SubResource("RectangleShape2D_gh0ne")
+
+[node name="ManagersNoteArea" type="Area2D" parent="." unique_id=196472283]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ManagersNoteArea" unique_id=1257275300]
+position = Vector2(31, 108)
+shape = SubResource("RectangleShape2D_gh0ne")
+
+[node name="TitleScreen" type="Node2D" parent="." unique_id=6981825]
+
+[node name="TitleBox" parent="TitleScreen" unique_id=791219887 instance=ExtResource("3_3cfgd")]
+offset_left = 46.0
+offset_top = 67.0
+offset_right = 273.0
+offset_bottom = 157.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="TitleScreen/TitleBox" unique_id=904057988]
+position = Vector2(114, 44)
+texture = ExtResource("4_kmhfv")
+
+[node name="SGBox" parent="TitleScreen" unique_id=856566780 instance=ExtResource("3_3cfgd")]
+offset_left = 82.0
+offset_top = 176.0
+offset_right = 237.0
+offset_bottom = 200.0
+text = "2026 StudioGuma  "
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Sprite2D" type="Sprite2D" parent="TitleScreen/SGBox" unique_id=350355416]
+position = Vector2(140, 12)
+texture = ExtResource("4_fyndt")
+hframes = 7
+vframes = 2
+frame = 2
+
+[node name="VersionBox" parent="TitleScreen" unique_id=2005906548 instance=ExtResource("3_3cfgd")]
+offset_right = 144.0
+offset_bottom = 46.0
+text = "v1.02
+Code: GPLv3
+Assets: CC BY-SA"
+
+[node name="SoundBox" parent="TitleScreen" unique_id=579879617 instance=ExtResource("3_3cfgd")]
+offset_left = 183.0
+offset_right = 320.0
+offset_bottom = 46.0
+text = "F1: Music
+F2: SFX
+Shift: Tutorial"
+horizontal_alignment = 2
