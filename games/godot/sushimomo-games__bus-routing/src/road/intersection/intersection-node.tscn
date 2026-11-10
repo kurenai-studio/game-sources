@@ -1,0 +1,15 @@
+[gd_scene load_steps=4 format=3 uid="uid://sqsjlmlyneb6"]
+
+[ext_resource type="Script" uid="uid://dbyi4m20fj0om" path="res://road/intersection/IntersectionNode.cs" id="1_h1vvq"]
+[ext_resource type="Texture2D" uid="uid://ckneaxqxvrrsq" path="res://assets/circle.png" id="2_mpe73"]
+[ext_resource type="PackedScene" uid="uid://o6lvivmce3jd" path="res://road/road-node/road-node-area.tscn" id="3_mpe73"]
+
+[node name="IntersectionNode" type="Node2D"]
+script = ExtResource("1_h1vvq")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+self_modulate = Color(0.83203804, 0.85847294, 0.8874689, 1)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_mpe73")
+
+[node name="RoadNodeArea" parent="." instance=ExtResource("3_mpe73")]

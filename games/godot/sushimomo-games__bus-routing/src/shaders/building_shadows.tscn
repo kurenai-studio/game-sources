@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3 uid="uid://cmwqxdeod4tbc"]
+
+[ext_resource type="Shader" uid="uid://5v7q2g6jpyk8" path="res://shaders/shadow-shader.gdshader" id="1_cdc0w"]
+[ext_resource type="Texture2D" uid="uid://c4tx6cege7xq5" path="res://assets/gradient.tres" id="2_hs1u1"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8iv2f"]
+shader = ExtResource("1_cdc0w")
+shader_parameter/color = Color(0.09099999, 0.26801676, 0.65, 0.15686275)
+shader_parameter/angle = 124.9650059358375
+shader_parameter/max_dist = 20.00000095
+shader_parameter/gradientTexture = ExtResource("2_hs1u1")
+
+[node name="BuildingShadows" type="Polygon2D"]
+editor_description = "Need this for adding shadow to houses. Should be added to every level. Level needs a DirectionalLight2D to work.
+Shader: https://github.com/jess-hammer/2d-shadows-demo-godot
+"
+material = SubResource("ShaderMaterial_8iv2f")
+polygon = PackedVector2Array(-9, -32, 718, 43, 750, 424, -24, 410)
+metadata/_edit_lock_ = true

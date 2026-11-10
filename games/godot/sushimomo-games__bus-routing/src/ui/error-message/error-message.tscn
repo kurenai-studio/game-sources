@@ -1,0 +1,29 @@
+[gd_scene load_steps=2 format=3 uid="uid://cqtxsdj4bg4xn"]
+
+[ext_resource type="Script" uid="uid://ocs5olrvf1g8" path="res://ui/error-message/ErrorMessage.cs" id="1_raciq"]
+
+[node name="ErrorMessage" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_raciq")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 412.0
+offset_bottom = 35.0
+color = Color(0.6717562, 0.34925967, 0.3483698, 0.6666667)
+
+[node name="ErrorText" type="Label" parent="."]
+editor_description = "This node is getting indexed in ErrorMessage.cs."
+self_modulate = Color(0.2, 0.029999996, 0.029999996, 1)
+layout_mode = 0
+offset_right = 412.0
+offset_bottom = 35.0
+text = "Test"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Timeout" type="Timer" parent="."]
+editor_description = "This node is getting indexed in ErrorMessage.cs."
+wait_time = 3.0
+one_shot = true

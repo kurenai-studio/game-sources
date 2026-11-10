@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://be8cl7jr4j0gc"]
+
+[ext_resource type="Texture2D" uid="uid://bb8l1lhcq5tgr" path="res://assets/arrow.svg" id="1_rt6l5"]
+[ext_resource type="PackedScene" uid="uid://d0bvpeqqj8t5" path="res://ui/hover-scaler/hover-scaler.tscn" id="3_v5b5b"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_evff2"]
+device = -1
+ctrl_pressed = true
+keycode = 82
+unicode = 114
+
+[sub_resource type="Shortcut" id="Shortcut_sho3k"]
+events = [SubResource("InputEventKey_evff2")]
+
+[node name="RedoButton" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="TextureButton" type="TextureButton" parent="."]
+layout_mode = 0
+offset_right = 54.0
+offset_bottom = 51.0
+tooltip_text = "Redo"
+shortcut = SubResource("Shortcut_sho3k")
+texture_normal = ExtResource("1_rt6l5")
+stretch_mode = 0
+flip_h = true
+
+[node name="HoverScaler" parent="TextureButton" instance=ExtResource("3_v5b5b")]

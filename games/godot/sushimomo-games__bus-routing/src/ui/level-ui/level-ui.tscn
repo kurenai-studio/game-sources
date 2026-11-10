@@ -1,0 +1,190 @@
+[gd_scene load_steps=17 format=3 uid="uid://dc2wfu8lyap4i"]
+
+[ext_resource type="Script" uid="uid://cuau4qy5dcr7l" path="res://ui/level-ui/LevelUI.cs" id="1_1jth6"]
+[ext_resource type="PackedScene" uid="uid://dkglf58b8n1vu" path="res://ui/buttons/add-stops/add-stop.tscn" id="2_2q8no"]
+[ext_resource type="Theme" uid="uid://bbd7hepk2p0vf" path="res://assets/ui-theme.tres" id="3_r2dcs"]
+[ext_resource type="PackedScene" uid="uid://dc2ns6w7uxuiu" path="res://ui/buttons/add-line/add-line-button.tscn" id="4_hn6xl"]
+[ext_resource type="PackedScene" uid="uid://cqtxsdj4bg4xn" path="res://ui/error-message/error-message.tscn" id="5_ftjap"]
+[ext_resource type="Script" uid="uid://cm0i2ufxmquap" path="res://ui/level-ui/BudgetLabel.cs" id="6_07au4"]
+[ext_resource type="Script" uid="uid://bydjv6i8bntvn" path="res://ui/level-ui/InformationPanel.cs" id="6_v72kp"]
+[ext_resource type="Script" uid="uid://bxwc5v3pghdtw" path="res://ui/buttons/EndBusLineButton.cs" id="8_te10w"]
+[ext_resource type="PackedScene" uid="uid://jf2a1v8x5v1v" path="res://ui/buttons/undo-button.tscn" id="9_itewi"]
+[ext_resource type="PackedScene" uid="uid://be8cl7jr4j0gc" path="res://ui/buttons/redo-button.tscn" id="10_gwjw8"]
+[ext_resource type="PackedScene" uid="uid://boeq5c2p8isiw" path="res://ui/buttons/slice-button.tscn" id="11_hn6xl"]
+[ext_resource type="PackedScene" uid="uid://jofckxx88jrf" path="res://ui/settings-menu/settings-menu.tscn" id="12_settings"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_v72kp"]
+content_margin_left = 2.0
+content_margin_top = 5.0
+content_margin_right = 2.0
+content_margin_bottom = 5.0
+bg_color = Color(0.427493, 0.42749307, 0.42749295, 0.78039217)
+
+[sub_resource type="Gradient" id="Gradient_hn6xl"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(0.92, 0.92, 0.92, 0, 1, 1, 1, 0.8627451, 1, 1, 1, 0)
+metadata/_snap_enabled = true
+metadata/_snap_count = 4
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_v72kp"]
+gradient = SubResource("Gradient_hn6xl")
+
+[sub_resource type="Theme" id="Theme_hn6xl"]
+
+[node name="LevelUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_1jth6")
+
+[node name="InfoPanelContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.842
+anchor_top = 0.025
+anchor_right = 0.987
+anchor_bottom = 0.602
+grow_horizontal = 0
+theme = ExtResource("3_r2dcs")
+
+[node name="informationPanel" type="PanelContainer" parent="InfoPanelContainer"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_v72kp")
+script = ExtResource("6_v72kp")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="InfoPanelContainer/informationPanel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="TitleLabel" type="Label" parent="InfoPanelContainer/informationPanel/VBoxContainer"]
+layout_mode = 2
+text = "No information"
+
+[node name="ButtonsRect" type="HBoxContainer" parent="InfoPanelContainer/informationPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="InfoText" type="Label" parent="InfoPanelContainer/informationPanel/VBoxContainer"]
+layout_mode = 2
+text = "Select a house, bus line, or bus stop to view the information."
+
+[node name="EditBtn" type="Button" parent="InfoPanelContainer/informationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 10
+text = "Edit"
+
+[node name="DeleteBtn" type="Button" parent="InfoPanelContainer/informationPanel/VBoxContainer"]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 10
+text = "Delete"
+
+[node name="ErrorMessage" parent="." instance=ExtResource("5_ftjap")]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 10.0
+grow_horizontal = 2
+
+[node name="BudgetLabel" type="Label" parent="."]
+modulate = Color(0.11858138, 0.11858138, 0.11858138, 1)
+layout_mode = 1
+offset_right = 40.0
+offset_bottom = 23.0
+script = ExtResource("6_07au4")
+
+[node name="LineEditorStatusLabel" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -137.0
+offset_top = -23.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.73, 0, 0.19466649, 1)
+text = "● Creating new line"
+
+[node name="EndBusLineButton" type="Button" parent="."]
+visible = false
+layout_mode = 0
+anchor_left = 0.113715276
+anchor_top = 0.06790123
+anchor_right = 0.20659722
+anchor_bottom = 0.11574074
+text = "End Bus Line"
+script = ExtResource("8_te10w")
+metadata/_edit_use_anchors_ = true
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -100.0
+grow_horizontal = 2
+grow_vertical = 0
+texture = SubResource("GradientTexture1D_v72kp")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -233.0
+offset_top = -91.22394
+offset_right = 358.24988
+offset_bottom = -66.99994
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(0.8, 0.8)
+theme = SubResource("Theme_hn6xl")
+alignment = 1
+
+[node name="AddStop" parent="HBoxContainer" instance=ExtResource("2_2q8no")]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="AddLineButton" parent="HBoxContainer" instance=ExtResource("4_hn6xl")]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="UndoButton" parent="HBoxContainer" instance=ExtResource("9_itewi")]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 2
+size_flags_vertical = 4
+
+[node name="RedoButton" parent="HBoxContainer" instance=ExtResource("10_gwjw8")]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="SliceButton" parent="HBoxContainer" instance=ExtResource("11_hn6xl")]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="SettingsMenu" parent="." instance=ExtResource("12_settings")]
+
+[connection signal="pressed" from="EndBusLineButton" to="EndBusLineButton" method="_on_pressed"]

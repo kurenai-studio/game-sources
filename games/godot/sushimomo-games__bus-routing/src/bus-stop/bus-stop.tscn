@@ -1,0 +1,52 @@
+[gd_scene load_steps=8 format=3 uid="uid://pkmhht26hfvg"]
+
+[ext_resource type="Script" uid="uid://b4aut18kx5u1u" path="res://bus-stop/BusStop.cs" id="1_0n3gx"]
+[ext_resource type="Texture2D" uid="uid://uhvh86snav6" path="res://assets/bus-stop.svg" id="2_6mx4d"]
+[ext_resource type="PackedScene" uid="uid://jxdx0w5h5cxi" path="res://bus-stop/walk_radius.tscn" id="3_6mx4d"]
+[ext_resource type="Script" uid="uid://ffmnen4viup1" path="res://bus-stop/BusStopDeletor.cs" id="4_6mx4d"]
+[ext_resource type="PackedScene" uid="uid://o6lvivmce3jd" path="res://road/road-node/road-node-area.tscn" id="4_6rec7"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_0n3gx"]
+radius = 11.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_6mx4d"]
+
+[node name="BusStop" type="Node2D"]
+z_index = 1
+script = ExtResource("1_0n3gx")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.4, 0.4)
+texture = ExtResource("2_6mx4d")
+
+[node name="WalkRadius" parent="." instance=ExtResource("3_6mx4d")]
+collision_mask = 32
+
+[node name="WalkRadiusSprite" parent="WalkRadius" index="1"]
+visible = false
+
+[node name="RoadNodeArea" parent="." instance=ExtResource("4_6rec7")]
+
+[node name="Deletor" type="Area2D" parent="."]
+editor_description = "This node will delete the bus stop upon right click."
+script = ExtResource("4_6mx4d")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Deletor"]
+shape = SubResource("CircleShape2D_0n3gx")
+debug_color = Color(0.9959118, 0, 0.20502087, 0.41960785)
+
+[node name="BusStopArea" type="Area2D" parent="."]
+editor_description = "This area is for general collisions, such as when a WalkRadius is detecting what bus stops are in its range."
+collision_layer = 32
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BusStopArea"]
+shape = SubResource("CircleShape2D_6mx4d")
+debug_color = Color(1, 0.7666667, 0, 0.41960785)
+
+[connection signal="input_event" from="Deletor" to="Deletor" method="_on_input_event"]
+[connection signal="mouse_entered" from="BusStopArea" to="." method="_on_bus_stop_area_mouse_entered"]
+[connection signal="mouse_exited" from="BusStopArea" to="." method="_on_bus_stop_area_mouse_exited"]
+[connection signal="input_event" from="BusStopArea" to="." method="_on_bus_stop_clicked"]
+
+[editable path="WalkRadius"]

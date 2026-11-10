@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://boeq5c2p8isiw"]
+
+[ext_resource type="Texture2D" uid="uid://duemgd3xvq2rv" path="res://assets/slice.svg" id="1_wv0hv"]
+[ext_resource type="PackedScene" uid="uid://d0bvpeqqj8t5" path="res://ui/hover-scaler/hover-scaler.tscn" id="2_1dejv"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_1dejv"]
+device = -1
+ctrl_pressed = true
+keycode = 88
+unicode = 120
+
+[sub_resource type="Shortcut" id="Shortcut_01n23"]
+events = [SubResource("InputEventKey_1dejv")]
+
+[node name="SliceButton" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="TextureButton" type="TextureButton" parent="."]
+layout_mode = 1
+offset_right = 78.0
+offset_bottom = 76.0
+tooltip_text = "Remove segment from bus line"
+shortcut = SubResource("Shortcut_01n23")
+texture_normal = ExtResource("1_wv0hv")
+ignore_texture_size = true
+stretch_mode = 0
+
+[node name="HoverScaler" parent="TextureButton" instance=ExtResource("2_1dejv")]

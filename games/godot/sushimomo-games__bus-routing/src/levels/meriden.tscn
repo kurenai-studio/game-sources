@@ -1,0 +1,85 @@
+[gd_scene load_steps=8 format=3 uid="uid://b57fjtbl22yus"]
+
+[ext_resource type="Script" uid="uid://c1omwi6nrcts5" path="res://levels/Level.cs" id="1_8iv2f"]
+[ext_resource type="Script" uid="uid://dcew74obwshpi" path="res://Camera.cs" id="2_4kxre"]
+[ext_resource type="PackedScene" uid="uid://7sg83f1kmn6m" path="res://buildings/destination/destination.tscn" id="2_q4dte"]
+[ext_resource type="PackedScene" uid="uid://cwiepcsny2a7m" path="res://buildings/house/house.tscn" id="3_udqdq"]
+[ext_resource type="PackedScene" uid="uid://sqsjlmlyneb6" path="res://road/intersection/intersection-node.tscn" id="6_q4dte"]
+[ext_resource type="PackedScene" uid="uid://cmwqxdeod4tbc" path="res://shaders/building_shadows.tscn" id="7_udqdq"]
+[ext_resource type="PackedScene" uid="uid://dc2wfu8lyap4i" path="res://ui/level-ui/level-ui.tscn" id="8_8iv2f"]
+
+[node name="Meriden" type="Node2D"]
+script = ExtResource("1_8iv2f")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(426.86, 166)
+scale = Vector2(-63.42596, -2.0827663)
+script = ExtResource("2_4kxre")
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="."]
+rotation = -4.1887903
+color = Color(1, 1, 1, 0.78431374)
+energy = 0.5
+
+[node name="IntersectionNodes" type="Node" parent="."]
+
+[node name="IntersectionNode1" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(164, 176)
+Neighbors = [NodePath("../IntersectionNode2"), NodePath("../IntersectionNode5")]
+
+[node name="IntersectionNode2" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(376, 170)
+Neighbors = [NodePath("../IntersectionNode1"), NodePath("../IntersectionNode3"), NodePath("../IntersectionNode4")]
+
+[node name="IntersectionNode3" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(519, 168)
+Neighbors = [NodePath("../IntersectionNode2")]
+
+[node name="IntersectionNode4" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(382, 387)
+Neighbors = [NodePath("../IntersectionNode2"), NodePath("../IntersectionNode5")]
+
+[node name="IntersectionNode5" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(167, 396)
+Neighbors = [NodePath("../IntersectionNode4"), NodePath("../IntersectionNode1")]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="LevelUI" parent="CanvasLayer" instance=ExtResource("8_8iv2f")]
+metadata/_edit_lock_ = true
+
+[node name="Houses" type="Node" parent="."]
+
+[node name="House" parent="Houses" instance=ExtResource("3_udqdq")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(424, 120)
+BuildingColor = "Yellow"
+
+[node name="BlueHouse" parent="Houses" instance=ExtResource("3_udqdq")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(488, 119)
+
+[node name="GreenHouse" parent="Houses" instance=ExtResource("3_udqdq")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(426, 220.99997)
+rotation = 3.117607
+BuildingColor = "Green"
+
+[node name="Destinations" type="Node" parent="."]
+
+[node name="Business1" parent="Destinations" instance=ExtResource("2_q4dte")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(229, 111)
+
+[node name="Business" parent="Destinations" instance=ExtResource("2_q4dte")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(92.99999, 245.00002)
+rotation = -1.5860153
+BuildingColor = "Green"
+
+[node name="Business2" parent="Destinations" instance=ExtResource("2_q4dte")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(231, 250)
+rotation = 1.5711393
+
+[node name="BuildingShadows" parent="." instance=ExtResource("7_udqdq")]

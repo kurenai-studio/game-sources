@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://dc2ns6w7uxuiu"]
+
+[ext_resource type="Script" uid="uid://cc6jt12y5aelv" path="res://ui/buttons/add-line/AddLineButton.cs" id="1_mk4gp"]
+[ext_resource type="Texture2D" uid="uid://cf2hb2eygxr8p" path="res://assets/new-line.svg" id="1_ocwtk"]
+[ext_resource type="PackedScene" uid="uid://d0bvpeqqj8t5" path="res://ui/hover-scaler/hover-scaler.tscn" id="3_6x80l"]
+
+[node name="AddLineButton" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Button" type="TextureButton" parent="."]
+layout_mode = 1
+offset_right = 78.0
+offset_bottom = 76.0
+tooltip_text = "Add new bus line"
+texture_normal = ExtResource("1_ocwtk")
+script = ExtResource("1_mk4gp")
+
+[node name="HoverScaler" parent="Button" instance=ExtResource("3_6x80l")]
+
+[connection signal="pressed" from="Button" to="Button" method="_on_pressed"]

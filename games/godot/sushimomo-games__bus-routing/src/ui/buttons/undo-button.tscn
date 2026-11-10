@@ -1,0 +1,35 @@
+[gd_scene load_steps=6 format=3 uid="uid://jf2a1v8x5v1v"]
+
+[ext_resource type="Texture2D" uid="uid://bb8l1lhcq5tgr" path="res://assets/arrow.svg" id="1_t5wrp"]
+[ext_resource type="Script" uid="uid://lt4aivqbvex3" path="res://ui/buttons/UndoButton.cs" id="2_4rvkd"]
+[ext_resource type="PackedScene" uid="uid://d0bvpeqqj8t5" path="res://ui/hover-scaler/hover-scaler.tscn" id="3_4rvkd"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_nwxmw"]
+device = -1
+ctrl_pressed = true
+keycode = 90
+unicode = 122
+
+[sub_resource type="Shortcut" id="Shortcut_4rvkd"]
+events = [SubResource("InputEventKey_nwxmw")]
+
+[node name="UndoButton" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 0
+
+[node name="TextureButton" type="TextureButton" parent="."]
+layout_mode = 0
+offset_right = 54.0
+offset_bottom = 51.0
+tooltip_text = "Undo"
+shortcut = SubResource("Shortcut_4rvkd")
+texture_normal = ExtResource("1_t5wrp")
+stretch_mode = 0
+script = ExtResource("2_4rvkd")
+
+[node name="HoverScaler" parent="TextureButton" instance=ExtResource("3_4rvkd")]
+
+[connection signal="pressed" from="TextureButton" to="TextureButton" method="_on_pressed"]

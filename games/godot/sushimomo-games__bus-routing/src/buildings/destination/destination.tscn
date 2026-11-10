@@ -1,0 +1,39 @@
+[gd_scene load_steps=9 format=3 uid="uid://7sg83f1kmn6m"]
+
+[ext_resource type="Script" uid="uid://cyb77mad3a4ns" path="res://buildings/destination/Destination.cs" id="1_5asxf"]
+[ext_resource type="Shader" uid="uid://bkiw64o711wls" path="res://shaders/outline.gdshader" id="1_outline"]
+[ext_resource type="Texture2D" uid="uid://bq2fkk3mnlbf0" path="res://assets/business.png" id="2_5asxf"]
+[ext_resource type="PackedScene" uid="uid://d3qg57hamhtvr" path="res://bus-stop/detector/bus-stop-detector.tscn" id="2_p3ua0"]
+[ext_resource type="Texture2D" uid="uid://44rx2yml64r" path="res://assets/normal-maps/business-nm.png" id="3_dhpfj"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o40wj"]
+shader = ExtResource("1_outline")
+shader_parameter/line_color = Color(0, 0, 0, 1)
+shader_parameter/line_thickness = 0.0
+shader_parameter/sprite_scale = Vector2(1, 1)
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_txwbo"]
+diffuse_texture = ExtResource("2_5asxf")
+normal_texture = ExtResource("3_dhpfj")
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_dhpfj"]
+polygon = PackedVector2Array(-239.99997, -214.99998, -239.99997, 164.99998, -159.99998, 164.99998, -159.99998, 214.99998, -39.999996, 214.99998, -39.999996, 164.99998, 39.999996, 164.99998, 39.999996, 124.999985, 199.99998, 124.999985, 199.99998, -34.999996, 239.99997, -34.999996, 239.99997, -214.99998)
+
+[node name="Business" type="Node2D"]
+editor_description = "Z-index of sprite must be on layer 1 in order for the map editor plugin to function properly."
+z_index = 1
+script = ExtResource("1_5asxf")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+editor_description = "Z-index must be on layer 1 in order for map editor plugin to function properly."
+z_index = 1
+material = SubResource("ShaderMaterial_o40wj")
+scale = Vector2(0.2, 0.2)
+texture = SubResource("CanvasTexture_txwbo")
+
+[node name="BusStopDetector" parent="." instance=ExtResource("2_p3ua0")]
+position = Vector2(-20, 18)
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+scale = Vector2(0.2, 0.2)
+occluder = SubResource("OccluderPolygon2D_dhpfj")
