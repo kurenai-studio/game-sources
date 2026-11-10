@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gx4ys"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_5dns1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lmf08"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_yehap"]
+
+[sub_resource type="Resource" id="Resource_k67lb"]
+script = ExtResource("2_5dns1")
+text = "Two neighbours nodded to each other over the fence, and nothing at all was said."
+
+[sub_resource type="Resource" id="Resource_wyf5m"]
+script = ExtResource("3_lmf08")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_oregk"]
+script = ExtResource("3_lmf08")
+key = &"cooled_off"
+
+[resource]
+script = ExtResource("4_yehap")
+id = &"quiet_neighbours"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_lmf08")]([SubResource("Resource_wyf5m"), SubResource("Resource_oregk")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_5dns1")]([SubResource("Resource_k67lb")])

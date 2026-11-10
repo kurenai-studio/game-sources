@@ -1,0 +1,40 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_4h8ul"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_srbrn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nm25c"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_tq18v"]
+
+[sub_resource type="Resource" id="Resource_ebukt"]
+script = ExtResource("2_srbrn")
+kind = 1
+key = &"butterfly_seen"
+
+[sub_resource type="Resource" id="Resource_c1kuh"]
+script = ExtResource("2_srbrn")
+text = "A butterfly nobody had seen before landed on the strange flower."
+
+[sub_resource type="Resource" id="Resource_w0bb1"]
+script = ExtResource("2_srbrn")
+kind = 10
+key = &"rare_visitor"
+text = "A Rare Visitor"
+
+[sub_resource type="Resource" id="Resource_dndfu"]
+script = ExtResource("3_nm25c")
+key = &"strange_flower_bloomed"
+
+[sub_resource type="Resource" id="Resource_0cmtk"]
+script = ExtResource("3_nm25c")
+key = &"butterfly_seen"
+negate = true
+
+[resource]
+script = ExtResource("4_tq18v")
+id = &"rare_butterfly"
+title = "A rare visitor"
+category = &"nature"
+requires = Array[ExtResource("3_nm25c")]([SubResource("Resource_dndfu"), SubResource("Resource_0cmtk")])
+chance_per_tick = 0.02
+once = true
+effects = Array[ExtResource("2_srbrn")]([SubResource("Resource_ebukt"), SubResource("Resource_c1kuh"), SubResource("Resource_w0bb1")])

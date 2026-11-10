@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8gmgf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ttuja"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ik1rd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bl2gq"]
+
+[sub_resource type="Resource" id="Resource_fvoal"]
+script = ExtResource("2_ttuja")
+text = "The iron pot hung over the fire all day, and nobody could remember what the soup had been like before."
+
+[sub_resource type="Resource" id="Resource_77ah0"]
+script = ExtResource("3_ik1rd")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vofoi"]
+script = ExtResource("3_ik1rd")
+key = &"iron_cauldron"
+
+[resource]
+script = ExtResource("4_bl2gq")
+id = &"soup_in_the_cauldron"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ik1rd")]([SubResource("Resource_77ah0"), SubResource("Resource_vofoi")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ttuja")]([SubResource("Resource_fvoal")])

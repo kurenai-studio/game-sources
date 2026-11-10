@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_usnm1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_42mhx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7vsr4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_128u6"]
+
+[sub_resource type="Resource" id="Resource_l7svc"]
+script = ExtResource("2_42mhx")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_68ghf"]
+script = ExtResource("2_42mhx")
+kind = 1
+key = &"honey_taken"
+
+[sub_resource type="Resource" id="Resource_qlxak"]
+script = ExtResource("2_42mhx")
+text = "They took the whole comb, and sticky, swollen, everyone ate until they ached."
+
+[sub_resource type="Resource" id="Resource_48btx"]
+script = ExtResource("1_usnm1")
+id = &"take_the_comb"
+label = "Take the whole comb, and put up with the stings"
+effects = Array[ExtResource("2_42mhx")]([SubResource("Resource_l7svc"), SubResource("Resource_68ghf"), SubResource("Resource_qlxak")])
+
+[sub_resource type="Resource" id="Resource_dam18"]
+script = ExtResource("2_42mhx")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_4fmvy"]
+script = ExtResource("2_42mhx")
+kind = 1
+key = &"honey_shared"
+
+[sub_resource type="Resource" id="Resource_vdst5"]
+script = ExtResource("2_42mhx")
+text = "They took one small piece of comb and left the tree humming, and the bees stayed."
+
+[sub_resource type="Resource" id="Resource_bmnlf"]
+script = ExtResource("1_usnm1")
+id = &"take_a_little"
+label = "Take a little and leave the hive standing"
+effects = Array[ExtResource("2_42mhx")]([SubResource("Resource_dam18"), SubResource("Resource_4fmvy"), SubResource("Resource_vdst5")])
+
+[sub_resource type="Resource" id="Resource_nbsrv"]
+script = ExtResource("3_7vsr4")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_ucony"]
+script = ExtResource("3_7vsr4")
+kind = 5
+amount = 227
+
+[resource]
+script = ExtResource("4_128u6")
+id = &"bee_tree"
+title = "The bee tree"
+body = "A hollow tree in the western wood hums with bees, and the comb inside is heavy with honey."
+category = &"nature"
+requires = Array[ExtResource("3_7vsr4")]([SubResource("Resource_nbsrv"), SubResource("Resource_ucony")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_usnm1")]([SubResource("Resource_48btx"), SubResource("Resource_bmnlf")])

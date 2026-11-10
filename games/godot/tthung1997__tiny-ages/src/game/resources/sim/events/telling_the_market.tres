@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hoiru"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_tt8bo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_5iocx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1yhna"]
+
+[sub_resource type="Resource" id="Resource_2frdx"]
+script = ExtResource("2_tt8bo")
+text = "{subject} told everyone about the road, and then told them again, in better order."
+
+[sub_resource type="Resource" id="Resource_iutt7"]
+script = ExtResource("3_5iocx")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_3b48q"]
+script = ExtResource("3_5iocx")
+kind = 9
+key = &"wheel_and_road"
+
+[sub_resource type="Resource" id="Resource_77cxt"]
+script = ExtResource("3_5iocx")
+kind = 6
+key = &"social"
+
+[sub_resource type="Resource" id="Resource_m5t7g"]
+script = ExtResource("3_5iocx")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_liwnj"]
+script = ExtResource("3_5iocx")
+kind = 10
+
+[resource]
+script = ExtResource("4_1yhna")
+id = &"telling_the_market"
+title = "A quiet moment"
+requires = Array[ExtResource("3_5iocx")]([SubResource("Resource_iutt7"), SubResource("Resource_3b48q")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_5iocx")]([SubResource("Resource_77cxt"), SubResource("Resource_m5t7g"), SubResource("Resource_liwnj")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_tt8bo")]([SubResource("Resource_2frdx")])

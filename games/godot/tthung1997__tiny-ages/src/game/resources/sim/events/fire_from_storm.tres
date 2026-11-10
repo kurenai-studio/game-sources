@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_krfew"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_y8c6m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hudai"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_8xb4r"]
+
+[sub_resource type="Resource" id="Resource_6rj1x"]
+script = ExtResource("2_y8c6m")
+kind = 1
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_tjd60"]
+script = ExtResource("2_y8c6m")
+text = "{subject} carried a burning branch back through the rain, and the cave was warm for the first time."
+
+[sub_resource type="Resource" id="Resource_pw2ci"]
+script = ExtResource("2_y8c6m")
+kind = 10
+key = &"fire"
+text = "Fire"
+
+[sub_resource type="Resource" id="Resource_q5tmg"]
+script = ExtResource("1_krfew")
+id = &"carry_fire"
+label = "Carry a burning branch back to the cave"
+effects = Array[ExtResource("2_y8c6m")]([SubResource("Resource_6rj1x"), SubResource("Resource_tjd60"), SubResource("Resource_pw2ci")])
+
+[sub_resource type="Resource" id="Resource_f50tm"]
+script = ExtResource("2_y8c6m")
+kind = 1
+key = &"embers_waited"
+
+[sub_resource type="Resource" id="Resource_5nyoe"]
+script = ExtResource("2_y8c6m")
+text = "The group watched the burning tree from a distance until it was ash and embers."
+
+[sub_resource type="Resource" id="Resource_p2evq"]
+script = ExtResource("2_y8c6m")
+kind = 7
+key = &"embers_remain"
+amount = 48
+
+[sub_resource type="Resource" id="Resource_pmj0e"]
+script = ExtResource("1_krfew")
+id = &"wait_for_embers"
+label = "Wait for it to burn down, then take the embers"
+effects = Array[ExtResource("2_y8c6m")]([SubResource("Resource_f50tm"), SubResource("Resource_5nyoe"), SubResource("Resource_p2evq")])
+
+[sub_resource type="Resource" id="Resource_jlu4w"]
+script = ExtResource("3_hudai")
+key = &"fire_found"
+negate = true
+
+[sub_resource type="Resource" id="Resource_yucx7"]
+script = ExtResource("3_hudai")
+kind = 5
+amount = 1
+
+[sub_resource type="Resource" id="Resource_vju30"]
+script = ExtResource("3_hudai")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_pg0lq"]
+script = ExtResource("3_hudai")
+kind = 7
+
+[resource]
+script = ExtResource("4_8xb4r")
+id = &"fire_from_storm"
+title = "A burning tree"
+body = "A storm rolled over the valley in the night. On the ridge a lone tree is burning, and even from here its glow is warm."
+category = &"nature"
+requires = Array[ExtResource("3_hudai")]([SubResource("Resource_jlu4w"), SubResource("Resource_yucx7")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_hudai")]([SubResource("Resource_vju30"), SubResource("Resource_pg0lq")])
+chance_per_tick = 0.04
+cooldown_ticks = 24
+choices = Array[ExtResource("1_krfew")]([SubResource("Resource_q5tmg"), SubResource("Resource_pmj0e")])

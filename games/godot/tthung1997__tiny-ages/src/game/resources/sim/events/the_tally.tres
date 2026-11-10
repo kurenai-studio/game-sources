@@ -1,0 +1,94 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_52knb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_b2fc0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7gjha"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3w1bx"]
+
+[sub_resource type="Resource" id="Resource_a5kas"]
+script = ExtResource("2_b2fc0")
+kind = 1
+key = &"clay_tablets"
+
+[sub_resource type="Resource" id="Resource_ep4k6"]
+script = ExtResource("2_b2fc0")
+kind = 1
+key = &"tally"
+
+[sub_resource type="Resource" id="Resource_g0akw"]
+script = ExtResource("2_b2fc0")
+kind = 10
+key = &"a_town"
+text = "A Town"
+
+[sub_resource type="Resource" id="Resource_8y82l"]
+script = ExtResource("2_b2fc0")
+text = "Marks were pressed into wet clay with a reed, and the slab baked in the kiln. It was, everyone agreed, a remarkably stubborn way of remembering."
+
+[sub_resource type="Resource" id="Resource_swwe0"]
+script = ExtResource("1_52knb")
+id = &"press_marks_in_clay"
+label = "Press marks into a slab of wet clay"
+effects = Array[ExtResource("2_b2fc0")]([SubResource("Resource_a5kas"), SubResource("Resource_ep4k6"), SubResource("Resource_g0akw"), SubResource("Resource_8y82l")])
+
+[sub_resource type="Resource" id="Resource_mrvms"]
+script = ExtResource("2_b2fc0")
+kind = 1
+key = &"knot_cords"
+
+[sub_resource type="Resource" id="Resource_i83dt"]
+script = ExtResource("2_b2fc0")
+kind = 1
+key = &"tally"
+
+[sub_resource type="Resource" id="Resource_s3m22"]
+script = ExtResource("2_b2fc0")
+kind = 10
+key = &"a_town"
+text = "A Town"
+
+[sub_resource type="Resource" id="Resource_6pejg"]
+script = ExtResource("2_b2fc0")
+text = "A cord was knotted for each store, a knot for each tally, and the keeper could read it with her eyes shut."
+
+[sub_resource type="Resource" id="Resource_dsfa3"]
+script = ExtResource("1_52knb")
+id = &"knot_a_cord"
+label = "Knot the count into a cord"
+effects = Array[ExtResource("2_b2fc0")]([SubResource("Resource_mrvms"), SubResource("Resource_i83dt"), SubResource("Resource_s3m22"), SubResource("Resource_6pejg")])
+
+[sub_resource type="Resource" id="Resource_1tt1x"]
+script = ExtResource("3_7gjha")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_bq7pp"]
+script = ExtResource("3_7gjha")
+kind = 11
+amount = 246
+
+[sub_resource type="Resource" id="Resource_qhak3"]
+script = ExtResource("3_7gjha")
+kind = 9
+key = &"a_town"
+negate = true
+
+[sub_resource type="Resource" id="Resource_ru7y1"]
+script = ExtResource("3_7gjha")
+kind = 7
+
+[resource]
+script = ExtResource("4_3w1bx")
+id = &"the_tally"
+title = "What is kept where"
+body = "There is more in the stores than anyone can remember, and a good deal of it is owed to someone. A way of keeping count is needed."
+category = &"settlement"
+requires = Array[ExtResource("3_7gjha")]([SubResource("Resource_1tt1x"), SubResource("Resource_bq7pp"), SubResource("Resource_qhak3")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_7gjha")]([SubResource("Resource_ru7y1")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_52knb")]([SubResource("Resource_swwe0"), SubResource("Resource_dsfa3")])

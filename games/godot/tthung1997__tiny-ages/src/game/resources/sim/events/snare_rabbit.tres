@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_fe4gu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qj76b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hp2gg"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_kwa5k"]
+
+[sub_resource type="Resource" id="Resource_xbtm4"]
+script = ExtResource("2_qj76b")
+text = "A rabbit was found in one of the snares, and the group ate well that night."
+
+[sub_resource type="Resource" id="Resource_68aqi"]
+script = ExtResource("3_hp2gg")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_cgi34"]
+script = ExtResource("3_hp2gg")
+key = &"snares"
+
+[resource]
+script = ExtResource("4_kwa5k")
+id = &"snare_rabbit"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_hp2gg")]([SubResource("Resource_68aqi"), SubResource("Resource_cgi34")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_qj76b")]([SubResource("Resource_xbtm4")])

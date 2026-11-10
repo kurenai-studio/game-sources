@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gkumt"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_f6h81"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ikw4r"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p0t2i"]
+
+[sub_resource type="Resource" id="Resource_5ov8r"]
+script = ExtResource("2_f6h81")
+kind = 1
+key = &"seed_in_sun"
+
+[sub_resource type="Resource" id="Resource_gpkxw"]
+script = ExtResource("2_f6h81")
+kind = 8
+key = &"strange_seed"
+
+[sub_resource type="Resource" id="Resource_xp2u3"]
+script = ExtResource("2_f6h81")
+text = "{subject} pressed the strange seed into the sunny soil by the cave mouth."
+
+[sub_resource type="Resource" id="Resource_bikoi"]
+script = ExtResource("3_ikw4r")
+kind = 3
+key = &"strange_seed"
+amount = 1
+
+[sub_resource type="Resource" id="Resource_q6vl7"]
+script = ExtResource("1_gkumt")
+id = &"plant_it"
+label = "Plant it in the sun at the cave mouth"
+requires = Array[ExtResource("3_ikw4r")]([SubResource("Resource_bikoi")])
+effects = Array[ExtResource("2_f6h81")]([SubResource("Resource_5ov8r"), SubResource("Resource_gpkxw"), SubResource("Resource_xp2u3")])
+
+[sub_resource type="Resource" id="Resource_ik0y3"]
+script = ExtResource("2_f6h81")
+kind = 1
+key = &"seed_in_shade"
+
+[sub_resource type="Resource" id="Resource_ntkxq"]
+script = ExtResource("2_f6h81")
+kind = 8
+key = &"strange_seed"
+
+[sub_resource type="Resource" id="Resource_86jub"]
+script = ExtResource("2_f6h81")
+text = "{subject} pressed the strange seed into the cool soil under the overhang."
+
+[sub_resource type="Resource" id="Resource_kx622"]
+script = ExtResource("1_gkumt")
+id = &"plant_in_shade"
+label = "Plant it in the shade of the overhang"
+requires = Array[ExtResource("3_ikw4r")]([SubResource("Resource_bikoi")])
+effects = Array[ExtResource("2_f6h81")]([SubResource("Resource_ik0y3"), SubResource("Resource_ntkxq"), SubResource("Resource_86jub")])
+
+[sub_resource type="Resource" id="Resource_uyheh"]
+script = ExtResource("2_f6h81")
+kind = 3
+key = &"strange_seed"
+amount = 1
+
+[sub_resource type="Resource" id="Resource_t0jcc"]
+script = ExtResource("2_f6h81")
+kind = 1
+key = &"western_forest_explored"
+
+[sub_resource type="Resource" id="Resource_brpbm"]
+script = ExtResource("2_f6h81")
+text = "{subject} returned from the western forest carrying the seed of an unfamiliar plant."
+
+[resource]
+script = ExtResource("4_p0t2i")
+id = &"explorer_returns"
+title = "A scout returns"
+body = "{subject} is back from the forest, carrying something unfamiliar."
+category = &"exploration"
+needs_subject = true
+effects = Array[ExtResource("2_f6h81")]([SubResource("Resource_uyheh"), SubResource("Resource_t0jcc"), SubResource("Resource_brpbm")])
+choices = Array[ExtResource("1_gkumt")]([SubResource("Resource_q6vl7"), SubResource("Resource_kx622")])

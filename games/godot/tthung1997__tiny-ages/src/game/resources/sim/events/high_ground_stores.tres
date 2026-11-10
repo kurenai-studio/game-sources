@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hkh7h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2hpnr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_8trtx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_u8e2v"]
+
+[sub_resource type="Resource" id="Resource_n83mw"]
+script = ExtResource("2_2hpnr")
+text = "The stores sat a little higher than before, and everyone had remembered why."
+
+[sub_resource type="Resource" id="Resource_lepjd"]
+script = ExtResource("3_8trtx")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_kgwhj"]
+script = ExtResource("3_8trtx")
+key = &"moved_to_high_ground"
+
+[resource]
+script = ExtResource("4_u8e2v")
+id = &"high_ground_stores"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_8trtx")]([SubResource("Resource_lepjd"), SubResource("Resource_kgwhj")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_2hpnr")]([SubResource("Resource_n83mw")])

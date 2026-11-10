@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_mlqpi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mn5ke"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_35bft"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_m0oia"]
+
+[sub_resource type="Resource" id="Resource_hgk4w"]
+script = ExtResource("2_mn5ke")
+text = "The long boards were set out again in the dusk, and the whole village found a seat."
+
+[sub_resource type="Resource" id="Resource_fsf4x"]
+script = ExtResource("3_35bft")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_1qlp7"]
+script = ExtResource("3_35bft")
+key = &"long_table"
+
+[resource]
+script = ExtResource("4_m0oia")
+id = &"long_table_set"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_35bft")]([SubResource("Resource_fsf4x"), SubResource("Resource_1qlp7")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_mn5ke")]([SubResource("Resource_hgk4w")])

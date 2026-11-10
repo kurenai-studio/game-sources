@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_567h0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8hl34"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_oek7a"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4vhuu"]
+
+[sub_resource type="Resource" id="Resource_j5a1q"]
+script = ExtResource("2_8hl34")
+text = "Someone was still telling the story of the day everyone went into the river."
+
+[sub_resource type="Resource" id="Resource_h0jdk"]
+script = ExtResource("3_oek7a")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_2206t"]
+script = ExtResource("3_oek7a")
+key = &"fish_by_hand"
+
+[resource]
+script = ExtResource("4_4vhuu")
+id = &"wet_and_laughing"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_oek7a")]([SubResource("Resource_h0jdk"), SubResource("Resource_2206t")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_8hl34")]([SubResource("Resource_j5a1q")])

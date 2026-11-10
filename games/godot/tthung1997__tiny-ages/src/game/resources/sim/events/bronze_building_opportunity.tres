@@ -1,0 +1,98 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_e3o2e"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rya24"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_voxxl"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_eyfku"]
+
+[sub_resource type="Resource" id="Resource_d3j50"]
+script = ExtResource("2_rya24")
+kind = 5
+key = &"smithy"
+
+[sub_resource type="Resource" id="Resource_a3p6r"]
+script = ExtResource("3_voxxl")
+kind = 0
+key = &"smithy"
+negate = true
+
+[sub_resource type="Resource" id="Resource_4b1y6"]
+script = ExtResource("3_voxxl")
+kind = 2
+key = &"wood"
+amount = 16
+
+[sub_resource type="Resource" id="Resource_fen7g"]
+script = ExtResource("3_voxxl")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_wr1bf"]
+script = ExtResource("3_voxxl")
+kind = 11
+amount = 18
+
+[sub_resource type="Resource" id="Resource_ace7s"]
+script = ExtResource("1_e3o2e")
+id = &"build_smithy"
+label = "Smithy"
+requires = Array[ExtResource("3_voxxl")]([SubResource("Resource_a3p6r"), SubResource("Resource_4b1y6"), SubResource("Resource_fen7g"), SubResource("Resource_wr1bf")])
+effects = Array[ExtResource("2_rya24")]([SubResource("Resource_d3j50")])
+
+[sub_resource type="Resource" id="Resource_0rvyy"]
+script = ExtResource("2_rya24")
+kind = 5
+key = &"trading_post"
+
+[sub_resource type="Resource" id="Resource_dqi4k"]
+script = ExtResource("3_voxxl")
+kind = 0
+key = &"trading_post"
+negate = true
+
+[sub_resource type="Resource" id="Resource_a7mcv"]
+script = ExtResource("3_voxxl")
+kind = 2
+key = &"wood"
+amount = 14
+
+[sub_resource type="Resource" id="Resource_2oe00"]
+script = ExtResource("3_voxxl")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_yaydw"]
+script = ExtResource("3_voxxl")
+kind = 11
+amount = 18
+
+[sub_resource type="Resource" id="Resource_pftx6"]
+script = ExtResource("1_e3o2e")
+id = &"build_trading_post"
+label = "Trading Post"
+requires = Array[ExtResource("3_voxxl")]([SubResource("Resource_dqi4k"), SubResource("Resource_a7mcv"), SubResource("Resource_2oe00"), SubResource("Resource_yaydw")])
+effects = Array[ExtResource("2_rya24")]([SubResource("Resource_0rvyy")])
+
+[sub_resource type="Resource" id="Resource_nmo6l"]
+script = ExtResource("3_voxxl")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_co1ev"]
+script = ExtResource("3_voxxl")
+kind = 4
+
+[sub_resource type="Resource" id="Resource_ru14k"]
+script = ExtResource("3_voxxl")
+kind = 2
+key = &"wood"
+amount = 14
+
+[resource]
+script = ExtResource("4_eyfku")
+id = &"bronze_building_opportunity"
+title = "Building a town"
+body = "The old workshops are too small for what the group has in mind."
+category = &"settlement"
+requires = Array[ExtResource("3_voxxl")]([SubResource("Resource_nmo6l"), SubResource("Resource_co1ev"), SubResource("Resource_ru14k")])
+chance_per_tick = 0.5
+cooldown_ticks = 24
+choices = Array[ExtResource("1_e3o2e")]([SubResource("Resource_ace7s"), SubResource("Resource_pftx6")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_i8mfj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ma0db"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mrsag"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0idqa"]
+
+[sub_resource type="Resource" id="Resource_tgi1a"]
+script = ExtResource("2_ma0db")
+text = "Steam rose from the bathhouse into the evening, and the whole street smelled of warm stone and a little of thyme."
+
+[sub_resource type="Resource" id="Resource_mm7gy"]
+script = ExtResource("3_mrsag")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_23tbf"]
+script = ExtResource("3_mrsag")
+key = &"bathhouse"
+
+[resource]
+script = ExtResource("4_0idqa")
+id = &"the_bathhouse_steam"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_mrsag")]([SubResource("Resource_mm7gy"), SubResource("Resource_23tbf")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ma0db")]([SubResource("Resource_tgi1a")])

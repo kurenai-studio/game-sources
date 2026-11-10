@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_lidwi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_kxb7b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7ygbo"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_r272m"]
+
+[sub_resource type="Resource" id="Resource_aukul"]
+script = ExtResource("2_kxb7b")
+kind = 0
+key = &"food"
+amount = -20
+
+[sub_resource type="Resource" id="Resource_2b3fv"]
+script = ExtResource("2_kxb7b")
+kind = 1
+key = &"festival"
+
+[sub_resource type="Resource" id="Resource_4okj3"]
+script = ExtResource("2_kxb7b")
+text = "A festival ran from noon to the small hours. There was a lot of dancing and a little singing."
+
+[sub_resource type="Resource" id="Resource_vidik"]
+script = ExtResource("3_7ygbo")
+kind = 2
+key = &"food"
+amount = 20
+
+[sub_resource type="Resource" id="Resource_nn0kw"]
+script = ExtResource("1_lidwi")
+id = &"hold_the_festival"
+label = "Hold a harvest festival"
+requires = Array[ExtResource("3_7ygbo")]([SubResource("Resource_vidik")])
+effects = Array[ExtResource("2_kxb7b")]([SubResource("Resource_aukul"), SubResource("Resource_2b3fv"), SubResource("Resource_4okj3")])
+
+[sub_resource type="Resource" id="Resource_2pfya"]
+script = ExtResource("2_kxb7b")
+kind = 1
+key = &"laid_by"
+
+[sub_resource type="Resource" id="Resource_02vqv"]
+script = ExtResource("2_kxb7b")
+text = "Everything was laid by for the lean months, and the lean months were noticeably less lean."
+
+[sub_resource type="Resource" id="Resource_c0tc6"]
+script = ExtResource("1_lidwi")
+id = &"lay_it_by"
+label = "Lay it by for the lean months"
+effects = Array[ExtResource("2_kxb7b")]([SubResource("Resource_2pfya"), SubResource("Resource_02vqv")])
+
+[sub_resource type="Resource" id="Resource_mlxi4"]
+script = ExtResource("3_7ygbo")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_aybve"]
+script = ExtResource("3_7ygbo")
+kind = 11
+amount = 92
+
+[sub_resource type="Resource" id="Resource_kunyh"]
+script = ExtResource("3_7ygbo")
+kind = 9
+key = &"first_harvest"
+
+[resource]
+script = ExtResource("4_r272m")
+id = &"harvest_festival"
+title = "More than enough"
+body = "The stores are full for the first time, and nobody can remember a year like it."
+category = &"settlement"
+requires = Array[ExtResource("3_7ygbo")]([SubResource("Resource_mlxi4"), SubResource("Resource_aybve"), SubResource("Resource_kunyh")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_lidwi")]([SubResource("Resource_nn0kw"), SubResource("Resource_c0tc6")])

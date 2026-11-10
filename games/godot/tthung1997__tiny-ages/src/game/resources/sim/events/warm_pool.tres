@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_semqx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8r70x"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ucmlf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ofjfn"]
+
+[sub_resource type="Resource" id="Resource_v20ff"]
+script = ExtResource("2_8r70x")
+kind = 1
+key = &"warm_pool_used"
+
+[sub_resource type="Resource" id="Resource_ggy8l"]
+script = ExtResource("2_8r70x")
+text = "They walked up the valley in the frost and sat in the warm pool up to their chins."
+
+[sub_resource type="Resource" id="Resource_3bn2l"]
+script = ExtResource("1_semqx")
+id = &"bathe_in_it"
+label = "Go and bathe in it on the coldest days"
+effects = Array[ExtResource("2_8r70x")]([SubResource("Resource_v20ff"), SubResource("Resource_ggy8l")])
+
+[sub_resource type="Resource" id="Resource_sp1eu"]
+script = ExtResource("2_8r70x")
+kind = 1
+key = &"warm_bags"
+
+[sub_resource type="Resource" id="Resource_0qhw8"]
+script = ExtResource("2_8r70x")
+text = "Hide bags of warm water were carried home, and everyone slept with one at their feet."
+
+[sub_resource type="Resource" id="Resource_urqu0"]
+script = ExtResource("1_semqx")
+id = &"carry_the_warmth"
+label = "Fill hide bags and carry the warmth home"
+effects = Array[ExtResource("2_8r70x")]([SubResource("Resource_sp1eu"), SubResource("Resource_0qhw8")])
+
+[sub_resource type="Resource" id="Resource_exp27"]
+script = ExtResource("3_ucmlf")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_4sidy"]
+script = ExtResource("3_ucmlf")
+kind = 5
+amount = 350
+
+[resource]
+script = ExtResource("4_ofjfn")
+id = &"warm_pool"
+title = "The warm pool"
+body = "A pool up the valley steams in the cold, and the water is warm to the hand."
+category = &"nature"
+requires = Array[ExtResource("3_ucmlf")]([SubResource("Resource_exp27"), SubResource("Resource_4sidy")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_semqx")]([SubResource("Resource_3bn2l"), SubResource("Resource_urqu0")])

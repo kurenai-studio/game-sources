@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y12l3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_wgjsj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ykwjo"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_vs4e2"]
+
+[sub_resource type="Resource" id="Resource_fqbgg"]
+script = ExtResource("2_wgjsj")
+text = "A small tree was stamped on every coin, and the coin was known all along the road as the Tree."
+
+[sub_resource type="Resource" id="Resource_xw0h0"]
+script = ExtResource("3_ykwjo")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_kh5sn"]
+script = ExtResource("3_ykwjo")
+key = &"coin_tree"
+
+[resource]
+script = ExtResource("4_vs4e2")
+id = &"the_coin_with_a_tree"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ykwjo")]([SubResource("Resource_xw0h0"), SubResource("Resource_kh5sn")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_wgjsj")]([SubResource("Resource_fqbgg")])

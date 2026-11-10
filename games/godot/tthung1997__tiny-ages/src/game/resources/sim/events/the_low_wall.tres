@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_knn0w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_4v7cp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_abbj7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_n42ga"]
+
+[sub_resource type="Resource" id="Resource_dypvo"]
+script = ExtResource("2_4v7cp")
+kind = 0
+key = &"wood"
+amount = -25
+
+[sub_resource type="Resource" id="Resource_2a63d"]
+script = ExtResource("2_4v7cp")
+kind = 1
+key = &"low_wall"
+
+[sub_resource type="Resource" id="Resource_2uoid"]
+script = ExtResource("2_4v7cp")
+text = "A low wall of fieldstones went up round the village, and everyone sat on it at least once."
+
+[sub_resource type="Resource" id="Resource_i1xpj"]
+script = ExtResource("3_abbj7")
+kind = 2
+key = &"wood"
+amount = 25
+
+[sub_resource type="Resource" id="Resource_w8y7p"]
+script = ExtResource("1_knn0w")
+id = &"build_a_low_wall"
+label = "Raise a low wall of fieldstones"
+requires = Array[ExtResource("3_abbj7")]([SubResource("Resource_i1xpj")])
+effects = Array[ExtResource("2_4v7cp")]([SubResource("Resource_dypvo"), SubResource("Resource_2a63d"), SubResource("Resource_2uoid")])
+
+[sub_resource type="Resource" id="Resource_35nch"]
+script = ExtResource("2_4v7cp")
+kind = 1
+key = &"open_village"
+
+[sub_resource type="Resource" id="Resource_abbla"]
+script = ExtResource("2_4v7cp")
+text = "The village was left open, and the paths went out from it like the spokes of a wheel."
+
+[sub_resource type="Resource" id="Resource_ilnga"]
+script = ExtResource("1_knn0w")
+id = &"keep_it_open"
+label = "Leave it open"
+effects = Array[ExtResource("2_4v7cp")]([SubResource("Resource_35nch"), SubResource("Resource_abbla")])
+
+[sub_resource type="Resource" id="Resource_brhhp"]
+script = ExtResource("3_abbj7")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_s5p70"]
+script = ExtResource("3_abbj7")
+kind = 11
+amount = 286
+
+[resource]
+script = ExtResource("4_n42ga")
+id = &"the_low_wall"
+title = "How far the village goes"
+body = "The village has grown past the edge of anyone's idea of it. Someone has asked where, exactly, it stops."
+category = &"settlement"
+requires = Array[ExtResource("3_abbj7")]([SubResource("Resource_brhhp"), SubResource("Resource_s5p70")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_knn0w")]([SubResource("Resource_w8y7p"), SubResource("Resource_ilnga")])

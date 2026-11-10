@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8vfqq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_md6ao"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_44cyf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_oa8mu"]
+
+[sub_resource type="Resource" id="Resource_i15ux"]
+script = ExtResource("2_md6ao")
+kind = 1
+key = &"colonnade_crafts"
+
+[sub_resource type="Resource" id="Resource_gemu6"]
+script = ExtResource("2_md6ao")
+text = "Each visiting craftsperson was given a bay in the colonnade, and the square filled with the sound of other towns' tools."
+
+[sub_resource type="Resource" id="Resource_yp7sb"]
+script = ExtResource("1_8vfqq")
+id = &"give_them_the_colonnade"
+label = "Give them a bay each, in the colonnade"
+effects = Array[ExtResource("2_md6ao")]([SubResource("Resource_i15ux"), SubResource("Resource_gemu6")])
+
+[sub_resource type="Resource" id="Resource_yrjq8"]
+script = ExtResource("2_md6ao")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_dahdi"]
+script = ExtResource("2_md6ao")
+kind = 1
+key = &"craft_yard"
+
+[sub_resource type="Resource" id="Resource_s7o27"]
+script = ExtResource("2_md6ao")
+text = "A yard behind the square was cleared for them, and a gate made, and it became the place where people went to see things being made."
+
+[sub_resource type="Resource" id="Resource_we6e7"]
+script = ExtResource("3_44cyf")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_mmfuq"]
+script = ExtResource("1_8vfqq")
+id = &"give_them_a_yard"
+label = "Give them a yard behind the square"
+requires = Array[ExtResource("3_44cyf")]([SubResource("Resource_we6e7")])
+effects = Array[ExtResource("2_md6ao")]([SubResource("Resource_yrjq8"), SubResource("Resource_dahdi"), SubResource("Resource_s7o27")])
+
+[sub_resource type="Resource" id="Resource_b5ax4"]
+script = ExtResource("3_44cyf")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_k3est"]
+script = ExtResource("3_44cyf")
+kind = 11
+amount = 178
+
+[sub_resource type="Resource" id="Resource_lswgl"]
+script = ExtResource("3_44cyf")
+kind = 9
+key = &"the_square"
+
+[sub_resource type="Resource" id="Resource_81mqn"]
+script = ExtResource("3_44cyf")
+kind = 7
+
+[resource]
+script = ExtResource("4_oa8mu")
+id = &"visiting_craftspeople"
+title = "Room for visiting craftspeople"
+body = "Craftspeople from other towns are asking for room in the square, and {subject} has noticed that the square is the one place that cannot grow."
+requires = Array[ExtResource("3_44cyf")]([SubResource("Resource_b5ax4"), SubResource("Resource_k3est"), SubResource("Resource_lswgl")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_44cyf")]([SubResource("Resource_81mqn")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_8vfqq")]([SubResource("Resource_yp7sb"), SubResource("Resource_mmfuq")])

@@ -1,0 +1,61 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y8shi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_eccq8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_iikxo"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_plqvh"]
+
+[sub_resource type="Resource" id="Resource_u4mr1"]
+script = ExtResource("2_eccq8")
+kind = 1
+key = &"scarecrow"
+
+[sub_resource type="Resource" id="Resource_gfog5"]
+script = ExtResource("2_eccq8")
+text = "A scarecrow went up in an old tunic. The birds were wary for two days, then sat on its head."
+
+[sub_resource type="Resource" id="Resource_n58bu"]
+script = ExtResource("1_y8shi")
+id = &"dress_a_scarecrow"
+label = "Dress a scarecrow in an old hide tunic"
+effects = Array[ExtResource("2_eccq8")]([SubResource("Resource_u4mr1"), SubResource("Resource_gfog5")])
+
+[sub_resource type="Resource" id="Resource_5hs03"]
+script = ExtResource("2_eccq8")
+kind = 1
+key = &"field_watchers"
+
+[sub_resource type="Resource" id="Resource_pylhk"]
+script = ExtResource("2_eccq8")
+text = "They took turns chasing the birds, and by evening everyone was hoarse."
+
+[sub_resource type="Resource" id="Resource_vt2j3"]
+script = ExtResource("1_y8shi")
+id = &"take_turns"
+label = "Take turns chasing them off"
+effects = Array[ExtResource("2_eccq8")]([SubResource("Resource_5hs03"), SubResource("Resource_pylhk")])
+
+[sub_resource type="Resource" id="Resource_40b5a"]
+script = ExtResource("3_iikxo")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_u2y2j"]
+script = ExtResource("3_iikxo")
+kind = 11
+amount = 58
+
+[sub_resource type="Resource" id="Resource_ontaj"]
+script = ExtResource("3_iikxo")
+key = &"path_agriculture"
+
+[resource]
+script = ExtResource("4_plqvh")
+id = &"the_scarecrow"
+title = "Birds in the field"
+body = "The birds have found the field, and they are very pleased with it."
+category = &"nature"
+requires = Array[ExtResource("3_iikxo")]([SubResource("Resource_40b5a"), SubResource("Resource_u2y2j"), SubResource("Resource_ontaj")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_y8shi")]([SubResource("Resource_n58bu"), SubResource("Resource_vt2j3")])

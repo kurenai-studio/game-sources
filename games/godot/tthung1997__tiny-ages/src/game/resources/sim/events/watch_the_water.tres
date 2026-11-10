@@ -1,0 +1,94 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_rqytv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_uo2da"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pxyht"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dl107"]
+
+[sub_resource type="Resource" id="Resource_cieyk"]
+script = ExtResource("2_uo2da")
+kind = 1
+key = &"watched_the_dune"
+
+[sub_resource type="Resource" id="Resource_eyle6"]
+script = ExtResource("2_uo2da")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_tmxhy"]
+script = ExtResource("2_uo2da")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_g0efd"]
+script = ExtResource("2_uo2da")
+text = "They watched from the dune for three evenings, and on the third something watched back."
+
+[sub_resource type="Resource" id="Resource_gugu0"]
+script = ExtResource("1_rqytv")
+id = &"watch_from_the_dune"
+label = "Watch from the dune"
+effects = Array[ExtResource("2_uo2da")]([SubResource("Resource_cieyk"), SubResource("Resource_eyle6"), SubResource("Resource_tmxhy"), SubResource("Resource_g0efd")])
+
+[sub_resource type="Resource" id="Resource_m6yxi"]
+script = ExtResource("2_uo2da")
+kind = 1
+key = &"spit_fire"
+
+[sub_resource type="Resource" id="Resource_ij1t8"]
+script = ExtResource("2_uo2da")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_4msmg"]
+script = ExtResource("2_uo2da")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_gcipf"]
+script = ExtResource("2_uo2da")
+text = "A fire was lit on the spit, and in the morning there was a thread of smoke from the other side of the water, answering."
+
+[sub_resource type="Resource" id="Resource_dcsl5"]
+script = ExtResource("1_rqytv")
+id = &"fire_on_the_spit"
+label = "Light a fire on the spit"
+effects = Array[ExtResource("2_uo2da")]([SubResource("Resource_m6yxi"), SubResource("Resource_ij1t8"), SubResource("Resource_4msmg"), SubResource("Resource_gcipf")])
+
+[sub_resource type="Resource" id="Resource_230nj"]
+script = ExtResource("3_pxyht")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_x1jgc"]
+script = ExtResource("3_pxyht")
+kind = 11
+amount = 288
+
+[sub_resource type="Resource" id="Resource_ocvdt"]
+script = ExtResource("3_pxyht")
+kind = 9
+key = &"beyond_the_water"
+negate = true
+
+[sub_resource type="Resource" id="Resource_5ha0h"]
+script = ExtResource("3_pxyht")
+kind = 7
+
+[resource]
+script = ExtResource("4_dl107")
+id = &"watch_the_water"
+title = "Smoke on the water"
+body = "Something has been moving on the horizon at dusk. It might be a bird, or a boat, or the end of someone's patience."
+category = &"exploration"
+requires = Array[ExtResource("3_pxyht")]([SubResource("Resource_230nj"), SubResource("Resource_x1jgc"), SubResource("Resource_ocvdt")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_pxyht")]([SubResource("Resource_5ha0h")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_rqytv")]([SubResource("Resource_gugu0"), SubResource("Resource_dcsl5")])

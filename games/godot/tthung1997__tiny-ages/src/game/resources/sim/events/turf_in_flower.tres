@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qm64s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_338s1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gw04r"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p3r1e"]
+
+[sub_resource type="Resource" id="Resource_ih8cw"]
+script = ExtResource("2_338s1")
+text = "A small flower had come up on one of the turf roofs, and nobody wanted to pull it."
+
+[sub_resource type="Resource" id="Resource_4x7fh"]
+script = ExtResource("3_gw04r")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_mv6uo"]
+script = ExtResource("3_gw04r")
+key = &"turf_roofs"
+
+[resource]
+script = ExtResource("4_p3r1e")
+id = &"turf_in_flower"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_gw04r")]([SubResource("Resource_4x7fh"), SubResource("Resource_mv6uo")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_338s1")]([SubResource("Resource_ih8cw")])

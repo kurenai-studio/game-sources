@@ -1,0 +1,106 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_idw8a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ssbur"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_e5sx2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_505y5"]
+
+[sub_resource type="Resource" id="Resource_nxg74"]
+script = ExtResource("2_ssbur")
+kind = 1
+key = &"tin_for_grain"
+
+[sub_resource type="Resource" id="Resource_sxhxj"]
+script = ExtResource("2_ssbur")
+kind = 0
+key = &"food"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_kt205"]
+script = ExtResource("2_ssbur")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_4iyeh"]
+script = ExtResource("2_ssbur")
+text = "The grain went off on the donkey and the heavy sacks stayed. The trader looked like someone who had improved on the arrangement."
+
+[sub_resource type="Resource" id="Resource_hepg5"]
+script = ExtResource("3_e5sx2")
+kind = 2
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_l5yo0"]
+script = ExtResource("1_idw8a")
+id = &"tin_for_grain"
+label = "Trade grain for it"
+requires = Array[ExtResource("3_e5sx2")]([SubResource("Resource_hepg5")])
+effects = Array[ExtResource("2_ssbur")]([SubResource("Resource_nxg74"), SubResource("Resource_sxhxj"), SubResource("Resource_kt205"), SubResource("Resource_4iyeh")])
+
+[sub_resource type="Resource" id="Resource_fu8mp"]
+script = ExtResource("2_ssbur")
+kind = 1
+key = &"tin_for_cloth"
+
+[sub_resource type="Resource" id="Resource_w32pc"]
+script = ExtResource("2_ssbur")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_u2vt1"]
+script = ExtResource("2_ssbur")
+text = "The cloth was unrolled in the road and measured twice. The sacks were handed over with a bow."
+
+[sub_resource type="Resource" id="Resource_ws426"]
+script = ExtResource("1_idw8a")
+id = &"tin_for_cloth"
+label = "Trade a bolt of cloth for it"
+effects = Array[ExtResource("2_ssbur")]([SubResource("Resource_fu8mp"), SubResource("Resource_w32pc"), SubResource("Resource_u2vt1")])
+
+[sub_resource type="Resource" id="Resource_oho1c"]
+script = ExtResource("3_e5sx2")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_b6yti"]
+script = ExtResource("3_e5sx2")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_knhfi"]
+script = ExtResource("3_e5sx2")
+kind = 9
+key = &"bronze_alloy"
+negate = true
+
+[sub_resource type="Resource" id="Resource_nuur7"]
+script = ExtResource("3_e5sx2")
+kind = 9
+key = &"first_casting"
+
+[sub_resource type="Resource" id="Resource_n2e5g"]
+script = ExtResource("3_e5sx2")
+key = &"salt"
+
+[sub_resource type="Resource" id="Resource_jieko"]
+script = ExtResource("3_e5sx2")
+kind = 7
+
+[resource]
+script = ExtResource("4_505y5")
+id = &"coast_trader_tin"
+title = "The coast trader, with something heavy"
+body = "The trader from the coast is back, and the sacks on her donkey are small and surprisingly heavy."
+category = &"settlement"
+requires = Array[ExtResource("3_e5sx2")]([SubResource("Resource_oho1c"), SubResource("Resource_b6yti"), SubResource("Resource_knhfi"), SubResource("Resource_nuur7"), SubResource("Resource_n2e5g")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_e5sx2")]([SubResource("Resource_jieko")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_idw8a")]([SubResource("Resource_l5yo0"), SubResource("Resource_ws426")])

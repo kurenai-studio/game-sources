@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6h2qn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_b3sqf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_e5a8s"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4bhpk"]
+
+[sub_resource type="Resource" id="Resource_4q3o7"]
+script = ExtResource("2_b3sqf")
+text = "Someone at the lookout was looking at the ridge again, even in the rain."
+
+[sub_resource type="Resource" id="Resource_035li"]
+script = ExtResource("3_e5a8s")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_jn6fd"]
+script = ExtResource("3_e5a8s")
+key = &"ridge_watched"
+
+[resource]
+script = ExtResource("4_4bhpk")
+id = &"ridge_in_the_rain"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_e5a8s")]([SubResource("Resource_035li"), SubResource("Resource_jn6fd")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_b3sqf")]([SubResource("Resource_4q3o7")])

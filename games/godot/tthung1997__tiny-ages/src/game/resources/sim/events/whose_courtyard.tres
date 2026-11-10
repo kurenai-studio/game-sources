@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_yw1he"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vaqbh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_5ysfn"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5hvrp"]
+
+[sub_resource type="Resource" id="Resource_j351l"]
+script = ExtResource("2_vaqbh")
+kind = 1
+key = &"courtyard_open"
+
+[sub_resource type="Resource" id="Resource_3a1ji"]
+script = ExtResource("2_vaqbh")
+text = "The courtyard was kept open to the sky, and the children were let in at once, and the weavers took their looms out on bright days and said it was an improvement."
+
+[sub_resource type="Resource" id="Resource_13xym"]
+script = ExtResource("1_yw1he")
+id = &"keep_it_open"
+label = "Keep it open to the sky"
+effects = Array[ExtResource("2_vaqbh")]([SubResource("Resource_j351l"), SubResource("Resource_3a1ji")])
+
+[sub_resource type="Resource" id="Resource_ndowv"]
+script = ExtResource("2_vaqbh")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_nohqy"]
+script = ExtResource("2_vaqbh")
+kind = 1
+key = &"courtyard_roofed"
+
+[sub_resource type="Resource" id="Resource_b554k"]
+script = ExtResource("2_vaqbh")
+text = "One half was roofed for the weavers, and the other left open, and the children were seen to be playing under the roof and not the sky, to everyone's surprise."
+
+[sub_resource type="Resource" id="Resource_n16uw"]
+script = ExtResource("3_5ysfn")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_feac4"]
+script = ExtResource("1_yw1he")
+id = &"roof_it_for_the_weavers"
+label = "Roof one half of it for the weavers"
+requires = Array[ExtResource("3_5ysfn")]([SubResource("Resource_n16uw")])
+effects = Array[ExtResource("2_vaqbh")]([SubResource("Resource_ndowv"), SubResource("Resource_nohqy"), SubResource("Resource_b554k")])
+
+[sub_resource type="Resource" id="Resource_rpxpi"]
+script = ExtResource("3_5ysfn")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_s5j6j"]
+script = ExtResource("3_5ysfn")
+kind = 11
+amount = 32
+
+[sub_resource type="Resource" id="Resource_0dmtn"]
+script = ExtResource("3_5ysfn")
+kind = 9
+key = &"paved_streets"
+
+[sub_resource type="Resource" id="Resource_yei2s"]
+script = ExtResource("3_5ysfn")
+kind = 7
+
+[resource]
+script = ExtResource("4_5hvrp")
+id = &"whose_courtyard"
+title = "Whose courtyard stays open"
+body = "The paved courtyard between the houses has become the best place in town, and {subject} has noticed that the weavers want a roof over it, and the children do not."
+requires = Array[ExtResource("3_5ysfn")]([SubResource("Resource_rpxpi"), SubResource("Resource_s5j6j"), SubResource("Resource_0dmtn")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_5ysfn")]([SubResource("Resource_yei2s")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_yw1he")]([SubResource("Resource_13xym"), SubResource("Resource_feac4")])

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_xmfjo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_g7biv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_37vs3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_lcu6r"]
+
+[sub_resource type="Resource" id="Resource_n7ivk"]
+script = ExtResource("2_g7biv")
+text = "The grain went up the granary ladder in baskets, so full that every climber left a little trail."
+
+[sub_resource type="Resource" id="Resource_bn0b3"]
+script = ExtResource("3_37vs3")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_mmn1e"]
+script = ExtResource("3_37vs3")
+kind = 9
+key = &"fuller_harvest"
+
+[resource]
+script = ExtResource("4_lcu6r")
+id = &"grain_up_the_ladder"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_37vs3")]([SubResource("Resource_bn0b3"), SubResource("Resource_mmn1e")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_g7biv")]([SubResource("Resource_n7ivk")])

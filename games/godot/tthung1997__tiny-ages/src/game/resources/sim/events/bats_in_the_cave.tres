@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1orpu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_f2w2b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nn1aw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7a8mt"]
+
+[sub_resource type="Resource" id="Resource_i0r4m"]
+script = ExtResource("2_f2w2b")
+text = "Bats went out of the old cave at dusk, in a long dark stream over the roofs."
+
+[sub_resource type="Resource" id="Resource_5ujj0"]
+script = ExtResource("3_nn1aw")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_div3t"]
+script = ExtResource("3_nn1aw")
+key = &"cave_left_alone"
+
+[resource]
+script = ExtResource("4_7a8mt")
+id = &"bats_in_the_cave"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_nn1aw")]([SubResource("Resource_5ujj0"), SubResource("Resource_div3t")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_f2w2b")]([SubResource("Resource_i0r4m")])

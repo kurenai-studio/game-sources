@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_d24mb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ns48u"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_qpbb0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_m4cms"]
+
+[sub_resource type="Resource" id="Resource_0mf86"]
+script = ExtResource("2_ns48u")
+kind = 1
+key = &"apprentice_taken"
+
+[sub_resource type="Resource" id="Resource_icy6t"]
+script = ExtResource("2_ns48u")
+text = "{subject} was taken as an apprentice, and spent the first month carrying charcoal and the second carrying more."
+
+[sub_resource type="Resource" id="Resource_fmvvr"]
+script = ExtResource("1_d24mb")
+id = &"take_an_apprentice"
+label = "Take them as an apprentice"
+effects = Array[ExtResource("2_ns48u")]([SubResource("Resource_0mf86"), SubResource("Resource_icy6t")])
+
+[sub_resource type="Resource" id="Resource_3ga4a"]
+script = ExtResource("2_ns48u")
+kind = 1
+key = &"slow_work_shared"
+
+[sub_resource type="Resource" id="Resource_xe4qf"]
+script = ExtResource("2_ns48u")
+text = "Every household learned a little, and a good deal of what they learned was how much there was to learn."
+
+[sub_resource type="Resource" id="Resource_fgc5m"]
+script = ExtResource("1_d24mb")
+id = &"every_household_learns"
+label = "Let every household learn a little"
+effects = Array[ExtResource("2_ns48u")]([SubResource("Resource_3ga4a"), SubResource("Resource_xe4qf")])
+
+[sub_resource type="Resource" id="Resource_uclmk"]
+script = ExtResource("3_qpbb0")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_1cc3b"]
+script = ExtResource("3_qpbb0")
+kind = 11
+amount = 14
+
+[sub_resource type="Resource" id="Resource_cty58"]
+script = ExtResource("3_qpbb0")
+kind = 7
+
+[resource]
+script = ExtResource("4_m4cms")
+id = &"who_learns_the_slow_work"
+title = "Who learns the slow work"
+body = "Iron is slow work, and the smith is not getting any younger, and {subject} has been standing near the furnace a good deal lately, doing nothing in particular."
+requires = Array[ExtResource("3_qpbb0")]([SubResource("Resource_uclmk"), SubResource("Resource_1cc3b")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_qpbb0")]([SubResource("Resource_cty58")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_d24mb")]([SubResource("Resource_fmvvr"), SubResource("Resource_fgc5m")])

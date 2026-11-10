@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_64e3y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rq70c"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pv8hw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_84j70"]
+
+[sub_resource type="Resource" id="Resource_qallv"]
+script = ExtResource("2_rq70c")
+kind = 1
+key = &"fog_gong"
+
+[sub_resource type="Resource" id="Resource_hvqxy"]
+script = ExtResource("2_rq70c")
+text = "A flat stone was hung from a post and struck on the hour, and the fog gave the sound back from every side."
+
+[sub_resource type="Resource" id="Resource_5cxsl"]
+script = ExtResource("1_64e3y")
+id = &"strike_a_gong"
+label = "Hang a flat stone and strike it every hour"
+effects = Array[ExtResource("2_rq70c")]([SubResource("Resource_qallv"), SubResource("Resource_hvqxy")])
+
+[sub_resource type="Resource" id="Resource_25aus"]
+script = ExtResource("2_rq70c")
+kind = 1
+key = &"fog_rope"
+
+[sub_resource type="Resource" id="Resource_owiep"]
+script = ExtResource("2_rq70c")
+text = "A rope ran from door to door, and everyone learned to walk with a hand on it."
+
+[sub_resource type="Resource" id="Resource_1x48n"]
+script = ExtResource("1_64e3y")
+id = &"run_a_rope"
+label = "Run a rope from hut to hut"
+effects = Array[ExtResource("2_rq70c")]([SubResource("Resource_25aus"), SubResource("Resource_owiep")])
+
+[sub_resource type="Resource" id="Resource_qvct3"]
+script = ExtResource("3_pv8hw")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_2v1k4"]
+script = ExtResource("3_pv8hw")
+kind = 11
+amount = 298
+
+[resource]
+script = ExtResource("4_84j70")
+id = &"the_fog"
+title = "Three days of fog"
+body = "Fog has lain over the valley for three days, so thick that people have started to call out when they cross the yard."
+category = &"nature"
+requires = Array[ExtResource("3_pv8hw")]([SubResource("Resource_qvct3"), SubResource("Resource_2v1k4")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_64e3y")]([SubResource("Resource_5cxsl"), SubResource("Resource_1x48n")])

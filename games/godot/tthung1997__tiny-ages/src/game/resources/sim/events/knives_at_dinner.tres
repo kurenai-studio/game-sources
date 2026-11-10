@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_sow6w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3p83b"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mrgt1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_tcsbm"]
+
+[sub_resource type="Resource" id="Resource_2yo43"]
+script = ExtResource("2_3p83b")
+text = "Knives came out at every meal, and every one was held up to the light first."
+
+[sub_resource type="Resource" id="Resource_yui34"]
+script = ExtResource("3_mrgt1")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_lf1nd"]
+script = ExtResource("3_mrgt1")
+key = &"iron_knives"
+
+[resource]
+script = ExtResource("4_tcsbm")
+id = &"knives_at_dinner"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_mrgt1")]([SubResource("Resource_yui34"), SubResource("Resource_lf1nd")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_3p83b")]([SubResource("Resource_2yo43")])

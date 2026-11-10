@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gth86"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ufd51"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gpyr2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_tnduu"]
+
+[sub_resource type="Resource" id="Resource_s4xot"]
+script = ExtResource("2_ufd51")
+text = "The calves in the pen leaned against the rails and watched the camp go by."
+
+[sub_resource type="Resource" id="Resource_ciy82"]
+script = ExtResource("3_gpyr2")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_4q48k"]
+script = ExtResource("3_gpyr2")
+key = &"calves_penned"
+
+[resource]
+script = ExtResource("4_tnduu")
+id = &"calves_in_the_pen"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_gpyr2")]([SubResource("Resource_ciy82"), SubResource("Resource_4q48k")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ufd51")]([SubResource("Resource_s4xot")])

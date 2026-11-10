@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_wdmf3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8enx4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_d7lk4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_tqi2w"]
+
+[sub_resource type="Resource" id="Resource_qh55l"]
+script = ExtResource("2_8enx4")
+kind = 0
+key = &"food"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_xv4wr"]
+script = ExtResource("2_8enx4")
+kind = 1
+key = &"mammoth_fed"
+
+[sub_resource type="Resource" id="Resource_unvri"]
+script = ExtResource("2_8enx4")
+text = "{subject} left greens at the edge of the grass. The mammoth considered them for most of the afternoon, and ate them."
+
+[sub_resource type="Resource" id="Resource_vjgne"]
+script = ExtResource("3_d7lk4")
+kind = 2
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_u1j1j"]
+script = ExtResource("1_wdmf3")
+id = &"offer_greens"
+label = "Offer it a bundle of greens"
+requires = Array[ExtResource("3_d7lk4")]([SubResource("Resource_vjgne")])
+effects = Array[ExtResource("2_8enx4")]([SubResource("Resource_qh55l"), SubResource("Resource_xv4wr"), SubResource("Resource_unvri")])
+
+[sub_resource type="Resource" id="Resource_07m3k"]
+script = ExtResource("2_8enx4")
+kind = 1
+key = &"mammoth_distant"
+
+[sub_resource type="Resource" id="Resource_q7u5f"]
+script = ExtResource("2_8enx4")
+text = "Everyone kept a careful distance, and the mammoth kept its own."
+
+[sub_resource type="Resource" id="Resource_tfuh8"]
+script = ExtResource("1_wdmf3")
+id = &"keep_distance"
+label = "Keep a respectful distance"
+effects = Array[ExtResource("2_8enx4")]([SubResource("Resource_07m3k"), SubResource("Resource_q7u5f")])
+
+[sub_resource type="Resource" id="Resource_ebw3j"]
+script = ExtResource("3_d7lk4")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_6si2k"]
+script = ExtResource("3_d7lk4")
+kind = 5
+amount = 88
+
+[sub_resource type="Resource" id="Resource_48t1x"]
+script = ExtResource("3_d7lk4")
+kind = 7
+
+[resource]
+script = ExtResource("4_tqi2w")
+id = &"mammoth_neighbour"
+title = "The neighbour"
+body = "A woolly mammoth has been grazing at the edge of camp for days, ignoring everyone. {subject} has started talking to it."
+category = &"nature"
+requires = Array[ExtResource("3_d7lk4")]([SubResource("Resource_ebw3j"), SubResource("Resource_6si2k")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_d7lk4")]([SubResource("Resource_48t1x")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_wdmf3")]([SubResource("Resource_u1j1j"), SubResource("Resource_tfuh8")])

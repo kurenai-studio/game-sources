@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_wuwyq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mgmij"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hnu03"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bysed"]
+
+[sub_resource type="Resource" id="Resource_xobpa"]
+script = ExtResource("2_mgmij")
+text = "Someone yawned at the hearth and said that they had sat up for the sun once."
+
+[sub_resource type="Resource" id="Resource_y2sxv"]
+script = ExtResource("3_hnu03")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_ebk6y"]
+script = ExtResource("3_hnu03")
+key = &"midsummer_hearth"
+
+[resource]
+script = ExtResource("4_bysed")
+id = &"hearth_all_night"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_hnu03")]([SubResource("Resource_y2sxv"), SubResource("Resource_ebk6y")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_mgmij")]([SubResource("Resource_xobpa")])

@@ -1,0 +1,111 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s614s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_0niag"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_sgjwd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_v3pr8"]
+
+[sub_resource type="Resource" id="Resource_pomtl"]
+script = ExtResource("2_0niag")
+kind = 1
+key = &"ditch_dug_out"
+
+[sub_resource type="Resource" id="Resource_imy6l"]
+script = ExtResource("2_0niag")
+kind = 1
+key = &"hill_fort"
+
+[sub_resource type="Resource" id="Resource_5ngjx"]
+script = ExtResource("2_0niag")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_vc1qy"]
+script = ExtResource("2_0niag")
+kind = 10
+key = &"the_hill_fort"
+text = "The Hill-fort"
+
+[sub_resource type="Resource" id="Resource_g408x"]
+script = ExtResource("2_0niag")
+text = "Iron spades went through the silt like it was cream, and the ditch was deeper by a man's height before the week was out."
+
+[sub_resource type="Resource" id="Resource_osnlw"]
+script = ExtResource("3_sgjwd")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_3gqok"]
+script = ExtResource("1_s614s")
+id = &"dig_it_out"
+label = "Dig it out with iron spades"
+requires = Array[ExtResource("3_sgjwd")]([SubResource("Resource_osnlw")])
+effects = Array[ExtResource("2_0niag")]([SubResource("Resource_pomtl"), SubResource("Resource_imy6l"), SubResource("Resource_5ngjx"), SubResource("Resource_vc1qy"), SubResource("Resource_g408x")])
+
+[sub_resource type="Resource" id="Resource_i2d5a"]
+script = ExtResource("2_0niag")
+kind = 1
+key = &"ditch_banked"
+
+[sub_resource type="Resource" id="Resource_3ceax"]
+script = ExtResource("2_0niag")
+kind = 1
+key = &"hill_fort"
+
+[sub_resource type="Resource" id="Resource_2e4fj"]
+script = ExtResource("2_0niag")
+kind = 10
+key = &"the_hill_fort"
+text = "The Hill-fort"
+
+[sub_resource type="Resource" id="Resource_wlkpj"]
+script = ExtResource("2_0niag")
+text = "The spoil was thrown up into a bank, and the ditch got deeper as the bank got higher, which everyone agreed was the proper way round."
+
+[sub_resource type="Resource" id="Resource_vl3nw"]
+script = ExtResource("1_s614s")
+id = &"raise_the_bank_higher"
+label = "Throw the spoil up into a bank"
+effects = Array[ExtResource("2_0niag")]([SubResource("Resource_i2d5a"), SubResource("Resource_3ceax"), SubResource("Resource_2e4fj"), SubResource("Resource_wlkpj")])
+
+[sub_resource type="Resource" id="Resource_08jhe"]
+script = ExtResource("3_sgjwd")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_31fik"]
+script = ExtResource("3_sgjwd")
+kind = 11
+amount = 108
+
+[sub_resource type="Resource" id="Resource_3f5d3"]
+script = ExtResource("3_sgjwd")
+kind = 9
+key = &"the_hill_fort"
+negate = true
+
+[sub_resource type="Resource" id="Resource_p2g4e"]
+script = ExtResource("3_sgjwd")
+key = &"dug_in"
+
+[sub_resource type="Resource" id="Resource_08myt"]
+script = ExtResource("3_sgjwd")
+kind = 7
+
+[resource]
+script = ExtResource("4_v3pr8")
+id = &"deepen_the_ditch"
+title = "A ditch to be proud of"
+body = "The old ditch has silted until a child could step across it, and a child has."
+category = &"settlement"
+requires = Array[ExtResource("3_sgjwd")]([SubResource("Resource_08jhe"), SubResource("Resource_31fik"), SubResource("Resource_3f5d3"), SubResource("Resource_p2g4e")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_sgjwd")]([SubResource("Resource_08myt")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_s614s")]([SubResource("Resource_3gqok"), SubResource("Resource_vl3nw")])

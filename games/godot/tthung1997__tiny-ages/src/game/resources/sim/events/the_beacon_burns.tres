@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_seniu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_jh2l1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fgv1p"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_r3r2i"]
+
+[sub_resource type="Resource" id="Resource_0xmr0"]
+script = ExtResource("2_jh2l1")
+text = "The beacon on the headland burned all night, and the sea had somewhere to look."
+
+[sub_resource type="Resource" id="Resource_mnvrh"]
+script = ExtResource("3_fgv1p")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_kekgd"]
+script = ExtResource("3_fgv1p")
+key = &"beacon_lit"
+
+[resource]
+script = ExtResource("4_r3r2i")
+id = &"the_beacon_burns"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_fgv1p")]([SubResource("Resource_mnvrh"), SubResource("Resource_kekgd")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_jh2l1")]([SubResource("Resource_0xmr0")])

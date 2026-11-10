@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_3wt3w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_5ne0y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_sm8u5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_f0eew"]
+
+[sub_resource type="Resource" id="Resource_1dwb0"]
+script = ExtResource("2_5ne0y")
+text = "The small stones of the street caught the last of the light in a thousand little curves, and a visitor stopped to stare at the ground."
+
+[sub_resource type="Resource" id="Resource_324ow"]
+script = ExtResource("3_sm8u5")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_0012o"]
+script = ExtResource("3_sm8u5")
+key = &"streets_setted"
+
+[resource]
+script = ExtResource("4_f0eew")
+id = &"setts_at_dusk"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_sm8u5")]([SubResource("Resource_324ow"), SubResource("Resource_0012o")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_5ne0y")]([SubResource("Resource_1dwb0")])

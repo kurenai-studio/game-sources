@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_173ko"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_62eev"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_velsq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ymmq7"]
+
+[sub_resource type="Resource" id="Resource_8e3iv"]
+script = ExtResource("2_62eev")
+kind = 0
+key = &"wood"
+amount = -15
+
+[sub_resource type="Resource" id="Resource_wfdnn"]
+script = ExtResource("2_62eev")
+kind = 1
+key = &"winter_ready"
+
+[sub_resource type="Resource" id="Resource_520kp"]
+script = ExtResource("2_62eev")
+text = "Firewood was stacked along every wall, and the winter looked at it and thought better of it."
+
+[sub_resource type="Resource" id="Resource_yfseg"]
+script = ExtResource("3_velsq")
+kind = 2
+key = &"wood"
+amount = 15
+
+[sub_resource type="Resource" id="Resource_usv4x"]
+script = ExtResource("1_173ko")
+id = &"lay_in_more"
+label = "Lay in more firewood and set it dry"
+requires = Array[ExtResource("3_velsq")]([SubResource("Resource_yfseg")])
+effects = Array[ExtResource("2_62eev")]([SubResource("Resource_8e3iv"), SubResource("Resource_wfdnn"), SubResource("Resource_520kp")])
+
+[sub_resource type="Resource" id="Resource_ffkr5"]
+script = ExtResource("2_62eev")
+kind = 1
+key = &"trusted_stores"
+
+[sub_resource type="Resource" id="Resource_vh4u0"]
+script = ExtResource("2_62eev")
+text = "The stores were trusted, and held, and nobody said anything about the counting."
+
+[sub_resource type="Resource" id="Resource_t4muf"]
+script = ExtResource("1_173ko")
+id = &"trust_the_stores"
+label = "Trust the stores"
+effects = Array[ExtResource("2_62eev")]([SubResource("Resource_ffkr5"), SubResource("Resource_vh4u0")])
+
+[sub_resource type="Resource" id="Resource_jpwq3"]
+script = ExtResource("3_velsq")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_f8tjr"]
+script = ExtResource("3_velsq")
+kind = 11
+amount = 238
+
+[sub_resource type="Resource" id="Resource_y3o0h"]
+script = ExtResource("3_velsq")
+kind = 13
+amount = 2
+
+[resource]
+script = ExtResource("4_ymmq7")
+id = &"winter_count"
+title = "Before winter"
+body = "The leaves are turning. Somebody has counted the stores twice, and got two different answers."
+category = &"settlement"
+requires = Array[ExtResource("3_velsq")]([SubResource("Resource_jpwq3"), SubResource("Resource_f8tjr"), SubResource("Resource_y3o0h")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_173ko")]([SubResource("Resource_usv4x"), SubResource("Resource_t4muf")])

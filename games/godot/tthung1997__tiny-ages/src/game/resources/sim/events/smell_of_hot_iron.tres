@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_r8glv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_d36ec"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_kwqcv"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_df8f2"]
+
+[sub_resource type="Resource" id="Resource_h3wcd"]
+script = ExtResource("2_d36ec")
+text = "The village smelled of charcoal and hot iron for a week, and then stopped noticing."
+
+[sub_resource type="Resource" id="Resource_x0mg4"]
+script = ExtResource("3_kwqcv")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_rr7qx"]
+script = ExtResource("3_kwqcv")
+kind = 9
+key = &"first_bloom"
+
+[resource]
+script = ExtResource("4_df8f2")
+id = &"smell_of_hot_iron"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_kwqcv")]([SubResource("Resource_x0mg4"), SubResource("Resource_rr7qx")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_d36ec")]([SubResource("Resource_h3wcd")])

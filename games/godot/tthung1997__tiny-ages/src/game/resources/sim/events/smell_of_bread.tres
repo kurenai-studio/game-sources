@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bto3j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_j88oa"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_l7bq7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4da2k"]
+
+[sub_resource type="Resource" id="Resource_7xm6h"]
+script = ExtResource("2_j88oa")
+text = "The smell of flat bread on hot stones drifted over the camp, and people found reasons to pass by."
+
+[sub_resource type="Resource" id="Resource_oq67g"]
+script = ExtResource("3_l7bq7")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_xecla"]
+script = ExtResource("3_l7bq7")
+kind = 9
+key = &"first_harvest"
+
+[resource]
+script = ExtResource("4_4da2k")
+id = &"smell_of_bread"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_l7bq7")]([SubResource("Resource_oq67g"), SubResource("Resource_xecla")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_j88oa")]([SubResource("Resource_7xm6h")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_iskb0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_36gex"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pj2ft"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_k2hr3"]
+
+[sub_resource type="Resource" id="Resource_apoam"]
+script = ExtResource("2_36gex")
+text = "The scarecrow was wearing a different hat this morning, and nobody owned up."
+
+[sub_resource type="Resource" id="Resource_vk18h"]
+script = ExtResource("3_pj2ft")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_84s7n"]
+script = ExtResource("3_pj2ft")
+key = &"scarecrow"
+
+[resource]
+script = ExtResource("4_k2hr3")
+id = &"scarecrow_hat"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_pj2ft")]([SubResource("Resource_vk18h"), SubResource("Resource_84s7n")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_36gex")]([SubResource("Resource_apoam")])

@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_x654y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_5cmhj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pbub7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bxxdn"]
+
+[sub_resource type="Resource" id="Resource_dcypr"]
+script = ExtResource("2_5cmhj")
+kind = 1
+key = &"thatched_roofs"
+
+[sub_resource type="Resource" id="Resource_lymam"]
+script = ExtResource("2_5cmhj")
+kind = 10
+key = &"first_roof"
+text = "A Roof of Your Own"
+
+[sub_resource type="Resource" id="Resource_iw7nh"]
+script = ExtResource("2_5cmhj")
+text = "{subject} lashed reed bundles over the poles, and that night the rain ran off the roof as if it had never been a problem."
+
+[sub_resource type="Resource" id="Resource_qtefj"]
+script = ExtResource("1_x654y")
+id = &"thatch_it"
+label = "Bind reeds into a thatch"
+effects = Array[ExtResource("2_5cmhj")]([SubResource("Resource_dcypr"), SubResource("Resource_lymam"), SubResource("Resource_iw7nh")])
+
+[sub_resource type="Resource" id="Resource_sffxm"]
+script = ExtResource("2_5cmhj")
+kind = 1
+key = &"turf_roofs"
+
+[sub_resource type="Resource" id="Resource_8pb16"]
+script = ExtResource("2_5cmhj")
+kind = 10
+key = &"first_roof"
+text = "A Roof of Your Own"
+
+[sub_resource type="Resource" id="Resource_p24s4"]
+script = ExtResource("2_5cmhj")
+text = "{subject} cut turf from the meadow and laid it over the poles, grass side up, and by the next rain it had started to grow."
+
+[sub_resource type="Resource" id="Resource_y8i0p"]
+script = ExtResource("1_x654y")
+id = &"make_do"
+label = "Lay turf over the poles"
+effects = Array[ExtResource("2_5cmhj")]([SubResource("Resource_sffxm"), SubResource("Resource_8pb16"), SubResource("Resource_p24s4")])
+
+[sub_resource type="Resource" id="Resource_d4enl"]
+script = ExtResource("3_pbub7")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_mtd5s"]
+script = ExtResource("3_pbub7")
+kind = 11
+amount = 18
+
+[sub_resource type="Resource" id="Resource_vdtyh"]
+script = ExtResource("3_pbub7")
+kind = 9
+key = &"first_roof"
+negate = true
+
+[sub_resource type="Resource" id="Resource_t54rx"]
+script = ExtResource("3_pbub7")
+kind = 7
+
+[resource]
+script = ExtResource("4_bxxdn")
+id = &"thatched_roof"
+title = "Rain through the hides"
+body = "{subject} is tired of rain dripping through the hides. Bundles of river reed, bound tight over the poles, might shed it."
+requires = Array[ExtResource("3_pbub7")]([SubResource("Resource_d4enl"), SubResource("Resource_mtd5s"), SubResource("Resource_vdtyh")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_pbub7")]([SubResource("Resource_t54rx")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_x654y")]([SubResource("Resource_qtefj"), SubResource("Resource_y8i0p")])

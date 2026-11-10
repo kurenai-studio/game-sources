@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ng1t7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ing0t"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_p7c6f"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_bwvoh"]
+
+[sub_resource type="Resource" id="Resource_0ibml"]
+script = ExtResource("2_ing0t")
+text = "Mist lay on the river until midday, and the camp was very quiet."
+
+[sub_resource type="Resource" id="Resource_o6puo"]
+script = ExtResource("3_p7c6f")
+kind = 5
+
+[resource]
+script = ExtResource("4_bwvoh")
+id = &"morning_mist"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_p7c6f")]([SubResource("Resource_o6puo")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ing0t")]([SubResource("Resource_0ibml")])

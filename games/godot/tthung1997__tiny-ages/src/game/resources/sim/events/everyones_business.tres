@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_eguou"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_6toni"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jlak3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_6f0xl"]
+
+[sub_resource type="Resource" id="Resource_a3cd5"]
+script = ExtResource("2_6toni")
+text = "{subject} knew everyone's business by noon, and shared it generously."
+
+[sub_resource type="Resource" id="Resource_o4ip3"]
+script = ExtResource("3_jlak3")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_qj3cx"]
+script = ExtResource("3_jlak3")
+kind = 6
+key = &"social"
+
+[sub_resource type="Resource" id="Resource_d7h4g"]
+script = ExtResource("3_jlak3")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_hb1w2"]
+script = ExtResource("3_jlak3")
+kind = 10
+
+[resource]
+script = ExtResource("4_6f0xl")
+id = &"everyones_business"
+title = "A quiet moment"
+requires = Array[ExtResource("3_jlak3")]([SubResource("Resource_o4ip3")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_jlak3")]([SubResource("Resource_qj3cx"), SubResource("Resource_d7h4g"), SubResource("Resource_hb1w2")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_6toni")]([SubResource("Resource_a3cd5")])

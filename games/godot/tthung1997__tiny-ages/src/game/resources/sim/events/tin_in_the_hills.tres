@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ugxdc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_j3fqn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_8ghge"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_m8hx1"]
+
+[sub_resource type="Resource" id="Resource_gftmn"]
+script = ExtResource("2_j3fqn")
+kind = 1
+key = &"tin_dug"
+
+[sub_resource type="Resource" id="Resource_ko28f"]
+script = ExtResource("2_j3fqn")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_4qkgl"]
+script = ExtResource("2_j3fqn")
+text = "They went up together with baskets, and came down singing, and a great deal heavier."
+
+[sub_resource type="Resource" id="Resource_jl5j2"]
+script = ExtResource("1_ugxdc")
+id = &"go_up_together"
+label = "Go up together, with baskets"
+effects = Array[ExtResource("2_j3fqn")]([SubResource("Resource_gftmn"), SubResource("Resource_ko28f"), SubResource("Resource_4qkgl")])
+
+[sub_resource type="Resource" id="Resource_7w8s7"]
+script = ExtResource("2_j3fqn")
+kind = 1
+key = &"tin_alone"
+
+[sub_resource type="Resource" id="Resource_5fjnq"]
+script = ExtResource("2_j3fqn")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_3jnit"]
+script = ExtResource("2_j3fqn")
+text = "{subject} went alone and was gone for six days. The sand was heavy, and the stories were heavier."
+
+[sub_resource type="Resource" id="Resource_ec2xe"]
+script = ExtResource("1_ugxdc")
+id = &"go_up_alone"
+label = "Let them go alone, and wait"
+effects = Array[ExtResource("2_j3fqn")]([SubResource("Resource_7w8s7"), SubResource("Resource_5fjnq"), SubResource("Resource_3jnit")])
+
+[sub_resource type="Resource" id="Resource_pclep"]
+script = ExtResource("3_8ghge")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_3mdhc"]
+script = ExtResource("3_8ghge")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_6vu8a"]
+script = ExtResource("3_8ghge")
+kind = 9
+key = &"bronze_alloy"
+negate = true
+
+[sub_resource type="Resource" id="Resource_rgapt"]
+script = ExtResource("3_8ghge")
+kind = 9
+key = &"first_casting"
+
+[sub_resource type="Resource" id="Resource_t22x6"]
+script = ExtResource("3_8ghge")
+kind = 7
+
+[resource]
+script = ExtResource("4_m8hx1")
+id = &"tin_in_the_hills"
+title = "Heavy grey sand"
+body = "There is a place in the hills where the stream runs over heavy grey sand, and {subject} thinks it is what the metal has been missing."
+category = &"exploration"
+requires = Array[ExtResource("3_8ghge")]([SubResource("Resource_pclep"), SubResource("Resource_3mdhc"), SubResource("Resource_6vu8a"), SubResource("Resource_rgapt")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_8ghge")]([SubResource("Resource_t22x6")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_ugxdc")]([SubResource("Resource_jl5j2"), SubResource("Resource_ec2xe")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_lvo8p"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ypxly"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_llya7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_2hfa0"]
+
+[sub_resource type="Resource" id="Resource_wl28q"]
+script = ExtResource("2_ypxly")
+text = "Bowls came out of the ashes with a grey bloom on them, and rang when they were tapped."
+
+[sub_resource type="Resource" id="Resource_fbrwg"]
+script = ExtResource("3_llya7")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_va7yb"]
+script = ExtResource("3_llya7")
+key = &"bowls_in_ash"
+
+[resource]
+script = ExtResource("4_2hfa0")
+id = &"ash_bowls"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_llya7")]([SubResource("Resource_fbrwg"), SubResource("Resource_va7yb")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ypxly")]([SubResource("Resource_wl28q")])

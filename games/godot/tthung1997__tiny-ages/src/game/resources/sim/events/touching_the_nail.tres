@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_tgm85"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_m1mlr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_u1ak3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p4fqr"]
+
+[sub_resource type="Resource" id="Resource_0h05x"]
+script = ExtResource("2_m1mlr")
+text = "Every door had its nail, and every nail had been touched for luck."
+
+[sub_resource type="Resource" id="Resource_4oxbd"]
+script = ExtResource("3_u1ak3")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_ms825"]
+script = ExtResource("3_u1ak3")
+key = &"door_nails"
+
+[resource]
+script = ExtResource("4_p4fqr")
+id = &"touching_the_nail"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_u1ak3")]([SubResource("Resource_4oxbd"), SubResource("Resource_ms825")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_m1mlr")]([SubResource("Resource_0h05x")])

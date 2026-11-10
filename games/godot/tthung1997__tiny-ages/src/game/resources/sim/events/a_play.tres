@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_c03em"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_oviq0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6eqw8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mi276"]
+
+[sub_resource type="Resource" id="Resource_30xef"]
+script = ExtResource("2_oviq0")
+kind = 1
+key = &"play_cave"
+
+[sub_resource type="Resource" id="Resource_qpgdd"]
+script = ExtResource("2_oviq0")
+text = "The play about the cave was performed by people dressed in furs, and a very small person was a mammoth, and was the best thing in it."
+
+[sub_resource type="Resource" id="Resource_7byw1"]
+script = ExtResource("1_c03em")
+id = &"a_play_about_the_cave"
+label = "A play about the cave, and the first fire"
+effects = Array[ExtResource("2_oviq0")]([SubResource("Resource_30xef"), SubResource("Resource_qpgdd")])
+
+[sub_resource type="Resource" id="Resource_oqogq"]
+script = ExtResource("2_oviq0")
+kind = 1
+key = &"play_voyage"
+
+[sub_resource type="Resource" id="Resource_0co4k"]
+script = ExtResource("2_oviq0")
+text = "The play about the voyage was performed with a ship made of chairs, and the audience leaned with it in every wave."
+
+[sub_resource type="Resource" id="Resource_3o0i5"]
+script = ExtResource("1_c03em")
+id = &"a_play_about_the_voyage"
+label = "A play about the first ship across"
+effects = Array[ExtResource("2_oviq0")]([SubResource("Resource_oqogq"), SubResource("Resource_0co4k")])
+
+[sub_resource type="Resource" id="Resource_t8oc5"]
+script = ExtResource("3_6eqw8")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_tuttm"]
+script = ExtResource("3_6eqw8")
+kind = 11
+amount = 232
+
+[sub_resource type="Resource" id="Resource_dkwd5"]
+script = ExtResource("3_6eqw8")
+kind = 9
+key = &"lamp_and_stage"
+
+[resource]
+script = ExtResource("4_mi276")
+id = &"a_play"
+title = "A play"
+body = "Someone has proposed a play, with parts for everyone, and the only question is what it is about."
+category = &"settlement"
+requires = Array[ExtResource("3_6eqw8")]([SubResource("Resource_t8oc5"), SubResource("Resource_tuttm"), SubResource("Resource_dkwd5")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_c03em")]([SubResource("Resource_7byw1"), SubResource("Resource_3o0i5")])

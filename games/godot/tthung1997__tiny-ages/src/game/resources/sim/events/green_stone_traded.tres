@@ -1,0 +1,93 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_jqa0n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_bfq32"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_olr43"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_70vjv"]
+
+[sub_resource type="Resource" id="Resource_rnfy7"]
+script = ExtResource("2_bfq32")
+kind = 0
+key = &"food"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_3tqkc"]
+script = ExtResource("2_bfq32")
+kind = 1
+key = &"green_stone"
+
+[sub_resource type="Resource" id="Resource_a0nch"]
+script = ExtResource("2_bfq32")
+kind = 10
+key = &"green_stone"
+text = "Word from the Hills"
+
+[sub_resource type="Resource" id="Resource_u36av"]
+script = ExtResource("2_bfq32")
+text = "The traveller left with a sack of grain, and the group had a pouch of green stones and a rumour of the hills they came from."
+
+[sub_resource type="Resource" id="Resource_35147"]
+script = ExtResource("3_olr43")
+kind = 2
+key = &"food"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_lbgt6"]
+script = ExtResource("1_jqa0n")
+id = &"trade_for_stones"
+label = "Trade food for a pouch of the stones"
+requires = Array[ExtResource("3_olr43")]([SubResource("Resource_35147")])
+effects = Array[ExtResource("2_bfq32")]([SubResource("Resource_rnfy7"), SubResource("Resource_3tqkc"), SubResource("Resource_a0nch"), SubResource("Resource_u36av")])
+
+[sub_resource type="Resource" id="Resource_0toxn"]
+script = ExtResource("2_bfq32")
+kind = 1
+key = &"traders_asked"
+
+[sub_resource type="Resource" id="Resource_ljkj6"]
+script = ExtResource("2_bfq32")
+kind = 7
+key = &"green_stone_shown"
+amount = 96
+
+[sub_resource type="Resource" id="Resource_op37i"]
+script = ExtResource("2_bfq32")
+text = "The traveller was sent on with bread, and asked to come back by the same road with more of the stones, and a name for where they came from."
+
+[sub_resource type="Resource" id="Resource_2dtns"]
+script = ExtResource("1_jqa0n")
+id = &"send_them_on"
+label = "Send them on with bread, and ask them back with more"
+effects = Array[ExtResource("2_bfq32")]([SubResource("Resource_0toxn"), SubResource("Resource_ljkj6"), SubResource("Resource_op37i")])
+
+[sub_resource type="Resource" id="Resource_3x0mx"]
+script = ExtResource("3_olr43")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_nucwh"]
+script = ExtResource("3_olr43")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_wh851"]
+script = ExtResource("3_olr43")
+kind = 9
+key = &"first_harvest"
+
+[sub_resource type="Resource" id="Resource_lawt5"]
+script = ExtResource("3_olr43")
+kind = 9
+key = &"green_stone"
+negate = true
+
+[resource]
+script = ExtResource("4_70vjv")
+id = &"green_stone_traded"
+title = "A traveller with green beads"
+body = "A traveller has come over the hills with a string of bright green stones. They want grain, and will not say where the stones are from."
+category = &"exploration"
+requires = Array[ExtResource("3_olr43")]([SubResource("Resource_3x0mx"), SubResource("Resource_nucwh"), SubResource("Resource_wh851"), SubResource("Resource_lawt5")])
+chance_per_tick = 0.02
+cooldown_ticks = 72
+choices = Array[ExtResource("1_jqa0n")]([SubResource("Resource_lbgt6"), SubResource("Resource_2dtns")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vxf82"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_p2yfp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1wyga"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7pdk7"]
+
+[sub_resource type="Resource" id="Resource_rgrb1"]
+script = ExtResource("2_p2yfp")
+text = "The library lamp was lit, and a very small boy was found asleep on the lowest shelf, with a scroll for a pillow."
+
+[sub_resource type="Resource" id="Resource_cpwon"]
+script = ExtResource("3_1wyga")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_7y7es"]
+script = ExtResource("3_1wyga")
+key = &"library_kept"
+
+[resource]
+script = ExtResource("4_7pdk7")
+id = &"the_library_lamp"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_1wyga")]([SubResource("Resource_cpwon"), SubResource("Resource_7y7es")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_p2yfp")]([SubResource("Resource_rgrb1")])

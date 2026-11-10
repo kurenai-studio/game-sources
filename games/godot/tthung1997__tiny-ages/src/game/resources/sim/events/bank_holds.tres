@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6q7w0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_6iv3m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jaqfo"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_x3gca"]
+
+[sub_resource type="Resource" id="Resource_scq1i"]
+script = ExtResource("2_6iv3m")
+text = "The river climbed to the foot of the bank in the rain and went no further."
+
+[sub_resource type="Resource" id="Resource_6scr0"]
+script = ExtResource("3_jaqfo")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_57usv"]
+script = ExtResource("3_jaqfo")
+key = &"river_bank"
+
+[sub_resource type="Resource" id="Resource_rdwl4"]
+script = ExtResource("3_jaqfo")
+kind = 14
+key = &"rain"
+
+[resource]
+script = ExtResource("4_x3gca")
+id = &"bank_holds"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_jaqfo")]([SubResource("Resource_6scr0"), SubResource("Resource_57usv"), SubResource("Resource_rdwl4")])
+chance_per_tick = 0.012
+cooldown_ticks = 960
+effects = Array[ExtResource("2_6iv3m")]([SubResource("Resource_scq1i")])

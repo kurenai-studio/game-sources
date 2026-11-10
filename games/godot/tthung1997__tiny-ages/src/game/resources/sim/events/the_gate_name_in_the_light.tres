@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_p4yy6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dhid8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_v2lck"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_l0d12"]
+
+[sub_resource type="Resource" id="Resource_w8k0f"]
+script = ExtResource("2_dhid8")
+text = "The name over the gate caught the evening sun, and its letters stood out in gold, and a child read them off, one by one, with pride."
+
+[sub_resource type="Resource" id="Resource_4s1y7"]
+script = ExtResource("3_v2lck")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_ibphx"]
+script = ExtResource("3_v2lck")
+key = &"gate_name"
+
+[resource]
+script = ExtResource("4_l0d12")
+id = &"the_gate_name_in_the_light"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_v2lck")]([SubResource("Resource_4s1y7"), SubResource("Resource_ibphx")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_dhid8")]([SubResource("Resource_w8k0f")])

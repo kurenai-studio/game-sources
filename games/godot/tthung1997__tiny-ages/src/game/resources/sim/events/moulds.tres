@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_wx7fp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7nlxl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_dgijm"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_m20sd"]
+
+[sub_resource type="Resource" id="Resource_jvav2"]
+script = ExtResource("2_7nlxl")
+kind = 1
+key = &"stone_moulds"
+
+[sub_resource type="Resource" id="Resource_2mcpi"]
+script = ExtResource("2_7nlxl")
+text = "Moulds were carved from river stone, and lasted for years, and took nearly as long to make."
+
+[sub_resource type="Resource" id="Resource_7k0be"]
+script = ExtResource("1_wx7fp")
+id = &"carve_stone_moulds"
+label = "Carve moulds from stone"
+effects = Array[ExtResource("2_7nlxl")]([SubResource("Resource_jvav2"), SubResource("Resource_2mcpi")])
+
+[sub_resource type="Resource" id="Resource_hoo2w"]
+script = ExtResource("2_7nlxl")
+kind = 1
+key = &"clay_moulds"
+
+[sub_resource type="Resource" id="Resource_ii1ud"]
+script = ExtResource("2_7nlxl")
+text = "Moulds were baked from clay by the dozen, and broke by the dozen, and were made again with some enthusiasm."
+
+[sub_resource type="Resource" id="Resource_44mhf"]
+script = ExtResource("1_wx7fp")
+id = &"bake_clay_moulds"
+label = "Bake them from clay"
+effects = Array[ExtResource("2_7nlxl")]([SubResource("Resource_hoo2w"), SubResource("Resource_ii1ud")])
+
+[sub_resource type="Resource" id="Resource_trhyq"]
+script = ExtResource("3_dgijm")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_2bg6v"]
+script = ExtResource("3_dgijm")
+kind = 11
+amount = 24
+
+[sub_resource type="Resource" id="Resource_h8l3r"]
+script = ExtResource("3_dgijm")
+kind = 9
+key = &"first_casting"
+
+[resource]
+script = ExtResource("4_m20sd")
+id = &"moulds"
+title = "Moulds"
+body = "Every blade so far has been cast in a mould that broke. Somebody wants to know if there's a mould that doesn't."
+category = &"settlement"
+requires = Array[ExtResource("3_dgijm")]([SubResource("Resource_trhyq"), SubResource("Resource_2bg6v"), SubResource("Resource_h8l3r")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_wx7fp")]([SubResource("Resource_7k0be"), SubResource("Resource_44mhf")])

@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hb3mq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ioydi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1suvs"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_551sf"]
+
+[sub_resource type="Resource" id="Resource_dq2jf"]
+script = ExtResource("2_ioydi")
+kind = 0
+key = &"food"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_oqssl"]
+script = ExtResource("2_ioydi")
+text = "The group stripped the meadow, and the cave smelled of toasted grain for days."
+
+[sub_resource type="Resource" id="Resource_drgp1"]
+script = ExtResource("1_hb3mq")
+id = &"gather_it_all"
+label = "Gather every seed head"
+effects = Array[ExtResource("2_ioydi")]([SubResource("Resource_dq2jf"), SubResource("Resource_oqssl")])
+
+[sub_resource type="Resource" id="Resource_t7crr"]
+script = ExtResource("2_ioydi")
+kind = 0
+key = &"food"
+amount = 5
+
+[sub_resource type="Resource" id="Resource_wmp1d"]
+script = ExtResource("2_ioydi")
+kind = 1
+key = &"left_seed"
+
+[sub_resource type="Resource" id="Resource_qqq85"]
+script = ExtResource("2_ioydi")
+text = "They gathered half and shook the rest loose over the ground for next year."
+
+[sub_resource type="Resource" id="Resource_76yaw"]
+script = ExtResource("1_hb3mq")
+id = &"leave_some"
+label = "Gather half, and leave the rest to scatter"
+effects = Array[ExtResource("2_ioydi")]([SubResource("Resource_t7crr"), SubResource("Resource_wmp1d"), SubResource("Resource_qqq85")])
+
+[sub_resource type="Resource" id="Resource_yk6y6"]
+script = ExtResource("3_1suvs")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_7f7x8"]
+script = ExtResource("3_1suvs")
+kind = 5
+amount = 232
+
+[resource]
+script = ExtResource("4_551sf")
+id = &"wild_grain"
+title = "Heavy grass"
+body = "In the western meadow the wild grass is heavy with seed."
+category = &"nature"
+requires = Array[ExtResource("3_1suvs")]([SubResource("Resource_yk6y6"), SubResource("Resource_7f7x8")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_hb3mq")]([SubResource("Resource_drgp1"), SubResource("Resource_76yaw")])

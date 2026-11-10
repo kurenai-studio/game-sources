@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s3r3v"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_n356w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hnae8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mkc0w"]
+
+[sub_resource type="Resource" id="Resource_w13mi"]
+script = ExtResource("2_n356w")
+text = "{subject} stacked the firewood into a neat wall, and seemed very pleased with it."
+
+[sub_resource type="Resource" id="Resource_qh87m"]
+script = ExtResource("3_hnae8")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_gx4ps"]
+script = ExtResource("3_hnae8")
+kind = 6
+key = &"industrious"
+
+[sub_resource type="Resource" id="Resource_pcy8m"]
+script = ExtResource("3_hnae8")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_i6nvo"]
+script = ExtResource("3_hnae8")
+kind = 10
+
+[resource]
+script = ExtResource("4_mkc0w")
+id = &"woodpile"
+title = "A quiet moment"
+requires = Array[ExtResource("3_hnae8")]([SubResource("Resource_qh87m")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_hnae8")]([SubResource("Resource_gx4ps"), SubResource("Resource_pcy8m"), SubResource("Resource_i6nvo")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_n356w")]([SubResource("Resource_w13mi")])

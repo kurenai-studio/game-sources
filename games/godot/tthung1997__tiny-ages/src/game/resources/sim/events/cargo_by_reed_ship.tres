@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_32ite"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lj7gb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7v3ay"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_6xgqp"]
+
+[sub_resource type="Resource" id="Resource_nli8s"]
+script = ExtResource("2_lj7gb")
+kind = 1
+key = &"reed_cargo_sailed"
+
+[sub_resource type="Resource" id="Resource_31w3w"]
+script = ExtResource("2_lj7gb")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_3fr1d"]
+script = ExtResource("2_lj7gb")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_3k7d2"]
+script = ExtResource("2_lj7gb")
+text = "The reed ship crossed on a fair wind and came back on a foul one, and was greeted at the quay as if it had been to the moon."
+
+[sub_resource type="Resource" id="Resource_src5w"]
+script = ExtResource("1_32ite")
+id = &"sail_the_reed_ship"
+label = "Sail it over on a fair wind"
+effects = Array[ExtResource("2_lj7gb")]([SubResource("Resource_nli8s"), SubResource("Resource_31w3w"), SubResource("Resource_3fr1d"), SubResource("Resource_3k7d2")])
+
+[sub_resource type="Resource" id="Resource_0s8g8"]
+script = ExtResource("2_lj7gb")
+kind = 1
+key = &"reed_cargo_company"
+
+[sub_resource type="Resource" id="Resource_nmpno"]
+script = ExtResource("2_lj7gb")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_2rk1o"]
+script = ExtResource("2_lj7gb")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_hw5m8"]
+script = ExtResource("2_lj7gb")
+text = "The reed ship went in company, with two others, and the three came home together, which is the best way to come home."
+
+[sub_resource type="Resource" id="Resource_karmh"]
+script = ExtResource("1_32ite")
+id = &"send_it_in_a_string"
+label = "Send it in company with the planked boats"
+effects = Array[ExtResource("2_lj7gb")]([SubResource("Resource_0s8g8"), SubResource("Resource_nmpno"), SubResource("Resource_2rk1o"), SubResource("Resource_hw5m8")])
+
+[sub_resource type="Resource" id="Resource_7e1e5"]
+script = ExtResource("3_7v3ay")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_mawg5"]
+script = ExtResource("3_7v3ay")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_qw27k"]
+script = ExtResource("3_7v3ay")
+kind = 9
+key = &"name_abroad"
+negate = true
+
+[sub_resource type="Resource" id="Resource_aprs0"]
+script = ExtResource("3_7v3ay")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_077gd"]
+script = ExtResource("3_7v3ay")
+key = &"reed_raft"
+
+[sub_resource type="Resource" id="Resource_f82go"]
+script = ExtResource("3_7v3ay")
+kind = 7
+
+[resource]
+script = ExtResource("4_6xgqp")
+id = &"cargo_by_reed_ship"
+title = "A cargo for the reed ship"
+body = "The reed ship has been dried, re-bound and stacked with goods, and is plainly waiting for somebody to say where."
+category = &"exploration"
+requires = Array[ExtResource("3_7v3ay")]([SubResource("Resource_7e1e5"), SubResource("Resource_mawg5"), SubResource("Resource_qw27k"), SubResource("Resource_aprs0"), SubResource("Resource_077gd")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_7v3ay")]([SubResource("Resource_f82go")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_32ite")]([SubResource("Resource_src5w"), SubResource("Resource_karmh")])

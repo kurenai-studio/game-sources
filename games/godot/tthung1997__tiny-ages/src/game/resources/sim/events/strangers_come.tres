@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_cu7vh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_o1lwm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_qbq0q"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_lx7dc"]
+
+[sub_resource type="Resource" id="Resource_hprci"]
+script = ExtResource("2_o1lwm")
+kind = 13
+amount = 2
+
+[sub_resource type="Resource" id="Resource_shmac"]
+script = ExtResource("2_o1lwm")
+text = "The bundle was gone one morning, and that evening the two strangers walked in on their own and sat down at the edge of the fire."
+
+[sub_resource type="Resource" id="Resource_7hnqq"]
+script = ExtResource("2_o1lwm")
+kind = 10
+key = &"bigger_group"
+text = "A Bigger Group"
+
+[sub_resource type="Resource" id="Resource_v8fs8"]
+script = ExtResource("3_qbq0q")
+kind = 9
+key = &"bigger_group"
+negate = true
+
+[resource]
+script = ExtResource("4_lx7dc")
+id = &"strangers_come"
+title = "The strangers come in"
+category = &"exploration"
+requires = Array[ExtResource("3_qbq0q")]([SubResource("Resource_v8fs8")])
+effects = Array[ExtResource("2_o1lwm")]([SubResource("Resource_hprci"), SubResource("Resource_shmac"), SubResource("Resource_7hnqq")])

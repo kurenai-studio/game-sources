@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_orv4q"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ipfap"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vc52e"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3xsl8"]
+
+[sub_resource type="Resource" id="Resource_n4qc0"]
+script = ExtResource("2_ipfap")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_2xg8i"]
+script = ExtResource("2_ipfap")
+kind = 1
+key = &"hearth_moved"
+
+[sub_resource type="Resource" id="Resource_augh2"]
+script = ExtResource("2_ipfap")
+text = "The hearth moved to the edge of the village, and the hammer moved with it, and everyone slept very well and felt slightly neglected."
+
+[sub_resource type="Resource" id="Resource_q5aks"]
+script = ExtResource("3_vc52e")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_5xigw"]
+script = ExtResource("1_orv4q")
+id = &"move_the_hearth"
+label = "Move the hearth to the edge of the village"
+requires = Array[ExtResource("3_vc52e")]([SubResource("Resource_q5aks")])
+effects = Array[ExtResource("2_ipfap")]([SubResource("Resource_n4qc0"), SubResource("Resource_2xg8i"), SubResource("Resource_augh2")])
+
+[sub_resource type="Resource" id="Resource_mdw5c"]
+script = ExtResource("2_ipfap")
+kind = 1
+key = &"hides_hung"
+
+[sub_resource type="Resource" id="Resource_hmt5c"]
+script = ExtResource("2_ipfap")
+text = "Hides were hung over the nearest walls, and the hammering went on softly, as if it were under a blanket."
+
+[sub_resource type="Resource" id="Resource_8l6b7"]
+script = ExtResource("1_orv4q")
+id = &"hang_hides"
+label = "Hang hides over the nearest walls"
+effects = Array[ExtResource("2_ipfap")]([SubResource("Resource_mdw5c"), SubResource("Resource_hmt5c")])
+
+[sub_resource type="Resource" id="Resource_ffat1"]
+script = ExtResource("3_vc52e")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_u71j8"]
+script = ExtResource("3_vc52e")
+kind = 11
+amount = 40
+
+[sub_resource type="Resource" id="Resource_5q3b2"]
+script = ExtResource("3_vc52e")
+kind = 7
+
+[resource]
+script = ExtResource("4_3xsl8")
+id = &"hammering_at_night"
+title = "The hammering at night"
+body = "{subject} has been woken three nights running by the hammer, and has said so, in the nicest possible way."
+requires = Array[ExtResource("3_vc52e")]([SubResource("Resource_ffat1"), SubResource("Resource_u71j8")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_vc52e")]([SubResource("Resource_5q3b2")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_orv4q")]([SubResource("Resource_5xigw"), SubResource("Resource_8l6b7")])

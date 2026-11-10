@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8beiv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_hf8v4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nakrc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_sckr5"]
+
+[sub_resource type="Resource" id="Resource_m4cij"]
+script = ExtResource("2_hf8v4")
+text = "Somebody waded out at the turn of the tide with a basket, and came back wet to the waist."
+
+[sub_resource type="Resource" id="Resource_y478v"]
+script = ExtResource("3_nakrc")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_8sst3"]
+script = ExtResource("3_nakrc")
+key = &"tide_baskets"
+
+[resource]
+script = ExtResource("4_sckr5")
+id = &"baskets_at_the_turn"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_nakrc")]([SubResource("Resource_y478v"), SubResource("Resource_8sst3")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_hf8v4")]([SubResource("Resource_m4cij")])

@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_urbqa"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vvih0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nqxto"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_hlour"]
+
+[sub_resource type="Resource" id="Resource_rmhyf"]
+script = ExtResource("2_vvih0")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_gfuye"]
+script = ExtResource("2_vvih0")
+kind = 1
+key = &"loom"
+
+[sub_resource type="Resource" id="Resource_agdiv"]
+script = ExtResource("2_vvih0")
+text = "The loom went up by the door, and the first cloth off it was the widest anyone had seen."
+
+[sub_resource type="Resource" id="Resource_s8otj"]
+script = ExtResource("3_nqxto")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_m4m8u"]
+script = ExtResource("1_urbqa")
+id = &"build_a_loom"
+label = "Build the loom properly"
+requires = Array[ExtResource("3_nqxto")]([SubResource("Resource_s8otj")])
+effects = Array[ExtResource("2_vvih0")]([SubResource("Resource_rmhyf"), SubResource("Resource_gfuye"), SubResource("Resource_agdiv")])
+
+[sub_resource type="Resource" id="Resource_jvt65"]
+script = ExtResource("2_vvih0")
+kind = 1
+key = &"spindle_only"
+
+[sub_resource type="Resource" id="Resource_0plby"]
+script = ExtResource("2_vvih0")
+text = "They stayed with the spindle, and the frame leaned against a wall and was used for drying."
+
+[sub_resource type="Resource" id="Resource_w7eyw"]
+script = ExtResource("1_urbqa")
+id = &"keep_the_spindle"
+label = "Stay with the spindle"
+effects = Array[ExtResource("2_vvih0")]([SubResource("Resource_jvt65"), SubResource("Resource_0plby")])
+
+[sub_resource type="Resource" id="Resource_31d3o"]
+script = ExtResource("3_nqxto")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_337mu"]
+script = ExtResource("3_nqxto")
+kind = 11
+amount = 184
+
+[sub_resource type="Resource" id="Resource_hxcba"]
+script = ExtResource("3_nqxto")
+kind = 9
+key = &"woven_cloth"
+
+[sub_resource type="Resource" id="Resource_vn5d0"]
+script = ExtResource("3_nqxto")
+kind = 7
+
+[resource]
+script = ExtResource("4_hlour")
+id = &"the_loom_frame"
+title = "Two posts and some thread"
+body = "{subject} has propped a frame between two posts and wound thread from end to end. It might weave faster than hands alone."
+requires = Array[ExtResource("3_nqxto")]([SubResource("Resource_31d3o"), SubResource("Resource_337mu"), SubResource("Resource_hxcba")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_nqxto")]([SubResource("Resource_vn5d0")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_urbqa")]([SubResource("Resource_m4m8u"), SubResource("Resource_w7eyw")])

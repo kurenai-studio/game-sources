@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6gxf4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3ehtm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_s48lt"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_cpcr5"]
+
+[sub_resource type="Resource" id="Resource_240v7"]
+script = ExtResource("2_3ehtm")
+text = "The baskets hung from the cave roof stayed full through the lean weeks, and nobody woke hungry."
+
+[sub_resource type="Resource" id="Resource_2qdr6"]
+script = ExtResource("2_3ehtm")
+kind = 10
+key = &"reliable_food"
+text = "Enough to Eat"
+
+[sub_resource type="Resource" id="Resource_fopld"]
+script = ExtResource("3_s48lt")
+kind = 9
+key = &"reliable_food"
+negate = true
+
+[resource]
+script = ExtResource("4_cpcr5")
+id = &"baskets_keep"
+title = "Baskets that keep"
+category = &"settlement"
+requires = Array[ExtResource("3_s48lt")]([SubResource("Resource_fopld")])
+effects = Array[ExtResource("2_3ehtm")]([SubResource("Resource_240v7"), SubResource("Resource_2qdr6")])

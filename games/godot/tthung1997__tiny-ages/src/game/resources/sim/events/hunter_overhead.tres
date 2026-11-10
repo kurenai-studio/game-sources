@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_p74t4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_75ooq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1vf6g"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_eej0s"]
+
+[sub_resource type="Resource" id="Resource_d4vq3"]
+script = ExtResource("2_75ooq")
+text = "Someone showed the Hunter to a sleepy neighbour, and it was exactly where they said."
+
+[sub_resource type="Resource" id="Resource_y80y3"]
+script = ExtResource("3_1vf6g")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_ml8o5"]
+script = ExtResource("3_1vf6g")
+key = &"star_names"
+
+[resource]
+script = ExtResource("4_eej0s")
+id = &"hunter_overhead"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_1vf6g")]([SubResource("Resource_y80y3"), SubResource("Resource_ml8o5")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_75ooq")]([SubResource("Resource_d4vq3")])

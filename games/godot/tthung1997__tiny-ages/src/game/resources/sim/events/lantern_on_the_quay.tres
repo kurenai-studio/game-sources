@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_m1mvf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_oycjh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jfkhc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rk5qk"]
+
+[sub_resource type="Resource" id="Resource_qcvr8"]
+script = ExtResource("2_oycjh")
+text = "A lantern was lit at the end of the quay, and the boats came in towards it like moths, only slower."
+
+[sub_resource type="Resource" id="Resource_x60pa"]
+script = ExtResource("3_jfkhc")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_8icia"]
+script = ExtResource("3_jfkhc")
+key = &"quay_built"
+
+[resource]
+script = ExtResource("4_rk5qk")
+id = &"lantern_on_the_quay"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_jfkhc")]([SubResource("Resource_x60pa"), SubResource("Resource_8icia")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_oycjh")]([SubResource("Resource_qcvr8")])

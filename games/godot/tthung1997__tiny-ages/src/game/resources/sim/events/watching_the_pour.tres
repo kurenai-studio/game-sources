@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6kds8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_y0e11"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_kar33"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0k5r5"]
+
+[sub_resource type="Resource" id="Resource_s6fqk"]
+script = ExtResource("2_y0e11")
+text = "{subject} stood at the hearth with a wet cloth over their face, watching the metal run, and had to be called three times for supper."
+
+[sub_resource type="Resource" id="Resource_2vcbp"]
+script = ExtResource("3_kar33")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_60512"]
+script = ExtResource("3_kar33")
+kind = 9
+key = &"first_casting"
+
+[sub_resource type="Resource" id="Resource_frfw3"]
+script = ExtResource("3_kar33")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_4ygvs"]
+script = ExtResource("3_kar33")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_3qcls"]
+script = ExtResource("3_kar33")
+kind = 10
+
+[resource]
+script = ExtResource("4_0k5r5")
+id = &"watching_the_pour"
+title = "A quiet moment"
+requires = Array[ExtResource("3_kar33")]([SubResource("Resource_2vcbp"), SubResource("Resource_60512")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_kar33")]([SubResource("Resource_frfw3"), SubResource("Resource_4ygvs"), SubResource("Resource_3qcls")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_y0e11")]([SubResource("Resource_s6fqk")])

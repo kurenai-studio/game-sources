@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vetgm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_33dbn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_67r24"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_t7nmn"]
+
+[sub_resource type="Resource" id="Resource_yooex"]
+script = ExtResource("2_33dbn")
+text = "No rain fell for weeks, but the well never failed and the ground around it stayed green."
+
+[sub_resource type="Resource" id="Resource_qv67g"]
+script = ExtResource("3_67r24")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_4flgx"]
+script = ExtResource("3_67r24")
+key = &"well_dug"
+
+[sub_resource type="Resource" id="Resource_x1lad"]
+script = ExtResource("3_67r24")
+kind = 13
+amount = 1
+
+[resource]
+script = ExtResource("4_t7nmn")
+id = &"well_keeps_green"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_67r24")]([SubResource("Resource_qv67g"), SubResource("Resource_4flgx"), SubResource("Resource_x1lad")])
+chance_per_tick = 0.002
+cooldown_ticks = 960
+effects = Array[ExtResource("2_33dbn")]([SubResource("Resource_yooex")])

@@ -1,0 +1,86 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8x3ki"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_0pg8t"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_27u1g"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_67tf6"]
+
+[sub_resource type="Resource" id="Resource_rsdf1"]
+script = ExtResource("2_0pg8t")
+kind = 13
+amount = 1
+
+[sub_resource type="Resource" id="Resource_dkvjp"]
+script = ExtResource("2_0pg8t")
+kind = 1
+key = &"family_taken_in"
+
+[sub_resource type="Resource" id="Resource_cdplv"]
+script = ExtResource("2_0pg8t")
+text = "The family was taken in, and given a patch at the edge, and within a month they had opinions about everything."
+
+[sub_resource type="Resource" id="Resource_1nwp6"]
+script = ExtResource("3_27u1g")
+kind = 12
+amount = 1
+
+[sub_resource type="Resource" id="Resource_lsndu"]
+script = ExtResource("1_8x3ki")
+id = &"take_a_family_in"
+label = "Take the family in"
+requires = Array[ExtResource("3_27u1g")]([SubResource("Resource_1nwp6")])
+effects = Array[ExtResource("2_0pg8t")]([SubResource("Resource_rsdf1"), SubResource("Resource_dkvjp"), SubResource("Resource_cdplv")])
+
+[sub_resource type="Resource" id="Resource_fed00"]
+script = ExtResource("2_0pg8t")
+kind = 0
+key = &"food"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_7453b"]
+script = ExtResource("2_0pg8t")
+kind = 1
+key = &"family_sent_on"
+
+[sub_resource type="Resource" id="Resource_ptvt2"]
+script = ExtResource("2_0pg8t")
+text = "The family was sent on with a sack of grain and good wishes, and were seen a month later a little way down the road, settled and waving."
+
+[sub_resource type="Resource" id="Resource_bc60c"]
+script = ExtResource("3_27u1g")
+kind = 2
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_p13t4"]
+script = ExtResource("1_8x3ki")
+id = &"send_them_on_with_grain"
+label = "Send them on with a sack of grain"
+requires = Array[ExtResource("3_27u1g")]([SubResource("Resource_bc60c")])
+effects = Array[ExtResource("2_0pg8t")]([SubResource("Resource_fed00"), SubResource("Resource_7453b"), SubResource("Resource_ptvt2")])
+
+[sub_resource type="Resource" id="Resource_23juw"]
+script = ExtResource("3_27u1g")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_uwpn4"]
+script = ExtResource("3_27u1g")
+kind = 11
+amount = 150
+
+[sub_resource type="Resource" id="Resource_ynpla"]
+script = ExtResource("3_27u1g")
+kind = 9
+key = &"fuller_harvest"
+
+[resource]
+script = ExtResource("4_67tf6")
+id = &"hands_for_the_field"
+title = "Hands for the field"
+body = "The new fields are wide, and there are not enough hands, and a family on the road has stopped to look at the gate."
+category = &"settlement"
+requires = Array[ExtResource("3_27u1g")]([SubResource("Resource_23juw"), SubResource("Resource_uwpn4"), SubResource("Resource_ynpla")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_8x3ki")]([SubResource("Resource_lsndu"), SubResource("Resource_p13t4")])

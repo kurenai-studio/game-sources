@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8mr8k"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_jwqnm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_opv5q"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_fntfo"]
+
+[sub_resource type="Resource" id="Resource_yn1oi"]
+script = ExtResource("2_jwqnm")
+text = "The meeting was so open that a goat wandered in and was asked its view, to general approval."
+
+[sub_resource type="Resource" id="Resource_bf5cc"]
+script = ExtResource("3_opv5q")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_8ndnp"]
+script = ExtResource("3_opv5q")
+key = &"open_meeting"
+
+[resource]
+script = ExtResource("4_fntfo")
+id = &"the_open_meeting"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_opv5q")]([SubResource("Resource_bf5cc"), SubResource("Resource_8ndnp")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_jwqnm")]([SubResource("Resource_yn1oi")])

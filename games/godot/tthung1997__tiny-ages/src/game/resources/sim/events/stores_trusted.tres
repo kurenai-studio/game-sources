@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7cfyo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_d0dwa"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_s4h73"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ib5vd"]
+
+[sub_resource type="Resource" id="Resource_nrtve"]
+script = ExtResource("2_d0dwa")
+text = "The stores were counted, found enough, and left alone."
+
+[sub_resource type="Resource" id="Resource_72jrr"]
+script = ExtResource("3_s4h73")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_wlg8s"]
+script = ExtResource("3_s4h73")
+key = &"trusted_stores"
+
+[resource]
+script = ExtResource("4_ib5vd")
+id = &"stores_trusted"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_s4h73")]([SubResource("Resource_72jrr"), SubResource("Resource_wlg8s")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_d0dwa")]([SubResource("Resource_nrtve")])

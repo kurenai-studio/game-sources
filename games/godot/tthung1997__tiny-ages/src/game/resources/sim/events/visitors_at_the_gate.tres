@@ -1,0 +1,108 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_t2xtq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_wcfb8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_54l14"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_61tgc"]
+
+[sub_resource type="Resource" id="Resource_bm72d"]
+script = ExtResource("2_wcfb8")
+kind = 1
+key = &"hosts_welcomed"
+
+[sub_resource type="Resource" id="Resource_wn126"]
+script = ExtResource("2_wcfb8")
+kind = 1
+key = &"towns_connected"
+
+[sub_resource type="Resource" id="Resource_hjuky"]
+script = ExtResource("2_wcfb8")
+kind = 10
+key = &"wider_world"
+text = "The Wider World"
+
+[sub_resource type="Resource" id="Resource_cti2p"]
+script = ExtResource("2_wcfb8")
+text = "Visiting towns were hosted in turn, a few days each, and the town learned how many ways there are of cooking the same bean."
+
+[sub_resource type="Resource" id="Resource_eq8tx"]
+script = ExtResource("1_t2xtq")
+id = &"host_the_visiting_towns"
+label = "Host the visiting towns, a few days each"
+effects = Array[ExtResource("2_wcfb8")]([SubResource("Resource_bm72d"), SubResource("Resource_wn126"), SubResource("Resource_hjuky"), SubResource("Resource_cti2p")])
+
+[sub_resource type="Resource" id="Resource_axy76"]
+script = ExtResource("2_wcfb8")
+kind = 1
+key = &"delegates_exchanged"
+
+[sub_resource type="Resource" id="Resource_wvpjv"]
+script = ExtResource("2_wcfb8")
+kind = 1
+key = &"towns_connected"
+
+[sub_resource type="Resource" id="Resource_3u1v8"]
+script = ExtResource("2_wcfb8")
+kind = 10
+key = &"wider_world"
+text = "The Wider World"
+
+[sub_resource type="Resource" id="Resource_epjry"]
+script = ExtResource("2_wcfb8")
+text = "Delegates were exchanged, and lived in each other's houses for a season, and came home with new words for the weather."
+
+[sub_resource type="Resource" id="Resource_6sol4"]
+script = ExtResource("1_t2xtq")
+id = &"exchange_delegates"
+label = "Exchange delegates, who live in each other's homes"
+effects = Array[ExtResource("2_wcfb8")]([SubResource("Resource_axy76"), SubResource("Resource_wvpjv"), SubResource("Resource_3u1v8"), SubResource("Resource_epjry")])
+
+[sub_resource type="Resource" id="Resource_ptmm3"]
+script = ExtResource("3_54l14")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_e6ntq"]
+script = ExtResource("3_54l14")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_qi853"]
+script = ExtResource("3_54l14")
+kind = 9
+key = &"wider_world"
+negate = true
+
+[sub_resource type="Resource" id="Resource_nkmyt"]
+script = ExtResource("3_54l14")
+kind = 9
+key = &"the_square"
+
+[sub_resource type="Resource" id="Resource_0wmpa"]
+script = ExtResource("3_54l14")
+kind = 9
+key = &"water_from_afar"
+
+[sub_resource type="Resource" id="Resource_l13tj"]
+script = ExtResource("3_54l14")
+key = &"path_assembly"
+
+[sub_resource type="Resource" id="Resource_n1j6t"]
+script = ExtResource("3_54l14")
+kind = 7
+
+[resource]
+script = ExtResource("4_61tgc")
+id = &"visitors_at_the_gate"
+title = "Visitors at the gate"
+body = "More towns than one have heard that the town has a square and a law, and some of their people have turned up at the gate with the air of having been invited."
+category = &"exploration"
+requires = Array[ExtResource("3_54l14")]([SubResource("Resource_ptmm3"), SubResource("Resource_e6ntq"), SubResource("Resource_qi853"), SubResource("Resource_nkmyt"), SubResource("Resource_0wmpa"), SubResource("Resource_l13tj")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_54l14")]([SubResource("Resource_n1j6t")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_t2xtq")]([SubResource("Resource_eq8tx"), SubResource("Resource_6sol4")])

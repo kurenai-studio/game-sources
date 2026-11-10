@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_w21rb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mh5xq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_3ut52"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ec4yw"]
+
+[sub_resource type="Resource" id="Resource_3kxdl"]
+script = ExtResource("2_mh5xq")
+text = "A ship put in at dusk and stayed three days, and the village learned some words it would rather not have."
+
+[sub_resource type="Resource" id="Resource_bhcbf"]
+script = ExtResource("3_3ut52")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_npx32"]
+script = ExtResource("3_3ut52")
+kind = 9
+key = &"name_abroad"
+
+[resource]
+script = ExtResource("4_ec4yw")
+id = &"a_ship_stays_three_days"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_3ut52")]([SubResource("Resource_bhcbf"), SubResource("Resource_npx32")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_mh5xq")]([SubResource("Resource_3kxdl")])

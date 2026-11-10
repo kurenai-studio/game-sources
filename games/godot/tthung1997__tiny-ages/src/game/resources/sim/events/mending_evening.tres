@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_f5y30"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rjkp5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_j1leu"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_xtdaq"]
+
+[sub_resource type="Resource" id="Resource_3dkw5"]
+script = ExtResource("2_rjkp5")
+text = "A pile of mending sat by the fire, half done, and talk was going over it like water."
+
+[sub_resource type="Resource" id="Resource_1dqj2"]
+script = ExtResource("3_j1leu")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_jnj1k"]
+script = ExtResource("3_j1leu")
+key = &"evening_work"
+
+[resource]
+script = ExtResource("4_xtdaq")
+id = &"mending_evening"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_j1leu")]([SubResource("Resource_1dqj2"), SubResource("Resource_jnj1k")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_rjkp5")]([SubResource("Resource_3dkw5")])

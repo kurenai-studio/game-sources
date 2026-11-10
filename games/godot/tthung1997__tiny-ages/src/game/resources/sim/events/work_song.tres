@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_g2ajc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_wqceg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_804k5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_etjmt"]
+
+[sub_resource type="Resource" id="Resource_oumqj"]
+script = ExtResource("2_wqceg")
+kind = 1
+key = &"work_song"
+
+[sub_resource type="Resource" id="Resource_ogyvq"]
+script = ExtResource("2_wqceg")
+text = "By evening the whole camp worked to {subject}'s rhythm, and nobody could stop humming it."
+
+[sub_resource type="Resource" id="Resource_07eav"]
+script = ExtResource("1_g2ajc")
+id = &"join_in"
+label = "Let everyone join in"
+effects = Array[ExtResource("2_wqceg")]([SubResource("Resource_oumqj"), SubResource("Resource_ogyvq")])
+
+[sub_resource type="Resource" id="Resource_bnduq"]
+script = ExtResource("2_wqceg")
+kind = 1
+key = &"work_quiet"
+
+[sub_resource type="Resource" id="Resource_exvfj"]
+script = ExtResource("2_wqceg")
+text = "{subject} kept the rhythm in their head, and tapped it on their knee."
+
+[sub_resource type="Resource" id="Resource_bd76c"]
+script = ExtResource("1_g2ajc")
+id = &"keep_it_quiet"
+label = "Ask for quiet while they work"
+effects = Array[ExtResource("2_wqceg")]([SubResource("Resource_bnduq"), SubResource("Resource_exvfj")])
+
+[sub_resource type="Resource" id="Resource_krpaq"]
+script = ExtResource("3_804k5")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_0t3jv"]
+script = ExtResource("3_804k5")
+kind = 5
+amount = 115
+
+[sub_resource type="Resource" id="Resource_b4vr8"]
+script = ExtResource("3_804k5")
+kind = 9
+key = &"shared_stories"
+
+[sub_resource type="Resource" id="Resource_jkfq2"]
+script = ExtResource("3_804k5")
+kind = 7
+
+[resource]
+script = ExtResource("4_etjmt")
+id = &"work_song"
+title = "A rhythm to work to"
+body = "{subject} has made up a rhythm to chop to, and keeps humming it. Others have begun to tap along."
+requires = Array[ExtResource("3_804k5")]([SubResource("Resource_krpaq"), SubResource("Resource_0t3jv"), SubResource("Resource_b4vr8")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_804k5")]([SubResource("Resource_jkfq2")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_g2ajc")]([SubResource("Resource_07eav"), SubResource("Resource_bd76c")])

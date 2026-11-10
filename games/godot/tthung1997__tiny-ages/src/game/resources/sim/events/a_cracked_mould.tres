@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7rau2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_4g45f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_bmlj5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0kt1d"]
+
+[sub_resource type="Resource" id="Resource_ypvji"]
+script = ExtResource("2_4g45f")
+kind = 1
+key = &"mould_patched"
+
+[sub_resource type="Resource" id="Resource_kjotd"]
+script = ExtResource("2_4g45f")
+text = "The crack was patched with wet clay and the mould went back to work, with a thin line down every blade like a signature."
+
+[sub_resource type="Resource" id="Resource_l4mu5"]
+script = ExtResource("1_7rau2")
+id = &"patch_the_mould"
+label = "Patch it with wet clay"
+effects = Array[ExtResource("2_4g45f")]([SubResource("Resource_ypvji"), SubResource("Resource_kjotd")])
+
+[sub_resource type="Resource" id="Resource_1cur3"]
+script = ExtResource("2_4g45f")
+kind = 1
+key = &"mould_remade"
+
+[sub_resource type="Resource" id="Resource_6wdqx"]
+script = ExtResource("2_4g45f")
+text = "The mould was broken with some ceremony and a new one made, a little bigger and a great deal more careful."
+
+[sub_resource type="Resource" id="Resource_k4nwl"]
+script = ExtResource("1_7rau2")
+id = &"break_and_remake"
+label = "Break it, and make a better one"
+effects = Array[ExtResource("2_4g45f")]([SubResource("Resource_1cur3"), SubResource("Resource_6wdqx")])
+
+[sub_resource type="Resource" id="Resource_2ti6g"]
+script = ExtResource("3_bmlj5")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_yjttp"]
+script = ExtResource("3_bmlj5")
+kind = 11
+amount = 78
+
+[sub_resource type="Resource" id="Resource_we3pm"]
+script = ExtResource("3_bmlj5")
+kind = 9
+key = &"first_casting"
+
+[resource]
+script = ExtResource("4_0kt1d")
+id = &"a_cracked_mould"
+title = "A cracked mould"
+body = "The best mould has a crack down one side, and everyone has been very careful not to mention whose elbow it was."
+category = &"settlement"
+requires = Array[ExtResource("3_bmlj5")]([SubResource("Resource_2ti6g"), SubResource("Resource_yjttp"), SubResource("Resource_we3pm")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_7rau2")]([SubResource("Resource_l4mu5"), SubResource("Resource_k4nwl")])

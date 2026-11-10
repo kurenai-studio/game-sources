@@ -1,0 +1,71 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_yh872"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ag3u2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_xlm4c"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_hiydg"]
+
+[sub_resource type="Resource" id="Resource_ia86f"]
+script = ExtResource("2_ag3u2")
+kind = 1
+key = &"words_written"
+
+[sub_resource type="Resource" id="Resource_4sxrd"]
+script = ExtResource("2_ag3u2")
+text = "The new words were written down, with what they meant, and the town's word-list grew by a page, and then, in an unfortunate week, by three."
+
+[sub_resource type="Resource" id="Resource_308so"]
+script = ExtResource("1_yh872")
+id = &"write_the_words_down"
+label = "Write them down, with what they mean"
+effects = Array[ExtResource("2_ag3u2")]([SubResource("Resource_ia86f"), SubResource("Resource_4sxrd")])
+
+[sub_resource type="Resource" id="Resource_7kgx6"]
+script = ExtResource("2_ag3u2")
+kind = 1
+key = &"words_spread"
+
+[sub_resource type="Resource" id="Resource_oblv8"]
+script = ExtResource("2_ag3u2")
+text = "The new words were let spread by use, and some stayed, and some did not, and the ones that stayed turned out to be the rude ones."
+
+[sub_resource type="Resource" id="Resource_1de4i"]
+script = ExtResource("1_yh872")
+id = &"let_them_spread"
+label = "Let them spread by use, and see which stay"
+effects = Array[ExtResource("2_ag3u2")]([SubResource("Resource_7kgx6"), SubResource("Resource_oblv8")])
+
+[sub_resource type="Resource" id="Resource_anwd0"]
+script = ExtResource("3_xlm4c")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_x0dwx"]
+script = ExtResource("3_xlm4c")
+kind = 11
+amount = 278
+
+[sub_resource type="Resource" id="Resource_gpu5g"]
+script = ExtResource("3_xlm4c")
+kind = 9
+key = &"wider_world"
+
+[sub_resource type="Resource" id="Resource_jdwyg"]
+script = ExtResource("3_xlm4c")
+kind = 7
+
+[resource]
+script = ExtResource("4_hiydg")
+id = &"words_brought_home"
+title = "Words brought home"
+body = "{subject} has come back from the other towns with a head full of words that nobody at home has, and a worrying tendency to use them."
+category = &"exploration"
+requires = Array[ExtResource("3_xlm4c")]([SubResource("Resource_anwd0"), SubResource("Resource_x0dwx"), SubResource("Resource_gpu5g")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_xlm4c")]([SubResource("Resource_jdwyg")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_yh872")]([SubResource("Resource_308so"), SubResource("Resource_1de4i")])

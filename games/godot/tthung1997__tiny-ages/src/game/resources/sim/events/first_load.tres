@@ -1,0 +1,107 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7egw4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7qnx8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_r604n"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_uks1o"]
+
+[sub_resource type="Resource" id="Resource_p0yi2"]
+script = ExtResource("2_7qnx8")
+kind = 1
+key = &"tin_bought"
+
+[sub_resource type="Resource" id="Resource_lpyqh"]
+script = ExtResource("2_7qnx8")
+kind = 0
+key = &"food"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_yf1ak"]
+script = ExtResource("2_7qnx8")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_0wxkc"]
+script = ExtResource("2_7qnx8")
+text = "The carrier was paid in food and the sand was mixed into the next pour. What came out was harder, and the colour of a warm autumn."
+
+[sub_resource type="Resource" id="Resource_iyq2r"]
+script = ExtResource("3_r604n")
+kind = 2
+key = &"food"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_7pffg"]
+script = ExtResource("1_7egw4")
+id = &"pay_the_carrier"
+label = "Pay the carrier in food"
+requires = Array[ExtResource("3_r604n")]([SubResource("Resource_iyq2r")])
+effects = Array[ExtResource("2_7qnx8")]([SubResource("Resource_p0yi2"), SubResource("Resource_lpyqh"), SubResource("Resource_yf1ak"), SubResource("Resource_0wxkc")])
+
+[sub_resource type="Resource" id="Resource_saj6x"]
+script = ExtResource("2_7qnx8")
+kind = 1
+key = &"tin_owed"
+
+[sub_resource type="Resource" id="Resource_y24ci"]
+script = ExtResource("2_7qnx8")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_mb5gq"]
+script = ExtResource("2_7qnx8")
+text = "A load of next harvest was promised, and the carrier wrote it down on a stick. The metal that came out of the pour was hard, and slightly in debt."
+
+[sub_resource type="Resource" id="Resource_ipqa4"]
+script = ExtResource("1_7egw4")
+id = &"promise_a_load"
+label = "Promise a load of the next harvest"
+effects = Array[ExtResource("2_7qnx8")]([SubResource("Resource_saj6x"), SubResource("Resource_y24ci"), SubResource("Resource_mb5gq")])
+
+[sub_resource type="Resource" id="Resource_wvnbm"]
+script = ExtResource("3_r604n")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_ve0c0"]
+script = ExtResource("3_r604n")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_ssgmk"]
+script = ExtResource("3_r604n")
+kind = 9
+key = &"bronze_alloy"
+negate = true
+
+[sub_resource type="Resource" id="Resource_uqvcw"]
+script = ExtResource("3_r604n")
+kind = 9
+key = &"first_casting"
+
+[sub_resource type="Resource" id="Resource_74m0a"]
+script = ExtResource("3_r604n")
+kind = 0
+key = &"trading_post"
+
+[sub_resource type="Resource" id="Resource_vlgx5"]
+script = ExtResource("3_r604n")
+kind = 7
+
+[resource]
+script = ExtResource("4_uks1o")
+id = &"first_load"
+title = "The first load up the road"
+body = "The first load of grey sand has come up the road in sacks, and the carrier is sure it is the missing half of the metal."
+category = &"settlement"
+requires = Array[ExtResource("3_r604n")]([SubResource("Resource_wvnbm"), SubResource("Resource_ve0c0"), SubResource("Resource_ssgmk"), SubResource("Resource_uqvcw"), SubResource("Resource_74m0a")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_r604n")]([SubResource("Resource_vlgx5")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_7egw4")]([SubResource("Resource_7pffg"), SubResource("Resource_ipqa4")])

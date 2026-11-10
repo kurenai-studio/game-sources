@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_tu68m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_f42g2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lw6ms"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3qdb1"]
+
+[sub_resource type="Resource" id="Resource_sr3cd"]
+script = ExtResource("2_f42g2")
+text = "{subject} tried the new edge on every piece of wood in reach, and was forgiven only by the firewood pile."
+
+[sub_resource type="Resource" id="Resource_da1fh"]
+script = ExtResource("3_lw6ms")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_t7te8"]
+script = ExtResource("3_lw6ms")
+kind = 9
+key = &"first_bloom"
+
+[sub_resource type="Resource" id="Resource_cybq4"]
+script = ExtResource("3_lw6ms")
+kind = 6
+key = &"industrious"
+
+[sub_resource type="Resource" id="Resource_bcoai"]
+script = ExtResource("3_lw6ms")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_gr0l5"]
+script = ExtResource("3_lw6ms")
+kind = 10
+
+[resource]
+script = ExtResource("4_3qdb1")
+id = &"trying_the_edge"
+title = "A quiet moment"
+requires = Array[ExtResource("3_lw6ms")]([SubResource("Resource_da1fh"), SubResource("Resource_t7te8")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_lw6ms")]([SubResource("Resource_cybq4"), SubResource("Resource_bcoai"), SubResource("Resource_gr0l5")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_f42g2")]([SubResource("Resource_sr3cd")])

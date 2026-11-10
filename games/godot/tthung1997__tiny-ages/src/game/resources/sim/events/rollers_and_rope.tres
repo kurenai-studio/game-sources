@@ -1,0 +1,84 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_34ult"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_j5bw0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jtfs8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mk7b3"]
+
+[sub_resource type="Resource" id="Resource_vvcy0"]
+script = ExtResource("2_j5bw0")
+kind = 1
+key = &"rollers"
+
+[sub_resource type="Resource" id="Resource_asrr3"]
+script = ExtResource("2_j5bw0")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_8c7ya"]
+script = ExtResource("2_j5bw0")
+text = "The load rode on poles that had to be carried round from the back to the front as it went, and the line of walking poles was oddly graceful."
+
+[sub_resource type="Resource" id="Resource_8ejwf"]
+script = ExtResource("1_34ult")
+id = &"drag_on_rollers"
+label = "Drag it on rollers"
+effects = Array[ExtResource("2_j5bw0")]([SubResource("Resource_vvcy0"), SubResource("Resource_asrr3"), SubResource("Resource_8c7ya")])
+
+[sub_resource type="Resource" id="Resource_ttsb2"]
+script = ExtResource("2_j5bw0")
+kind = 1
+key = &"relays"
+
+[sub_resource type="Resource" id="Resource_e4k7x"]
+script = ExtResource("2_j5bw0")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_d8ayf"]
+script = ExtResource("2_j5bw0")
+text = "The load went from hand to hand along the road, a few steps each, and arrived before any of them had worked out how tired they were."
+
+[sub_resource type="Resource" id="Resource_nqmvt"]
+script = ExtResource("1_34ult")
+id = &"carry_in_relays"
+label = "Carry it in relays"
+effects = Array[ExtResource("2_j5bw0")]([SubResource("Resource_ttsb2"), SubResource("Resource_e4k7x"), SubResource("Resource_d8ayf")])
+
+[sub_resource type="Resource" id="Resource_1oola"]
+script = ExtResource("3_jtfs8")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_0plei"]
+script = ExtResource("3_jtfs8")
+kind = 11
+amount = 198
+
+[sub_resource type="Resource" id="Resource_5k2hs"]
+script = ExtResource("3_jtfs8")
+kind = 9
+key = &"wheel_and_road"
+negate = true
+
+[sub_resource type="Resource" id="Resource_ubyu2"]
+script = ExtResource("3_jtfs8")
+kind = 7
+
+[resource]
+script = ExtResource("4_mk7b3")
+id = &"rollers_and_rope"
+title = "Poles and rope"
+body = "The load is too heavy to carry and too light to be worth the argument. Somebody has found a stack of straight poles."
+category = &"settlement"
+requires = Array[ExtResource("3_jtfs8")]([SubResource("Resource_1oola"), SubResource("Resource_0plei"), SubResource("Resource_5k2hs")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_jtfs8")]([SubResource("Resource_ubyu2")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_34ult")]([SubResource("Resource_8ejwf"), SubResource("Resource_nqmvt")])

@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_74lhx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_q4ybw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_2nnxq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_kyw3e"]
+
+[sub_resource type="Resource" id="Resource_1nxrf"]
+script = ExtResource("2_q4ybw")
+kind = 1
+key = &"coin_to_stones"
+
+[sub_resource type="Resource" id="Resource_7edyu"]
+script = ExtResource("2_q4ybw")
+kind = 1
+key = &"coin_struck"
+
+[sub_resource type="Resource" id="Resource_hfbk4"]
+script = ExtResource("2_q4ybw")
+kind = 10
+key = &"silver_by_weight"
+text = "Silver by Weight"
+
+[sub_resource type="Resource" id="Resource_4ndu8"]
+script = ExtResource("2_q4ybw")
+text = "The silver was cut into pieces that balanced against the river stones, and the pieces were stamped so they could not be mistaken for anything else."
+
+[sub_resource type="Resource" id="Resource_na84m"]
+script = ExtResource("1_74lhx")
+id = &"cut_it_to_the_stones"
+label = "Cut it to the weight stones"
+effects = Array[ExtResource("2_q4ybw")]([SubResource("Resource_1nxrf"), SubResource("Resource_7edyu"), SubResource("Resource_hfbk4"), SubResource("Resource_4ndu8")])
+
+[sub_resource type="Resource" id="Resource_5nqgr"]
+script = ExtResource("2_q4ybw")
+kind = 1
+key = &"coin_stamped"
+
+[sub_resource type="Resource" id="Resource_lwfrd"]
+script = ExtResource("2_q4ybw")
+kind = 1
+key = &"coin_struck"
+
+[sub_resource type="Resource" id="Resource_cogr4"]
+script = ExtResource("2_q4ybw")
+kind = 10
+key = &"silver_by_weight"
+text = "Silver by Weight"
+
+[sub_resource type="Resource" id="Resource_p2cop"]
+script = ExtResource("2_q4ybw")
+text = "The silver was beaten flat and stamped, and for the first time a thing was worth what the town said it was worth."
+
+[sub_resource type="Resource" id="Resource_dj10s"]
+script = ExtResource("1_74lhx")
+id = &"stamp_it_flat"
+label = "Beat it flat and stamp the town's mark"
+effects = Array[ExtResource("2_q4ybw")]([SubResource("Resource_5nqgr"), SubResource("Resource_lwfrd"), SubResource("Resource_cogr4"), SubResource("Resource_p2cop")])
+
+[sub_resource type="Resource" id="Resource_t6x4o"]
+script = ExtResource("3_2nnxq")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_8kmu6"]
+script = ExtResource("3_2nnxq")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_fonin"]
+script = ExtResource("3_2nnxq")
+kind = 9
+key = &"silver_by_weight"
+negate = true
+
+[sub_resource type="Resource" id="Resource_fnht8"]
+script = ExtResource("3_2nnxq")
+kind = 9
+key = &"fuller_harvest"
+
+[sub_resource type="Resource" id="Resource_qu0mt"]
+script = ExtResource("3_2nnxq")
+key = &"stone_weights"
+
+[sub_resource type="Resource" id="Resource_jaaci"]
+script = ExtResource("3_2nnxq")
+kind = 7
+
+[resource]
+script = ExtResource("4_kyw3e")
+id = &"silver_to_the_stones"
+title = "A lump of silver"
+body = "A trader has left a lump of silver in payment for a debt, and now the village has a lump of silver and the problem of what it is worth."
+category = &"settlement"
+requires = Array[ExtResource("3_2nnxq")]([SubResource("Resource_t6x4o"), SubResource("Resource_8kmu6"), SubResource("Resource_fonin"), SubResource("Resource_fnht8"), SubResource("Resource_qu0mt")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_2nnxq")]([SubResource("Resource_jaaci")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_74lhx")]([SubResource("Resource_na84m"), SubResource("Resource_dj10s")])

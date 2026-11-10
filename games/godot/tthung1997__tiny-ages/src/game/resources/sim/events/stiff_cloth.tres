@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8mqp6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_sf0k0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_x15on"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gf2l8"]
+
+[sub_resource type="Resource" id="Resource_f4ron"]
+script = ExtResource("2_sf0k0")
+text = "The coarse flax cloth stood up by itself in the corner, and was somehow admired."
+
+[sub_resource type="Resource" id="Resource_c8vbt"]
+script = ExtResource("3_x15on")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_rykt7"]
+script = ExtResource("3_x15on")
+key = &"flax_beaten"
+
+[resource]
+script = ExtResource("4_gf2l8")
+id = &"stiff_cloth"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_x15on")]([SubResource("Resource_c8vbt"), SubResource("Resource_rykt7")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_sf0k0")]([SubResource("Resource_f4ron")])

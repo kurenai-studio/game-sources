@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_72e24"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_o1rhm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_agb8y"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_skqpg"]
+
+[sub_resource type="Resource" id="Resource_ydgqk"]
+script = ExtResource("2_o1rhm")
+text = "{subject} hummed while working, and before long someone hummed back."
+
+[sub_resource type="Resource" id="Resource_7caa7"]
+script = ExtResource("3_agb8y")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_gmvxs"]
+script = ExtResource("3_agb8y")
+kind = 6
+key = &"social"
+
+[sub_resource type="Resource" id="Resource_bkaeu"]
+script = ExtResource("3_agb8y")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_grtkq"]
+script = ExtResource("3_agb8y")
+kind = 10
+
+[resource]
+script = ExtResource("4_skqpg")
+id = &"humming"
+title = "A quiet moment"
+requires = Array[ExtResource("3_agb8y")]([SubResource("Resource_7caa7")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_agb8y")]([SubResource("Resource_gmvxs"), SubResource("Resource_bkaeu"), SubResource("Resource_grtkq")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_o1rhm")]([SubResource("Resource_ydgqk")])

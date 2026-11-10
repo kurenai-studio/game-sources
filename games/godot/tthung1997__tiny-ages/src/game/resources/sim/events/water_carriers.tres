@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ow4k6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_e7vee"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_j6tc6"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7y8d3"]
+
+[sub_resource type="Resource" id="Resource_gvrpy"]
+script = ExtResource("2_e7vee")
+text = "Two people came up from the river with full pots, arguing about whose turn it was."
+
+[sub_resource type="Resource" id="Resource_hucs8"]
+script = ExtResource("3_j6tc6")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_loxkv"]
+script = ExtResource("3_j6tc6")
+key = &"well_carriers"
+
+[resource]
+script = ExtResource("4_7y8d3")
+id = &"water_carriers"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_j6tc6")]([SubResource("Resource_hucs8"), SubResource("Resource_loxkv")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_e7vee")]([SubResource("Resource_gvrpy")])

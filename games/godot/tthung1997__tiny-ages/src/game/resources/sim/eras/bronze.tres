@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EraDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/era_def.gd" id="1_dquws"]
+
+[resource]
+script = ExtResource("1_dquws")
+id = &"bronze"
+display_name = "Bronze Age"
+order = 2
+description = "Metal, roads and walls: villages grow into towns and look over the sea."
+intro_text = "The green stone changed what the fire could do, and a new age began."
+housing = 8
+max_villagers = 10
+food_need_scale = 1.3
+food_yield_scale = 1.3
+wood_yield_scale = 1.2
+required_achievements = Array[StringName]([&"first_roof", &"first_harvest", &"fired_clay", &"woven_cloth", &"a_village", &"green_stone"])
+min_ticks_in_previous_era = 8640
+turn_event = &"the_metals_road"

@@ -1,0 +1,120 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_4a66f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7mi0p"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_bnw8m"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ea6ct"]
+
+[sub_resource type="Resource" id="Resource_byvsp"]
+script = ExtResource("2_7mi0p")
+kind = 1
+key = &"ridge_ringed"
+
+[sub_resource type="Resource" id="Resource_xacr5"]
+script = ExtResource("2_7mi0p")
+kind = 1
+key = &"hill_fort"
+
+[sub_resource type="Resource" id="Resource_ihs04"]
+script = ExtResource("2_7mi0p")
+kind = 0
+key = &"wood"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_ifhdy"]
+script = ExtResource("2_7mi0p")
+kind = 10
+key = &"the_hill_fort"
+text = "The Hill-fort"
+
+[sub_resource type="Resource" id="Resource_bil3l"]
+script = ExtResource("2_7mi0p")
+text = "A bank and a ditch went round the top of the ridge, and for the first time the town had somewhere to go when it wanted to feel safe."
+
+[sub_resource type="Resource" id="Resource_4k2po"]
+script = ExtResource("3_bnw8m")
+kind = 2
+key = &"wood"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_lgviw"]
+script = ExtResource("1_4a66f")
+id = &"bank_and_ditch_the_ridge"
+label = "Throw a bank and ditch round the top"
+requires = Array[ExtResource("3_bnw8m")]([SubResource("Resource_4k2po")])
+effects = Array[ExtResource("2_7mi0p")]([SubResource("Resource_byvsp"), SubResource("Resource_xacr5"), SubResource("Resource_ihs04"), SubResource("Resource_ifhdy"), SubResource("Resource_bil3l")])
+
+[sub_resource type="Resource" id="Resource_5v2uv"]
+script = ExtResource("2_7mi0p")
+kind = 1
+key = &"ridge_stockade"
+
+[sub_resource type="Resource" id="Resource_6fay0"]
+script = ExtResource("2_7mi0p")
+kind = 1
+key = &"hill_fort"
+
+[sub_resource type="Resource" id="Resource_ryuup"]
+script = ExtResource("2_7mi0p")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_kw7i5"]
+script = ExtResource("2_7mi0p")
+kind = 10
+key = &"the_hill_fort"
+text = "The Hill-fort"
+
+[sub_resource type="Resource" id="Resource_etqha"]
+script = ExtResource("2_7mi0p")
+text = "A stockade of split oak went along the crest, and from the town below it looked like a crown on a rather surprised hill."
+
+[sub_resource type="Resource" id="Resource_8mxjf"]
+script = ExtResource("3_bnw8m")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_cvlqq"]
+script = ExtResource("1_4a66f")
+id = &"a_stockade_on_the_ridge"
+label = "Set a stockade along the crest"
+requires = Array[ExtResource("3_bnw8m")]([SubResource("Resource_8mxjf")])
+effects = Array[ExtResource("2_7mi0p")]([SubResource("Resource_5v2uv"), SubResource("Resource_6fay0"), SubResource("Resource_ryuup"), SubResource("Resource_kw7i5"), SubResource("Resource_etqha")])
+
+[sub_resource type="Resource" id="Resource_7eehe"]
+script = ExtResource("3_bnw8m")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_mgmqx"]
+script = ExtResource("3_bnw8m")
+kind = 11
+amount = 108
+
+[sub_resource type="Resource" id="Resource_q12dy"]
+script = ExtResource("3_bnw8m")
+kind = 9
+key = &"the_hill_fort"
+negate = true
+
+[sub_resource type="Resource" id="Resource_krbxr"]
+script = ExtResource("3_bnw8m")
+kind = 7
+
+[resource]
+script = ExtResource("4_ea6ct")
+id = &"ring_the_ridge"
+title = "The ridge above the town"
+body = "Above the town the ridge stands up like an upturned bowl. Somebody has pointed out that anyone standing on it can see everything, and so can anyone else."
+category = &"settlement"
+requires = Array[ExtResource("3_bnw8m")]([SubResource("Resource_7eehe"), SubResource("Resource_mgmqx"), SubResource("Resource_q12dy")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_bnw8m")]([SubResource("Resource_krbxr")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_4a66f")]([SubResource("Resource_lgviw"), SubResource("Resource_cvlqq")])

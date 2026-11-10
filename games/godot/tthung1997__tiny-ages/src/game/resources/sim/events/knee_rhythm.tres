@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_22fjf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_n0727"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_28rdm"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_aa48g"]
+
+[sub_resource type="Resource" id="Resource_tl5mf"]
+script = ExtResource("2_n0727")
+text = "Someone tapped a rhythm on their knee while they worked, and it was nobody's but theirs."
+
+[sub_resource type="Resource" id="Resource_7v4ro"]
+script = ExtResource("3_28rdm")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_3mxpb"]
+script = ExtResource("3_28rdm")
+key = &"work_quiet"
+
+[resource]
+script = ExtResource("4_aa48g")
+id = &"knee_rhythm"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_28rdm")]([SubResource("Resource_7v4ro"), SubResource("Resource_3mxpb")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_n0727")]([SubResource("Resource_tl5mf")])

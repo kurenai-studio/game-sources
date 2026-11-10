@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_e74n5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_d2qum"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fspbd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_2yaaa"]
+
+[sub_resource type="Resource" id="Resource_m0wtd"]
+script = ExtResource("2_d2qum")
+text = "The first blade hung by the door, and was taken down, admired and put back so often that the cord wore thin."
+
+[sub_resource type="Resource" id="Resource_uilfm"]
+script = ExtResource("3_fspbd")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_np3fi"]
+script = ExtResource("3_fspbd")
+key = &"first_blade"
+
+[resource]
+script = ExtResource("4_2yaaa")
+id = &"first_blade_on_the_wall"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_fspbd")]([SubResource("Resource_uilfm"), SubResource("Resource_np3fi")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_d2qum")]([SubResource("Resource_m0wtd")])

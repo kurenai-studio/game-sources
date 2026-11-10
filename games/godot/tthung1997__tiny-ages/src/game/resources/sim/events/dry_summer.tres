@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_lnbqy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3ke6h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_iq7tv"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_25ofr"]
+
+[sub_resource type="Resource" id="Resource_j0pbx"]
+script = ExtResource("2_3ke6h")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_jb2g3"]
+script = ExtResource("2_3ke6h")
+kind = 18
+
+[sub_resource type="Resource" id="Resource_s1hh0"]
+script = ExtResource("2_3ke6h")
+kind = 1
+key = &"carry_water"
+
+[sub_resource type="Resource" id="Resource_hyhh7"]
+script = ExtResource("2_3ke6h")
+text = "Water came up from the river in yokes and jars all week, and the damage was put right."
+
+[sub_resource type="Resource" id="Resource_iaxju"]
+script = ExtResource("3_iq7tv")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_l7u01"]
+script = ExtResource("1_lnbqy")
+id = &"carry_water"
+label = "Carry water up from the river"
+requires = Array[ExtResource("3_iq7tv")]([SubResource("Resource_iaxju")])
+effects = Array[ExtResource("2_3ke6h")]([SubResource("Resource_j0pbx"), SubResource("Resource_jb2g3"), SubResource("Resource_s1hh0"), SubResource("Resource_hyhh7")])
+
+[sub_resource type="Resource" id="Resource_een5l"]
+script = ExtResource("2_3ke6h")
+kind = 0
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_0pdtv"]
+script = ExtResource("2_3ke6h")
+kind = 1
+key = &"follow_the_fish"
+
+[sub_resource type="Resource" id="Resource_ufg4d"]
+script = ExtResource("2_3ke6h")
+text = "The baskets went down to the pools where the fish were trapped, and came back full. The damage would be mended by hand in time."
+
+[sub_resource type="Resource" id="Resource_7jm0b"]
+script = ExtResource("1_lnbqy")
+id = &"follow_the_fish"
+label = "Follow the river down to the fish pools"
+effects = Array[ExtResource("2_3ke6h")]([SubResource("Resource_een5l"), SubResource("Resource_0pdtv"), SubResource("Resource_ufg4d")])
+
+[sub_resource type="Resource" id="Resource_csp6a"]
+script = ExtResource("2_3ke6h")
+kind = 15
+key = &"drought"
+
+[sub_resource type="Resource" id="Resource_ufkd3"]
+script = ExtResource("2_3ke6h")
+kind = 17
+key = &"dry"
+text = "The ground cracked in the heat, and the {building} split and curled."
+
+[sub_resource type="Resource" id="Resource_k62g5"]
+script = ExtResource("3_iq7tv")
+kind = 13
+amount = 1
+
+[sub_resource type="Resource" id="Resource_uscr6"]
+script = ExtResource("3_iq7tv")
+kind = 14
+
+[sub_resource type="Resource" id="Resource_nbdtg"]
+script = ExtResource("3_iq7tv")
+key = &"well_dug"
+negate = true
+
+[sub_resource type="Resource" id="Resource_fynad"]
+script = ExtResource("3_iq7tv")
+kind = 15
+key = &"dry"
+
+[resource]
+script = ExtResource("4_25ofr")
+id = &"dry_summer"
+title = "No rain for weeks"
+body = "The river has shrunk to a trickle and the ground has begun to crack. Everything that needs water is going without."
+category = &"nature"
+requires = Array[ExtResource("3_iq7tv")]([SubResource("Resource_k62g5"), SubResource("Resource_uscr6"), SubResource("Resource_nbdtg"), SubResource("Resource_fynad")])
+chance_per_tick = 0.002
+cooldown_ticks = 960
+effects = Array[ExtResource("2_3ke6h")]([SubResource("Resource_csp6a"), SubResource("Resource_ufkd3")])
+choices = Array[ExtResource("1_lnbqy")]([SubResource("Resource_l7u01"), SubResource("Resource_7jm0b")])

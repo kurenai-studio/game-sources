@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_5hlxe"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_0dx7g"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nj4kb"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_8f4y4"]
+
+[sub_resource type="Resource" id="Resource_5m1a7"]
+script = ExtResource("2_0dx7g")
+kind = 1
+key = &"panned_all_day"
+
+[sub_resource type="Resource" id="Resource_7ybpa"]
+script = ExtResource("2_0dx7g")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_a1sxw"]
+script = ExtResource("2_0dx7g")
+text = "A whole day's sand was washed, and the dish at the end of it held a spoonful of heavy grains and a great many damp feet."
+
+[sub_resource type="Resource" id="Resource_r7m81"]
+script = ExtResource("1_5hlxe")
+id = &"wash_all_day"
+label = "Wash a whole day's sand"
+effects = Array[ExtResource("2_0dx7g")]([SubResource("Resource_5m1a7"), SubResource("Resource_7ybpa"), SubResource("Resource_a1sxw")])
+
+[sub_resource type="Resource" id="Resource_van5k"]
+script = ExtResource("2_0dx7g")
+kind = 1
+key = &"panned_each_morning"
+
+[sub_resource type="Resource" id="Resource_ld1ot"]
+script = ExtResource("2_0dx7g")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_cs3bt"]
+script = ExtResource("2_0dx7g")
+text = "A little sand was washed every morning before anyone was properly awake, and by the end of the month there was enough."
+
+[sub_resource type="Resource" id="Resource_m26wi"]
+script = ExtResource("1_5hlxe")
+id = &"wash_each_morning"
+label = "Wash a little every morning"
+effects = Array[ExtResource("2_0dx7g")]([SubResource("Resource_van5k"), SubResource("Resource_ld1ot"), SubResource("Resource_cs3bt")])
+
+[sub_resource type="Resource" id="Resource_60oat"]
+script = ExtResource("3_nj4kb")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_580fc"]
+script = ExtResource("3_nj4kb")
+kind = 11
+amount = 90
+
+[sub_resource type="Resource" id="Resource_t0din"]
+script = ExtResource("3_nj4kb")
+kind = 9
+key = &"bronze_alloy"
+negate = true
+
+[sub_resource type="Resource" id="Resource_3agst"]
+script = ExtResource("3_nj4kb")
+kind = 9
+key = &"first_casting"
+
+[sub_resource type="Resource" id="Resource_684me"]
+script = ExtResource("3_nj4kb")
+kind = 7
+
+[resource]
+script = ExtResource("4_8f4y4")
+id = &"panned_in_the_stream"
+title = "Heavy grains in the stream"
+body = "Somebody has been washing the stream sand in a flat dish, and keeps finding the same heavy grey grains at the bottom of it."
+category = &"settlement"
+requires = Array[ExtResource("3_nj4kb")]([SubResource("Resource_60oat"), SubResource("Resource_580fc"), SubResource("Resource_t0din"), SubResource("Resource_3agst")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_nj4kb")]([SubResource("Resource_684me")])
+trait_weights = Dictionary[StringName, float]({
+&"nature_loving": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_5hlxe")]([SubResource("Resource_r7m81"), SubResource("Resource_m26wi")])

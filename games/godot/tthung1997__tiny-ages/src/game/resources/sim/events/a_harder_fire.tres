@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_15l0y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_k13ka"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_tnhm6"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ttl6s"]
+
+[sub_resource type="Resource" id="Resource_ctqgl"]
+script = ExtResource("2_k13ka")
+kind = 1
+key = &"path_bloomery"
+
+[sub_resource type="Resource" id="Resource_kf6lm"]
+script = ExtResource("2_k13ka")
+kind = 12
+key = &"iron"
+
+[sub_resource type="Resource" id="Resource_t72bn"]
+script = ExtResource("2_k13ka")
+text = "The red mud of the river flats was dug out in baskets, and a furnace went up taller than the smithy, and everyone stood well back from it."
+
+[sub_resource type="Resource" id="Resource_1521n"]
+script = ExtResource("1_15l0y")
+id = &"work_it_at_home"
+label = "Dig the red mud from the flats, and build a hotter furnace"
+effects = Array[ExtResource("2_k13ka")]([SubResource("Resource_ctqgl"), SubResource("Resource_kf6lm"), SubResource("Resource_t72bn")])
+
+[sub_resource type="Resource" id="Resource_jbyqn"]
+script = ExtResource("2_k13ka")
+kind = 1
+key = &"path_ore"
+
+[sub_resource type="Resource" id="Resource_l3gju"]
+script = ExtResource("2_k13ka")
+kind = 12
+key = &"iron"
+
+[sub_resource type="Resource" id="Resource_mwpdn"]
+script = ExtResource("2_k13ka")
+text = "A few people walked up into the dark hills with empty sacks, and came back with full ones, a limp, and a very clear idea of where the stone had come from."
+
+[sub_resource type="Resource" id="Resource_khmuu"]
+script = ExtResource("1_15l0y")
+id = &"follow_it_to_the_hills"
+label = "Follow the stone back to the dark hills"
+effects = Array[ExtResource("2_k13ka")]([SubResource("Resource_jbyqn"), SubResource("Resource_l3gju"), SubResource("Resource_mwpdn")])
+
+[resource]
+script = ExtResource("4_ttl6s")
+id = &"a_harder_fire"
+title = "A harder fire"
+body = "The dark stone will not melt in the bronze fire, however hot the bellows make it. It glows, and sulks, and rings when it is struck, which is more than most stones do."
+category = &"settlement"
+choices = Array[ExtResource("1_15l0y")]([SubResource("Resource_1521n"), SubResource("Resource_khmuu")])

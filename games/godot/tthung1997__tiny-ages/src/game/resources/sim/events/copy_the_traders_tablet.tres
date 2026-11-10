@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_11yge"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_hrv2w"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_wxui2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_udxmj"]
+
+[sub_resource type="Resource" id="Resource_ect43"]
+script = ExtResource("2_hrv2w")
+kind = 1
+key = &"tablet_copied"
+
+[sub_resource type="Resource" id="Resource_6xwgu"]
+script = ExtResource("2_hrv2w")
+kind = 1
+key = &"letters"
+
+[sub_resource type="Resource" id="Resource_s8oww"]
+script = ExtResource("2_hrv2w")
+kind = 10
+key = &"written_word"
+text = "The Written Word"
+
+[sub_resource type="Resource" id="Resource_ihmdt"]
+script = ExtResource("2_hrv2w")
+text = "The tablet was copied sign by sign, and the copy was checked against it, and by the end three people could read it aloud, and did."
+
+[sub_resource type="Resource" id="Resource_21cfb"]
+script = ExtResource("1_11yge")
+id = &"copy_it_sign_by_sign"
+label = "Copy it sign by sign"
+effects = Array[ExtResource("2_hrv2w")]([SubResource("Resource_ect43"), SubResource("Resource_6xwgu"), SubResource("Resource_s8oww"), SubResource("Resource_ihmdt")])
+
+[sub_resource type="Resource" id="Resource_d4ahv"]
+script = ExtResource("2_hrv2w")
+kind = 1
+key = &"signs_by_heart"
+
+[sub_resource type="Resource" id="Resource_p6wrv"]
+script = ExtResource("2_hrv2w")
+kind = 1
+key = &"letters"
+
+[sub_resource type="Resource" id="Resource_hanq2"]
+script = ExtResource("2_hrv2w")
+kind = 10
+key = &"written_word"
+text = "The Written Word"
+
+[sub_resource type="Resource" id="Resource_bu840"]
+script = ExtResource("2_hrv2w")
+text = "The signs were learned by heart, and written from memory, and only a few were backwards, and nobody minded."
+
+[sub_resource type="Resource" id="Resource_ri6or"]
+script = ExtResource("1_11yge")
+id = &"learn_it_by_heart"
+label = "Learn the signs by heart, and write them from memory"
+effects = Array[ExtResource("2_hrv2w")]([SubResource("Resource_d4ahv"), SubResource("Resource_p6wrv"), SubResource("Resource_hanq2"), SubResource("Resource_bu840")])
+
+[sub_resource type="Resource" id="Resource_4frcn"]
+script = ExtResource("3_wxui2")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_y8nh4"]
+script = ExtResource("3_wxui2")
+kind = 11
+amount = 246
+
+[sub_resource type="Resource" id="Resource_rlwoh"]
+script = ExtResource("3_wxui2")
+kind = 9
+key = &"written_word"
+negate = true
+
+[sub_resource type="Resource" id="Resource_m6ri1"]
+script = ExtResource("3_wxui2")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_8dkda"]
+script = ExtResource("3_wxui2")
+kind = 7
+
+[resource]
+script = ExtResource("4_udxmj")
+id = &"copy_the_traders_tablet"
+title = "A trader's tablet"
+body = "A trader has left a tablet covered in small neat signs, and a very strong impression that they mean something."
+category = &"settlement"
+requires = Array[ExtResource("3_wxui2")]([SubResource("Resource_4frcn"), SubResource("Resource_y8nh4"), SubResource("Resource_rlwoh"), SubResource("Resource_m6ri1")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_wxui2")]([SubResource("Resource_8dkda")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_11yge")]([SubResource("Resource_21cfb"), SubResource("Resource_ri6or")])

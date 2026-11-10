@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_s14t7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_y5wha"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_37ba0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_qrqd8"]
+
+[sub_resource type="Resource" id="Resource_j5olq"]
+script = ExtResource("2_y5wha")
+text = "The bowls from under the cook fire came out whole, every one, and nobody said a word."
+
+[sub_resource type="Resource" id="Resource_7gjth"]
+script = ExtResource("3_37ba0")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_icvx6"]
+script = ExtResource("3_37ba0")
+key = &"bowls_in_pit"
+
+[resource]
+script = ExtResource("4_qrqd8")
+id = &"pit_bowls"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_37ba0")]([SubResource("Resource_7gjth"), SubResource("Resource_icvx6")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_y5wha")]([SubResource("Resource_j5olq")])

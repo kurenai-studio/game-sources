@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_08aje"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_040jd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jxkbb"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gj3lg"]
+
+[sub_resource type="Resource" id="Resource_hj46y"]
+script = ExtResource("2_040jd")
+kind = 1
+key = &"dark_stone_bell"
+
+[sub_resource type="Resource" id="Resource_llvmp"]
+script = ExtResource("2_040jd")
+text = "The dark stone was hung from a beam, and struck at dusk, and the sound went a long way out over the water."
+
+[sub_resource type="Resource" id="Resource_0r3ed"]
+script = ExtResource("1_08aje")
+id = &"hang_it_as_a_bell"
+label = "Hang it up as a bell"
+effects = Array[ExtResource("2_040jd")]([SubResource("Resource_hj46y"), SubResource("Resource_llvmp")])
+
+[sub_resource type="Resource" id="Resource_4r4rx"]
+script = ExtResource("2_040jd")
+kind = 1
+key = &"dark_stone_tried"
+
+[sub_resource type="Resource" id="Resource_2jj2j"]
+script = ExtResource("2_040jd")
+text = "The dark stone went into the fire and came out a different colour, much harder, and very difficult to cut."
+
+[sub_resource type="Resource" id="Resource_php3g"]
+script = ExtResource("1_08aje")
+id = &"put_it_in_the_fire"
+label = "Put it in the fire, and see"
+effects = Array[ExtResource("2_040jd")]([SubResource("Resource_4r4rx"), SubResource("Resource_2jj2j")])
+
+[sub_resource type="Resource" id="Resource_k7qru"]
+script = ExtResource("3_jxkbb")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_uwoad"]
+script = ExtResource("3_jxkbb")
+kind = 11
+amount = 312
+
+[sub_resource type="Resource" id="Resource_1qnfr"]
+script = ExtResource("3_jxkbb")
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_iu5ps"]
+script = ExtResource("3_jxkbb")
+kind = 7
+
+[resource]
+script = ExtResource("4_gj3lg")
+id = &"a_stone_that_rings"
+title = "A stone that rings"
+body = "{subject} has brought back a dark, heavy stone from the far shore that rings like a bell when struck, and does something odd to the fire."
+category = &"exploration"
+requires = Array[ExtResource("3_jxkbb")]([SubResource("Resource_k7qru"), SubResource("Resource_uwoad"), SubResource("Resource_1qnfr")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_jxkbb")]([SubResource("Resource_iu5ps")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_08aje")]([SubResource("Resource_0r3ed"), SubResource("Resource_php3g")])

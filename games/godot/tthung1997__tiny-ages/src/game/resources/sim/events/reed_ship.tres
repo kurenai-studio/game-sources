@@ -1,0 +1,98 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_b5uq0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_go3wb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_637my"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gyfrl"]
+
+[sub_resource type="Resource" id="Resource_jy7yd"]
+script = ExtResource("2_go3wb")
+kind = 1
+key = &"reed_ship"
+
+[sub_resource type="Resource" id="Resource_21h5u"]
+script = ExtResource("2_go3wb")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_80qf6"]
+script = ExtResource("2_go3wb")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_c0p57"]
+script = ExtResource("2_go3wb")
+text = "Reeds were bound into a ship with a high prow and a cloth sail, and it rode the swell like a swan that had been told something confidential."
+
+[sub_resource type="Resource" id="Resource_37y4a"]
+script = ExtResource("1_b5uq0")
+id = &"bind_a_reed_ship"
+label = "Bind a reed ship under a square sail"
+effects = Array[ExtResource("2_go3wb")]([SubResource("Resource_jy7yd"), SubResource("Resource_21h5u"), SubResource("Resource_80qf6"), SubResource("Resource_c0p57")])
+
+[sub_resource type="Resource" id="Resource_fhta4"]
+script = ExtResource("2_go3wb")
+kind = 1
+key = &"keeled_raft"
+
+[sub_resource type="Resource" id="Resource_ttatp"]
+script = ExtResource("2_go3wb")
+kind = 1
+key = &"far_shore"
+
+[sub_resource type="Resource" id="Resource_yhu2n"]
+script = ExtResource("2_go3wb")
+kind = 10
+key = &"beyond_the_water"
+text = "Beyond the Water"
+
+[sub_resource type="Resource" id="Resource_lh7ry"]
+script = ExtResource("2_go3wb")
+text = "A keel of poles was lashed beneath it, and the raft went out into the channel with its nose in the air and a look of deep concentration."
+
+[sub_resource type="Resource" id="Resource_lg3x4"]
+script = ExtResource("1_b5uq0")
+id = &"keel_the_raft"
+label = "Lash the raft to a keel of poles"
+effects = Array[ExtResource("2_go3wb")]([SubResource("Resource_fhta4"), SubResource("Resource_ttatp"), SubResource("Resource_yhu2n"), SubResource("Resource_lh7ry")])
+
+[sub_resource type="Resource" id="Resource_qgh8g"]
+script = ExtResource("3_637my")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_aci68"]
+script = ExtResource("3_637my")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_bl2y7"]
+script = ExtResource("3_637my")
+kind = 9
+key = &"beyond_the_water"
+negate = true
+
+[sub_resource type="Resource" id="Resource_cqyl0"]
+script = ExtResource("3_637my")
+key = &"reed_raft"
+
+[sub_resource type="Resource" id="Resource_6114f"]
+script = ExtResource("3_637my")
+kind = 7
+
+[resource]
+script = ExtResource("4_gyfrl")
+id = &"reed_ship"
+title = "The raft wants to go further"
+body = "The reed raft has been dried and re-bound so often that it has started to look like a small ship. It is only waiting to be told."
+category = &"exploration"
+requires = Array[ExtResource("3_637my")]([SubResource("Resource_qgh8g"), SubResource("Resource_aci68"), SubResource("Resource_bl2y7"), SubResource("Resource_cqyl0")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_637my")]([SubResource("Resource_6114f")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_b5uq0")]([SubResource("Resource_37y4a"), SubResource("Resource_lg3x4")])

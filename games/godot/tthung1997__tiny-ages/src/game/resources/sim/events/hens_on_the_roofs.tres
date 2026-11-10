@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_e7stf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_bk28p"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_tvxv0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e7k10"]
+
+[sub_resource type="Resource" id="Resource_1ek0t"]
+script = ExtResource("2_bk28p")
+text = "The small brown birds argued on a roof all morning, and nobody could say about what."
+
+[sub_resource type="Resource" id="Resource_ciuh7"]
+script = ExtResource("3_tvxv0")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_sxwhx"]
+script = ExtResource("3_tvxv0")
+key = &"wild_fowl_left"
+
+[resource]
+script = ExtResource("4_e7k10")
+id = &"hens_on_the_roofs"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_tvxv0")]([SubResource("Resource_ciuh7"), SubResource("Resource_sxwhx")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_bk28p")]([SubResource("Resource_1ek0t")])

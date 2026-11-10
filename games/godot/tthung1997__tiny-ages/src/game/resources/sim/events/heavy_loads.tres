@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_2j1y1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_djgre"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_8leli"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_6774v"]
+
+[sub_resource type="Resource" id="Resource_uge5f"]
+script = ExtResource("2_djgre")
+kind = 1
+key = &"sledge"
+
+[sub_resource type="Resource" id="Resource_s1dqj"]
+script = ExtResource("2_djgre")
+text = "A sledge was built from two curved branches and a plank, and was dragged up the lane by four villagers and a dog."
+
+[sub_resource type="Resource" id="Resource_3c5sd"]
+script = ExtResource("1_2j1y1")
+id = &"build_a_sledge"
+label = "Build a sledge"
+effects = Array[ExtResource("2_djgre")]([SubResource("Resource_uge5f"), SubResource("Resource_s1dqj")])
+
+[sub_resource type="Resource" id="Resource_5vcbr"]
+script = ExtResource("2_djgre")
+kind = 1
+key = &"pack_baskets"
+
+[sub_resource type="Resource" id="Resource_t6ebk"]
+script = ExtResource("2_djgre")
+text = "Baskets with straps were made for the back, and the villagers walked the lane bent like a row of question marks."
+
+[sub_resource type="Resource" id="Resource_ole14"]
+script = ExtResource("1_2j1y1")
+id = &"carry_in_packs"
+label = "Carry it in baskets on the back"
+effects = Array[ExtResource("2_djgre")]([SubResource("Resource_5vcbr"), SubResource("Resource_t6ebk")])
+
+[sub_resource type="Resource" id="Resource_2dqoe"]
+script = ExtResource("3_8leli")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_gvc2o"]
+script = ExtResource("3_8leli")
+kind = 11
+amount = 330
+
+[sub_resource type="Resource" id="Resource_1ky3q"]
+script = ExtResource("3_8leli")
+kind = 8
+amount = 2
+negate = true
+
+[resource]
+script = ExtResource("4_6774v")
+id = &"heavy_loads"
+title = "Heavy loads"
+body = "The loads have grown, the village has grown, and the backs have stayed exactly as they were."
+category = &"settlement"
+requires = Array[ExtResource("3_8leli")]([SubResource("Resource_2dqoe"), SubResource("Resource_gvc2o"), SubResource("Resource_1ky3q")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_2j1y1")]([SubResource("Resource_3c5sd"), SubResource("Resource_ole14")])

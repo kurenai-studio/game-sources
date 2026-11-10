@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_m2u3a"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_v3o8p"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hht44"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_8vq63"]
+
+[sub_resource type="Resource" id="Resource_18ko0"]
+script = ExtResource("2_v3o8p")
+text = "The boats nodded at their posts all night, and the posts, to be fair, nodded back."
+
+[sub_resource type="Resource" id="Resource_dl6so"]
+script = ExtResource("3_hht44")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_qrjc5"]
+script = ExtResource("3_hht44")
+key = &"mooring_posts"
+
+[resource]
+script = ExtResource("4_8vq63")
+id = &"boats_at_the_posts"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_hht44")]([SubResource("Resource_dl6so"), SubResource("Resource_qrjc5")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_v3o8p")]([SubResource("Resource_18ko0")])

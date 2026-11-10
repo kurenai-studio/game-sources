@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bk71m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_obote"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ncxgt"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_itpaw"]
+
+[sub_resource type="Resource" id="Resource_own0g"]
+script = ExtResource("2_obote")
+kind = 0
+key = &"food"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_23uak"]
+script = ExtResource("2_obote")
+kind = 1
+key = &"book_copied"
+
+[sub_resource type="Resource" id="Resource_nrk5v"]
+script = ExtResource("2_obote")
+text = "The book was copied, page by page, by lamplight, and the copy was bound in leather and set on the shelf with great ceremony."
+
+[sub_resource type="Resource" id="Resource_1trno"]
+script = ExtResource("3_ncxgt")
+kind = 2
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_2xnor"]
+script = ExtResource("1_bk71m")
+id = &"copy_the_book"
+label = "Copy it, page by page, before it goes on"
+requires = Array[ExtResource("3_ncxgt")]([SubResource("Resource_1trno")])
+effects = Array[ExtResource("2_obote")]([SubResource("Resource_own0g"), SubResource("Resource_23uak"), SubResource("Resource_nrk5v")])
+
+[sub_resource type="Resource" id="Resource_mha1d"]
+script = ExtResource("2_obote")
+kind = 1
+key = &"stories_bound"
+
+[sub_resource type="Resource" id="Resource_jl5mh"]
+script = ExtResource("2_obote")
+text = "The town's own stories were gathered and bound, and the first reader found a story about their grandmother and had to sit down."
+
+[sub_resource type="Resource" id="Resource_12ghu"]
+script = ExtResource("1_bk71m")
+id = &"gather_the_towns_stories"
+label = "Gather the town's own stories instead, and bind those"
+effects = Array[ExtResource("2_obote")]([SubResource("Resource_mha1d"), SubResource("Resource_jl5mh")])
+
+[sub_resource type="Resource" id="Resource_lvgrc"]
+script = ExtResource("3_ncxgt")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_m7ki4"]
+script = ExtResource("3_ncxgt")
+kind = 11
+amount = 222
+
+[sub_resource type="Resource" id="Resource_n8psw"]
+script = ExtResource("3_ncxgt")
+kind = 9
+key = &"lamp_and_stage"
+
+[sub_resource type="Resource" id="Resource_h2p1h"]
+script = ExtResource("3_ncxgt")
+kind = 7
+
+[resource]
+script = ExtResource("4_itpaw")
+id = &"a_visiting_book"
+title = "A visiting book"
+body = "A traveller has left a book behind, overnight, with a note asking that it be looked after, and {subject} has already read the first page and is not sleeping."
+requires = Array[ExtResource("3_ncxgt")]([SubResource("Resource_lvgrc"), SubResource("Resource_m7ki4"), SubResource("Resource_n8psw")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_ncxgt")]([SubResource("Resource_h2p1h")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_bk71m")]([SubResource("Resource_2xnor"), SubResource("Resource_12ghu")])

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_uyjvm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_adrey"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pg2gf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dgwm4"]
+
+[sub_resource type="Resource" id="Resource_8awki"]
+script = ExtResource("2_adrey")
+text = "{subject} stacked bricks in rows so straight that they looked drawn."
+
+[sub_resource type="Resource" id="Resource_j1gdu"]
+script = ExtResource("3_pg2gf")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_fig4k"]
+script = ExtResource("3_pg2gf")
+kind = 9
+key = &"mud_brick_walls"
+
+[sub_resource type="Resource" id="Resource_2ud2f"]
+script = ExtResource("3_pg2gf")
+kind = 6
+key = &"industrious"
+
+[sub_resource type="Resource" id="Resource_y52uc"]
+script = ExtResource("3_pg2gf")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_mefia"]
+script = ExtResource("3_pg2gf")
+kind = 10
+
+[resource]
+script = ExtResource("4_dgwm4")
+id = &"stacking_bricks"
+title = "A quiet moment"
+requires = Array[ExtResource("3_pg2gf")]([SubResource("Resource_j1gdu"), SubResource("Resource_fig4k")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_pg2gf")]([SubResource("Resource_2ud2f"), SubResource("Resource_y52uc"), SubResource("Resource_mefia")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_adrey")]([SubResource("Resource_8awki")])

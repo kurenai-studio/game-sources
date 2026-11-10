@@ -1,0 +1,90 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vqyun"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_e61f3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_0p42g"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3k1b4"]
+
+[sub_resource type="Resource" id="Resource_o71hn"]
+script = ExtResource("2_e61f3")
+kind = 1
+key = &"families_taken_in"
+
+[sub_resource type="Resource" id="Resource_0ljcm"]
+script = ExtResource("2_e61f3")
+kind = 13
+amount = 2
+
+[sub_resource type="Resource" id="Resource_vaudd"]
+script = ExtResource("2_e61f3")
+kind = 10
+key = &"a_village"
+text = "A Village"
+
+[sub_resource type="Resource" id="Resource_pt8vs"]
+script = ExtResource("2_e61f3")
+text = "The two families came in out of the road, and the camp became a village."
+
+[sub_resource type="Resource" id="Resource_l0xte"]
+script = ExtResource("1_vqyun")
+id = &"make_room"
+label = "Make room for them"
+effects = Array[ExtResource("2_e61f3")]([SubResource("Resource_o71hn"), SubResource("Resource_0ljcm"), SubResource("Resource_vaudd"), SubResource("Resource_pt8vs")])
+
+[sub_resource type="Resource" id="Resource_mbjqs"]
+script = ExtResource("2_e61f3")
+kind = 1
+key = &"families_by_the_river"
+
+[sub_resource type="Resource" id="Resource_l7kyf"]
+script = ExtResource("2_e61f3")
+kind = 13
+amount = 2
+
+[sub_resource type="Resource" id="Resource_0rwy8"]
+script = ExtResource("2_e61f3")
+kind = 10
+key = &"a_village"
+text = "A Village"
+
+[sub_resource type="Resource" id="Resource_tbqbl"]
+script = ExtResource("2_e61f3")
+text = "The two families were shown the empty ground by the river, and by the next moon there was a roof there, and the camp had a neighbour that was also the camp."
+
+[sub_resource type="Resource" id="Resource_htew1"]
+script = ExtResource("1_vqyun")
+id = &"point_the_way"
+label = "Offer them the empty ground by the river"
+effects = Array[ExtResource("2_e61f3")]([SubResource("Resource_mbjqs"), SubResource("Resource_l7kyf"), SubResource("Resource_0rwy8"), SubResource("Resource_tbqbl")])
+
+[sub_resource type="Resource" id="Resource_0gda4"]
+script = ExtResource("3_0p42g")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_r14u3"]
+script = ExtResource("3_0p42g")
+kind = 11
+amount = 216
+
+[sub_resource type="Resource" id="Resource_clneg"]
+script = ExtResource("3_0p42g")
+kind = 9
+key = &"first_roof"
+
+[sub_resource type="Resource" id="Resource_cj162"]
+script = ExtResource("3_0p42g")
+kind = 9
+key = &"a_village"
+negate = true
+
+[resource]
+script = ExtResource("4_3k1b4")
+id = &"families_on_the_road"
+title = "Families on the road"
+body = "Two families have stopped at the edge of the fields. They have walked a long way, and they look at the roofs the way hungry people look at bread."
+category = &"exploration"
+requires = Array[ExtResource("3_0p42g")]([SubResource("Resource_0gda4"), SubResource("Resource_r14u3"), SubResource("Resource_clneg"), SubResource("Resource_cj162")])
+chance_per_tick = 0.02
+cooldown_ticks = 72
+choices = Array[ExtResource("1_vqyun")]([SubResource("Resource_l0xte"), SubResource("Resource_htew1")])

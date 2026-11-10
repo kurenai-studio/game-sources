@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ntbcg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_q1uf7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_u4b2a"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1ey2k"]
+
+[sub_resource type="Resource" id="Resource_svlus"]
+script = ExtResource("2_q1uf7")
+kind = 1
+key = &"door_stones"
+
+[sub_resource type="Resource" id="Resource_bjyqu"]
+script = ExtResource("2_q1uf7")
+text = "A flat stone went down at every door, and the mud stayed outside for nearly a week."
+
+[sub_resource type="Resource" id="Resource_jvmd8"]
+script = ExtResource("1_ntbcg")
+id = &"lay_door_stones"
+label = "Lay a flat stone at every door"
+effects = Array[ExtResource("2_q1uf7")]([SubResource("Resource_svlus"), SubResource("Resource_bjyqu")])
+
+[sub_resource type="Resource" id="Resource_7hfn0"]
+script = ExtResource("2_q1uf7")
+kind = 1
+key = &"door_mats"
+
+[sub_resource type="Resource" id="Resource_eh4r8"]
+script = ExtResource("2_q1uf7")
+text = "A reed mat lay at every door, and each one was plaited a little differently."
+
+[sub_resource type="Resource" id="Resource_odiok"]
+script = ExtResource("1_ntbcg")
+id = &"weave_door_mats"
+label = "Plait a reed mat for every door"
+effects = Array[ExtResource("2_q1uf7")]([SubResource("Resource_7hfn0"), SubResource("Resource_eh4r8")])
+
+[sub_resource type="Resource" id="Resource_nx4sn"]
+script = ExtResource("3_u4b2a")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_d1k2d"]
+script = ExtResource("3_u4b2a")
+kind = 11
+amount = 28
+
+[resource]
+script = ExtResource("4_1ey2k")
+id = &"the_threshold"
+title = "Mud at the door"
+body = "Everyone comes in from the fields with half the field on their feet, and the new floors are suffering."
+category = &"settlement"
+requires = Array[ExtResource("3_u4b2a")]([SubResource("Resource_nx4sn"), SubResource("Resource_d1k2d")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ntbcg")]([SubResource("Resource_jvmd8"), SubResource("Resource_odiok")])

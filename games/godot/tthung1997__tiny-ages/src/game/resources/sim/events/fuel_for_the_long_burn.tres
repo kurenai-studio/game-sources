@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ep20q"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qkf6f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7havl"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_be8ks"]
+
+[sub_resource type="Resource" id="Resource_fq4vs"]
+script = ExtResource("2_qkf6f")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_cylc2"]
+script = ExtResource("2_qkf6f")
+kind = 1
+key = &"second_charcoal_pit"
+
+[sub_resource type="Resource" id="Resource_kg0ha"]
+script = ExtResource("2_qkf6f")
+text = "A second pit was stacked beside the first, and the two burned together under a single skin of turf, like twins."
+
+[sub_resource type="Resource" id="Resource_77qgt"]
+script = ExtResource("3_7havl")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_w15bb"]
+script = ExtResource("1_ep20q")
+id = &"stack_a_second_pit"
+label = "Stack a second charcoal pit"
+requires = Array[ExtResource("3_7havl")]([SubResource("Resource_77qgt")])
+effects = Array[ExtResource("2_qkf6f")]([SubResource("Resource_fq4vs"), SubResource("Resource_cylc2"), SubResource("Resource_kg0ha")])
+
+[sub_resource type="Resource" id="Resource_mxhxe"]
+script = ExtResource("2_qkf6f")
+kind = 1
+key = &"waited_for_wind"
+
+[sub_resource type="Resource" id="Resource_gmqsn"]
+script = ExtResource("2_qkf6f")
+text = "A day with a good wind was waited for, and came, and the pit burned as if it had been listening."
+
+[sub_resource type="Resource" id="Resource_wp4j3"]
+script = ExtResource("1_ep20q")
+id = &"wait_for_a_windy_day"
+label = "Wait for a day with a good wind"
+effects = Array[ExtResource("2_qkf6f")]([SubResource("Resource_mxhxe"), SubResource("Resource_gmqsn")])
+
+[sub_resource type="Resource" id="Resource_2r85y"]
+script = ExtResource("3_7havl")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_5u1qy"]
+script = ExtResource("3_7havl")
+kind = 11
+amount = 346
+
+[sub_resource type="Resource" id="Resource_pm5tj"]
+script = ExtResource("3_7havl")
+kind = 8
+amount = 3
+negate = true
+
+[resource]
+script = ExtResource("4_be8ks")
+id = &"fuel_for_the_long_burn"
+title = "Fuel for the long burn"
+body = "Whatever is coming will want a great deal more charcoal than the pit has ever made."
+category = &"settlement"
+requires = Array[ExtResource("3_7havl")]([SubResource("Resource_2r85y"), SubResource("Resource_5u1qy"), SubResource("Resource_pm5tj")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_ep20q")]([SubResource("Resource_w15bb"), SubResource("Resource_wp4j3")])

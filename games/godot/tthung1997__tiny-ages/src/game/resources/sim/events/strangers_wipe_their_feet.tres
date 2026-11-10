@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_riyqr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gnba5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_twk7n"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_y77yn"]
+
+[sub_resource type="Resource" id="Resource_4733v"]
+script = ExtResource("2_gnba5")
+text = "Strangers walked in through the open gate and, out of politeness, wiped their feet."
+
+[sub_resource type="Resource" id="Resource_aejg5"]
+script = ExtResource("3_twk7n")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_di7dg"]
+script = ExtResource("3_twk7n")
+key = &"open_road"
+
+[resource]
+script = ExtResource("4_y77yn")
+id = &"strangers_wipe_their_feet"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_twk7n")]([SubResource("Resource_aejg5"), SubResource("Resource_di7dg")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_gnba5")]([SubResource("Resource_4733v")])

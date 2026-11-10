@@ -1,0 +1,99 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_iprwd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7vmoi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gkk3m"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_axrf3"]
+
+[sub_resource type="Resource" id="Resource_2sne2"]
+script = ExtResource("2_7vmoi")
+kind = 1
+key = &"name_cut_deep"
+
+[sub_resource type="Resource" id="Resource_02hd3"]
+script = ExtResource("2_7vmoi")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_dkgbn"]
+script = ExtResource("2_7vmoi")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_a07bu"]
+script = ExtResource("2_7vmoi")
+text = "The name was cut deep in a rock by the crossing, and the first traveller to read it stood there so long that they were offered a meal."
+
+[sub_resource type="Resource" id="Resource_econl"]
+script = ExtResource("1_iprwd")
+id = &"cut_the_name_deep"
+label = "Cut the name deep in a rock by the crossing"
+effects = Array[ExtResource("2_7vmoi")]([SubResource("Resource_2sne2"), SubResource("Resource_02hd3"), SubResource("Resource_dkgbn"), SubResource("Resource_a07bu")])
+
+[sub_resource type="Resource" id="Resource_1ngjc"]
+script = ExtResource("2_7vmoi")
+kind = 1
+key = &"name_board"
+
+[sub_resource type="Resource" id="Resource_qa1mc"]
+script = ExtResource("2_7vmoi")
+kind = 1
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_7doii"]
+script = ExtResource("2_7vmoi")
+kind = 10
+key = &"name_abroad"
+text = "A Name Abroad"
+
+[sub_resource type="Resource" id="Resource_3gn23"]
+script = ExtResource("2_7vmoi")
+text = "A painted board went up at the crossing, and was repainted every spring, and was, to everyone's surprise, quite handsome."
+
+[sub_resource type="Resource" id="Resource_ncc3p"]
+script = ExtResource("1_iprwd")
+id = &"hang_a_painted_board"
+label = "Hang a painted board at the crossing"
+effects = Array[ExtResource("2_7vmoi")]([SubResource("Resource_1ngjc"), SubResource("Resource_qa1mc"), SubResource("Resource_7doii"), SubResource("Resource_3gn23")])
+
+[sub_resource type="Resource" id="Resource_8besl"]
+script = ExtResource("3_gkk3m")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_xroiv"]
+script = ExtResource("3_gkk3m")
+kind = 11
+amount = 288
+
+[sub_resource type="Resource" id="Resource_8qh2e"]
+script = ExtResource("3_gkk3m")
+kind = 9
+key = &"name_abroad"
+negate = true
+
+[sub_resource type="Resource" id="Resource_aprs0"]
+script = ExtResource("3_gkk3m")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_0lyf4"]
+script = ExtResource("3_gkk3m")
+kind = 7
+
+[resource]
+script = ExtResource("4_axrf3")
+id = &"a_name_for_the_traveller"
+title = "Where the road meets the river"
+body = "Travellers keep stopping at the crossing and asking whose town it is, and there is nothing there to tell them."
+category = &"settlement"
+requires = Array[ExtResource("3_gkk3m")]([SubResource("Resource_8besl"), SubResource("Resource_xroiv"), SubResource("Resource_8qh2e"), SubResource("Resource_aprs0")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_gkk3m")]([SubResource("Resource_0lyf4")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_iprwd")]([SubResource("Resource_econl"), SubResource("Resource_ncc3p")])

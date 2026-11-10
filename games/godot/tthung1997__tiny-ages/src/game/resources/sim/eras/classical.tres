@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EraDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/era_def.gd" id="1_sl58e"]
+
+[resource]
+script = ExtResource("1_sl58e")
+id = &"classical"
+display_name = "Classical Age"
+order = 4
+description = "Streets, water brought in, written law and a square: the town has become a city among cities."
+intro_text = "The strangers asked for a seat at the table, and the town became a city, and a new age began."
+housing = 14
+max_villagers = 14
+food_need_scale = 1.7
+food_yield_scale = 1.7
+wood_yield_scale = 1.5
+required_achievements = Array[StringName]([&"first_bloom", &"fuller_harvest", &"the_hill_fort", &"silver_by_weight", &"written_word", &"name_abroad"])
+min_ticks_in_previous_era = 8640
+turn_event = &"a_seat_at_the_table"

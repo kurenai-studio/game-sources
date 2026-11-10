@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6di2s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_msmcs"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7jwy5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_2cvg7"]
+
+[sub_resource type="Resource" id="Resource_5o22l"]
+script = ExtResource("2_msmcs")
+text = "Someone lay awake outside, and nobody asked what they were looking at."
+
+[sub_resource type="Resource" id="Resource_45jpd"]
+script = ExtResource("3_7jwy5")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_kwdgm"]
+script = ExtResource("3_7jwy5")
+key = &"stars_private"
+
+[resource]
+script = ExtResource("4_2cvg7")
+id = &"private_sky"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_7jwy5")]([SubResource("Resource_45jpd"), SubResource("Resource_kwdgm")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_msmcs")]([SubResource("Resource_5o22l")])

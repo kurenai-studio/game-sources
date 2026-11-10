@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EraDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/era_def.gd" id="1_x5erh"]
+
+[resource]
+script = ExtResource("1_x5erh")
+id = &"settled"
+display_name = "Settled Age"
+order = 1
+description = "Farming and herding: people stay in one place and shape the land."
+intro_text = "The group stayed by the field, and a new way of living began."
+max_villagers = 8
+food_need_scale = 1.15
+food_yield_scale = 1.15
+wood_yield_scale = 1.1
+required_achievements = Array[StringName]([&"fire", &"stone_tools", &"reliable_food", &"shared_stories", &"bigger_group", &"unexpected_garden"])
+min_ticks_in_previous_era = 8640
+turn_event = &"seeds_of_a_new_life"

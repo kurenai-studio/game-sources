@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7p4rm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dtyf3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_tcwjp"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_vd35e"]
+
+[sub_resource type="Resource" id="Resource_nbisx"]
+script = ExtResource("2_dtyf3")
+text = "The blue feather above the fire turned in the warm air, and everyone looked up."
+
+[sub_resource type="Resource" id="Resource_x2stt"]
+script = ExtResource("3_tcwjp")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_ycdes"]
+script = ExtResource("3_tcwjp")
+key = &"feather_shared"
+
+[resource]
+script = ExtResource("4_vd35e")
+id = &"feather_over_the_fire"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_tcwjp")]([SubResource("Resource_x2stt"), SubResource("Resource_ycdes")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_dtyf3")]([SubResource("Resource_nbisx")])

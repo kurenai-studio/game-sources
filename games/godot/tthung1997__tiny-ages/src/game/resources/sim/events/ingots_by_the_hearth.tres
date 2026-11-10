@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_eq5er"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_63o4p"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ixsr5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_h5g7y"]
+
+[sub_resource type="Resource" id="Resource_up8l7"]
+script = ExtResource("2_63o4p")
+text = "Ingots of bronze were stacked by the hearth like small loaves, and every passer-by lifted one to feel how heavy it was."
+
+[sub_resource type="Resource" id="Resource_oa11u"]
+script = ExtResource("3_ixsr5")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_opj8v"]
+script = ExtResource("3_ixsr5")
+kind = 9
+key = &"bronze_alloy"
+
+[resource]
+script = ExtResource("4_h5g7y")
+id = &"ingots_by_the_hearth"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ixsr5")]([SubResource("Resource_oa11u"), SubResource("Resource_opj8v")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_63o4p")]([SubResource("Resource_up8l7")])

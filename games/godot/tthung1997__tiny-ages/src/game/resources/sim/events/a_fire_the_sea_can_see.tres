@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_jmxy2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_iqqqk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_cp2uy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_y8rav"]
+
+[sub_resource type="Resource" id="Resource_2xdhl"]
+script = ExtResource("2_iqqqk")
+kind = 0
+key = &"wood"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_ac12t"]
+script = ExtResource("2_iqqqk")
+kind = 1
+key = &"beacon_lit"
+
+[sub_resource type="Resource" id="Resource_8bacy"]
+script = ExtResource("2_iqqqk")
+text = "A fire was built on the headland, and fed every night, and the first ship to steer by it sent a gift of oil."
+
+[sub_resource type="Resource" id="Resource_0exjs"]
+script = ExtResource("3_cp2uy")
+kind = 2
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_4ceju"]
+script = ExtResource("1_jmxy2")
+id = &"light_the_headland"
+label = "Light a fire on the headland every night"
+requires = Array[ExtResource("3_cp2uy")]([SubResource("Resource_0exjs")])
+effects = Array[ExtResource("2_iqqqk")]([SubResource("Resource_2xdhl"), SubResource("Resource_ac12t"), SubResource("Resource_8bacy")])
+
+[sub_resource type="Resource" id="Resource_diiqa"]
+script = ExtResource("2_iqqqk")
+kind = 1
+key = &"trust_the_stars"
+
+[sub_resource type="Resource" id="Resource_5qymi"]
+script = ExtResource("2_iqqqk")
+text = "The captains were told to trust the stars, and a few did, and the rest were seen arriving in the morning, looking relieved."
+
+[sub_resource type="Resource" id="Resource_y2p06"]
+script = ExtResource("1_jmxy2")
+id = &"trust_the_stars"
+label = "Trust the stars"
+effects = Array[ExtResource("2_iqqqk")]([SubResource("Resource_diiqa"), SubResource("Resource_5qymi")])
+
+[sub_resource type="Resource" id="Resource_3o11i"]
+script = ExtResource("3_cp2uy")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_hs3sy"]
+script = ExtResource("3_cp2uy")
+kind = 11
+amount = 286
+
+[sub_resource type="Resource" id="Resource_xciae"]
+script = ExtResource("3_cp2uy")
+key = &"known_abroad"
+
+[resource]
+script = ExtResource("4_y8rav")
+id = &"a_fire_the_sea_can_see"
+title = "A fire the sea can see"
+body = "The ships that come to the town come late, and the coast has no light to steer them by, and the captains have mentioned it."
+category = &"settlement"
+requires = Array[ExtResource("3_cp2uy")]([SubResource("Resource_3o11i"), SubResource("Resource_hs3sy"), SubResource("Resource_xciae")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_jmxy2")]([SubResource("Resource_4ceju"), SubResource("Resource_y2p06")])

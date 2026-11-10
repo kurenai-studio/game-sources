@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7q66n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_5xqct"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_us5wc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_fdbtr"]
+
+[sub_resource type="Resource" id="Resource_vygjd"]
+script = ExtResource("2_5xqct")
+text = "{subject} followed a bird's call to the river and back, and could answer it."
+
+[sub_resource type="Resource" id="Resource_11sfj"]
+script = ExtResource("3_us5wc")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_83nks"]
+script = ExtResource("3_us5wc")
+kind = 6
+key = &"nature_loving"
+
+[sub_resource type="Resource" id="Resource_8cgfl"]
+script = ExtResource("3_us5wc")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_5ccyy"]
+script = ExtResource("3_us5wc")
+kind = 10
+
+[resource]
+script = ExtResource("4_fdbtr")
+id = &"bird_call"
+title = "A quiet moment"
+requires = Array[ExtResource("3_us5wc")]([SubResource("Resource_11sfj")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_us5wc")]([SubResource("Resource_83nks"), SubResource("Resource_8cgfl"), SubResource("Resource_5ccyy")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_5xqct")]([SubResource("Resource_vygjd")])

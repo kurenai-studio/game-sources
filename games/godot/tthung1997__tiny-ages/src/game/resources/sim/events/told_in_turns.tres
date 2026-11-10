@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qadjh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_heltm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6qkvc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_05g7q"]
+
+[sub_resource type="Resource" id="Resource_y17u7"]
+script = ExtResource("2_heltm")
+text = "Someone asked for the story the oldest one told in the long evenings."
+
+[sub_resource type="Resource" id="Resource_jn2to"]
+script = ExtResource("3_6qkvc")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_c4rjc"]
+script = ExtResource("3_6qkvc")
+key = &"evening_tales"
+
+[resource]
+script = ExtResource("4_05g7q")
+id = &"told_in_turns"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_6qkvc")]([SubResource("Resource_jn2to"), SubResource("Resource_c4rjc")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_heltm")]([SubResource("Resource_y17u7")])

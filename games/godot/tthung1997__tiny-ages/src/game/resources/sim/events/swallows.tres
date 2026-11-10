@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_twa6o"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_d585f"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_qa1d0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_wp5v6"]
+
+[sub_resource type="Resource" id="Resource_irrfd"]
+script = ExtResource("2_d585f")
+text = "The swallows came back to the eaves, as if the roofs had been built for them."
+
+[sub_resource type="Resource" id="Resource_i31xs"]
+script = ExtResource("3_qa1d0")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_nb7qs"]
+script = ExtResource("3_qa1d0")
+kind = 9
+key = &"first_roof"
+
+[resource]
+script = ExtResource("4_wp5v6")
+id = &"swallows"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_qa1d0")]([SubResource("Resource_i31xs"), SubResource("Resource_nb7qs")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_d585f")]([SubResource("Resource_irrfd")])

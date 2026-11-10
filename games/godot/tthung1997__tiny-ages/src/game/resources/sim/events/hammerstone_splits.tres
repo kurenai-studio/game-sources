@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gxnsf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_tt4b2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_675j5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_52apl"]
+
+[sub_resource type="Resource" id="Resource_tbs7y"]
+script = ExtResource("2_tt4b2")
+text = "The old nut stone finally split clean across, and the edge it left was sharper than anything the group owned. By evening everyone was making edges."
+
+[sub_resource type="Resource" id="Resource_renrp"]
+script = ExtResource("2_tt4b2")
+kind = 10
+key = &"stone_tools"
+text = "Stone Tools"
+
+[sub_resource type="Resource" id="Resource_x1bq2"]
+script = ExtResource("3_675j5")
+kind = 9
+key = &"stone_tools"
+negate = true
+
+[resource]
+script = ExtResource("4_52apl")
+id = &"hammerstone_splits"
+title = "The hammerstone breaks"
+requires = Array[ExtResource("3_675j5")]([SubResource("Resource_x1bq2")])
+needs_subject = true
+effects = Array[ExtResource("2_tt4b2")]([SubResource("Resource_tbs7y"), SubResource("Resource_renrp")])

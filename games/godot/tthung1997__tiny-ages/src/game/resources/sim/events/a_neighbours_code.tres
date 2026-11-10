@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_yfho2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_n1tkv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_dphsd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1lwn1"]
+
+[sub_resource type="Resource" id="Resource_0603r"]
+script = ExtResource("2_n1tkv")
+kind = 1
+key = &"code_adapted"
+
+[sub_resource type="Resource" id="Resource_e1qsg"]
+script = ExtResource("2_n1tkv")
+kind = 10
+key = &"written_law"
+text = "The Law"
+
+[sub_resource type="Resource" id="Resource_ewhws"]
+script = ExtResource("2_n1tkv")
+text = "The code was adapted line by line, and a good many lines were crossed out with a flourish, and the town found it liked its own handwriting."
+
+[sub_resource type="Resource" id="Resource_uurv4"]
+script = ExtResource("1_yfho2")
+id = &"adapt_their_code"
+label = "Adapt their code to the town's ways"
+effects = Array[ExtResource("2_n1tkv")]([SubResource("Resource_0603r"), SubResource("Resource_e1qsg"), SubResource("Resource_ewhws")])
+
+[sub_resource type="Resource" id="Resource_h5r2o"]
+script = ExtResource("2_n1tkv")
+kind = 1
+key = &"charter_written"
+
+[sub_resource type="Resource" id="Resource_xs3ds"]
+script = ExtResource("2_n1tkv")
+kind = 10
+key = &"written_law"
+text = "The Law"
+
+[sub_resource type="Resource" id="Resource_sbnob"]
+script = ExtResource("2_n1tkv")
+text = "A charter was written of what the towns owed each other, and signed by people who had never seen each other, and it held."
+
+[sub_resource type="Resource" id="Resource_ltym6"]
+script = ExtResource("1_yfho2")
+id = &"write_a_charter"
+label = "Write a charter of what the towns owe each other"
+effects = Array[ExtResource("2_n1tkv")]([SubResource("Resource_h5r2o"), SubResource("Resource_xs3ds"), SubResource("Resource_sbnob")])
+
+[sub_resource type="Resource" id="Resource_te57n"]
+script = ExtResource("3_dphsd")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_fvpik"]
+script = ExtResource("3_dphsd")
+kind = 11
+amount = 108
+
+[sub_resource type="Resource" id="Resource_up1gy"]
+script = ExtResource("3_dphsd")
+kind = 9
+key = &"written_law"
+negate = true
+
+[sub_resource type="Resource" id="Resource_mh53m"]
+script = ExtResource("3_dphsd")
+kind = 9
+key = &"paved_streets"
+
+[sub_resource type="Resource" id="Resource_py3p6"]
+script = ExtResource("3_dphsd")
+key = &"path_league"
+
+[sub_resource type="Resource" id="Resource_bvsfj"]
+script = ExtResource("3_dphsd")
+kind = 7
+
+[resource]
+script = ExtResource("4_1lwn1")
+id = &"a_neighbours_code"
+title = "A neighbour's code"
+body = "The far shore's laws are long and thorough, and some of them are plainly meant for a different sort of town, and somebody has to choose."
+requires = Array[ExtResource("3_dphsd")]([SubResource("Resource_te57n"), SubResource("Resource_fvpik"), SubResource("Resource_up1gy"), SubResource("Resource_mh53m"), SubResource("Resource_py3p6")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_dphsd")]([SubResource("Resource_bvsfj")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_yfho2")]([SubResource("Resource_uurv4"), SubResource("Resource_ltym6")])

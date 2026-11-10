@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hxxhu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rro8u"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_t6dnl"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_skq73"]
+
+[sub_resource type="Resource" id="Resource_13dl2"]
+script = ExtResource("2_rro8u")
+text = "The lump that had blackened in the fire sat by the furnace, and was looked at now and then like a question."
+
+[sub_resource type="Resource" id="Resource_5tof3"]
+script = ExtResource("3_t6dnl")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_4rths"]
+script = ExtResource("3_t6dnl")
+key = &"dark_stone_tried"
+
+[resource]
+script = ExtResource("4_skq73")
+id = &"dark_stone_blackened"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_t6dnl")]([SubResource("Resource_5tof3"), SubResource("Resource_4rths")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_rro8u")]([SubResource("Resource_13dl2")])

@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_snoxk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vmdyf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_40cki"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0nomm"]
+
+[sub_resource type="Resource" id="Resource_ch6nq"]
+script = ExtResource("2_vmdyf")
+kind = 1
+key = &"teach_in_workshops"
+
+[sub_resource type="Resource" id="Resource_5j5fj"]
+script = ExtResource("2_vmdyf")
+text = "The teaching moved into the workshop, where a lesson came with a task, and by the end of the month a dozen people could do the thing."
+
+[sub_resource type="Resource" id="Resource_n5s3f"]
+script = ExtResource("1_snoxk")
+id = &"teach_in_a_workshop"
+label = "Teach in the workshop, with hands full"
+effects = Array[ExtResource("2_vmdyf")]([SubResource("Resource_ch6nq"), SubResource("Resource_5j5fj")])
+
+[sub_resource type="Resource" id="Resource_qrnnd"]
+script = ExtResource("2_vmdyf")
+kind = 1
+key = &"teach_in_the_court"
+
+[sub_resource type="Resource" id="Resource_g4whg"]
+script = ExtResource("2_vmdyf")
+text = "The teaching stayed in the court, where everyone could hear, and a crowd formed, and the lessons were attended by people who had no business learning."
+
+[sub_resource type="Resource" id="Resource_kcagh"]
+script = ExtResource("1_snoxk")
+id = &"teach_in_the_court"
+label = "Teach in the open court, with everyone listening"
+effects = Array[ExtResource("2_vmdyf")]([SubResource("Resource_qrnnd"), SubResource("Resource_g4whg")])
+
+[sub_resource type="Resource" id="Resource_0y8ex"]
+script = ExtResource("3_40cki")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_remra"]
+script = ExtResource("3_40cki")
+kind = 11
+amount = 242
+
+[sub_resource type="Resource" id="Resource_3rs1h"]
+script = ExtResource("3_40cki")
+kind = 9
+key = &"lamp_and_stage"
+
+[sub_resource type="Resource" id="Resource_3o2er"]
+script = ExtResource("3_40cki")
+kind = 7
+
+[resource]
+script = ExtResource("4_0nomm")
+id = &"where_to_teach"
+title = "Where to teach"
+body = "{subject} has begun to teach whoever comes, and has noticed that they teach better in one sort of place than another."
+requires = Array[ExtResource("3_40cki")]([SubResource("Resource_0y8ex"), SubResource("Resource_remra"), SubResource("Resource_3rs1h")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_40cki")]([SubResource("Resource_3o2er")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_snoxk")]([SubResource("Resource_n5s3f"), SubResource("Resource_kcagh")])

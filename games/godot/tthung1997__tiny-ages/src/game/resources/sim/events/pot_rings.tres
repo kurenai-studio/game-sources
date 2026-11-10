@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_gepae"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7g6t7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fdbrt"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0ng02"]
+
+[sub_resource type="Resource" id="Resource_fxu3u"]
+script = ExtResource("2_7g6t7")
+text = "Someone tapped the first pot with a fingernail, just to hear it ring."
+
+[sub_resource type="Resource" id="Resource_c6mph"]
+script = ExtResource("3_fdbrt")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_2hn0f"]
+script = ExtResource("3_fdbrt")
+key = &"pot_fired"
+
+[resource]
+script = ExtResource("4_0ng02")
+id = &"pot_rings"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_fdbrt")]([SubResource("Resource_c6mph"), SubResource("Resource_2hn0f")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_7g6t7")]([SubResource("Resource_fxu3u")])

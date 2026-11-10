@@ -1,0 +1,65 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_dl2y1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_iryx2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_00c3u"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p70hq"]
+
+[sub_resource type="Resource" id="Resource_xhb3i"]
+script = ExtResource("2_iryx2")
+kind = 1
+key = &"named_for_river"
+
+[sub_resource type="Resource" id="Resource_pam2e"]
+script = ExtResource("2_iryx2")
+text = "The village was named for the river, and the river, as far as anyone could tell, didn't mind."
+
+[sub_resource type="Resource" id="Resource_t1ba2"]
+script = ExtResource("1_dl2y1")
+id = &"after_the_river"
+label = "Name it after the river"
+effects = Array[ExtResource("2_iryx2")]([SubResource("Resource_xhb3i"), SubResource("Resource_pam2e")])
+
+[sub_resource type="Resource" id="Resource_gk30y"]
+script = ExtResource("2_iryx2")
+kind = 1
+key = &"named_for_cave"
+
+[sub_resource type="Resource" id="Resource_ydtge"]
+script = ExtResource("2_iryx2")
+text = "The village was named for the cave, and somebody climbed up and said the name into it, and it came back."
+
+[sub_resource type="Resource" id="Resource_i78fw"]
+script = ExtResource("1_dl2y1")
+id = &"after_the_cave"
+label = "Name it after the cave"
+effects = Array[ExtResource("2_iryx2")]([SubResource("Resource_gk30y"), SubResource("Resource_ydtge")])
+
+[sub_resource type="Resource" id="Resource_n0en0"]
+script = ExtResource("3_00c3u")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_tqug0"]
+script = ExtResource("3_00c3u")
+kind = 11
+amount = 120
+
+[sub_resource type="Resource" id="Resource_glgbd"]
+script = ExtResource("3_00c3u")
+kind = 7
+
+[resource]
+script = ExtResource("4_p70hq")
+id = &"a_name_for_the_place"
+title = "A name for the place"
+body = "Strangers keep asking what the village is called, and {subject} has run out of ways to say that it isn't."
+requires = Array[ExtResource("3_00c3u")]([SubResource("Resource_n0en0"), SubResource("Resource_tqug0")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_00c3u")]([SubResource("Resource_glgbd")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_dl2y1")]([SubResource("Resource_t1ba2"), SubResource("Resource_i78fw")])

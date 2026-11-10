@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_yoc8n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_mbyyr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_r6vt3"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_g324r"]
+
+[sub_resource type="Resource" id="Resource_xsy5g"]
+script = ExtResource("2_mbyyr")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_s2ipf"]
+script = ExtResource("2_mbyyr")
+kind = 1
+key = &"well_dug"
+
+[sub_resource type="Resource" id="Resource_0rcia"]
+script = ExtResource("2_mbyyr")
+text = "The well went down past the roots of the old tree, and the water that came up tasted of stone."
+
+[sub_resource type="Resource" id="Resource_5jsjj"]
+script = ExtResource("3_r6vt3")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_5vlaa"]
+script = ExtResource("1_yoc8n")
+id = &"dig_a_well"
+label = "Dig a well, and line it with stones"
+requires = Array[ExtResource("3_r6vt3")]([SubResource("Resource_5jsjj")])
+effects = Array[ExtResource("2_mbyyr")]([SubResource("Resource_xsy5g"), SubResource("Resource_s2ipf"), SubResource("Resource_0rcia")])
+
+[sub_resource type="Resource" id="Resource_c56kn"]
+script = ExtResource("2_mbyyr")
+kind = 1
+key = &"well_carriers"
+
+[sub_resource type="Resource" id="Resource_u6rkq"]
+script = ExtResource("2_mbyyr")
+text = "They kept carrying water from the river, and everybody grew a good pair of shoulders."
+
+[sub_resource type="Resource" id="Resource_pvigw"]
+script = ExtResource("1_yoc8n")
+id = &"keep_carrying"
+label = "Keep carrying water from the river"
+effects = Array[ExtResource("2_mbyyr")]([SubResource("Resource_c56kn"), SubResource("Resource_u6rkq")])
+
+[sub_resource type="Resource" id="Resource_dif1j"]
+script = ExtResource("3_r6vt3")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_eaben"]
+script = ExtResource("3_r6vt3")
+kind = 11
+amount = 46
+
+[resource]
+script = ExtResource("4_g324r")
+id = &"the_well"
+title = "A place to fetch water"
+body = "Carrying water from the river twice a day is starting to feel like a way of life."
+category = &"settlement"
+requires = Array[ExtResource("3_r6vt3")]([SubResource("Resource_dif1j"), SubResource("Resource_eaben")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_yoc8n")]([SubResource("Resource_5vlaa"), SubResource("Resource_pvigw")])

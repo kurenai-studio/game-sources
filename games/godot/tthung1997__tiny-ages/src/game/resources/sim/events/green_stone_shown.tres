@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_g77vx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_sfbad"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_t607y"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_cuo1d"]
+
+[sub_resource type="Resource" id="Resource_df8bg"]
+script = ExtResource("2_sfbad")
+kind = 1
+key = &"green_stone"
+
+[sub_resource type="Resource" id="Resource_wolpe"]
+script = ExtResource("2_sfbad")
+text = "In time the green stone was traced to a stream in the hills, and a party came back from it with a heavy bag and a good deal to say."
+
+[sub_resource type="Resource" id="Resource_sluss"]
+script = ExtResource("2_sfbad")
+kind = 10
+key = &"green_stone"
+text = "Word from the Hills"
+
+[sub_resource type="Resource" id="Resource_f1a4u"]
+script = ExtResource("3_t607y")
+kind = 9
+key = &"green_stone"
+negate = true
+
+[resource]
+script = ExtResource("4_cuo1d")
+id = &"green_stone_shown"
+title = "Where the green comes from"
+category = &"exploration"
+requires = Array[ExtResource("3_t607y")]([SubResource("Resource_f1a4u")])
+effects = Array[ExtResource("2_sfbad")]([SubResource("Resource_df8bg"), SubResource("Resource_wolpe"), SubResource("Resource_sluss")])

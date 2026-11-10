@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y0la2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_q5836"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_a4yu2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_k58sk"]
+
+[sub_resource type="Resource" id="Resource_hmb0p"]
+script = ExtResource("2_q5836")
+text = "The kiln was lit, and for a night the whole camp smelled of hot clay."
+
+[sub_resource type="Resource" id="Resource_q5kgg"]
+script = ExtResource("3_a4yu2")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_014iw"]
+script = ExtResource("3_a4yu2")
+key = &"kiln"
+
+[resource]
+script = ExtResource("4_k58sk")
+id = &"kiln_night"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_a4yu2")]([SubResource("Resource_q5kgg"), SubResource("Resource_014iw")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_q5836")]([SubResource("Resource_hmb0p")])

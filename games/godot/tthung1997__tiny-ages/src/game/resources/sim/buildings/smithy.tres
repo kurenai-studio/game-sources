@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_2t1hl"]
+
+[resource]
+script = ExtResource("1_2t1hl")
+id = &"smithy"
+display_name = "Smithy"
+description = "A clay furnace, an anvil stone and a pile of charcoal: a place to work metal."
+cost = Dictionary[StringName, int]({
+&"wood": 16
+})
+work_required = 40
+daily_output = Dictionary[StringName, float]({
+&"wood": 0.5
+})
+tags = Array[StringName]([&"exposed"])
+completion_achievement = &"first_casting"
+completion_achievement_title = "The First Casting"

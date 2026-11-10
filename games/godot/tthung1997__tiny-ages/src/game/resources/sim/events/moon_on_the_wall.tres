@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_knlml"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_87ywu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_b0h0l"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_w67ra"]
+
+[sub_resource type="Resource" id="Resource_8cmsk"]
+script = ExtResource("2_87ywu")
+text = "At dusk the painted moon caught the firelight, and for a moment glowed from inside."
+
+[sub_resource type="Resource" id="Resource_0i04v"]
+script = ExtResource("3_b0h0l")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_jj0ey"]
+script = ExtResource("3_b0h0l")
+key = &"art_sky"
+
+[resource]
+script = ExtResource("4_w67ra")
+id = &"moon_on_the_wall"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_b0h0l")]([SubResource("Resource_0i04v"), SubResource("Resource_jj0ey")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_87ywu")]([SubResource("Resource_8cmsk")])

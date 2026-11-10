@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_jagu6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_g1fss"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_25nwq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5pdeh"]
+
+[sub_resource type="Resource" id="Resource_773r2"]
+script = ExtResource("2_g1fss")
+text = "A red tunic crossed the field, and everyone stopped to watch it go."
+
+[sub_resource type="Resource" id="Resource_yjah2"]
+script = ExtResource("3_25nwq")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_4nwsh"]
+script = ExtResource("3_25nwq")
+key = &"dyed_cloth"
+
+[resource]
+script = ExtResource("4_5pdeh")
+id = &"red_tunic"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_25nwq")]([SubResource("Resource_yjah2"), SubResource("Resource_4nwsh")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_g1fss")]([SubResource("Resource_773r2")])

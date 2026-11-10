@@ -1,0 +1,94 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_3t1r6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_505cl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_aci0v"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_m3rln"]
+
+[sub_resource type="Resource" id="Resource_xmpjd"]
+script = ExtResource("2_505cl")
+kind = 1
+key = &"iron_gate"
+
+[sub_resource type="Resource" id="Resource_opjes"]
+script = ExtResource("2_505cl")
+kind = 1
+key = &"hill_fort"
+
+[sub_resource type="Resource" id="Resource_l30dk"]
+script = ExtResource("2_505cl")
+kind = 10
+key = &"the_hill_fort"
+text = "The Hill-fort"
+
+[sub_resource type="Resource" id="Resource_fratx"]
+script = ExtResource("2_505cl")
+text = "Iron hinges and straps went on the gate, and it swung shut with a sound like a very large decision being made."
+
+[sub_resource type="Resource" id="Resource_rtda6"]
+script = ExtResource("1_3t1r6")
+id = &"hang_it_in_iron"
+label = "Hang it on iron hinges, and bind it with straps"
+effects = Array[ExtResource("2_505cl")]([SubResource("Resource_xmpjd"), SubResource("Resource_opjes"), SubResource("Resource_l30dk"), SubResource("Resource_fratx")])
+
+[sub_resource type="Resource" id="Resource_xullg"]
+script = ExtResource("2_505cl")
+kind = 1
+key = &"barred_gate"
+
+[sub_resource type="Resource" id="Resource_ndjxh"]
+script = ExtResource("2_505cl")
+kind = 1
+key = &"hill_fort"
+
+[sub_resource type="Resource" id="Resource_706ps"]
+script = ExtResource("2_505cl")
+kind = 10
+key = &"the_hill_fort"
+text = "The Hill-fort"
+
+[sub_resource type="Resource" id="Resource_gfrgb"]
+script = ExtResource("2_505cl")
+text = "A single great beam went across the gate, and took four people to lift, which was agreed to be a feature."
+
+[sub_resource type="Resource" id="Resource_g8jt1"]
+script = ExtResource("1_3t1r6")
+id = &"bar_it_with_a_beam"
+label = "Bar it with a single great beam"
+effects = Array[ExtResource("2_505cl")]([SubResource("Resource_xullg"), SubResource("Resource_ndjxh"), SubResource("Resource_706ps"), SubResource("Resource_gfrgb")])
+
+[sub_resource type="Resource" id="Resource_scan0"]
+script = ExtResource("3_aci0v")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_6go38"]
+script = ExtResource("3_aci0v")
+kind = 11
+amount = 144
+
+[sub_resource type="Resource" id="Resource_3egkc"]
+script = ExtResource("3_aci0v")
+kind = 9
+key = &"the_hill_fort"
+negate = true
+
+[sub_resource type="Resource" id="Resource_fun3q"]
+script = ExtResource("3_aci0v")
+kind = 7
+
+[resource]
+script = ExtResource("4_m3rln")
+id = &"bind_the_gate_in_iron"
+title = "A gate that holds"
+body = "The gate has been shut and opened so many times that the hinges have started to complain in two voices."
+category = &"settlement"
+requires = Array[ExtResource("3_aci0v")]([SubResource("Resource_scan0"), SubResource("Resource_6go38"), SubResource("Resource_3egkc")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_aci0v")]([SubResource("Resource_fun3q")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_3t1r6")]([SubResource("Resource_rtda6"), SubResource("Resource_g8jt1")])

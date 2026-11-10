@@ -1,0 +1,102 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1iq51"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_x0mac"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vimhe"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_suqte"]
+
+[sub_resource type="Resource" id="Resource_rbqjb"]
+script = ExtResource("2_x0mac")
+kind = 1
+key = &"signs_cut"
+
+[sub_resource type="Resource" id="Resource_b67mm"]
+script = ExtResource("2_x0mac")
+kind = 1
+key = &"letters"
+
+[sub_resource type="Resource" id="Resource_osmij"]
+script = ExtResource("2_x0mac")
+kind = 10
+key = &"written_word"
+text = "The Written Word"
+
+[sub_resource type="Resource" id="Resource_ty1xj"]
+script = ExtResource("2_x0mac")
+text = "The signs were cut into a stick, one for every sound, and the stick was passed round and read by people who had never seen a stick read."
+
+[sub_resource type="Resource" id="Resource_m40ih"]
+script = ExtResource("1_1iq51")
+id = &"cut_the_signs"
+label = "Cut the signs into the stick"
+effects = Array[ExtResource("2_x0mac")]([SubResource("Resource_rbqjb"), SubResource("Resource_b67mm"), SubResource("Resource_osmij"), SubResource("Resource_ty1xj")])
+
+[sub_resource type="Resource" id="Resource_lppsn"]
+script = ExtResource("2_x0mac")
+kind = 1
+key = &"cord_read"
+
+[sub_resource type="Resource" id="Resource_0j7xv"]
+script = ExtResource("2_x0mac")
+kind = 1
+key = &"letters"
+
+[sub_resource type="Resource" id="Resource_b6g3m"]
+script = ExtResource("2_x0mac")
+kind = 10
+key = &"written_word"
+text = "The Written Word"
+
+[sub_resource type="Resource" id="Resource_mnnw5"]
+script = ExtResource("2_x0mac")
+text = "The cord was read aloud, knot by knot, while someone cut each sound into a stick, and it took all night and was worth it."
+
+[sub_resource type="Resource" id="Resource_6wurv"]
+script = ExtResource("1_1iq51")
+id = &"read_the_cord_aloud"
+label = "Read the cord aloud, and cut as you go"
+effects = Array[ExtResource("2_x0mac")]([SubResource("Resource_lppsn"), SubResource("Resource_0j7xv"), SubResource("Resource_b6g3m"), SubResource("Resource_mnnw5")])
+
+[sub_resource type="Resource" id="Resource_ack5q"]
+script = ExtResource("3_vimhe")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_cqprj"]
+script = ExtResource("3_vimhe")
+kind = 11
+amount = 216
+
+[sub_resource type="Resource" id="Resource_gwskv"]
+script = ExtResource("3_vimhe")
+kind = 9
+key = &"written_word"
+negate = true
+
+[sub_resource type="Resource" id="Resource_m6ri1"]
+script = ExtResource("3_vimhe")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_mjll6"]
+script = ExtResource("3_vimhe")
+key = &"knot_cords"
+
+[sub_resource type="Resource" id="Resource_p1wcx"]
+script = ExtResource("3_vimhe")
+kind = 7
+
+[resource]
+script = ExtResource("4_suqte")
+id = &"signs_on_a_stick"
+title = "A sign for a knot"
+body = "The keeper of the cords has begun to cut small signs into a stick beside each knot, so that nobody has to ask her what they mean."
+requires = Array[ExtResource("3_vimhe")]([SubResource("Resource_ack5q"), SubResource("Resource_cqprj"), SubResource("Resource_gwskv"), SubResource("Resource_m6ri1"), SubResource("Resource_mjll6")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_vimhe")]([SubResource("Resource_p1wcx")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_1iq51")]([SubResource("Resource_m40ih"), SubResource("Resource_6wurv")])

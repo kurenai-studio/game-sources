@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_tn627"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_g6cyn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_x8tyc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_boda8"]
+
+[sub_resource type="Resource" id="Resource_8xldx"]
+script = ExtResource("2_g6cyn")
+text = "The dogs barked at dusk, and somebody answered from the next roof."
+
+[sub_resource type="Resource" id="Resource_em18c"]
+script = ExtResource("3_x8tyc")
+kind = 8
+amount = 1
+
+[resource]
+script = ExtResource("4_boda8")
+id = &"dogs_at_dusk"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_x8tyc")]([SubResource("Resource_em18c")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_g6cyn")]([SubResource("Resource_8xldx")])

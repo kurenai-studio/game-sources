@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_uw6ph"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_eye4r"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_3uvt5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_h5uxc"]
+
+[sub_resource type="Resource" id="Resource_832ji"]
+script = ExtResource("2_eye4r")
+text = "The clay chimney drew the smoke straight up, and the village smelled, for once, of something else."
+
+[sub_resource type="Resource" id="Resource_doj8d"]
+script = ExtResource("3_3uvt5")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_jnhus"]
+script = ExtResource("3_3uvt5")
+key = &"chimney"
+
+[resource]
+script = ExtResource("4_h5uxc")
+id = &"chimney_smoke"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_3uvt5")]([SubResource("Resource_doj8d"), SubResource("Resource_jnhus")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_eye4r")]([SubResource("Resource_832ji")])

@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_p3mn2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vcn8c"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_idopw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3si70"]
+
+[sub_resource type="Resource" id="Resource_144su"]
+script = ExtResource("2_vcn8c")
+kind = 11
+key = &"trader"
+
+[sub_resource type="Resource" id="Resource_d0vpv"]
+script = ExtResource("2_vcn8c")
+kind = 1
+key = &"trader_chosen"
+
+[sub_resource type="Resource" id="Resource_yfwhv"]
+script = ExtResource("2_vcn8c")
+text = "{subject} was made the trader, and given a good strong bag and a very long list."
+
+[sub_resource type="Resource" id="Resource_qbdh0"]
+script = ExtResource("1_p3mn2")
+id = &"make_a_trader"
+label = "Make them the village's trader"
+effects = Array[ExtResource("2_vcn8c")]([SubResource("Resource_144su"), SubResource("Resource_d0vpv"), SubResource("Resource_yfwhv")])
+
+[sub_resource type="Resource" id="Resource_vjrox"]
+script = ExtResource("2_vcn8c")
+kind = 1
+key = &"road_shared"
+
+[sub_resource type="Resource" id="Resource_a0lf8"]
+script = ExtResource("2_vcn8c")
+text = "Everyone took a turn, and the village learned a great many ways to be cheated, and a few to cheat back."
+
+[sub_resource type="Resource" id="Resource_bq2c3"]
+script = ExtResource("1_p3mn2")
+id = &"share_the_road"
+label = "Let everyone take a turn at the road"
+effects = Array[ExtResource("2_vcn8c")]([SubResource("Resource_vjrox"), SubResource("Resource_a0lf8")])
+
+[sub_resource type="Resource" id="Resource_rvq2i"]
+script = ExtResource("3_idopw")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_sykdy"]
+script = ExtResource("3_idopw")
+kind = 11
+amount = 174
+
+[sub_resource type="Resource" id="Resource_62ul3"]
+script = ExtResource("3_idopw")
+kind = 9
+key = &"wheel_and_road"
+
+[sub_resource type="Resource" id="Resource_d85dx"]
+script = ExtResource("3_idopw")
+kind = 7
+
+[resource]
+script = ExtResource("4_3si70")
+id = &"who_walks_the_road"
+title = "Who walks the road"
+body = "{subject} has been to the end of the road and back three times this month, and comes home each time with a new word."
+requires = Array[ExtResource("3_idopw")]([SubResource("Resource_rvq2i"), SubResource("Resource_sykdy"), SubResource("Resource_62ul3")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_idopw")]([SubResource("Resource_d85dx")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_p3mn2")]([SubResource("Resource_qbdh0"), SubResource("Resource_bq2c3")])

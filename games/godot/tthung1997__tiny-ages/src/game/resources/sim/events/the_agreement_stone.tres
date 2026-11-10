@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y1bm2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_0w8ot"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_82478"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_pukjv"]
+
+[sub_resource type="Resource" id="Resource_u3q5w"]
+script = ExtResource("2_0w8ot")
+text = "Someone ran a finger down a line of the agreements in the stone, slowly, as if tracing a road."
+
+[sub_resource type="Resource" id="Resource_7w5ke"]
+script = ExtResource("3_82478")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_15u8l"]
+script = ExtResource("3_82478")
+key = &"agreements_cut"
+
+[resource]
+script = ExtResource("4_pukjv")
+id = &"the_agreement_stone"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_82478")]([SubResource("Resource_7w5ke"), SubResource("Resource_15u8l")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_0w8ot")]([SubResource("Resource_u3q5w")])

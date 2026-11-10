@@ -1,0 +1,43 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_er5fg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_xwjay"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_81for"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_cxpgp"]
+
+[sub_resource type="Resource" id="Resource_okvef"]
+script = ExtResource("2_xwjay")
+text = "{subject} sat with the herd until dark, and said that they were good company."
+
+[sub_resource type="Resource" id="Resource_tc36e"]
+script = ExtResource("3_81for")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_crnhm"]
+script = ExtResource("3_81for")
+key = &"path_herding"
+
+[sub_resource type="Resource" id="Resource_7181y"]
+script = ExtResource("3_81for")
+kind = 6
+key = &"nature_loving"
+
+[sub_resource type="Resource" id="Resource_defij"]
+script = ExtResource("3_81for")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_gk65m"]
+script = ExtResource("3_81for")
+kind = 10
+
+[resource]
+script = ExtResource("4_cxpgp")
+id = &"with_the_herd"
+title = "A quiet moment"
+requires = Array[ExtResource("3_81for")]([SubResource("Resource_tc36e"), SubResource("Resource_crnhm")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_81for")]([SubResource("Resource_7181y"), SubResource("Resource_defij"), SubResource("Resource_gk65m")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_xwjay")]([SubResource("Resource_okvef")])

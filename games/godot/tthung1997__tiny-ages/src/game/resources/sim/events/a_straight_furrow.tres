@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_top54"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_h65un"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_evxcw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e0a22"]
+
+[sub_resource type="Resource" id="Resource_t7pwj"]
+script = ExtResource("2_h65un")
+text = "A line of turned earth ran the whole length of the field, so straight that a stranger took it for a road."
+
+[sub_resource type="Resource" id="Resource_nd20m"]
+script = ExtResource("3_evxcw")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_eye0a"]
+script = ExtResource("3_evxcw")
+kind = 9
+key = &"fuller_harvest"
+
+[resource]
+script = ExtResource("4_e0a22")
+id = &"a_straight_furrow"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_evxcw")]([SubResource("Resource_nd20m"), SubResource("Resource_eye0a")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_h65un")]([SubResource("Resource_t7pwj")])

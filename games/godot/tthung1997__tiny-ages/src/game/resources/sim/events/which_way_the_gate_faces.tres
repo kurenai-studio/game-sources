@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_8i21n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_go3ly"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fqi1s"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3hmwx"]
+
+[sub_resource type="Resource" id="Resource_c6gq3"]
+script = ExtResource("2_go3ly")
+kind = 1
+key = &"river_gate"
+
+[sub_resource type="Resource" id="Resource_3hal8"]
+script = ExtResource("2_go3ly")
+text = "The gate was hung facing the river, and every morning the first thing anyone saw was water."
+
+[sub_resource type="Resource" id="Resource_aro3j"]
+script = ExtResource("1_8i21n")
+id = &"gate_to_the_river"
+label = "Toward the river"
+effects = Array[ExtResource("2_go3ly")]([SubResource("Resource_c6gq3"), SubResource("Resource_3hal8")])
+
+[sub_resource type="Resource" id="Resource_qwp6l"]
+script = ExtResource("2_go3ly")
+kind = 1
+key = &"road_gate"
+
+[sub_resource type="Resource" id="Resource_kn14o"]
+script = ExtResource("2_go3ly")
+text = "The gate was hung facing the road, and every morning the first thing anyone saw was whoever was coming."
+
+[sub_resource type="Resource" id="Resource_jk1kx"]
+script = ExtResource("1_8i21n")
+id = &"gate_to_the_road"
+label = "Toward the road"
+effects = Array[ExtResource("2_go3ly")]([SubResource("Resource_qwp6l"), SubResource("Resource_kn14o")])
+
+[sub_resource type="Resource" id="Resource_e0861"]
+script = ExtResource("3_fqi1s")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_buhp8"]
+script = ExtResource("3_fqi1s")
+kind = 11
+amount = 112
+
+[sub_resource type="Resource" id="Resource_4j57s"]
+script = ExtResource("3_fqi1s")
+kind = 9
+key = &"mud_brick_walls"
+
+[resource]
+script = ExtResource("4_3hmwx")
+id = &"which_way_the_gate_faces"
+title = "Which way the gate faces"
+body = "The gate is built, and now it has to face somewhere."
+category = &"settlement"
+requires = Array[ExtResource("3_fqi1s")]([SubResource("Resource_e0861"), SubResource("Resource_buhp8"), SubResource("Resource_4j57s")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_8i21n")]([SubResource("Resource_aro3j"), SubResource("Resource_jk1kx")])

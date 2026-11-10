@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_kvlnx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ov8be"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_8hb15"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_o7irm"]
+
+[sub_resource type="Resource" id="Resource_h3fu0"]
+script = ExtResource("2_ov8be")
+text = "A band of fine plaiting went round someone's wrist, with a grass thread through it."
+
+[sub_resource type="Resource" id="Resource_xjhdt"]
+script = ExtResource("3_8hb15")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_jadfh"]
+script = ExtResource("3_8hb15")
+key = &"fine_plaiting"
+
+[resource]
+script = ExtResource("4_o7irm")
+id = &"fine_plait"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_8hb15")]([SubResource("Resource_xjhdt"), SubResource("Resource_jadfh")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ov8be")]([SubResource("Resource_h3fu0")])

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_thrih"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qju5i"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_kkm16"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_hiyip"]
+
+[sub_resource type="Resource" id="Resource_urtf6"]
+script = ExtResource("2_qju5i")
+text = "Smoke rose from the roof by the river, and a child ran between the two camps with a message."
+
+[sub_resource type="Resource" id="Resource_ee27y"]
+script = ExtResource("3_kkm16")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_xi4fd"]
+script = ExtResource("3_kkm16")
+key = &"families_by_the_river"
+
+[resource]
+script = ExtResource("4_hiyip")
+id = &"river_roof"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_kkm16")]([SubResource("Resource_ee27y"), SubResource("Resource_xi4fd")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_qju5i")]([SubResource("Resource_urtf6")])

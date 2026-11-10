@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_nmhpy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ko4tv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gdhbq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_anb6g"]
+
+[sub_resource type="Resource" id="Resource_j8gjb"]
+script = ExtResource("2_ko4tv")
+text = "The standing stone at the crossing was found to be wearing a garland, and no one would say who had put it there."
+
+[sub_resource type="Resource" id="Resource_4db6i"]
+script = ExtResource("3_gdhbq")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_qryjf"]
+script = ExtResource("3_gdhbq")
+key = &"standing_stone"
+
+[resource]
+script = ExtResource("4_anb6g")
+id = &"the_standing_stone_seen_again"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_gdhbq")]([SubResource("Resource_4db6i"), SubResource("Resource_qryjf")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ko4tv")]([SubResource("Resource_j8gjb")])

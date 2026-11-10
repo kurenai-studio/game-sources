@@ -1,0 +1,88 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hcs5v"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1tjdr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_2mrpf"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_d3ep1"]
+
+[sub_resource type="Resource" id="Resource_87lxn"]
+script = ExtResource("2_1tjdr")
+kind = 5
+key = &"quay"
+
+[sub_resource type="Resource" id="Resource_0u1di"]
+script = ExtResource("3_2mrpf")
+kind = 0
+key = &"quay"
+negate = true
+
+[sub_resource type="Resource" id="Resource_a5seb"]
+script = ExtResource("3_2mrpf")
+kind = 2
+key = &"wood"
+amount = 14
+
+[sub_resource type="Resource" id="Resource_ca8d0"]
+script = ExtResource("3_2mrpf")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_vufk4"]
+script = ExtResource("1_hcs5v")
+id = &"build_quay"
+label = "Quay"
+requires = Array[ExtResource("3_2mrpf")]([SubResource("Resource_0u1di"), SubResource("Resource_a5seb"), SubResource("Resource_ca8d0")])
+effects = Array[ExtResource("2_1tjdr")]([SubResource("Resource_87lxn")])
+
+[sub_resource type="Resource" id="Resource_4a1q4"]
+script = ExtResource("2_1tjdr")
+kind = 0
+key = &"wood"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_dxcvp"]
+script = ExtResource("2_1tjdr")
+kind = 1
+key = &"mooring_posts"
+
+[sub_resource type="Resource" id="Resource_wdn0x"]
+script = ExtResource("2_1tjdr")
+text = "Three stout posts went into the bank, and the boats were tied to them with a great deal of rope and a certain amount of pride."
+
+[sub_resource type="Resource" id="Resource_7rhjv"]
+script = ExtResource("3_2mrpf")
+kind = 2
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_r13bo"]
+script = ExtResource("1_hcs5v")
+id = &"drive_mooring_posts"
+label = "Drive mooring posts into the bank"
+requires = Array[ExtResource("3_2mrpf")]([SubResource("Resource_7rhjv")])
+effects = Array[ExtResource("2_1tjdr")]([SubResource("Resource_4a1q4"), SubResource("Resource_dxcvp"), SubResource("Resource_wdn0x")])
+
+[sub_resource type="Resource" id="Resource_e0xex"]
+script = ExtResource("3_2mrpf")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_utyr8"]
+script = ExtResource("3_2mrpf")
+kind = 11
+amount = 204
+
+[sub_resource type="Resource" id="Resource_sjhis"]
+script = ExtResource("3_2mrpf")
+kind = 4
+
+[resource]
+script = ExtResource("4_d3ep1")
+id = &"the_quay"
+title = "Where the boats tie up"
+body = "The boats are pulled up the bank every evening, and every evening somebody gets wet to the knees."
+category = &"settlement"
+requires = Array[ExtResource("3_2mrpf")]([SubResource("Resource_e0xex"), SubResource("Resource_utyr8"), SubResource("Resource_sjhis")])
+chance_per_tick = 0.5
+once = true
+cooldown_ticks = 24
+choices = Array[ExtResource("1_hcs5v")]([SubResource("Resource_vufk4"), SubResource("Resource_r13bo")])

@@ -1,0 +1,108 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_4fv6s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_vvy3l"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_m2ndg"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3xr5o"]
+
+[sub_resource type="Resource" id="Resource_edbqv"]
+script = ExtResource("2_vvy3l")
+kind = 1
+key = &"harbours_linked"
+
+[sub_resource type="Resource" id="Resource_y7idt"]
+script = ExtResource("2_vvy3l")
+kind = 1
+key = &"towns_connected"
+
+[sub_resource type="Resource" id="Resource_edx5x"]
+script = ExtResource("2_vvy3l")
+kind = 10
+key = &"wider_world"
+text = "The Wider World"
+
+[sub_resource type="Resource" id="Resource_u5pc8"]
+script = ExtResource("2_vvy3l")
+text = "The harbours were linked, with lights on every headland and a shared table of the tides, and a ship from three towns away arrived on time."
+
+[sub_resource type="Resource" id="Resource_317jq"]
+script = ExtResource("1_4fv6s")
+id = &"link_the_harbour_towns"
+label = "Link the harbours, with lights and a shared tide-table"
+effects = Array[ExtResource("2_vvy3l")]([SubResource("Resource_edbqv"), SubResource("Resource_y7idt"), SubResource("Resource_edx5x"), SubResource("Resource_u5pc8")])
+
+[sub_resource type="Resource" id="Resource_b2q7g"]
+script = ExtResource("2_vvy3l")
+kind = 1
+key = &"shared_roads"
+
+[sub_resource type="Resource" id="Resource_dr61j"]
+script = ExtResource("2_vvy3l")
+kind = 1
+key = &"towns_connected"
+
+[sub_resource type="Resource" id="Resource_bay1d"]
+script = ExtResource("2_vvy3l")
+kind = 10
+key = &"wider_world"
+text = "The Wider World"
+
+[sub_resource type="Resource" id="Resource_dqqf0"]
+script = ExtResource("2_vvy3l")
+text = "The roads between the towns were shared out, a stretch each, and the town took its stretch very seriously, and mended it in the first week."
+
+[sub_resource type="Resource" id="Resource_3ce5y"]
+script = ExtResource("1_4fv6s")
+id = &"keep_the_shared_roads"
+label = "Keep the shared roads, a stretch each"
+effects = Array[ExtResource("2_vvy3l")]([SubResource("Resource_b2q7g"), SubResource("Resource_dr61j"), SubResource("Resource_bay1d"), SubResource("Resource_dqqf0")])
+
+[sub_resource type="Resource" id="Resource_c2vis"]
+script = ExtResource("3_m2ndg")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_ebuy2"]
+script = ExtResource("3_m2ndg")
+kind = 11
+amount = 252
+
+[sub_resource type="Resource" id="Resource_swp6i"]
+script = ExtResource("3_m2ndg")
+kind = 9
+key = &"wider_world"
+negate = true
+
+[sub_resource type="Resource" id="Resource_nkmyt"]
+script = ExtResource("3_m2ndg")
+kind = 9
+key = &"the_square"
+
+[sub_resource type="Resource" id="Resource_0wmpa"]
+script = ExtResource("3_m2ndg")
+kind = 9
+key = &"water_from_afar"
+
+[sub_resource type="Resource" id="Resource_jgi01"]
+script = ExtResource("3_m2ndg")
+key = &"path_league"
+
+[sub_resource type="Resource" id="Resource_gwi48"]
+script = ExtResource("3_m2ndg")
+kind = 7
+
+[resource]
+script = ExtResource("4_3xr5o")
+id = &"the_web_of_towns"
+title = "The web of towns"
+body = "The towns that share the far shore's laws have begun to ask the town to hold up its end of things, in a friendly way, with a great many ships."
+category = &"exploration"
+requires = Array[ExtResource("3_m2ndg")]([SubResource("Resource_c2vis"), SubResource("Resource_ebuy2"), SubResource("Resource_swp6i"), SubResource("Resource_nkmyt"), SubResource("Resource_0wmpa"), SubResource("Resource_jgi01")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_m2ndg")]([SubResource("Resource_gwi48")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_4fv6s")]([SubResource("Resource_317jq"), SubResource("Resource_3ce5y")])

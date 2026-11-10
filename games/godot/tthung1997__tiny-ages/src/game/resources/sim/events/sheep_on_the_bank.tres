@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_iv1wf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_3txkx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_jbijy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_n1ogg"]
+
+[sub_resource type="Resource" id="Resource_ucfr5"]
+script = ExtResource("2_3txkx")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_taon1"]
+script = ExtResource("2_3txkx")
+kind = 1
+key = &"bank_grazed"
+
+[sub_resource type="Resource" id="Resource_g1uww"]
+script = ExtResource("2_3txkx")
+text = "The flock grazed the bank clean, and the bank was never so tidy, and the sheep looked like a procession."
+
+[sub_resource type="Resource" id="Resource_027xs"]
+script = ExtResource("1_iv1wf")
+id = &"graze_the_bank"
+label = "Let the flock graze it"
+effects = Array[ExtResource("2_3txkx")]([SubResource("Resource_ucfr5"), SubResource("Resource_taon1"), SubResource("Resource_g1uww")])
+
+[sub_resource type="Resource" id="Resource_6k377"]
+script = ExtResource("2_3txkx")
+kind = 1
+key = &"bank_left"
+
+[sub_resource type="Resource" id="Resource_oouqd"]
+script = ExtResource("2_3txkx")
+text = "The flock was kept off the bank, which grew tall, and nested with larks."
+
+[sub_resource type="Resource" id="Resource_arskm"]
+script = ExtResource("1_iv1wf")
+id = &"keep_the_flock_off"
+label = "Keep the flock off it"
+effects = Array[ExtResource("2_3txkx")]([SubResource("Resource_6k377"), SubResource("Resource_oouqd")])
+
+[sub_resource type="Resource" id="Resource_160ns"]
+script = ExtResource("3_jbijy")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_ptioj"]
+script = ExtResource("3_jbijy")
+kind = 11
+amount = 140
+
+[sub_resource type="Resource" id="Resource_1x23v"]
+script = ExtResource("3_jbijy")
+kind = 9
+key = &"the_hill_fort"
+
+[sub_resource type="Resource" id="Resource_dp64c"]
+script = ExtResource("3_jbijy")
+key = &"path_herding"
+
+[resource]
+script = ExtResource("4_n1ogg")
+id = &"sheep_on_the_bank"
+title = "Sheep on the bank"
+body = "The bank round the fort is grass, and the flock has noticed."
+category = &"settlement"
+requires = Array[ExtResource("3_jbijy")]([SubResource("Resource_160ns"), SubResource("Resource_ptioj"), SubResource("Resource_1x23v"), SubResource("Resource_dp64c")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_iv1wf")]([SubResource("Resource_027xs"), SubResource("Resource_arskm")])

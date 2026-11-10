@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_e5jlc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ajq7y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ip72m"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_2apio"]
+
+[sub_resource type="Resource" id="Resource_mhxo7"]
+script = ExtResource("2_ajq7y")
+kind = 1
+key = &"midsummer_hill"
+
+[sub_resource type="Resource" id="Resource_re5c2"]
+script = ExtResource("2_ajq7y")
+text = "A fire burned on the hill all night, and everyone watched it from their doors."
+
+[sub_resource type="Resource" id="Resource_xiwnm"]
+script = ExtResource("1_e5jlc")
+id = &"fire_on_the_hill"
+label = "Light a fire on the hill and watch it from the huts"
+effects = Array[ExtResource("2_ajq7y")]([SubResource("Resource_mhxo7"), SubResource("Resource_re5c2")])
+
+[sub_resource type="Resource" id="Resource_fh0a1"]
+script = ExtResource("2_ajq7y")
+kind = 1
+key = &"midsummer_hearth"
+
+[sub_resource type="Resource" id="Resource_6gq3a"]
+script = ExtResource("2_ajq7y")
+text = "The whole village sat up round the hearth, and the sun came back before anyone slept."
+
+[sub_resource type="Resource" id="Resource_so7me"]
+script = ExtResource("1_e5jlc")
+id = &"dance_round_the_hearth"
+label = "Sit up round the village hearth until it is light again"
+effects = Array[ExtResource("2_ajq7y")]([SubResource("Resource_fh0a1"), SubResource("Resource_6gq3a")])
+
+[sub_resource type="Resource" id="Resource_2n1jn"]
+script = ExtResource("3_ip72m")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_6o0u2"]
+script = ExtResource("3_ip72m")
+kind = 11
+amount = 152
+
+[sub_resource type="Resource" id="Resource_8do1l"]
+script = ExtResource("3_ip72m")
+kind = 13
+amount = 1
+
+[resource]
+script = ExtResource("4_2apio")
+id = &"midsummer"
+title = "The longest day"
+body = "The sun has barely set, and someone has pointed out that tomorrow it will rise nearly where it set."
+category = &"settlement"
+requires = Array[ExtResource("3_ip72m")]([SubResource("Resource_2n1jn"), SubResource("Resource_6o0u2"), SubResource("Resource_8do1l")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_e5jlc")]([SubResource("Resource_xiwnm"), SubResource("Resource_so7me")])

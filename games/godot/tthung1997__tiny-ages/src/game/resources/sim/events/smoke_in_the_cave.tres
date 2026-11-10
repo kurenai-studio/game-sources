@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_4elp6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_4owm8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_c0gic"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ki1du"]
+
+[sub_resource type="Resource" id="Resource_cqr6y"]
+script = ExtResource("2_4owm8")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_agmq0"]
+script = ExtResource("2_4owm8")
+kind = 1
+key = &"smoke_hole"
+
+[sub_resource type="Resource" id="Resource_40uik"]
+script = ExtResource("2_4owm8")
+text = "A gap in the roof drew the smoke up, and the stars showed through it."
+
+[sub_resource type="Resource" id="Resource_hi612"]
+script = ExtResource("3_c0gic")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_3nio1"]
+script = ExtResource("1_4elp6")
+id = &"dig_a_smoke_hole"
+label = "Open a gap in the roof above the fire"
+requires = Array[ExtResource("3_c0gic")]([SubResource("Resource_hi612")])
+effects = Array[ExtResource("2_4owm8")]([SubResource("Resource_cqr6y"), SubResource("Resource_agmq0"), SubResource("Resource_40uik")])
+
+[sub_resource type="Resource" id="Resource_lraw8"]
+script = ExtResource("2_4owm8")
+kind = 1
+key = &"smoky_cave"
+
+[sub_resource type="Resource" id="Resource_f2h3s"]
+script = ExtResource("2_4owm8")
+text = "Everyone coughed a little less each year, or said so."
+
+[sub_resource type="Resource" id="Resource_4w27n"]
+script = ExtResource("1_4elp6")
+id = &"live_with_it"
+label = "Live with the smoke"
+effects = Array[ExtResource("2_4owm8")]([SubResource("Resource_lraw8"), SubResource("Resource_f2h3s")])
+
+[sub_resource type="Resource" id="Resource_2xraa"]
+script = ExtResource("3_c0gic")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_rm6gw"]
+script = ExtResource("3_c0gic")
+kind = 5
+amount = 316
+
+[resource]
+script = ExtResource("4_ki1du")
+id = &"smoke_in_the_cave"
+title = "Smoke in the cave"
+body = "Years of fire have blackened the cave roof, and the smoke lingers every evening."
+category = &"settlement"
+requires = Array[ExtResource("3_c0gic")]([SubResource("Resource_2xraa"), SubResource("Resource_rm6gw")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_4elp6")]([SubResource("Resource_3nio1"), SubResource("Resource_4w27n")])

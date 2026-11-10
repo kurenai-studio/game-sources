@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_idnfq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2x5h1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vvkek"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_r85du"]
+
+[sub_resource type="Resource" id="Resource_difr7"]
+script = ExtResource("2_2x5h1")
+kind = 13
+amount = 1
+
+[sub_resource type="Resource" id="Resource_wk22u"]
+script = ExtResource("2_2x5h1")
+kind = 1
+key = &"smith_stayed"
+
+[sub_resource type="Resource" id="Resource_riyo0"]
+script = ExtResource("2_2x5h1")
+text = "The smith was taken in, and brought tools, opinions and a number of better ways to hold a hammer."
+
+[sub_resource type="Resource" id="Resource_t3r3c"]
+script = ExtResource("3_vvkek")
+kind = 12
+amount = 1
+
+[sub_resource type="Resource" id="Resource_tu3r0"]
+script = ExtResource("1_idnfq")
+id = &"take_the_smith_in"
+label = "Take them in"
+requires = Array[ExtResource("3_vvkek")]([SubResource("Resource_t3r3c")])
+effects = Array[ExtResource("2_2x5h1")]([SubResource("Resource_difr7"), SubResource("Resource_wk22u"), SubResource("Resource_riyo0")])
+
+[sub_resource type="Resource" id="Resource_tn0ev"]
+script = ExtResource("2_2x5h1")
+kind = 0
+key = &"food"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_a8kt4"]
+script = ExtResource("2_2x5h1")
+kind = 1
+key = &"smith_sent_on"
+
+[sub_resource type="Resource" id="Resource_sfp42"]
+script = ExtResource("2_2x5h1")
+text = "The smith was sent on with a gift of food, and a good name, and a small hammer left behind by accident."
+
+[sub_resource type="Resource" id="Resource_ldm0f"]
+script = ExtResource("3_vvkek")
+kind = 2
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_f1pfg"]
+script = ExtResource("1_idnfq")
+id = &"send_them_on"
+label = "Send them on with a gift of food"
+requires = Array[ExtResource("3_vvkek")]([SubResource("Resource_ldm0f")])
+effects = Array[ExtResource("2_2x5h1")]([SubResource("Resource_tn0ev"), SubResource("Resource_a8kt4"), SubResource("Resource_sfp42")])
+
+[sub_resource type="Resource" id="Resource_j22we"]
+script = ExtResource("3_vvkek")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_f2hhv"]
+script = ExtResource("3_vvkek")
+kind = 11
+amount = 150
+
+[sub_resource type="Resource" id="Resource_ba8d6"]
+script = ExtResource("3_vvkek")
+kind = 9
+key = &"first_casting"
+
+[resource]
+script = ExtResource("4_r85du")
+id = &"a_smith_who_stays"
+title = "A smith who wants to stay"
+body = "A smith from beyond the ridge has been working at the hearth for a week, and has begun to ask what the winters are like."
+requires = Array[ExtResource("3_vvkek")]([SubResource("Resource_j22we"), SubResource("Resource_f2hhv"), SubResource("Resource_ba8d6")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_idnfq")]([SubResource("Resource_tu3r0"), SubResource("Resource_f1pfg")])

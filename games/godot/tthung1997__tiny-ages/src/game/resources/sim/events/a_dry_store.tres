@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hy17m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_olm82"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_i270l"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_sbyt0"]
+
+[sub_resource type="Resource" id="Resource_rxyna"]
+script = ExtResource("2_olm82")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_wcv2p"]
+script = ExtResource("2_olm82")
+kind = 1
+key = &"store_pit"
+
+[sub_resource type="Resource" id="Resource_d3i1e"]
+script = ExtResource("2_olm82")
+text = "A pit lined with clay and capped with a flat stone kept the grain dry and the mice hungry."
+
+[sub_resource type="Resource" id="Resource_eotkt"]
+script = ExtResource("3_i270l")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_88c5x"]
+script = ExtResource("1_hy17m")
+id = &"dig_a_store_pit"
+label = "Line a pit with clay"
+requires = Array[ExtResource("3_i270l")]([SubResource("Resource_eotkt")])
+effects = Array[ExtResource("2_olm82")]([SubResource("Resource_rxyna"), SubResource("Resource_wcv2p"), SubResource("Resource_d3i1e")])
+
+[sub_resource type="Resource" id="Resource_vq2c8"]
+script = ExtResource("2_olm82")
+kind = 1
+key = &"hanging_baskets"
+
+[sub_resource type="Resource" id="Resource_vj8fc"]
+script = ExtResource("2_olm82")
+text = "The baskets were hung from the rafters, out of reach of everything but the swallows."
+
+[sub_resource type="Resource" id="Resource_1pa8q"]
+script = ExtResource("1_hy17m")
+id = &"hang_the_baskets"
+label = "Hang the baskets from the rafters"
+effects = Array[ExtResource("2_olm82")]([SubResource("Resource_vq2c8"), SubResource("Resource_vj8fc")])
+
+[sub_resource type="Resource" id="Resource_g5xrf"]
+script = ExtResource("3_i270l")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_mal50"]
+script = ExtResource("3_i270l")
+kind = 11
+amount = 70
+
+[sub_resource type="Resource" id="Resource_6rp1g"]
+script = ExtResource("3_i270l")
+kind = 9
+key = &"first_harvest"
+
+[resource]
+script = ExtResource("4_sbyt0")
+id = &"a_dry_store"
+title = "Damp grain"
+body = "The grain in the baskets is going damp at the bottom, and something has been at the rest."
+category = &"settlement"
+requires = Array[ExtResource("3_i270l")]([SubResource("Resource_g5xrf"), SubResource("Resource_mal50"), SubResource("Resource_6rp1g")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_hy17m")]([SubResource("Resource_88c5x"), SubResource("Resource_1pa8q")])

@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_cqdlt"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_s0gm2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nggdb"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_k770m"]
+
+[sub_resource type="Resource" id="Resource_swu27"]
+script = ExtResource("2_s0gm2")
+text = "At noon the square was full of people, none of whom had a reason to be there except the square."
+
+[sub_resource type="Resource" id="Resource_2ovey"]
+script = ExtResource("3_nggdb")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_fitmg"]
+script = ExtResource("3_nggdb")
+kind = 9
+key = &"the_square"
+
+[resource]
+script = ExtResource("4_k770m")
+id = &"noon_in_the_square"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_nggdb")]([SubResource("Resource_2ovey"), SubResource("Resource_fitmg")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_s0gm2")]([SubResource("Resource_swu27")])

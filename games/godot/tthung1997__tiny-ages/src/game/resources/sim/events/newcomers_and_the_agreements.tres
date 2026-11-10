@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bd5g5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_6a4vi"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_awup4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4f73n"]
+
+[sub_resource type="Resource" id="Resource_1a587"]
+script = ExtResource("2_6a4vi")
+kind = 1
+key = &"read_at_the_gate"
+
+[sub_resource type="Resource" id="Resource_j7acl"]
+script = ExtResource("2_6a4vi")
+text = "The town's words were read to every newcomer at the gate, in a voice that grew weary and warm, and the newcomers listened with great seriousness."
+
+[sub_resource type="Resource" id="Resource_5jijy"]
+script = ExtResource("1_bd5g5")
+id = &"read_them_at_the_gate"
+label = "Read the town's words to them at the gate"
+effects = Array[ExtResource("2_6a4vi")]([SubResource("Resource_1a587"), SubResource("Resource_j7acl")])
+
+[sub_resource type="Resource" id="Resource_8qdxi"]
+script = ExtResource("2_6a4vi")
+kind = 1
+key = &"neighbour_guides"
+
+[sub_resource type="Resource" id="Resource_ad7vk"]
+script = ExtResource("2_6a4vi")
+text = "Every newcomer was given a neighbour, who explained the laws at some length and with some editing, and the neighbours became fast friends."
+
+[sub_resource type="Resource" id="Resource_1swjj"]
+script = ExtResource("1_bd5g5")
+id = &"give_them_a_neighbour"
+label = "Give each newcomer a neighbour to explain it"
+effects = Array[ExtResource("2_6a4vi")]([SubResource("Resource_8qdxi"), SubResource("Resource_ad7vk")])
+
+[sub_resource type="Resource" id="Resource_vw6pr"]
+script = ExtResource("3_awup4")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_kgemo"]
+script = ExtResource("3_awup4")
+kind = 11
+amount = 138
+
+[sub_resource type="Resource" id="Resource_tw8r2"]
+script = ExtResource("3_awup4")
+kind = 9
+key = &"written_law"
+
+[resource]
+script = ExtResource("4_4f73n")
+id = &"newcomers_and_the_agreements"
+title = "Newcomers and the agreements"
+body = "New people keep arriving along the road, and the town's laws are not theirs, and someone has asked how long the old ones have to wait to be read."
+category = &"settlement"
+requires = Array[ExtResource("3_awup4")]([SubResource("Resource_vw6pr"), SubResource("Resource_kgemo"), SubResource("Resource_tw8r2")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_bd5g5")]([SubResource("Resource_5jijy"), SubResource("Resource_1swjj")])

@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_xxr52"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_grwya"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7y6u7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3pew8"]
+
+[sub_resource type="Resource" id="Resource_6jgh1"]
+script = ExtResource("2_grwya")
+kind = 15
+key = &"flood"
+
+[sub_resource type="Resource" id="Resource_yio3a"]
+script = ExtResource("2_grwya")
+text = "The river came over its banks into the reeds, and the foragers went further up the valley to find dry ground."
+
+[sub_resource type="Resource" id="Resource_b0sot"]
+script = ExtResource("3_7y6u7")
+kind = 14
+key = &"rain"
+
+[sub_resource type="Resource" id="Resource_50erm"]
+script = ExtResource("3_7y6u7")
+kind = 15
+key = &"river"
+negate = true
+
+[sub_resource type="Resource" id="Resource_yaag7"]
+script = ExtResource("3_7y6u7")
+key = &"stores_on_ledge"
+negate = true
+
+[sub_resource type="Resource" id="Resource_ufyk2"]
+script = ExtResource("3_7y6u7")
+key = &"river_bank"
+negate = true
+
+[resource]
+script = ExtResource("4_3pew8")
+id = &"river_over_the_reeds"
+title = "The river spreads"
+category = &"nature"
+requires = Array[ExtResource("3_7y6u7")]([SubResource("Resource_b0sot"), SubResource("Resource_50erm"), SubResource("Resource_yaag7"), SubResource("Resource_ufyk2")])
+chance_per_tick = 0.012
+cooldown_ticks = 960
+effects = Array[ExtResource("2_grwya")]([SubResource("Resource_6jgh1"), SubResource("Resource_yio3a")])

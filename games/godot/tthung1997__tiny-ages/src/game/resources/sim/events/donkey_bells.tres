@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_wmrpm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_edu2k"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_i0whd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_p067k"]
+
+[sub_resource type="Resource" id="Resource_vw6dh"]
+script = ExtResource("2_edu2k")
+text = "The donkeys came in at evening with their bells ringing, and the children raced them to the gate."
+
+[sub_resource type="Resource" id="Resource_5d6w8"]
+script = ExtResource("3_i0whd")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_op1xh"]
+script = ExtResource("3_i0whd")
+key = &"pack_donkeys"
+
+[resource]
+script = ExtResource("4_p067k")
+id = &"donkey_bells"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_i0whd")]([SubResource("Resource_5d6w8"), SubResource("Resource_op1xh")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_edu2k")]([SubResource("Resource_vw6dh")])

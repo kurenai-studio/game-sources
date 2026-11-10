@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vdj7c"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_tpuvq"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_bhjfl"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_frcuu"]
+
+[sub_resource type="Resource" id="Resource_h6ahf"]
+script = ExtResource("2_tpuvq")
+text = "A heron stood in the shallows all afternoon, as if it had business there."
+
+[sub_resource type="Resource" id="Resource_l2f57"]
+script = ExtResource("3_bhjfl")
+kind = 5
+
+[resource]
+script = ExtResource("4_frcuu")
+id = &"heron"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_bhjfl")]([SubResource("Resource_l2f57")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_tpuvq")]([SubResource("Resource_h6ahf")])

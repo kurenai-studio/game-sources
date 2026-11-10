@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_u3tk4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_x6b50"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_cx7ep"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_v5l4d"]
+
+[sub_resource type="Resource" id="Resource_xnpui"]
+script = ExtResource("2_x6b50")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_d80rm"]
+script = ExtResource("2_x6b50")
+kind = 1
+key = &"charcoal_pit"
+
+[sub_resource type="Resource" id="Resource_ggmfe"]
+script = ExtResource("2_x6b50")
+text = "A pit of wood was burned under a skin of turf for three days, and came out black, light and astonishingly hot."
+
+[sub_resource type="Resource" id="Resource_n37br"]
+script = ExtResource("3_cx7ep")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_2nm7g"]
+script = ExtResource("1_u3tk4")
+id = &"burn_a_pit"
+label = "Burn a covered pit of charcoal"
+requires = Array[ExtResource("3_cx7ep")]([SubResource("Resource_n37br")])
+effects = Array[ExtResource("2_x6b50")]([SubResource("Resource_xnpui"), SubResource("Resource_d80rm"), SubResource("Resource_ggmfe")])
+
+[sub_resource type="Resource" id="Resource_nr7ji"]
+script = ExtResource("2_x6b50")
+kind = 0
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_boclo"]
+script = ExtResource("2_x6b50")
+kind = 1
+key = &"dead_wood"
+
+[sub_resource type="Resource" id="Resource_x6jp4"]
+script = ExtResource("2_x6b50")
+text = "The children came back with armfuls of grey, dry wood and were extremely proud of every stick."
+
+[sub_resource type="Resource" id="Resource_rvicq"]
+script = ExtResource("1_u3tk4")
+id = &"gather_dead_wood"
+label = "Send the children for dead wood"
+effects = Array[ExtResource("2_x6b50")]([SubResource("Resource_nr7ji"), SubResource("Resource_boclo"), SubResource("Resource_x6jp4")])
+
+[sub_resource type="Resource" id="Resource_cuk17"]
+script = ExtResource("3_cx7ep")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_oh4hn"]
+script = ExtResource("3_cx7ep")
+kind = 11
+amount = 8
+
+[resource]
+script = ExtResource("4_v5l4d")
+id = &"charcoal"
+title = "Charcoal"
+body = "Green wood smokes, and dry wood burns out too fast. Somebody has said that charcoal would do neither."
+category = &"settlement"
+requires = Array[ExtResource("3_cx7ep")]([SubResource("Resource_cuk17"), SubResource("Resource_oh4hn")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_u3tk4")]([SubResource("Resource_2nm7g"), SubResource("Resource_rvicq")])

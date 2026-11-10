@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="EraDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/era_def.gd" id="1_bdfv3"]
+
+[resource]
+script = ExtResource("1_bdfv3")
+id = &"iron"
+display_name = "Iron Age"
+order = 3
+description = "A harder metal, bigger fields and a fort on the hill: the town is known beyond the water."
+intro_text = "The dark stone would not melt in the bronze fire, so the fire was made hotter, and a new age began."
+housing = 10
+max_villagers = 12
+food_need_scale = 1.5
+food_yield_scale = 1.5
+wood_yield_scale = 1.35
+required_achievements = Array[StringName]([&"first_casting", &"bronze_alloy", &"mud_brick_walls", &"wheel_and_road", &"a_town", &"beyond_the_water"])
+min_ticks_in_previous_era = 8640
+turn_event = &"a_harder_fire"

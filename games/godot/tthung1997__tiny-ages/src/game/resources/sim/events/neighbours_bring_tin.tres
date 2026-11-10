@@ -1,0 +1,106 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_j3i1m"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_0f0d4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_2wlls"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_qed6n"]
+
+[sub_resource type="Resource" id="Resource_q804d"]
+script = ExtResource("2_0f0d4")
+kind = 1
+key = &"neighbours_stayed"
+
+[sub_resource type="Resource" id="Resource_tscxh"]
+script = ExtResource("2_0f0d4")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_1auil"]
+script = ExtResource("2_0f0d4")
+text = "They stayed by the fire and mixed the sand into the pour themselves, explaining every step twice."
+
+[sub_resource type="Resource" id="Resource_g8gdq"]
+script = ExtResource("1_j3i1m")
+id = &"sit_by_the_fire"
+label = "Ask them to stay by the fire"
+effects = Array[ExtResource("2_0f0d4")]([SubResource("Resource_q804d"), SubResource("Resource_tscxh"), SubResource("Resource_1auil")])
+
+[sub_resource type="Resource" id="Resource_qmbi0"]
+script = ExtResource("2_0f0d4")
+kind = 1
+key = &"neighbours_fed"
+
+[sub_resource type="Resource" id="Resource_plt52"]
+script = ExtResource("2_0f0d4")
+kind = 0
+key = &"food"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_71gwo"]
+script = ExtResource("2_0f0d4")
+kind = 10
+key = &"bronze_alloy"
+text = "Bronze"
+
+[sub_resource type="Resource" id="Resource_r4kx3"]
+script = ExtResource("2_0f0d4")
+text = "They went home fed, and left the sand and the instructions behind."
+
+[sub_resource type="Resource" id="Resource_tl8v0"]
+script = ExtResource("3_2wlls")
+kind = 2
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_bqbkb"]
+script = ExtResource("1_j3i1m")
+id = &"send_them_home_fed"
+label = "Send them home with food"
+requires = Array[ExtResource("3_2wlls")]([SubResource("Resource_tl8v0")])
+effects = Array[ExtResource("2_0f0d4")]([SubResource("Resource_qmbi0"), SubResource("Resource_plt52"), SubResource("Resource_71gwo"), SubResource("Resource_r4kx3")])
+
+[sub_resource type="Resource" id="Resource_c86yh"]
+script = ExtResource("3_2wlls")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_lvduq"]
+script = ExtResource("3_2wlls")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_821ju"]
+script = ExtResource("3_2wlls")
+kind = 9
+key = &"bronze_alloy"
+negate = true
+
+[sub_resource type="Resource" id="Resource_oqlmd"]
+script = ExtResource("3_2wlls")
+kind = 9
+key = &"first_casting"
+
+[sub_resource type="Resource" id="Resource_xxvxw"]
+script = ExtResource("3_2wlls")
+key = &"good_neighbours"
+
+[sub_resource type="Resource" id="Resource_wlcga"]
+script = ExtResource("3_2wlls")
+kind = 7
+
+[resource]
+script = ExtResource("4_qed6n")
+id = &"neighbours_bring_tin"
+title = "The neighbours come back"
+body = "The neighbours from beyond the ridge have come back, and this time they have brought a bag of heavy grey sand and a clear idea of what to do with it."
+category = &"settlement"
+requires = Array[ExtResource("3_2wlls")]([SubResource("Resource_c86yh"), SubResource("Resource_lvduq"), SubResource("Resource_821ju"), SubResource("Resource_oqlmd"), SubResource("Resource_xxvxw")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_2wlls")]([SubResource("Resource_wlcga")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_j3i1m")]([SubResource("Resource_g8gdq"), SubResource("Resource_bqbkb")])

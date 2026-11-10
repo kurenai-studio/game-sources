@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ojhqj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_h0nyl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_slbh5"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_tmcgy"]
+
+[sub_resource type="Resource" id="Resource_aqass"]
+script = ExtResource("2_h0nyl")
+text = "{subject} told the market that a coin was worth exactly what the market would agree it was, and was applauded."
+
+[sub_resource type="Resource" id="Resource_keykr"]
+script = ExtResource("3_slbh5")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_2w3cy"]
+script = ExtResource("3_slbh5")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_k8s6b"]
+script = ExtResource("3_slbh5")
+kind = 6
+key = &"social"
+
+[sub_resource type="Resource" id="Resource_mkcad"]
+script = ExtResource("3_slbh5")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_i20tf"]
+script = ExtResource("3_slbh5")
+kind = 10
+
+[resource]
+script = ExtResource("4_tmcgy")
+id = &"telling_the_coin"
+title = "A quiet moment"
+requires = Array[ExtResource("3_slbh5")]([SubResource("Resource_keykr"), SubResource("Resource_2w3cy")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_slbh5")]([SubResource("Resource_k8s6b"), SubResource("Resource_mkcad"), SubResource("Resource_i20tf")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_h0nyl")]([SubResource("Resource_aqass")])

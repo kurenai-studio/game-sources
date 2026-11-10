@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7qcf1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_fbqr6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nmjw6"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5g7no"]
+
+[sub_resource type="Resource" id="Resource_1yiom"]
+script = ExtResource("2_fbqr6")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_tkkpq"]
+script = ExtResource("2_fbqr6")
+kind = 1
+key = &"tall_furnace"
+
+[sub_resource type="Resource" id="Resource_4ctg3"]
+script = ExtResource("2_fbqr6")
+text = "A tall furnace of clay and stone went up, as high as two people, and drew so hard that it roared like something in a cave."
+
+[sub_resource type="Resource" id="Resource_m77tj"]
+script = ExtResource("3_nmjw6")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_yh6tu"]
+script = ExtResource("1_7qcf1")
+id = &"build_a_tall_furnace"
+label = "Build a tall clay furnace"
+requires = Array[ExtResource("3_nmjw6")]([SubResource("Resource_m77tj")])
+effects = Array[ExtResource("2_fbqr6")]([SubResource("Resource_1yiom"), SubResource("Resource_tkkpq"), SubResource("Resource_4ctg3")])
+
+[sub_resource type="Resource" id="Resource_yx1ln"]
+script = ExtResource("2_fbqr6")
+kind = 1
+key = &"bank_furnace"
+
+[sub_resource type="Resource" id="Resource_fh7af"]
+script = ExtResource("2_fbqr6")
+text = "A furnace was dug into the side of the bank, where the earth held the heat in, and the smoke came out of the hill as if it were smoking a pipe."
+
+[sub_resource type="Resource" id="Resource_8ak6p"]
+script = ExtResource("1_7qcf1")
+id = &"dig_it_into_the_bank"
+label = "Dig a furnace into the bank"
+effects = Array[ExtResource("2_fbqr6")]([SubResource("Resource_yx1ln"), SubResource("Resource_fh7af")])
+
+[sub_resource type="Resource" id="Resource_hurc8"]
+script = ExtResource("3_nmjw6")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vd1ru"]
+script = ExtResource("3_nmjw6")
+kind = 11
+amount = 2
+
+[resource]
+script = ExtResource("4_5g7no")
+id = &"a_hotter_hearth"
+title = "A hotter hearth"
+body = "The bronze fire was hot, and the iron fire has to be hotter, and everyone has opinions about where the heat goes."
+category = &"settlement"
+requires = Array[ExtResource("3_nmjw6")]([SubResource("Resource_hurc8"), SubResource("Resource_vd1ru")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_7qcf1")]([SubResource("Resource_yh6tu"), SubResource("Resource_8ak6p")])

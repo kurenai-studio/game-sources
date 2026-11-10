@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_maexx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_41m4u"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_rts32"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rpjeh"]
+
+[sub_resource type="Resource" id="Resource_a4x2c"]
+script = ExtResource("2_41m4u")
+text = "Somebody laid the long table in the square for no reason, and by evening the whole town was sitting at it."
+
+[sub_resource type="Resource" id="Resource_ct0bs"]
+script = ExtResource("3_rts32")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_c78fc"]
+script = ExtResource("3_rts32")
+key = &"long_table"
+
+[resource]
+script = ExtResource("4_rpjeh")
+id = &"the_long_table_again"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_rts32")]([SubResource("Resource_ct0bs"), SubResource("Resource_c78fc")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_41m4u")]([SubResource("Resource_a4x2c")])

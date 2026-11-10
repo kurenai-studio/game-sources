@@ -1,0 +1,114 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6l877"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_plmsd"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_p2nbh"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1j0xn"]
+
+[sub_resource type="Resource" id="Resource_80o2w"]
+script = ExtResource("2_plmsd")
+kind = 1
+key = &"town_wall"
+
+[sub_resource type="Resource" id="Resource_inks5"]
+script = ExtResource("2_plmsd")
+kind = 0
+key = &"wood"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_o040q"]
+script = ExtResource("2_plmsd")
+kind = 10
+key = &"mud_brick_walls"
+text = "Mud-brick Walls"
+
+[sub_resource type="Resource" id="Resource_b0pmg"]
+script = ExtResource("2_plmsd")
+text = "Mud-brick went up on the old stones, row on row, and the wall stopped being something to sit on."
+
+[sub_resource type="Resource" id="Resource_4u5lm"]
+script = ExtResource("3_p2nbh")
+kind = 2
+key = &"wood"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_my4ph"]
+script = ExtResource("1_6l877")
+id = &"raise_it_in_brick"
+label = "Raise it in mud-brick"
+requires = Array[ExtResource("3_p2nbh")]([SubResource("Resource_4u5lm")])
+effects = Array[ExtResource("2_plmsd")]([SubResource("Resource_80o2w"), SubResource("Resource_inks5"), SubResource("Resource_o040q"), SubResource("Resource_b0pmg")])
+
+[sub_resource type="Resource" id="Resource_wjgt1"]
+script = ExtResource("2_plmsd")
+kind = 1
+key = &"palisade"
+
+[sub_resource type="Resource" id="Resource_40fyc"]
+script = ExtResource("2_plmsd")
+kind = 0
+key = &"wood"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_ut5hb"]
+script = ExtResource("2_plmsd")
+kind = 10
+key = &"mud_brick_walls"
+text = "Mud-brick Walls"
+
+[sub_resource type="Resource" id="Resource_qg8d5"]
+script = ExtResource("2_plmsd")
+text = "Sharpened stakes went along the top, each one a little different, and the wall bristled like a hedgehog."
+
+[sub_resource type="Resource" id="Resource_qlyf4"]
+script = ExtResource("3_p2nbh")
+kind = 2
+key = &"wood"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_rwlx1"]
+script = ExtResource("1_6l877")
+id = &"top_it_with_stakes"
+label = "Top it with a palisade"
+requires = Array[ExtResource("3_p2nbh")]([SubResource("Resource_qlyf4")])
+effects = Array[ExtResource("2_plmsd")]([SubResource("Resource_wjgt1"), SubResource("Resource_40fyc"), SubResource("Resource_ut5hb"), SubResource("Resource_qg8d5")])
+
+[sub_resource type="Resource" id="Resource_bymfd"]
+script = ExtResource("3_p2nbh")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_8p10g"]
+script = ExtResource("3_p2nbh")
+kind = 11
+amount = 108
+
+[sub_resource type="Resource" id="Resource_lt407"]
+script = ExtResource("3_p2nbh")
+kind = 9
+key = &"mud_brick_walls"
+negate = true
+
+[sub_resource type="Resource" id="Resource_a55f4"]
+script = ExtResource("3_p2nbh")
+key = &"low_wall"
+
+[sub_resource type="Resource" id="Resource_rocy2"]
+script = ExtResource("3_p2nbh")
+kind = 7
+
+[resource]
+script = ExtResource("4_1j0xn")
+id = &"heighten_the_wall"
+title = "Higher than a child"
+body = "The low wall of fieldstones is exactly as high as a child, and that has proved to be a bad height for a wall."
+category = &"settlement"
+requires = Array[ExtResource("3_p2nbh")]([SubResource("Resource_bymfd"), SubResource("Resource_8p10g"), SubResource("Resource_lt407"), SubResource("Resource_a55f4")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_p2nbh")]([SubResource("Resource_rocy2")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_6l877")]([SubResource("Resource_my4ph"), SubResource("Resource_rwlx1")])

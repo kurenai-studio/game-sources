@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6icgu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_im6lu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_fohkb"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ai8wj"]
+
+[sub_resource type="Resource" id="Resource_wire3"]
+script = ExtResource("2_im6lu")
+text = "{subject} sat on the wall at dusk and counted birds, lost count, and started again."
+
+[sub_resource type="Resource" id="Resource_71s64"]
+script = ExtResource("3_fohkb")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_opmh2"]
+script = ExtResource("3_fohkb")
+kind = 9
+key = &"mud_brick_walls"
+
+[sub_resource type="Resource" id="Resource_3d45k"]
+script = ExtResource("3_fohkb")
+kind = 6
+key = &"nature_loving"
+
+[sub_resource type="Resource" id="Resource_2u40a"]
+script = ExtResource("3_fohkb")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_foecc"]
+script = ExtResource("3_fohkb")
+kind = 10
+
+[resource]
+script = ExtResource("4_ai8wj")
+id = &"counting_birds_from_the_wall"
+title = "A quiet moment"
+requires = Array[ExtResource("3_fohkb")]([SubResource("Resource_71s64"), SubResource("Resource_opmh2")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_fohkb")]([SubResource("Resource_3d45k"), SubResource("Resource_2u40a"), SubResource("Resource_foecc")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_im6lu")]([SubResource("Resource_wire3")])

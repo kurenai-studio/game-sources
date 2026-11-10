@@ -1,0 +1,98 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ro7kh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lbkbm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_kta6c"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_kc2l7"]
+
+[sub_resource type="Resource" id="Resource_a3ap2"]
+script = ExtResource("2_lbkbm")
+kind = 5
+key = &"bloomery"
+
+[sub_resource type="Resource" id="Resource_ldngt"]
+script = ExtResource("3_kta6c")
+kind = 0
+key = &"bloomery"
+negate = true
+
+[sub_resource type="Resource" id="Resource_hu8ur"]
+script = ExtResource("3_kta6c")
+kind = 2
+key = &"wood"
+amount = 18
+
+[sub_resource type="Resource" id="Resource_8javu"]
+script = ExtResource("3_kta6c")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_2gg4s"]
+script = ExtResource("3_kta6c")
+kind = 11
+amount = 18
+
+[sub_resource type="Resource" id="Resource_hah5v"]
+script = ExtResource("1_ro7kh")
+id = &"build_bloomery"
+label = "Bloomery"
+requires = Array[ExtResource("3_kta6c")]([SubResource("Resource_ldngt"), SubResource("Resource_hu8ur"), SubResource("Resource_8javu"), SubResource("Resource_2gg4s")])
+effects = Array[ExtResource("2_lbkbm")]([SubResource("Resource_a3ap2")])
+
+[sub_resource type="Resource" id="Resource_nvwkb"]
+script = ExtResource("2_lbkbm")
+kind = 5
+key = &"granary"
+
+[sub_resource type="Resource" id="Resource_5wxja"]
+script = ExtResource("3_kta6c")
+kind = 0
+key = &"granary"
+negate = true
+
+[sub_resource type="Resource" id="Resource_02xrt"]
+script = ExtResource("3_kta6c")
+kind = 2
+key = &"wood"
+amount = 14
+
+[sub_resource type="Resource" id="Resource_1yiv6"]
+script = ExtResource("3_kta6c")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_emw81"]
+script = ExtResource("3_kta6c")
+kind = 11
+amount = 18
+
+[sub_resource type="Resource" id="Resource_ms3uj"]
+script = ExtResource("1_ro7kh")
+id = &"build_granary"
+label = "Granary"
+requires = Array[ExtResource("3_kta6c")]([SubResource("Resource_5wxja"), SubResource("Resource_02xrt"), SubResource("Resource_1yiv6"), SubResource("Resource_emw81")])
+effects = Array[ExtResource("2_lbkbm")]([SubResource("Resource_nvwkb")])
+
+[sub_resource type="Resource" id="Resource_w5ogc"]
+script = ExtResource("3_kta6c")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_g535u"]
+script = ExtResource("3_kta6c")
+kind = 4
+
+[sub_resource type="Resource" id="Resource_6iflr"]
+script = ExtResource("3_kta6c")
+kind = 2
+key = &"wood"
+amount = 14
+
+[resource]
+script = ExtResource("4_kc2l7")
+id = &"iron_building_opportunity"
+title = "Building in iron"
+body = "The new metal wants a furnace of its own, and the new harvest wants somewhere to go."
+category = &"settlement"
+requires = Array[ExtResource("3_kta6c")]([SubResource("Resource_w5ogc"), SubResource("Resource_g535u"), SubResource("Resource_6iflr")])
+chance_per_tick = 0.5
+cooldown_ticks = 24
+choices = Array[ExtResource("1_ro7kh")]([SubResource("Resource_hah5v"), SubResource("Resource_ms3uj")])

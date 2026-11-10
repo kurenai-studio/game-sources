@@ -1,0 +1,96 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_eshn1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_krxp0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gwil7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_26tt4"]
+
+[sub_resource type="Resource" id="Resource_jb2ci"]
+script = ExtResource("2_krxp0")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_6s536"]
+script = ExtResource("2_krxp0")
+kind = 18
+
+[sub_resource type="Resource" id="Resource_bqsaq"]
+script = ExtResource("2_krxp0")
+kind = 1
+key = &"cut_new_poles"
+
+[sub_resource type="Resource" id="Resource_nynnl"]
+script = ExtResource("2_krxp0")
+text = "New poles went in before the next squall, and the damage was set right."
+
+[sub_resource type="Resource" id="Resource_4rely"]
+script = ExtResource("3_gwil7")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_cu1dd"]
+script = ExtResource("1_eshn1")
+id = &"cut_new_poles"
+label = "Cut new poles and mend it now"
+requires = Array[ExtResource("3_gwil7")]([SubResource("Resource_4rely")])
+effects = Array[ExtResource("2_krxp0")]([SubResource("Resource_jb2ci"), SubResource("Resource_6s536"), SubResource("Resource_bqsaq"), SubResource("Resource_nynnl")])
+
+[sub_resource type="Resource" id="Resource_px581"]
+script = ExtResource("2_krxp0")
+kind = 0
+key = &"wood"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_sbxp4"]
+script = ExtResource("2_krxp0")
+kind = 1
+key = &"gather_the_fallen_wood"
+
+[sub_resource type="Resource" id="Resource_l7iq8"]
+script = ExtResource("2_krxp0")
+text = "Everyone sheltered until it passed, and the fallen branches made a good pile. The damage would be mended by hand in time."
+
+[sub_resource type="Resource" id="Resource_3afbs"]
+script = ExtResource("1_eshn1")
+id = &"gather_the_fallen_wood"
+label = "Wait it out, then gather what fell"
+effects = Array[ExtResource("2_krxp0")]([SubResource("Resource_px581"), SubResource("Resource_sbxp4"), SubResource("Resource_l7iq8")])
+
+[sub_resource type="Resource" id="Resource_imlpk"]
+script = ExtResource("2_krxp0")
+kind = 15
+key = &"storm"
+
+[sub_resource type="Resource" id="Resource_cncfb"]
+script = ExtResource("2_krxp0")
+kind = 17
+key = &"exposed"
+text = "A gust got under the {building} and tore it half apart."
+
+[sub_resource type="Resource" id="Resource_ulso1"]
+script = ExtResource("3_gwil7")
+kind = 13
+amount = 1
+
+[sub_resource type="Resource" id="Resource_3y0oc"]
+script = ExtResource("3_gwil7")
+kind = 14
+
+[sub_resource type="Resource" id="Resource_rtc7n"]
+script = ExtResource("3_gwil7")
+kind = 15
+key = &"exposed"
+
+[resource]
+script = ExtResource("4_26tt4")
+id = &"thunder_storm"
+title = "A storm breaks"
+body = "The sky went the colour of a bruise, the wind got up, and then it all came down at once. Something has given way."
+category = &"nature"
+requires = Array[ExtResource("3_gwil7")]([SubResource("Resource_ulso1"), SubResource("Resource_3y0oc"), SubResource("Resource_rtc7n")])
+chance_per_tick = 0.0025
+cooldown_ticks = 960
+effects = Array[ExtResource("2_krxp0")]([SubResource("Resource_imlpk"), SubResource("Resource_cncfb")])
+choices = Array[ExtResource("1_eshn1")]([SubResource("Resource_cu1dd"), SubResource("Resource_3afbs")])

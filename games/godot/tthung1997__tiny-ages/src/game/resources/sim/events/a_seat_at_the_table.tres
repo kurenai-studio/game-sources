@@ -1,0 +1,54 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_q7ao4"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_h0fs1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_n0kum"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_qfedo"]
+
+[sub_resource type="Resource" id="Resource_ek0q1"]
+script = ExtResource("2_h0fs1")
+kind = 1
+key = &"path_assembly"
+
+[sub_resource type="Resource" id="Resource_a0h5w"]
+script = ExtResource("2_h0fs1")
+kind = 12
+key = &"classical"
+
+[sub_resource type="Resource" id="Resource_p5kfw"]
+script = ExtResource("2_h0fs1")
+text = "The whole town gathered where everyone could see, and agreed, over a long afternoon and a longer evening, how they meant to live, and the strangers were asked to listen and found they did not mind."
+
+[sub_resource type="Resource" id="Resource_hyxj2"]
+script = ExtResource("1_q7ao4")
+id = &"keep_our_own_ways"
+label = "Gather at the stone, and agree how we mean to live"
+effects = Array[ExtResource("2_h0fs1")]([SubResource("Resource_ek0q1"), SubResource("Resource_a0h5w"), SubResource("Resource_p5kfw")])
+
+[sub_resource type="Resource" id="Resource_gqjp6"]
+script = ExtResource("2_h0fs1")
+kind = 1
+key = &"path_league"
+
+[sub_resource type="Resource" id="Resource_ollig"]
+script = ExtResource("2_h0fs1")
+kind = 12
+key = &"classical"
+
+[sub_resource type="Resource" id="Resource_2al4i"]
+script = ExtResource("2_h0fs1")
+text = "A ship went out for the far shore's laws, and came back with a great deal of writing and a few people who wanted to see how the town did it, and the town was a city before the ink was dry."
+
+[sub_resource type="Resource" id="Resource_1ttov"]
+script = ExtResource("1_q7ao4")
+id = &"take_a_place_among_theirs"
+label = "Send for their laws, and take a place among theirs"
+effects = Array[ExtResource("2_h0fs1")]([SubResource("Resource_gqjp6"), SubResource("Resource_ollig"), SubResource("Resource_2al4i")])
+
+[resource]
+script = ExtResource("4_qfedo")
+id = &"a_seat_at_the_table"
+title = "A seat at the table"
+body = "The strangers who asked the town's name have sent word: the town is big enough now to be asked to be a city, with a seat at the table of cities, and a great deal of discussion about who sits where."
+category = &"settlement"
+choices = Array[ExtResource("1_q7ao4")]([SubResource("Resource_hyxj2"), SubResource("Resource_1ttov")])

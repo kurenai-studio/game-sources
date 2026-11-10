@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_syniv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_jqqix"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_nfblw"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3ak6y"]
+
+[sub_resource type="Resource" id="Resource_umtoo"]
+script = ExtResource("2_jqqix")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_yke2v"]
+script = ExtResource("2_jqqix")
+kind = 1
+key = &"planked_ruts"
+
+[sub_resource type="Resource" id="Resource_2pfd2"]
+script = ExtResource("2_jqqix")
+text = "Planks were laid along the ruts, and the cart ran on them with a hollow drumming that could be heard from the field."
+
+[sub_resource type="Resource" id="Resource_dilr6"]
+script = ExtResource("3_nfblw")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_vp674"]
+script = ExtResource("1_syniv")
+id = &"lay_planks"
+label = "Lay planks in the ruts"
+requires = Array[ExtResource("3_nfblw")]([SubResource("Resource_dilr6")])
+effects = Array[ExtResource("2_jqqix")]([SubResource("Resource_umtoo"), SubResource("Resource_yke2v"), SubResource("Resource_2pfd2")])
+
+[sub_resource type="Resource" id="Resource_5wagn"]
+script = ExtResource("2_jqqix")
+kind = 1
+key = &"new_ruts"
+
+[sub_resource type="Resource" id="Resource_qixgt"]
+script = ExtResource("2_jqqix")
+text = "The cart was left to find a new line, and wore two new ruts beside the old ones, which the children were delighted about."
+
+[sub_resource type="Resource" id="Resource_bo326"]
+script = ExtResource("1_syniv")
+id = &"let_the_cart_find_a_line"
+label = "Let the cart find a new line"
+effects = Array[ExtResource("2_jqqix")]([SubResource("Resource_5wagn"), SubResource("Resource_qixgt")])
+
+[sub_resource type="Resource" id="Resource_14uot"]
+script = ExtResource("3_nfblw")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_584ru"]
+script = ExtResource("3_nfblw")
+kind = 11
+amount = 198
+
+[sub_resource type="Resource" id="Resource_3gnio"]
+script = ExtResource("3_nfblw")
+kind = 9
+key = &"wheel_and_road"
+
+[resource]
+script = ExtResource("4_3ak6y")
+id = &"ruts_in_the_lane"
+title = "Ruts in the lane"
+body = "The cart has worn two deep ruts into the lane, and the children have discovered that they are exactly the right depth for racing sticks."
+category = &"settlement"
+requires = Array[ExtResource("3_nfblw")]([SubResource("Resource_14uot"), SubResource("Resource_584ru"), SubResource("Resource_3gnio")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_syniv")]([SubResource("Resource_vp674"), SubResource("Resource_bo326")])

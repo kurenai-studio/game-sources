@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qohe8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gvtto"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6l08h"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ctii4"]
+
+[sub_resource type="Resource" id="Resource_u173n"]
+script = ExtResource("2_gvtto")
+text = "Someone mentioned the pond of the wet summer, and everyone looked at the low ground."
+
+[sub_resource type="Resource" id="Resource_j2k4m"]
+script = ExtResource("3_6l08h")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_fsguw"]
+script = ExtResource("3_6l08h")
+key = &"waited_out_rain"
+
+[resource]
+script = ExtResource("4_ctii4")
+id = &"pond_remembered"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_6l08h")]([SubResource("Resource_j2k4m"), SubResource("Resource_fsguw")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_gvtto")]([SubResource("Resource_u173n")])

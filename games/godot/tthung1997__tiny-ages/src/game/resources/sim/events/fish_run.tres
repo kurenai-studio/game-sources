@@ -1,0 +1,81 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_4v8cw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_nkq0t"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_2oin0"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0xk1v"]
+
+[sub_resource type="Resource" id="Resource_kn7hr"]
+script = ExtResource("2_nkq0t")
+kind = 0
+key = &"food"
+amount = 5
+
+[sub_resource type="Resource" id="Resource_jiyep"]
+script = ExtResource("2_nkq0t")
+kind = 1
+key = &"fish_by_hand"
+
+[sub_resource type="Resource" id="Resource_586jb"]
+script = ExtResource("2_nkq0t")
+text = "Half the camp ended up in the river, and came out soaked, laughing, and carrying fish."
+
+[sub_resource type="Resource" id="Resource_hryes"]
+script = ExtResource("1_4v8cw")
+id = &"wade_in"
+label = "Wade in with spears and bare hands"
+effects = Array[ExtResource("2_nkq0t")]([SubResource("Resource_kn7hr"), SubResource("Resource_jiyep"), SubResource("Resource_586jb")])
+
+[sub_resource type="Resource" id="Resource_oi1pw"]
+script = ExtResource("2_nkq0t")
+kind = 0
+key = &"wood"
+amount = -4
+
+[sub_resource type="Resource" id="Resource_bhc8e"]
+script = ExtResource("2_nkq0t")
+kind = 0
+key = &"food"
+amount = 9
+
+[sub_resource type="Resource" id="Resource_usjk6"]
+script = ExtResource("2_nkq0t")
+kind = 1
+key = &"fish_trap"
+
+[sub_resource type="Resource" id="Resource_usvho"]
+script = ExtResource("2_nkq0t")
+text = "A trap of woven willow went across the channel, and by morning it was heavy with fish."
+
+[sub_resource type="Resource" id="Resource_mnxtf"]
+script = ExtResource("3_2oin0")
+kind = 2
+key = &"wood"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_b7hm6"]
+script = ExtResource("1_4v8cw")
+id = &"weave_a_trap"
+label = "Weave a trap across the narrow channel"
+requires = Array[ExtResource("3_2oin0")]([SubResource("Resource_mnxtf")])
+effects = Array[ExtResource("2_nkq0t")]([SubResource("Resource_oi1pw"), SubResource("Resource_bhc8e"), SubResource("Resource_usjk6"), SubResource("Resource_usvho")])
+
+[sub_resource type="Resource" id="Resource_yf7l1"]
+script = ExtResource("3_2oin0")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_3wseg"]
+script = ExtResource("3_2oin0")
+kind = 5
+amount = 246
+
+[resource]
+script = ExtResource("4_0xk1v")
+id = &"fish_run"
+title = "The run of fish"
+body = "The river is full of fish, thick in the shallows, all heading the same way."
+category = &"nature"
+requires = Array[ExtResource("3_2oin0")]([SubResource("Resource_yf7l1"), SubResource("Resource_3wseg")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_4v8cw")]([SubResource("Resource_hryes"), SubResource("Resource_b7hm6")])

@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_sucvw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_yhnvo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_v0vwk"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_toks8"]
+
+[sub_resource type="Resource" id="Resource_en7hb"]
+script = ExtResource("2_yhnvo")
+text = "{subject} lay in the grass all morning watching ants, and could not say why."
+
+[sub_resource type="Resource" id="Resource_bx47d"]
+script = ExtResource("3_v0vwk")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_ic0o5"]
+script = ExtResource("3_v0vwk")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_j7isf"]
+script = ExtResource("3_v0vwk")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_le0hd"]
+script = ExtResource("3_v0vwk")
+kind = 10
+
+[resource]
+script = ExtResource("4_toks8")
+id = &"watching_ants"
+title = "A quiet moment"
+requires = Array[ExtResource("3_v0vwk")]([SubResource("Resource_bx47d")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_v0vwk")]([SubResource("Resource_ic0o5"), SubResource("Resource_j7isf"), SubResource("Resource_le0hd")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_yhnvo")]([SubResource("Resource_en7hb")])

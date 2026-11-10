@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1sc3r"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_scdy0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_r4g06"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5lj23"]
+
+[sub_resource type="Resource" id="Resource_pvulb"]
+script = ExtResource("2_scdy0")
+kind = 1
+key = &"lump_hammered"
+
+[sub_resource type="Resource" id="Resource_usqq7"]
+script = ExtResource("2_scdy0")
+kind = 10
+key = &"first_bloom"
+text = "The First Bloom"
+
+[sub_resource type="Resource" id="Resource_xc6eb"]
+script = ExtResource("2_scdy0")
+text = "{subject} hammered it for an afternoon, and it grew from a lump into a bar and rang like a small, annoyed bell."
+
+[sub_resource type="Resource" id="Resource_qx1wf"]
+script = ExtResource("1_1sc3r")
+id = &"hammer_it_till_it_rings"
+label = "Hammer it until it rings"
+effects = Array[ExtResource("2_scdy0")]([SubResource("Resource_pvulb"), SubResource("Resource_usqq7"), SubResource("Resource_xc6eb")])
+
+[sub_resource type="Resource" id="Resource_qmnqp"]
+script = ExtResource("2_scdy0")
+kind = 1
+key = &"lump_quenched"
+
+[sub_resource type="Resource" id="Resource_l6skv"]
+script = ExtResource("2_scdy0")
+kind = 10
+key = &"first_bloom"
+text = "The First Bloom"
+
+[sub_resource type="Resource" id="Resource_r3a8f"]
+script = ExtResource("2_scdy0")
+text = "The lump went into the fire red and into the river white, with a noise like a goose, and came out a good deal harder than it went in."
+
+[sub_resource type="Resource" id="Resource_ea1uk"]
+script = ExtResource("1_1sc3r")
+id = &"quench_it_and_see"
+label = "Heat it, and quench it in the river"
+effects = Array[ExtResource("2_scdy0")]([SubResource("Resource_qmnqp"), SubResource("Resource_l6skv"), SubResource("Resource_r3a8f")])
+
+[sub_resource type="Resource" id="Resource_sumxl"]
+script = ExtResource("3_r4g06")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_spbsh"]
+script = ExtResource("3_r4g06")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_6oifp"]
+script = ExtResource("3_r4g06")
+kind = 9
+key = &"first_bloom"
+negate = true
+
+[sub_resource type="Resource" id="Resource_ui8x6"]
+script = ExtResource("3_r4g06")
+kind = 7
+
+[resource]
+script = ExtResource("4_5lj23")
+id = &"a_lump_in_the_slag"
+title = "A black lump in the slag"
+body = "{subject} has found a black lump in the heap of old slag behind the smithy. It is heavier than it should be, and it does not break."
+requires = Array[ExtResource("3_r4g06")]([SubResource("Resource_sumxl"), SubResource("Resource_spbsh"), SubResource("Resource_6oifp")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_r4g06")]([SubResource("Resource_ui8x6")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_1sc3r")]([SubResource("Resource_qx1wf"), SubResource("Resource_ea1uk")])

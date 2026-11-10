@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6i0mh"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qle8s"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_hdqt1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_x00ht"]
+
+[sub_resource type="Resource" id="Resource_bt7kd"]
+script = ExtResource("2_qle8s")
+kind = 11
+key = &"smith"
+
+[sub_resource type="Resource" id="Resource_56xg5"]
+script = ExtResource("2_qle8s")
+kind = 1
+key = &"smith_chosen"
+
+[sub_resource type="Resource" id="Resource_nk67i"]
+script = ExtResource("2_qle8s")
+text = "{subject} was given the hearth, and the title, and a leather apron that came down to the ankles."
+
+[sub_resource type="Resource" id="Resource_l5svr"]
+script = ExtResource("1_6i0mh")
+id = &"one_keeps_it"
+label = "Let them keep it, and call them the smith"
+effects = Array[ExtResource("2_qle8s")]([SubResource("Resource_bt7kd"), SubResource("Resource_56xg5"), SubResource("Resource_nk67i")])
+
+[sub_resource type="Resource" id="Resource_2o2s7"]
+script = ExtResource("2_qle8s")
+kind = 1
+key = &"hearth_shared"
+
+[sub_resource type="Resource" id="Resource_oi8k1"]
+script = ExtResource("2_qle8s")
+text = "Every household took a turn at the bellows, and for a month the whole village smelled of singed hair."
+
+[sub_resource type="Resource" id="Resource_piox7"]
+script = ExtResource("1_6i0mh")
+id = &"everyone_learns"
+label = "Have every household learn a little"
+effects = Array[ExtResource("2_qle8s")]([SubResource("Resource_2o2s7"), SubResource("Resource_oi8k1")])
+
+[sub_resource type="Resource" id="Resource_oywpm"]
+script = ExtResource("3_hdqt1")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_m2vm5"]
+script = ExtResource("3_hdqt1")
+kind = 11
+amount = 14
+
+[sub_resource type="Resource" id="Resource_2rck5"]
+script = ExtResource("3_hdqt1")
+kind = 7
+
+[resource]
+script = ExtResource("4_x00ht")
+id = &"who_tends_the_hearth"
+title = "Who tends the hearth"
+body = "{subject} has been at the hearth every day for a week, and has begun to know it the way you know a stubborn animal."
+requires = Array[ExtResource("3_hdqt1")]([SubResource("Resource_oywpm"), SubResource("Resource_m2vm5")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_hdqt1")]([SubResource("Resource_2rck5")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_6i0mh")]([SubResource("Resource_l5svr"), SubResource("Resource_piox7")])

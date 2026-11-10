@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qkv3y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qf5f8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_pu4sq"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_rddvv"]
+
+[sub_resource type="Resource" id="Resource_6pris"]
+script = ExtResource("2_qf5f8")
+text = "{subject} sat in the court in the evening and listened to people arguing politely, and seemed to find it better than any song."
+
+[sub_resource type="Resource" id="Resource_7tkp1"]
+script = ExtResource("3_pu4sq")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_xvgd2"]
+script = ExtResource("3_pu4sq")
+kind = 6
+key = &"social"
+
+[sub_resource type="Resource" id="Resource_87swj"]
+script = ExtResource("3_pu4sq")
+kind = 7
+
+[sub_resource type="Resource" id="Resource_yc4m0"]
+script = ExtResource("3_pu4sq")
+kind = 10
+
+[resource]
+script = ExtResource("4_rddvv")
+id = &"a_listener_at_the_court"
+title = "A quiet moment"
+requires = Array[ExtResource("3_pu4sq")]([SubResource("Resource_7tkp1")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_pu4sq")]([SubResource("Resource_xvgd2"), SubResource("Resource_87swj"), SubResource("Resource_yc4m0")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_qf5f8")]([SubResource("Resource_6pris")])

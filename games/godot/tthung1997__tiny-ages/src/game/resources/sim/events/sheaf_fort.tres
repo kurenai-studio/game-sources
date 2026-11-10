@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_faxho"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_456ri"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7aswc"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_yi7vu"]
+
+[sub_resource type="Resource" id="Resource_qwn1t"]
+script = ExtResource("2_456ri")
+text = "The children's fort of sheaves had been rebuilt, bigger, in the corner of the field."
+
+[sub_resource type="Resource" id="Resource_c8gdm"]
+script = ExtResource("3_7aswc")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_0mf65"]
+script = ExtResource("3_7aswc")
+key = &"sheaf_fort"
+
+[resource]
+script = ExtResource("4_yi7vu")
+id = &"sheaf_fort"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_7aswc")]([SubResource("Resource_c8gdm"), SubResource("Resource_0mf65")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_456ri")]([SubResource("Resource_qwn1t")])

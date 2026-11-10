@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_rwwr7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_c0bhg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_vmqir"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7ew1v"]
+
+[sub_resource type="Resource" id="Resource_7q5ew"]
+script = ExtResource("2_c0bhg")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_5xqc5"]
+script = ExtResource("2_c0bhg")
+kind = 1
+key = &"coin_at_the_gate"
+
+[sub_resource type="Resource" id="Resource_2s2sc"]
+script = ExtResource("2_c0bhg")
+text = "A coin was taken from every cart, and the gate became a place where people stood and had a quiet word with their purses."
+
+[sub_resource type="Resource" id="Resource_dnsvc"]
+script = ExtResource("1_rwwr7")
+id = &"coin_at_the_gate"
+label = "Take a coin from every cart"
+effects = Array[ExtResource("2_c0bhg")]([SubResource("Resource_7q5ew"), SubResource("Resource_5xqc5"), SubResource("Resource_2s2sc")])
+
+[sub_resource type="Resource" id="Resource_nfnhs"]
+script = ExtResource("2_c0bhg")
+kind = 1
+key = &"neighbours_waved_through"
+
+[sub_resource type="Resource" id="Resource_tsw0o"]
+script = ExtResource("2_c0bhg")
+text = "The gate waved neighbours through, and the neighbours, to the gatekeeper's surprise, remembered it."
+
+[sub_resource type="Resource" id="Resource_n511i"]
+script = ExtResource("1_rwwr7")
+id = &"waive_it_for_neighbours"
+label = "Waive it for neighbours"
+effects = Array[ExtResource("2_c0bhg")]([SubResource("Resource_nfnhs"), SubResource("Resource_tsw0o")])
+
+[sub_resource type="Resource" id="Resource_gn8h1"]
+script = ExtResource("3_vmqir")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_dkkk5"]
+script = ExtResource("3_vmqir")
+kind = 11
+amount = 198
+
+[sub_resource type="Resource" id="Resource_e8v2j"]
+script = ExtResource("3_vmqir")
+kind = 9
+key = &"silver_by_weight"
+
+[resource]
+script = ExtResource("4_7ew1v")
+id = &"who_pays_at_the_gate"
+title = "Who pays at the gate"
+body = "Now there is coin, the gate has the chance to ask for it, and the gatekeeper has been thinking about this a great deal."
+category = &"settlement"
+requires = Array[ExtResource("3_vmqir")]([SubResource("Resource_gn8h1"), SubResource("Resource_dkkk5"), SubResource("Resource_e8v2j")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_rwwr7")]([SubResource("Resource_dnsvc"), SubResource("Resource_n511i")])

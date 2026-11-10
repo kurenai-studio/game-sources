@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_vludw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_v26es"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_p6pfx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_yej61"]
+
+[sub_resource type="Resource" id="Resource_26hwr"]
+script = ExtResource("2_v26es")
+text = "The market awnings filled in the wind like sails, and the stalls beneath them tugged gently at their pegs."
+
+[sub_resource type="Resource" id="Resource_a3kc3"]
+script = ExtResource("3_p6pfx")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_suk8a"]
+script = ExtResource("3_p6pfx")
+key = &"awning_market"
+
+[resource]
+script = ExtResource("4_yej61")
+id = &"awnings_in_the_wind"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_p6pfx")]([SubResource("Resource_a3kc3"), SubResource("Resource_suk8a")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_v26es")]([SubResource("Resource_26hwr")])

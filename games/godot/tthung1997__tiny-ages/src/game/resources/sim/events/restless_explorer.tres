@@ -1,0 +1,103 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_eik50"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_voo8t"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_6b73f"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_vbsry"]
+
+[sub_resource type="Resource" id="Resource_wwwm0"]
+script = ExtResource("2_voo8t")
+kind = 1
+key = &"scouted_alone"
+
+[sub_resource type="Resource" id="Resource_4d4rp"]
+script = ExtResource("2_voo8t")
+kind = 11
+key = &"scout"
+
+[sub_resource type="Resource" id="Resource_jawoh"]
+script = ExtResource("2_voo8t")
+kind = 6
+key = &"western_forest"
+amount = 36
+
+[sub_resource type="Resource" id="Resource_n6cxd"]
+script = ExtResource("2_voo8t")
+kind = 7
+key = &"explorer_returns"
+amount = 36
+
+[sub_resource type="Resource" id="Resource_eohsr"]
+script = ExtResource("2_voo8t")
+text = "{subject} set off to scout the western forest."
+
+[sub_resource type="Resource" id="Resource_63i7g"]
+script = ExtResource("1_eik50")
+id = &"encourage"
+label = "Let them scout alone"
+effects = Array[ExtResource("2_voo8t")]([SubResource("Resource_wwwm0"), SubResource("Resource_4d4rp"), SubResource("Resource_jawoh"), SubResource("Resource_n6cxd"), SubResource("Resource_eohsr")])
+
+[sub_resource type="Resource" id="Resource_1on3i"]
+script = ExtResource("2_voo8t")
+kind = 1
+key = &"scouted_together"
+
+[sub_resource type="Resource" id="Resource_kanje"]
+script = ExtResource("2_voo8t")
+kind = 6
+key = &"western_forest"
+amount = 60
+
+[sub_resource type="Resource" id="Resource_4jtls"]
+script = ExtResource("2_voo8t")
+kind = 7
+key = &"explorer_returns"
+amount = 60
+
+[sub_resource type="Resource" id="Resource_536bv"]
+script = ExtResource("2_voo8t")
+text = "The group walked out to the western forest together, slowly, and {subject} led the way back."
+
+[sub_resource type="Resource" id="Resource_hi2mr"]
+script = ExtResource("1_eik50")
+id = &"walk_together"
+label = "Walk out there together"
+effects = Array[ExtResource("2_voo8t")]([SubResource("Resource_1on3i"), SubResource("Resource_kanje"), SubResource("Resource_4jtls"), SubResource("Resource_536bv")])
+
+[sub_resource type="Resource" id="Resource_n5ip8"]
+script = ExtResource("3_6b73f")
+kind = 0
+key = &"lookout"
+negate = true
+
+[sub_resource type="Resource" id="Resource_dp2ut"]
+script = ExtResource("3_6b73f")
+key = &"western_forest_explored"
+negate = true
+
+[sub_resource type="Resource" id="Resource_3ch8m"]
+script = ExtResource("3_6b73f")
+kind = 5
+amount = 246
+
+[sub_resource type="Resource" id="Resource_a5h63"]
+script = ExtResource("3_6b73f")
+kind = 6
+key = &"curious"
+
+[sub_resource type="Resource" id="Resource_2rgfc"]
+script = ExtResource("3_6b73f")
+kind = 7
+
+[resource]
+script = ExtResource("4_vbsry")
+id = &"restless_explorer"
+title = "A curious scout"
+body = "{subject} keeps wandering to the edge of the western forest to stare at the ridge beyond it."
+category = &"exploration"
+requires = Array[ExtResource("3_6b73f")]([SubResource("Resource_n5ip8"), SubResource("Resource_dp2ut"), SubResource("Resource_3ch8m")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_6b73f")]([SubResource("Resource_a5h63"), SubResource("Resource_2rgfc")])
+chance_per_tick = 0.06
+cooldown_ticks = 72
+choices = Array[ExtResource("1_eik50")]([SubResource("Resource_63i7g"), SubResource("Resource_hi2mr")])

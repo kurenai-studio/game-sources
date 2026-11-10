@@ -1,0 +1,63 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_mdi5o"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1trmn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ysli8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_25pan"]
+
+[sub_resource type="Resource" id="Resource_ie0i1"]
+script = ExtResource("2_1trmn")
+kind = 1
+key = &"seed_in_sun"
+
+[sub_resource type="Resource" id="Resource_aajyu"]
+script = ExtResource("2_1trmn")
+kind = 8
+key = &"strange_seed"
+
+[sub_resource type="Resource" id="Resource_4vxwp"]
+script = ExtResource("2_1trmn")
+text = "The strange seed was planted in the sun at last."
+
+[sub_resource type="Resource" id="Resource_y3e8r"]
+script = ExtResource("1_mdi5o")
+id = &"plant_it"
+label = "Plant it in the sun at the cave mouth"
+effects = Array[ExtResource("2_1trmn")]([SubResource("Resource_ie0i1"), SubResource("Resource_aajyu"), SubResource("Resource_4vxwp")])
+
+[sub_resource type="Resource" id="Resource_5vn1p"]
+script = ExtResource("2_1trmn")
+kind = 1
+key = &"seed_in_shade"
+
+[sub_resource type="Resource" id="Resource_vtc80"]
+script = ExtResource("2_1trmn")
+kind = 8
+key = &"strange_seed"
+
+[sub_resource type="Resource" id="Resource_6ukvv"]
+script = ExtResource("2_1trmn")
+text = "The strange seed was planted in the shade at last."
+
+[sub_resource type="Resource" id="Resource_jhs7q"]
+script = ExtResource("1_mdi5o")
+id = &"plant_in_shade"
+label = "Plant it in the shade of the overhang"
+effects = Array[ExtResource("2_1trmn")]([SubResource("Resource_5vn1p"), SubResource("Resource_vtc80"), SubResource("Resource_6ukvv")])
+
+[sub_resource type="Resource" id="Resource_aw00l"]
+script = ExtResource("3_ysli8")
+kind = 3
+key = &"strange_seed"
+amount = 1
+
+[resource]
+script = ExtResource("4_25pan")
+id = &"seed_in_pouch"
+title = "The seed in the pouch"
+body = "The strange seed in its hide pouch looks ready to be planted."
+category = &"exploration"
+requires = Array[ExtResource("3_ysli8")]([SubResource("Resource_aw00l")])
+chance_per_tick = 0.01
+cooldown_ticks = 96
+choices = Array[ExtResource("1_mdi5o")]([SubResource("Resource_y3e8r"), SubResource("Resource_jhs7q")])

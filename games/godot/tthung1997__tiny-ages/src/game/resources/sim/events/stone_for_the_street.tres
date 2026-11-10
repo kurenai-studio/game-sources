@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_b8jlm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_olcul"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_oqn81"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e17w0"]
+
+[sub_resource type="Resource" id="Resource_1pw8t"]
+script = ExtResource("2_olcul")
+kind = 1
+key = &"streets_slabbed"
+
+[sub_resource type="Resource" id="Resource_66v4a"]
+script = ExtResource("2_olcul")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_j5i11"]
+script = ExtResource("2_olcul")
+kind = 10
+key = &"paved_streets"
+text = "Paved Streets"
+
+[sub_resource type="Resource" id="Resource_6i2ik"]
+script = ExtResource("2_olcul")
+text = "Broad slabs went down the middle of the lane, and the first wet morning everyone walked up and down it for no reason except that their feet were dry."
+
+[sub_resource type="Resource" id="Resource_1v5ue"]
+script = ExtResource("3_oqn81")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_uj8th"]
+script = ExtResource("1_b8jlm")
+id = &"lay_broad_slabs"
+label = "Lay broad slabs down the middle"
+requires = Array[ExtResource("3_oqn81")]([SubResource("Resource_1v5ue")])
+effects = Array[ExtResource("2_olcul")]([SubResource("Resource_1pw8t"), SubResource("Resource_66v4a"), SubResource("Resource_j5i11"), SubResource("Resource_6i2ik")])
+
+[sub_resource type="Resource" id="Resource_6dqow"]
+script = ExtResource("2_olcul")
+kind = 1
+key = &"streets_setted"
+
+[sub_resource type="Resource" id="Resource_5118l"]
+script = ExtResource("2_olcul")
+kind = 10
+key = &"paved_streets"
+text = "Paved Streets"
+
+[sub_resource type="Resource" id="Resource_3q7c4"]
+script = ExtResource("2_olcul")
+text = "Small stones were set close in curves, a whole street of them, and a mason was seen kneeling in the lane in the evening, admiring it."
+
+[sub_resource type="Resource" id="Resource_uliix"]
+script = ExtResource("1_b8jlm")
+id = &"lay_small_setts"
+label = "Set small stones close, in curves"
+effects = Array[ExtResource("2_olcul")]([SubResource("Resource_6dqow"), SubResource("Resource_5118l"), SubResource("Resource_3q7c4")])
+
+[sub_resource type="Resource" id="Resource_b0thw"]
+script = ExtResource("3_oqn81")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_duq7f"]
+script = ExtResource("3_oqn81")
+kind = 11
+amount = 18
+
+[sub_resource type="Resource" id="Resource_v1hvm"]
+script = ExtResource("3_oqn81")
+kind = 9
+key = &"paved_streets"
+negate = true
+
+[sub_resource type="Resource" id="Resource_1hg0g"]
+script = ExtResource("3_oqn81")
+key = &"cut_stone"
+
+[sub_resource type="Resource" id="Resource_sqnqx"]
+script = ExtResource("3_oqn81")
+kind = 7
+
+[resource]
+script = ExtResource("4_e17w0")
+id = &"stone_for_the_street"
+title = "Stone for the street"
+body = "The masons who cut the hill's stone have noticed that the lane is still mud, and have offered, with the air of people making a casual remark, to do something about it."
+category = &"settlement"
+requires = Array[ExtResource("3_oqn81")]([SubResource("Resource_b0thw"), SubResource("Resource_duq7f"), SubResource("Resource_v1hvm"), SubResource("Resource_1hg0g")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_oqn81")]([SubResource("Resource_sqnqx")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_b8jlm")]([SubResource("Resource_uj8th"), SubResource("Resource_uliix")])

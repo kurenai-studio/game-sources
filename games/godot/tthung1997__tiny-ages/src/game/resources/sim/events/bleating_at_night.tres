@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_mtddn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gh6cy"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_h2evg"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_838lf"]
+
+[sub_resource type="Resource" id="Resource_yurdk"]
+script = ExtResource("2_gh6cy")
+text = "Bleating came across the fold all night. Nobody minded; it meant the herd was there."
+
+[sub_resource type="Resource" id="Resource_dn65e"]
+script = ExtResource("3_h2evg")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_crnhm"]
+script = ExtResource("3_h2evg")
+key = &"path_herding"
+
+[resource]
+script = ExtResource("4_838lf")
+id = &"bleating_at_night"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_h2evg")]([SubResource("Resource_dn65e"), SubResource("Resource_crnhm")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_gh6cy")]([SubResource("Resource_yurdk")])

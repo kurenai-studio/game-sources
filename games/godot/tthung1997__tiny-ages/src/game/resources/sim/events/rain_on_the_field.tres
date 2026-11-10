@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_kjgtm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_8agf7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_cejl6"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_vwyue"]
+
+[sub_resource type="Resource" id="Resource_ua1te"]
+script = ExtResource("2_8agf7")
+text = "Rain came soft and steady all day, and everyone stood in a doorway to watch it fall on the field."
+
+[sub_resource type="Resource" id="Resource_61575"]
+script = ExtResource("3_cejl6")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_u05c7"]
+script = ExtResource("3_cejl6")
+key = &"path_agriculture"
+
+[resource]
+script = ExtResource("4_vwyue")
+id = &"rain_on_the_field"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_cejl6")]([SubResource("Resource_61575"), SubResource("Resource_u05c7")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_8agf7")]([SubResource("Resource_ua1te")])

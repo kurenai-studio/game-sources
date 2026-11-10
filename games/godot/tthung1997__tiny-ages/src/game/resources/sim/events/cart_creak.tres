@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_adqh0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_wbxgn"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ktwox"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_uw7vf"]
+
+[sub_resource type="Resource" id="Resource_q0yik"]
+script = ExtResource("2_wbxgn")
+text = "The cart creaked down the lane, and every dog in the village followed it for a while, out of principle."
+
+[sub_resource type="Resource" id="Resource_c3x2m"]
+script = ExtResource("3_ktwox")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_26in4"]
+script = ExtResource("3_ktwox")
+key = &"cart"
+
+[resource]
+script = ExtResource("4_uw7vf")
+id = &"cart_creak"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_ktwox")]([SubResource("Resource_c3x2m"), SubResource("Resource_26in4")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_wbxgn")]([SubResource("Resource_q0yik")])

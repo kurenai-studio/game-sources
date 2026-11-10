@@ -1,0 +1,102 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_n700h"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_lcj1n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_th42c"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_02je5"]
+
+[sub_resource type="Resource" id="Resource_pvdar"]
+script = ExtResource("2_lcj1n")
+kind = 1
+key = &"signs_pressed"
+
+[sub_resource type="Resource" id="Resource_uvg1q"]
+script = ExtResource("2_lcj1n")
+kind = 1
+key = &"letters"
+
+[sub_resource type="Resource" id="Resource_tfc5c"]
+script = ExtResource("2_lcj1n")
+kind = 10
+key = &"written_word"
+text = "The Written Word"
+
+[sub_resource type="Resource" id="Resource_y8afv"]
+script = ExtResource("2_lcj1n")
+text = "A sign was pressed for every sound the village made, and the first thing anyone wrote was a name, and then, at once, a complaint."
+
+[sub_resource type="Resource" id="Resource_kj1ex"]
+script = ExtResource("1_n700h")
+id = &"press_the_signs"
+label = "Press a sign for every sound"
+effects = Array[ExtResource("2_lcj1n")]([SubResource("Resource_pvdar"), SubResource("Resource_uvg1q"), SubResource("Resource_tfc5c"), SubResource("Resource_y8afv")])
+
+[sub_resource type="Resource" id="Resource_2ktkp"]
+script = ExtResource("2_lcj1n")
+kind = 1
+key = &"slabs_read"
+
+[sub_resource type="Resource" id="Resource_gdjsd"]
+script = ExtResource("2_lcj1n")
+kind = 1
+key = &"letters"
+
+[sub_resource type="Resource" id="Resource_yw5k0"]
+script = ExtResource("2_lcj1n")
+kind = 10
+key = &"written_word"
+text = "The Written Word"
+
+[sub_resource type="Resource" id="Resource_e6y4d"]
+script = ExtResource("2_lcj1n")
+text = "The old slabs were read aloud while someone drew the signs, and for the first time the tally of last year's grain said something about the year."
+
+[sub_resource type="Resource" id="Resource_d7yjx"]
+script = ExtResource("1_n700h")
+id = &"read_the_slab_aloud"
+label = "Read the old slabs aloud, and fit signs to them"
+effects = Array[ExtResource("2_lcj1n")]([SubResource("Resource_2ktkp"), SubResource("Resource_gdjsd"), SubResource("Resource_yw5k0"), SubResource("Resource_e6y4d")])
+
+[sub_resource type="Resource" id="Resource_fkcsq"]
+script = ExtResource("3_th42c")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_vesmt"]
+script = ExtResource("3_th42c")
+kind = 11
+amount = 216
+
+[sub_resource type="Resource" id="Resource_ddvsl"]
+script = ExtResource("3_th42c")
+kind = 9
+key = &"written_word"
+negate = true
+
+[sub_resource type="Resource" id="Resource_m6ri1"]
+script = ExtResource("3_th42c")
+kind = 9
+key = &"silver_by_weight"
+
+[sub_resource type="Resource" id="Resource_qt13h"]
+script = ExtResource("3_th42c")
+key = &"clay_tablets"
+
+[sub_resource type="Resource" id="Resource_rw7tu"]
+script = ExtResource("3_th42c")
+kind = 7
+
+[resource]
+script = ExtResource("4_02je5")
+id = &"signs_in_the_clay"
+title = "A sign for a sound"
+body = "The marks on the old clay slabs have begun to be used for the sounds in words, and nobody is sure who started it."
+requires = Array[ExtResource("3_th42c")]([SubResource("Resource_fkcsq"), SubResource("Resource_vesmt"), SubResource("Resource_ddvsl"), SubResource("Resource_m6ri1"), SubResource("Resource_qt13h")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_th42c")]([SubResource("Resource_rw7tu")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_n700h")]([SubResource("Resource_kj1ex"), SubResource("Resource_d7yjx")])

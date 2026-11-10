@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_c5hw3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_h21jo"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_sdlkx"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_n3cqs"]
+
+[sub_resource type="Resource" id="Resource_j56uh"]
+script = ExtResource("2_h21jo")
+text = "A pot sat under the drip again, and someone said it was time to see about the roof."
+
+[sub_resource type="Resource" id="Resource_gplco"]
+script = ExtResource("3_sdlkx")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_fje4k"]
+script = ExtResource("3_sdlkx")
+key = &"leaky_roofs"
+
+[resource]
+script = ExtResource("4_n3cqs")
+id = &"pot_under_the_drip"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_sdlkx")]([SubResource("Resource_gplco"), SubResource("Resource_fje4k")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_h21jo")]([SubResource("Resource_j56uh")])

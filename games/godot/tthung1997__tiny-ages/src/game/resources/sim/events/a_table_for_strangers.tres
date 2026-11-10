@@ -1,0 +1,80 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_qhmlk"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_i6qd8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_t2jh8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7tja0"]
+
+[sub_resource type="Resource" id="Resource_57ab4"]
+script = ExtResource("2_i6qd8")
+kind = 0
+key = &"food"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_c0ntq"]
+script = ExtResource("2_i6qd8")
+kind = 1
+key = &"long_table"
+
+[sub_resource type="Resource" id="Resource_jsaxw"]
+script = ExtResource("2_i6qd8")
+text = "A long table went down the lane, and the whole town sat at it, and the guests were put in the middle, which was agreed to be the safest place."
+
+[sub_resource type="Resource" id="Resource_12f0i"]
+script = ExtResource("3_t2jh8")
+kind = 2
+key = &"food"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_cil08"]
+script = ExtResource("1_qhmlk")
+id = &"lay_a_long_table"
+label = "Lay a long table in the lane"
+requires = Array[ExtResource("3_t2jh8")]([SubResource("Resource_12f0i")])
+effects = Array[ExtResource("2_i6qd8")]([SubResource("Resource_57ab4"), SubResource("Resource_c0ntq"), SubResource("Resource_jsaxw")])
+
+[sub_resource type="Resource" id="Resource_u5opf"]
+script = ExtResource("2_i6qd8")
+kind = 1
+key = &"night_watch"
+
+[sub_resource type="Resource" id="Resource_04c0k"]
+script = ExtResource("2_i6qd8")
+text = "A watch was kept on the gate by night, and was friendly, and a little puzzled by its own friendliness."
+
+[sub_resource type="Resource" id="Resource_wqucq"]
+script = ExtResource("1_qhmlk")
+id = &"keep_a_night_watch"
+label = "Keep a watch on the gate by night"
+effects = Array[ExtResource("2_i6qd8")]([SubResource("Resource_u5opf"), SubResource("Resource_04c0k")])
+
+[sub_resource type="Resource" id="Resource_whd0x"]
+script = ExtResource("3_t2jh8")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_5njds"]
+script = ExtResource("3_t2jh8")
+kind = 11
+amount = 346
+
+[sub_resource type="Resource" id="Resource_yyx50"]
+script = ExtResource("3_t2jh8")
+key = &"known_abroad"
+
+[sub_resource type="Resource" id="Resource_atp0o"]
+script = ExtResource("3_t2jh8")
+kind = 8
+amount = 4
+negate = true
+
+[resource]
+script = ExtResource("4_7tja0")
+id = &"a_table_for_strangers"
+title = "A table for strangers"
+body = "The guests will arrive within a week, and the question of where they will sit is already causing a great deal of feeling."
+category = &"settlement"
+requires = Array[ExtResource("3_t2jh8")]([SubResource("Resource_whd0x"), SubResource("Resource_5njds"), SubResource("Resource_yyx50"), SubResource("Resource_atp0o")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_qhmlk")]([SubResource("Resource_cil08"), SubResource("Resource_wqucq")])

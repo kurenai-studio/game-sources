@@ -1,0 +1,106 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1ykn2"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ywvw1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_mocb7"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3ylw5"]
+
+[sub_resource type="Resource" id="Resource_lj4h6"]
+script = ExtResource("2_ywvw1")
+kind = 1
+key = &"cart_solid"
+
+[sub_resource type="Resource" id="Resource_35ftv"]
+script = ExtResource("2_ywvw1")
+kind = 1
+key = &"cart"
+
+[sub_resource type="Resource" id="Resource_egl6b"]
+script = ExtResource("2_ywvw1")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_nwq42"]
+script = ExtResource("2_ywvw1")
+text = "Two heavy discs were cut from a trunk and an axle run through them. It creaked, and it rolled, and it was carrying firewood before it was finished."
+
+[sub_resource type="Resource" id="Resource_2or54"]
+script = ExtResource("1_1ykn2")
+id = &"solid_wheels"
+label = "Cut solid wheels from a trunk"
+effects = Array[ExtResource("2_ywvw1")]([SubResource("Resource_lj4h6"), SubResource("Resource_35ftv"), SubResource("Resource_egl6b"), SubResource("Resource_nwq42")])
+
+[sub_resource type="Resource" id="Resource_ofehe"]
+script = ExtResource("2_ywvw1")
+kind = 1
+key = &"cart_spoked"
+
+[sub_resource type="Resource" id="Resource_o61vd"]
+script = ExtResource("2_ywvw1")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_qg3en"]
+script = ExtResource("2_ywvw1")
+kind = 1
+key = &"cart"
+
+[sub_resource type="Resource" id="Resource_4h47s"]
+script = ExtResource("2_ywvw1")
+kind = 10
+key = &"wheel_and_road"
+text = "The Wheel and the Road"
+
+[sub_resource type="Resource" id="Resource_8wy8b"]
+script = ExtResource("2_ywvw1")
+text = "The wheels were made of spokes and a rim, and weighed a third as much. Everyone took a turn at pushing the cart, and then at being pushed in it."
+
+[sub_resource type="Resource" id="Resource_bgv8q"]
+script = ExtResource("3_mocb7")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_vb3fo"]
+script = ExtResource("1_1ykn2")
+id = &"spoked_wheels"
+label = "Try spokes, the way the smith draws them"
+requires = Array[ExtResource("3_mocb7")]([SubResource("Resource_bgv8q")])
+effects = Array[ExtResource("2_ywvw1")]([SubResource("Resource_ofehe"), SubResource("Resource_o61vd"), SubResource("Resource_qg3en"), SubResource("Resource_4h47s"), SubResource("Resource_8wy8b")])
+
+[sub_resource type="Resource" id="Resource_rmx2i"]
+script = ExtResource("3_mocb7")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_nyj1k"]
+script = ExtResource("3_mocb7")
+kind = 11
+amount = 162
+
+[sub_resource type="Resource" id="Resource_0cpgs"]
+script = ExtResource("3_mocb7")
+kind = 9
+key = &"wheel_and_road"
+negate = true
+
+[sub_resource type="Resource" id="Resource_wxel7"]
+script = ExtResource("3_mocb7")
+kind = 7
+
+[resource]
+script = ExtResource("4_3ylw5")
+id = &"a_cart"
+title = "Something that rolls"
+body = "{subject} has been rolling a cut section of trunk down the hill and chasing it. It occurs to {subject} that something could sit on it."
+requires = Array[ExtResource("3_mocb7")]([SubResource("Resource_rmx2i"), SubResource("Resource_nyj1k"), SubResource("Resource_0cpgs")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_mocb7")]([SubResource("Resource_wxel7")])
+trait_weights = Dictionary[StringName, float]({
+&"industrious": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_1ykn2")]([SubResource("Resource_2or54"), SubResource("Resource_vb3fo")])

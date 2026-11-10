@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_jie7n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_x4j6y"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_eh3n8"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_4jft7"]
+
+[sub_resource type="Resource" id="Resource_wk85b"]
+script = ExtResource("2_x4j6y")
+text = "Someone went up to the cave for the winter store, and came back sneezing from the dust."
+
+[sub_resource type="Resource" id="Resource_t0lfm"]
+script = ExtResource("3_eh3n8")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_1gweu"]
+script = ExtResource("3_eh3n8")
+key = &"cave_store"
+
+[resource]
+script = ExtResource("4_4jft7")
+id = &"stores_in_the_cave"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_eh3n8")]([SubResource("Resource_t0lfm"), SubResource("Resource_1gweu")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_x4j6y")]([SubResource("Resource_wk85b")])

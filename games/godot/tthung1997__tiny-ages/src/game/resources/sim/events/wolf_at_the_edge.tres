@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_j4hva"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rl8sp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_2cljy"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gx2fb"]
+
+[sub_resource type="Resource" id="Resource_xq8ed"]
+script = ExtResource("2_rl8sp")
+kind = 0
+key = &"food"
+amount = -2
+
+[sub_resource type="Resource" id="Resource_0xcry"]
+script = ExtResource("2_rl8sp")
+kind = 1
+key = &"wolf_fed"
+
+[sub_resource type="Resource" id="Resource_ful1q"]
+script = ExtResource("2_rl8sp")
+text = "A bone was left at the edge of the light. By morning it was gone."
+
+[sub_resource type="Resource" id="Resource_o53qd"]
+script = ExtResource("3_2cljy")
+kind = 2
+key = &"food"
+amount = 2
+
+[sub_resource type="Resource" id="Resource_euaow"]
+script = ExtResource("1_j4hva")
+id = &"feed_the_wolf"
+label = "Leave scraps at the edge of the light"
+requires = Array[ExtResource("3_2cljy")]([SubResource("Resource_o53qd")])
+effects = Array[ExtResource("2_rl8sp")]([SubResource("Resource_xq8ed"), SubResource("Resource_0xcry"), SubResource("Resource_ful1q")])
+
+[sub_resource type="Resource" id="Resource_pp0hr"]
+script = ExtResource("2_rl8sp")
+kind = 1
+key = &"wolf_driven_off"
+
+[sub_resource type="Resource" id="Resource_ugdw7"]
+script = ExtResource("2_rl8sp")
+text = "The group waved torches until the wolf slipped back into the dark."
+
+[sub_resource type="Resource" id="Resource_bpqas"]
+script = ExtResource("1_j4hva")
+id = &"drive_it_off"
+label = "Drive it off with a torch"
+effects = Array[ExtResource("2_rl8sp")]([SubResource("Resource_pp0hr"), SubResource("Resource_ugdw7")])
+
+[sub_resource type="Resource" id="Resource_riuv1"]
+script = ExtResource("3_2cljy")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_2m53r"]
+script = ExtResource("3_2cljy")
+kind = 5
+amount = 4
+
+[resource]
+script = ExtResource("4_gx2fb")
+id = &"wolf_at_the_edge"
+title = "A wolf at the edge"
+body = "A thin grey wolf has begun appearing at dusk, sitting just outside the firelight. It watches the camp and never comes closer."
+category = &"nature"
+requires = Array[ExtResource("3_2cljy")]([SubResource("Resource_riuv1"), SubResource("Resource_2m53r")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_j4hva")]([SubResource("Resource_euaow"), SubResource("Resource_bpqas")])

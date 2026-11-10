@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_21yyc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_06lb3"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_86fir"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_f3dvj"]
+
+[sub_resource type="Resource" id="Resource_48m41"]
+script = ExtResource("2_06lb3")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_2u6i0"]
+script = ExtResource("2_06lb3")
+kind = 0
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_g1lhh"]
+script = ExtResource("2_06lb3")
+kind = 1
+key = &"dugout_canoe"
+
+[sub_resource type="Resource" id="Resource_wrmaq"]
+script = ExtResource("2_06lb3")
+text = "A log was burned and scraped hollow, and the canoe went into the river with everyone watching. It floated."
+
+[sub_resource type="Resource" id="Resource_qf1c1"]
+script = ExtResource("3_86fir")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_a2s2r"]
+script = ExtResource("1_21yyc")
+id = &"hollow_a_dugout"
+label = "Hollow a log into a dugout canoe"
+requires = Array[ExtResource("3_86fir")]([SubResource("Resource_qf1c1")])
+effects = Array[ExtResource("2_06lb3")]([SubResource("Resource_48m41"), SubResource("Resource_2u6i0"), SubResource("Resource_g1lhh"), SubResource("Resource_wrmaq")])
+
+[sub_resource type="Resource" id="Resource_a7rvc"]
+script = ExtResource("2_06lb3")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_px6qd"]
+script = ExtResource("2_06lb3")
+kind = 1
+key = &"reed_raft"
+
+[sub_resource type="Resource" id="Resource_jrr6t"]
+script = ExtResource("2_06lb3")
+text = "Reeds were bound in great bundles into a raft, which rode low, wobbled, and carried three people across and back."
+
+[sub_resource type="Resource" id="Resource_8a88o"]
+script = ExtResource("1_21yyc")
+id = &"bind_a_raft"
+label = "Bind a raft of reeds"
+effects = Array[ExtResource("2_06lb3")]([SubResource("Resource_a7rvc"), SubResource("Resource_px6qd"), SubResource("Resource_jrr6t")])
+
+[sub_resource type="Resource" id="Resource_y5nvv"]
+script = ExtResource("3_86fir")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_q51uk"]
+script = ExtResource("3_86fir")
+kind = 11
+amount = 160
+
+[resource]
+script = ExtResource("4_f3dvj")
+id = &"a_boat_for_the_river"
+title = "A boat for the river"
+body = "The river is wide, and the fish are in the middle of it. Someone has been looking at it for a long time."
+category = &"settlement"
+requires = Array[ExtResource("3_86fir")]([SubResource("Resource_y5nvv"), SubResource("Resource_q51uk")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_21yyc")]([SubResource("Resource_a2s2r"), SubResource("Resource_8a88o")])

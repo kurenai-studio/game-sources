@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_6e61e"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_gts7o"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7ot67"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e63qk"]
+
+[sub_resource type="Resource" id="Resource_g7utl"]
+script = ExtResource("2_gts7o")
+kind = 1
+key = &"road_smith"
+
+[sub_resource type="Resource" id="Resource_ly82n"]
+script = ExtResource("2_gts7o")
+kind = 10
+key = &"first_casting"
+text = "The First Casting"
+
+[sub_resource type="Resource" id="Resource_xbjxv"]
+script = ExtResource("2_gts7o")
+text = "The kiln was hers for a day. The smoke was green, then black, then gone, and she walked out holding a blade by the wrong end, which she said was the right end."
+
+[sub_resource type="Resource" id="Resource_onjsw"]
+script = ExtResource("1_6e61e")
+id = &"lend_the_kiln"
+label = "Give her the kiln for a day"
+effects = Array[ExtResource("2_gts7o")]([SubResource("Resource_g7utl"), SubResource("Resource_ly82n"), SubResource("Resource_xbjxv")])
+
+[sub_resource type="Resource" id="Resource_yywbt"]
+script = ExtResource("2_gts7o")
+kind = 1
+key = &"taught_by_the_road"
+
+[sub_resource type="Resource" id="Resource_hrp5b"]
+script = ExtResource("2_gts7o")
+kind = 0
+key = &"food"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_5plx0"]
+script = ExtResource("2_gts7o")
+kind = 10
+key = &"first_casting"
+text = "The First Casting"
+
+[sub_resource type="Resource" id="Resource_pew1q"]
+script = ExtResource("2_gts7o")
+text = "She was paid in food and taught the whole group in an afternoon, and left before anyone had thought of a good question."
+
+[sub_resource type="Resource" id="Resource_jw706"]
+script = ExtResource("3_7ot67")
+kind = 2
+key = &"food"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_85tf7"]
+script = ExtResource("1_6e61e")
+id = &"pay_to_be_taught"
+label = "Pay her in food, and ask her to teach"
+requires = Array[ExtResource("3_7ot67")]([SubResource("Resource_jw706")])
+effects = Array[ExtResource("2_gts7o")]([SubResource("Resource_yywbt"), SubResource("Resource_hrp5b"), SubResource("Resource_5plx0"), SubResource("Resource_pew1q")])
+
+[sub_resource type="Resource" id="Resource_88v1k"]
+script = ExtResource("3_7ot67")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_gaa7w"]
+script = ExtResource("3_7ot67")
+kind = 11
+amount = 30
+
+[sub_resource type="Resource" id="Resource_yjew6"]
+script = ExtResource("3_7ot67")
+kind = 9
+key = &"first_casting"
+negate = true
+
+[sub_resource type="Resource" id="Resource_a6nug"]
+script = ExtResource("3_7ot67")
+key = &"path_trading"
+
+[sub_resource type="Resource" id="Resource_4qodf"]
+script = ExtResource("3_7ot67")
+kind = 7
+
+[resource]
+script = ExtResource("4_e63qk")
+id = &"smith_on_the_road"
+title = "A traveller from the coast"
+body = "A woman following the road up from the coast says she can make bright metal from the green stone, if there is a hot fire and a clay mould."
+category = &"settlement"
+requires = Array[ExtResource("3_7ot67")]([SubResource("Resource_88v1k"), SubResource("Resource_gaa7w"), SubResource("Resource_yjew6"), SubResource("Resource_a6nug")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_7ot67")]([SubResource("Resource_4qodf")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_6e61e")]([SubResource("Resource_onjsw"), SubResource("Resource_85tf7")])

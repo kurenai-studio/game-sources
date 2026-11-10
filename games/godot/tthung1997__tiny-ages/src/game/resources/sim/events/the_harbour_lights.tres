@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_3e03j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_b20j8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7wnul"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_5ulom"]
+
+[sub_resource type="Resource" id="Resource_c2lqn"]
+script = ExtResource("2_b20j8")
+text = "The linked harbours lit their lamps in turn along the coast at dusk, and the town watched the line of light go out to sea."
+
+[sub_resource type="Resource" id="Resource_rhr8h"]
+script = ExtResource("3_7wnul")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_roeto"]
+script = ExtResource("3_7wnul")
+key = &"harbours_linked"
+
+[resource]
+script = ExtResource("4_5ulom")
+id = &"the_harbour_lights"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_7wnul")]([SubResource("Resource_rhr8h"), SubResource("Resource_roeto")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_b20j8")]([SubResource("Resource_c2lqn")])

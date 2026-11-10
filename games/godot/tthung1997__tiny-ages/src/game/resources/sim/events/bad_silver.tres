@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_lsnp8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_oqutc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_osgpv"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_55squ"]
+
+[sub_resource type="Resource" id="Resource_7fien"]
+script = ExtResource("2_oqutc")
+kind = 0
+key = &"food"
+amount = -3
+
+[sub_resource type="Resource" id="Resource_auw5s"]
+script = ExtResource("2_oqutc")
+kind = 1
+key = &"touchstone"
+
+[sub_resource type="Resource" id="Resource_0bm8g"]
+script = ExtResource("2_oqutc")
+text = "A black touchstone was set up by the market, and rubbed so bright that it caught the light, and the trader who first failed it left in a hurry."
+
+[sub_resource type="Resource" id="Resource_k7lq6"]
+script = ExtResource("3_osgpv")
+kind = 2
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_4wmaj"]
+script = ExtResource("1_lsnp8")
+id = &"test_it_on_a_touchstone"
+label = "Set up a touchstone by the market"
+requires = Array[ExtResource("3_osgpv")]([SubResource("Resource_k7lq6")])
+effects = Array[ExtResource("2_oqutc")]([SubResource("Resource_7fien"), SubResource("Resource_auw5s"), SubResource("Resource_0bm8g")])
+
+[sub_resource type="Resource" id="Resource_lgdr6"]
+script = ExtResource("2_oqutc")
+kind = 1
+key = &"trusted_the_trader"
+
+[sub_resource type="Resource" id="Resource_ko58a"]
+script = ExtResource("2_oqutc")
+text = "The trader's word was trusted, and the trader was visibly a little hurt, and honest for the rest of the season."
+
+[sub_resource type="Resource" id="Resource_5pm7o"]
+script = ExtResource("1_lsnp8")
+id = &"trust_the_trader"
+label = "Trust the trader's word"
+effects = Array[ExtResource("2_oqutc")]([SubResource("Resource_lgdr6"), SubResource("Resource_ko58a")])
+
+[sub_resource type="Resource" id="Resource_pkd51"]
+script = ExtResource("3_osgpv")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_hdi0a"]
+script = ExtResource("3_osgpv")
+kind = 11
+amount = 186
+
+[sub_resource type="Resource" id="Resource_jsq0y"]
+script = ExtResource("3_osgpv")
+kind = 9
+key = &"silver_by_weight"
+
+[resource]
+script = ExtResource("4_55squ")
+id = &"bad_silver"
+title = "Bad silver"
+body = "A coin has turned up that is not quite silver, and everybody agrees it must have come from someone else."
+category = &"settlement"
+requires = Array[ExtResource("3_osgpv")]([SubResource("Resource_pkd51"), SubResource("Resource_hdi0a"), SubResource("Resource_jsq0y")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_lsnp8")]([SubResource("Resource_4wmaj"), SubResource("Resource_5pm7o")])

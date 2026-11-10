@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_7rva0"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_1jeuv"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_w8sp1"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_ybf2j"]
+
+[sub_resource type="Resource" id="Resource_jgbn8"]
+script = ExtResource("2_1jeuv")
+kind = 1
+key = &"echo_games"
+
+[sub_resource type="Resource" id="Resource_c0n8w"]
+script = ExtResource("2_1jeuv")
+text = "The whole group shouted questions into the dark, and the cave answered every one with the last word."
+
+[sub_resource type="Resource" id="Resource_hua86"]
+script = ExtResource("1_7rva0")
+id = &"shout_questions"
+label = "Shout questions into it, all together"
+effects = Array[ExtResource("2_1jeuv")]([SubResource("Resource_jgbn8"), SubResource("Resource_c0n8w")])
+
+[sub_resource type="Resource" id="Resource_b1603"]
+script = ExtResource("2_1jeuv")
+kind = 1
+key = &"echo_whispers"
+
+[sub_resource type="Resource" id="Resource_311yh"]
+script = ExtResource("2_1jeuv")
+text = "They whispered into the cave, one at a time, and held their breath for the reply."
+
+[sub_resource type="Resource" id="Resource_i7f1q"]
+script = ExtResource("1_7rva0")
+id = &"whisper_and_listen"
+label = "Whisper, and listen to what comes back"
+effects = Array[ExtResource("2_1jeuv")]([SubResource("Resource_b1603"), SubResource("Resource_311yh")])
+
+[sub_resource type="Resource" id="Resource_paxou"]
+script = ExtResource("3_w8sp1")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_l7nr1"]
+script = ExtResource("3_w8sp1")
+kind = 5
+amount = 307
+
+[resource]
+script = ExtResource("4_ybf2j")
+id = &"echo_in_the_cave"
+title = "The cave answers"
+body = "Someone shouted into the deep back of the cave, and it shouted back, a moment later."
+requires = Array[ExtResource("3_w8sp1")]([SubResource("Resource_paxou"), SubResource("Resource_l7nr1")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_7rva0")]([SubResource("Resource_hua86"), SubResource("Resource_i7f1q")])

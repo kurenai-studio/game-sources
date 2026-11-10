@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_e8x5d"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_dsj0n"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_guu4s"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_jrgib"]
+
+[sub_resource type="Resource" id="Resource_ajc37"]
+script = ExtResource("2_dsj0n")
+kind = 0
+key = &"food"
+amount = -8
+
+[sub_resource type="Resource" id="Resource_wucn0"]
+script = ExtResource("2_dsj0n")
+kind = 1
+key = &"glassy_stone"
+
+[sub_resource type="Resource" id="Resource_tqihm"]
+script = ExtResource("2_dsj0n")
+text = "The dark stone took an edge sharper than flint, and the traveller left full."
+
+[sub_resource type="Resource" id="Resource_t5w6g"]
+script = ExtResource("3_guu4s")
+kind = 2
+key = &"food"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_6d45x"]
+script = ExtResource("1_e8x5d")
+id = &"trade_food"
+label = "Trade food for the stone"
+requires = Array[ExtResource("3_guu4s")]([SubResource("Resource_t5w6g")])
+effects = Array[ExtResource("2_dsj0n")]([SubResource("Resource_ajc37"), SubResource("Resource_wucn0"), SubResource("Resource_tqihm")])
+
+[sub_resource type="Resource" id="Resource_1rncm"]
+script = ExtResource("2_dsj0n")
+kind = 1
+key = &"meal_shared"
+
+[sub_resource type="Resource" id="Resource_nf4vj"]
+script = ExtResource("2_dsj0n")
+text = "The traveller ate by the fire, said a few words nobody understood, and went on."
+
+[sub_resource type="Resource" id="Resource_ncbn6"]
+script = ExtResource("1_e8x5d")
+id = &"share_a_meal"
+label = "Share a meal and send them on"
+effects = Array[ExtResource("2_dsj0n")]([SubResource("Resource_1rncm"), SubResource("Resource_nf4vj")])
+
+[sub_resource type="Resource" id="Resource_142bi"]
+script = ExtResource("3_guu4s")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_2kjn1"]
+script = ExtResource("3_guu4s")
+kind = 5
+amount = 272
+
+[sub_resource type="Resource" id="Resource_wrjvt"]
+script = ExtResource("3_guu4s")
+kind = 9
+key = &"bigger_group"
+
+[resource]
+script = ExtResource("4_jrgib")
+id = &"trader"
+title = "A traveller with dark stone"
+body = "A traveller from beyond the ridge has come to the edge of the camp with a bag of dark, glassy stone, and a hungry look."
+category = &"exploration"
+requires = Array[ExtResource("3_guu4s")]([SubResource("Resource_142bi"), SubResource("Resource_2kjn1"), SubResource("Resource_wrjvt")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_e8x5d")]([SubResource("Resource_6d45x"), SubResource("Resource_ncbn6")])

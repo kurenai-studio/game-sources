@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_hgay7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_b7nqg"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_or1yd"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_2mg3r"]
+
+[sub_resource type="Resource" id="Resource_bekjh"]
+script = ExtResource("2_b7nqg")
+text = "Someone looked up at the hill and remembered the fire that had burned there all night."
+
+[sub_resource type="Resource" id="Resource_ge8ko"]
+script = ExtResource("3_or1yd")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_2a2qb"]
+script = ExtResource("3_or1yd")
+key = &"midsummer_hill"
+
+[resource]
+script = ExtResource("4_2mg3r")
+id = &"hill_fire_remembered"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_or1yd")]([SubResource("Resource_ge8ko"), SubResource("Resource_2a2qb")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_b7nqg")]([SubResource("Resource_bekjh")])

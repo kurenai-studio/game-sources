@@ -1,0 +1,84 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_no7d1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_xwn1v"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_ghaks"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_fup0x"]
+
+[sub_resource type="Resource" id="Resource_aoy7a"]
+script = ExtResource("2_xwn1v")
+kind = 1
+key = &"doorsteps_paved"
+
+[sub_resource type="Resource" id="Resource_ytay8"]
+script = ExtResource("2_xwn1v")
+kind = 10
+key = &"paved_streets"
+text = "Paved Streets"
+
+[sub_resource type="Resource" id="Resource_knemf"]
+script = ExtResource("2_xwn1v")
+text = "Every doorstep was paved alike, and the lane stopped looking like an argument and started looking like a town."
+
+[sub_resource type="Resource" id="Resource_l2pp0"]
+script = ExtResource("1_no7d1")
+id = &"pave_every_step"
+label = "Pave every doorstep alike"
+effects = Array[ExtResource("2_xwn1v")]([SubResource("Resource_aoy7a"), SubResource("Resource_ytay8"), SubResource("Resource_knemf")])
+
+[sub_resource type="Resource" id="Resource_e8icu"]
+script = ExtResource("2_xwn1v")
+kind = 1
+key = &"common_walk"
+
+[sub_resource type="Resource" id="Resource_arbdm"]
+script = ExtResource("2_xwn1v")
+kind = 10
+key = &"paved_streets"
+text = "Paved Streets"
+
+[sub_resource type="Resource" id="Resource_b7e86"]
+script = ExtResource("2_xwn1v")
+text = "A common walk was laid past all the doors, and the doorsteps were left to their owners, and the walk made the whole lane look finished."
+
+[sub_resource type="Resource" id="Resource_y1kqp"]
+script = ExtResource("1_no7d1")
+id = &"lay_a_common_walk"
+label = "Lay a common walk past all the doors"
+effects = Array[ExtResource("2_xwn1v")]([SubResource("Resource_e8icu"), SubResource("Resource_arbdm"), SubResource("Resource_b7e86")])
+
+[sub_resource type="Resource" id="Resource_8tuea"]
+script = ExtResource("3_ghaks")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_flypo"]
+script = ExtResource("3_ghaks")
+kind = 11
+amount = 54
+
+[sub_resource type="Resource" id="Resource_agtlk"]
+script = ExtResource("3_ghaks")
+kind = 9
+key = &"paved_streets"
+negate = true
+
+[sub_resource type="Resource" id="Resource_r2p5m"]
+script = ExtResource("3_ghaks")
+kind = 7
+
+[resource]
+script = ExtResource("4_fup0x")
+id = &"shared_doorsteps"
+title = "Doorsteps"
+body = "Every house has a doorstep of some kind, and no two of them agree, and the lane has begun to look like an argument."
+category = &"settlement"
+requires = Array[ExtResource("3_ghaks")]([SubResource("Resource_8tuea"), SubResource("Resource_flypo"), SubResource("Resource_agtlk")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_ghaks")]([SubResource("Resource_r2p5m")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.03
+cooldown_ticks = 48
+choices = Array[ExtResource("1_no7d1")]([SubResource("Resource_l2pp0"), SubResource("Resource_y1kqp")])

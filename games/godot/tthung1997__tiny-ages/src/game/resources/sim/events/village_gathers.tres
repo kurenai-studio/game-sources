@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_2w13r"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_xbevr"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_oq0ny"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_1a3db"]
+
+[sub_resource type="Resource" id="Resource_saywt"]
+script = ExtResource("2_xbevr")
+text = "The dishes had been brought for one supper, and then another, and by the end of the month nobody called it anything but the village."
+
+[sub_resource type="Resource" id="Resource_e1e1m"]
+script = ExtResource("2_xbevr")
+kind = 10
+key = &"a_village"
+text = "A Village"
+
+[sub_resource type="Resource" id="Resource_ax0ak"]
+script = ExtResource("3_oq0ny")
+kind = 9
+key = &"a_village"
+negate = true
+
+[resource]
+script = ExtResource("4_1a3db")
+id = &"village_gathers"
+title = "Supper at the old fire"
+category = &"settlement"
+requires = Array[ExtResource("3_oq0ny")]([SubResource("Resource_ax0ak")])
+effects = Array[ExtResource("2_xbevr")]([SubResource("Resource_saywt"), SubResource("Resource_e1e1m")])

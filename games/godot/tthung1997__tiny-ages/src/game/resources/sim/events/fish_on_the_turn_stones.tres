@@ -1,0 +1,90 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_m7ucu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_d6oh5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_71pam"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_dscbl"]
+
+[sub_resource type="Resource" id="Resource_7jqom"]
+script = ExtResource("2_d6oh5")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_dv063"]
+script = ExtResource("2_d6oh5")
+kind = 0
+key = &"food"
+amount = 8
+
+[sub_resource type="Resource" id="Resource_7bkx0"]
+script = ExtResource("2_d6oh5")
+kind = 1
+key = &"tide_weir"
+
+[sub_resource type="Resource" id="Resource_c247s"]
+script = ExtResource("2_d6oh5")
+text = "A curved weir of stones went up on the flats, and the next tide left it full."
+
+[sub_resource type="Resource" id="Resource_wwb2i"]
+script = ExtResource("3_71pam")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_nbmfs"]
+script = ExtResource("1_m7ucu")
+id = &"build_a_weir"
+label = "Pile a weir of stones to hold the fish"
+requires = Array[ExtResource("3_71pam")]([SubResource("Resource_wwb2i")])
+effects = Array[ExtResource("2_d6oh5")]([SubResource("Resource_7jqom"), SubResource("Resource_dv063"), SubResource("Resource_7bkx0"), SubResource("Resource_c247s")])
+
+[sub_resource type="Resource" id="Resource_iv2yl"]
+script = ExtResource("2_d6oh5")
+kind = 0
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_sxc1r"]
+script = ExtResource("2_d6oh5")
+kind = 1
+key = &"tide_baskets"
+
+[sub_resource type="Resource" id="Resource_ime5u"]
+script = ExtResource("2_d6oh5")
+text = "They waded out with baskets as the water turned, and took what the pools held."
+
+[sub_resource type="Resource" id="Resource_lh0ye"]
+script = ExtResource("1_m7ucu")
+id = &"wade_out_with_baskets"
+label = "Wade out with baskets at the turn"
+effects = Array[ExtResource("2_d6oh5")]([SubResource("Resource_iv2yl"), SubResource("Resource_sxc1r"), SubResource("Resource_ime5u")])
+
+[sub_resource type="Resource" id="Resource_rpvl7"]
+script = ExtResource("3_71pam")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_pll67"]
+script = ExtResource("3_71pam")
+kind = 11
+amount = 218
+
+[sub_resource type="Resource" id="Resource_ljhak"]
+script = ExtResource("3_71pam")
+key = &"stepping_stones"
+
+[sub_resource type="Resource" id="Resource_3stys"]
+script = ExtResource("3_71pam")
+kind = 17
+
+[resource]
+script = ExtResource("4_dscbl")
+id = &"fish_on_the_turn_stones"
+title = "Fish on the turn of the tide"
+body = "Fish are left in the pools on the flats each time the sea goes out, and the gulls know it."
+category = &"nature"
+requires = Array[ExtResource("3_71pam")]([SubResource("Resource_rpvl7"), SubResource("Resource_pll67"), SubResource("Resource_ljhak"), SubResource("Resource_3stys")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_m7ucu")]([SubResource("Resource_nbmfs"), SubResource("Resource_lh0ye")])

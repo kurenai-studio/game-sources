@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_31c2k"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_crhqj"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_x1num"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_3rsa0"]
+
+[sub_resource type="Resource" id="Resource_565nq"]
+script = ExtResource("2_crhqj")
+text = "The mammoth was in the same place at dawn. It seems to have decided to stay."
+
+[sub_resource type="Resource" id="Resource_48p8f"]
+script = ExtResource("3_x1num")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_4xnle"]
+script = ExtResource("3_x1num")
+key = &"mammoth_fed"
+
+[resource]
+script = ExtResource("4_3rsa0")
+id = &"mammoth_stays"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_x1num")]([SubResource("Resource_48p8f"), SubResource("Resource_4xnle")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_crhqj")]([SubResource("Resource_565nq")])

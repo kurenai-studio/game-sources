@@ -1,0 +1,74 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_607hm"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7eilp"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1ya2q"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_7aqre"]
+
+[sub_resource type="Resource" id="Resource_c3bjn"]
+script = ExtResource("2_7eilp")
+kind = 0
+key = &"food"
+amount = -2
+
+[sub_resource type="Resource" id="Resource_6seqe"]
+script = ExtResource("2_7eilp")
+kind = 1
+key = &"herd_dog"
+
+[sub_resource type="Resource" id="Resource_qtrxv"]
+script = ExtResource("2_7eilp")
+text = "The dog was fed, and it stayed, and by the end of the week it had opinions about the herd."
+
+[sub_resource type="Resource" id="Resource_6b1db"]
+script = ExtResource("3_1ya2q")
+kind = 2
+key = &"food"
+amount = 2
+
+[sub_resource type="Resource" id="Resource_cy4q4"]
+script = ExtResource("1_607hm")
+id = &"feed_the_dog"
+label = "Feed it, and let it stay"
+requires = Array[ExtResource("3_1ya2q")]([SubResource("Resource_6b1db")])
+effects = Array[ExtResource("2_7eilp")]([SubResource("Resource_c3bjn"), SubResource("Resource_6seqe"), SubResource("Resource_qtrxv")])
+
+[sub_resource type="Resource" id="Resource_5jkgt"]
+script = ExtResource("2_7eilp")
+kind = 1
+key = &"dog_at_a_distance"
+
+[sub_resource type="Resource" id="Resource_l38so"]
+script = ExtResource("2_7eilp")
+text = "The dog was left to its own business, and went on doing it, at a distance, with the herd."
+
+[sub_resource type="Resource" id="Resource_1b4f2"]
+script = ExtResource("1_607hm")
+id = &"shoo_it_off"
+label = "Leave it to its own business"
+effects = Array[ExtResource("2_7eilp")]([SubResource("Resource_5jkgt"), SubResource("Resource_l38so")])
+
+[sub_resource type="Resource" id="Resource_p0j7t"]
+script = ExtResource("3_1ya2q")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_0yng1"]
+script = ExtResource("3_1ya2q")
+kind = 11
+amount = 58
+
+[sub_resource type="Resource" id="Resource_qb8w1"]
+script = ExtResource("3_1ya2q")
+key = &"path_herding"
+
+[resource]
+script = ExtResource("4_7aqre")
+id = &"the_herd_dog"
+title = "A dog at the fold"
+body = "A half-tame dog has taken to following the herd, keeping the stragglers from straying."
+category = &"nature"
+requires = Array[ExtResource("3_1ya2q")]([SubResource("Resource_p0j7t"), SubResource("Resource_0yng1"), SubResource("Resource_qb8w1")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_607hm")]([SubResource("Resource_cy4q4"), SubResource("Resource_1b4f2")])

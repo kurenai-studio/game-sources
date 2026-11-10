@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bt544"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_nutaw"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gylhn"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_nq7jk"]
+
+[sub_resource type="Resource" id="Resource_5wccc"]
+script = ExtResource("2_nutaw")
+text = "Someone tapped a pot to hear it ring, and then every pot in the camp had to be tapped."
+
+[sub_resource type="Resource" id="Resource_b7ixb"]
+script = ExtResource("3_gylhn")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_n04jr"]
+script = ExtResource("3_gylhn")
+kind = 9
+key = &"fired_clay"
+
+[resource]
+script = ExtResource("4_nq7jk")
+id = &"pots_ring"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_gylhn")]([SubResource("Resource_b7ixb"), SubResource("Resource_n04jr")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_nutaw")]([SubResource("Resource_5wccc")])

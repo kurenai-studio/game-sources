@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_ivajf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ec1wf"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_yjsro"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_63ejg"]
+
+[sub_resource type="Resource" id="Resource_67yaw"]
+script = ExtResource("2_ec1wf")
+text = "The hanging stone rang once on the wind, with nobody near it."
+
+[sub_resource type="Resource" id="Resource_k4xrh"]
+script = ExtResource("3_yjsro")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_7y5in"]
+script = ExtResource("3_yjsro")
+key = &"fog_gong"
+
+[resource]
+script = ExtResource("4_63ejg")
+id = &"gong_stone"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_yjsro")]([SubResource("Resource_k4xrh"), SubResource("Resource_7y5in")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_ec1wf")]([SubResource("Resource_67yaw")])

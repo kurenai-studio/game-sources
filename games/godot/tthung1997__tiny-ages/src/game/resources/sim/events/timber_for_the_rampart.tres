@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_03mlb"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_rihkl"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_s2mw2"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_k2muk"]
+
+[sub_resource type="Resource" id="Resource_cajga"]
+script = ExtResource("2_rihkl")
+kind = 0
+key = &"wood"
+amount = -12
+
+[sub_resource type="Resource" id="Resource_f7ur3"]
+script = ExtResource("2_rihkl")
+kind = 1
+key = &"far_oak"
+
+[sub_resource type="Resource" id="Resource_cbjni"]
+script = ExtResource("2_rihkl")
+text = "Oak was felled in the far wood and dragged home by every beast the village could borrow, and the rampart smelled of fresh timber for a year."
+
+[sub_resource type="Resource" id="Resource_rycf6"]
+script = ExtResource("3_s2mw2")
+kind = 2
+key = &"wood"
+amount = 12
+
+[sub_resource type="Resource" id="Resource_3ruvs"]
+script = ExtResource("1_03mlb")
+id = &"oak_from_the_far_wood"
+label = "Fell oak in the far wood"
+requires = Array[ExtResource("3_s2mw2")]([SubResource("Resource_rycf6")])
+effects = Array[ExtResource("2_rihkl")]([SubResource("Resource_cajga"), SubResource("Resource_f7ur3"), SubResource("Resource_cbjni")])
+
+[sub_resource type="Resource" id="Resource_mq6ow"]
+script = ExtResource("2_rihkl")
+kind = 1
+key = &"old_timbers"
+
+[sub_resource type="Resource" id="Resource_himtm"]
+script = ExtResource("2_rihkl")
+text = "The old gate's timbers were used, and they carried a great many scratches and one child's name, which stayed."
+
+[sub_resource type="Resource" id="Resource_qkm0r"]
+script = ExtResource("1_03mlb")
+id = &"the_old_gate_timbers"
+label = "Use the old gate's timbers"
+effects = Array[ExtResource("2_rihkl")]([SubResource("Resource_mq6ow"), SubResource("Resource_himtm")])
+
+[sub_resource type="Resource" id="Resource_6h5ll"]
+script = ExtResource("3_s2mw2")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_ewewm"]
+script = ExtResource("3_s2mw2")
+kind = 11
+amount = 112
+
+[sub_resource type="Resource" id="Resource_lc0gu"]
+script = ExtResource("3_s2mw2")
+kind = 9
+key = &"the_hill_fort"
+
+[resource]
+script = ExtResource("4_k2muk")
+id = &"timber_for_the_rampart"
+title = "Timber for the rampart"
+body = "The rampart wants a great deal of timber, and there is not a great deal of timber about."
+category = &"settlement"
+requires = Array[ExtResource("3_s2mw2")]([SubResource("Resource_6h5ll"), SubResource("Resource_ewewm"), SubResource("Resource_lc0gu")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_03mlb")]([SubResource("Resource_3ruvs"), SubResource("Resource_qkm0r")])

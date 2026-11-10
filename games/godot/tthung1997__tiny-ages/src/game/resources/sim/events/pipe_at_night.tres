@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_fpgvt"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_yh8un"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_tia2q"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_alqms"]
+
+[sub_resource type="Resource" id="Resource_paoa4"]
+script = ExtResource("2_yh8un")
+text = "A thin pipe tune drifted over the camp, and everyone pretended not to listen."
+
+[sub_resource type="Resource" id="Resource_v6hus"]
+script = ExtResource("3_tia2q")
+kind = 5
+
+[sub_resource type="Resource" id="Resource_n64b5"]
+script = ExtResource("3_tia2q")
+key = &"bone_pipe"
+
+[resource]
+script = ExtResource("4_alqms")
+id = &"pipe_at_night"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_tia2q")]([SubResource("Resource_v6hus"), SubResource("Resource_n64b5")])
+chance_per_tick = 0.0045
+cooldown_ticks = 360
+effects = Array[ExtResource("2_yh8un")]([SubResource("Resource_paoa4")])

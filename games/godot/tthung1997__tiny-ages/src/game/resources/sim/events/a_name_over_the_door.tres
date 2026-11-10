@@ -1,0 +1,62 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_1dtp1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_7wq70"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_0sd2a"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_k7i7b"]
+
+[sub_resource type="Resource" id="Resource_kgv6m"]
+script = ExtResource("2_7wq70")
+kind = 1
+key = &"names_in_wood"
+
+[sub_resource type="Resource" id="Resource_y37ov"]
+script = ExtResource("2_7wq70")
+text = "Names were cut into lintels, and the carpenter did a thriving trade in curly letters for a month."
+
+[sub_resource type="Resource" id="Resource_78pbb"]
+script = ExtResource("1_1dtp1")
+id = &"cut_it_in_wood"
+label = "Cut it in the lintel"
+effects = Array[ExtResource("2_7wq70")]([SubResource("Resource_kgv6m"), SubResource("Resource_y37ov")])
+
+[sub_resource type="Resource" id="Resource_xb5f0"]
+script = ExtResource("2_7wq70")
+kind = 1
+key = &"names_in_clay"
+
+[sub_resource type="Resource" id="Resource_x7g40"]
+script = ExtResource("2_7wq70")
+text = "Names were pressed into clay plaques and set by each door, and the potters became quietly proud of their alphabet."
+
+[sub_resource type="Resource" id="Resource_d3fe2"]
+script = ExtResource("1_1dtp1")
+id = &"press_it_in_clay"
+label = "Press it into a clay plaque"
+effects = Array[ExtResource("2_7wq70")]([SubResource("Resource_xb5f0"), SubResource("Resource_x7g40")])
+
+[sub_resource type="Resource" id="Resource_btxnj"]
+script = ExtResource("3_0sd2a")
+kind = 8
+amount = 3
+
+[sub_resource type="Resource" id="Resource_61wve"]
+script = ExtResource("3_0sd2a")
+kind = 11
+amount = 228
+
+[sub_resource type="Resource" id="Resource_de6ot"]
+script = ExtResource("3_0sd2a")
+kind = 9
+key = &"written_word"
+
+[resource]
+script = ExtResource("4_k7i7b")
+id = &"a_name_over_the_door"
+title = "A name over the door"
+body = "The signs are good enough now to put on a door, and every household would like theirs to be the first."
+category = &"settlement"
+requires = Array[ExtResource("3_0sd2a")]([SubResource("Resource_btxnj"), SubResource("Resource_61wve"), SubResource("Resource_de6ot")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_1dtp1")]([SubResource("Resource_78pbb"), SubResource("Resource_d3fe2")])

@@ -1,0 +1,68 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_p5ow8"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ihiu6"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_bloru"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gkhk1"]
+
+[sub_resource type="Resource" id="Resource_hxw6l"]
+script = ExtResource("2_ihiu6")
+kind = 0
+key = &"food"
+amount = 3
+
+[sub_resource type="Resource" id="Resource_htvys"]
+script = ExtResource("2_ihiu6")
+kind = 1
+key = &"beads_and_cloth"
+
+[sub_resource type="Resource" id="Resource_putqi"]
+script = ExtResource("2_ihiu6")
+text = "Beads and bright cloth were taken, and the lane looked, for a week, like a festival."
+
+[sub_resource type="Resource" id="Resource_g46k6"]
+script = ExtResource("1_p5ow8")
+id = &"take_beads_and_cloth"
+label = "Take beads and cloth"
+effects = Array[ExtResource("2_ihiu6")]([SubResource("Resource_hxw6l"), SubResource("Resource_htvys"), SubResource("Resource_putqi")])
+
+[sub_resource type="Resource" id="Resource_gv2l6"]
+script = ExtResource("2_ihiu6")
+kind = 1
+key = &"stranger_tools"
+
+[sub_resource type="Resource" id="Resource_bs62m"]
+script = ExtResource("2_ihiu6")
+text = "A set of tools was taken, and by evening the lane was full of people trying them and putting them down with respect."
+
+[sub_resource type="Resource" id="Resource_ic5qg"]
+script = ExtResource("1_p5ow8")
+id = &"take_tools"
+label = "Take tools"
+effects = Array[ExtResource("2_ihiu6")]([SubResource("Resource_gv2l6"), SubResource("Resource_bs62m")])
+
+[sub_resource type="Resource" id="Resource_q0101"]
+script = ExtResource("3_bloru")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_wrbq0"]
+script = ExtResource("3_bloru")
+kind = 11
+amount = 186
+
+[sub_resource type="Resource" id="Resource_t6oje"]
+script = ExtResource("3_bloru")
+kind = 9
+key = &"wheel_and_road"
+
+[resource]
+script = ExtResource("4_gkhk1")
+id = &"a_strangers_goods"
+title = "A stranger's goods"
+body = "A stranger has spread a blanket in the lane with a heap of things on it, and is looking at the village as if it might be useful."
+category = &"settlement"
+requires = Array[ExtResource("3_bloru")]([SubResource("Resource_q0101"), SubResource("Resource_wrbq0"), SubResource("Resource_t6oje")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_p5ow8")]([SubResource("Resource_g46k6"), SubResource("Resource_ic5qg")])

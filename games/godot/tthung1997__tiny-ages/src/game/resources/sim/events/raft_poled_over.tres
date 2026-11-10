@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_bc85u"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2tfvx"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_1mhwu"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_gl1sr"]
+
+[sub_resource type="Resource" id="Resource_r3aqp"]
+script = ExtResource("2_2tfvx")
+text = "The reed raft was poled across and back, low in the water, with a lot of laughing."
+
+[sub_resource type="Resource" id="Resource_oef4u"]
+script = ExtResource("3_1mhwu")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_dw3q2"]
+script = ExtResource("3_1mhwu")
+key = &"reed_raft"
+
+[resource]
+script = ExtResource("4_gl1sr")
+id = &"raft_poled_over"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_1mhwu")]([SubResource("Resource_oef4u"), SubResource("Resource_dw3q2")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_2tfvx")]([SubResource("Resource_r3aqp")])

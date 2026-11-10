@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_64ih5"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2a4gu"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_lfk4e"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_6hljf"]
+
+[sub_resource type="Resource" id="Resource_qpaad"]
+script = ExtResource("2_2a4gu")
+kind = 0
+key = &"food"
+amount = 5
+
+[sub_resource type="Resource" id="Resource_gbr6p"]
+script = ExtResource("2_2a4gu")
+text = "{subject} came home at dusk. The prints were a bear's, days old, but there were pine nuts beneath the tree where it had sat."
+
+[resource]
+script = ExtResource("4_6hljf")
+id = &"prints_end"
+title = "The prints end"
+category = &"exploration"
+needs_subject = true
+effects = Array[ExtResource("2_2a4gu")]([SubResource("Resource_qpaad"), SubResource("Resource_gbr6p")])

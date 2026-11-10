@@ -1,0 +1,67 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_y03ge"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_k0rql"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_7xi7q"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_046nh"]
+
+[sub_resource type="Resource" id="Resource_ajcad"]
+script = ExtResource("2_k0rql")
+kind = 0
+key = &"food"
+amount = 4
+
+[sub_resource type="Resource" id="Resource_tqd7o"]
+script = ExtResource("2_k0rql")
+kind = 1
+key = &"salt_laid_in"
+
+[sub_resource type="Resource" id="Resource_mnwp7"]
+script = ExtResource("2_k0rql")
+text = "A sack of grey salt came up the road on a donkey, and the winter meat went in under it, layer by layer."
+
+[sub_resource type="Resource" id="Resource_rfxey"]
+script = ExtResource("1_y03ge")
+id = &"buy_salt_for_winter"
+label = "Buy salt for the winter meat"
+effects = Array[ExtResource("2_k0rql")]([SubResource("Resource_ajcad"), SubResource("Resource_tqd7o"), SubResource("Resource_mnwp7")])
+
+[sub_resource type="Resource" id="Resource_lkmn3"]
+script = ExtResource("2_k0rql")
+kind = 1
+key = &"smoked_meat"
+
+[sub_resource type="Resource" id="Resource_u1uao"]
+script = ExtResource("2_k0rql")
+text = "The meat was hung in the hearth smoke and came out dark and leathery and remarkably good."
+
+[sub_resource type="Resource" id="Resource_0jb0b"]
+script = ExtResource("1_y03ge")
+id = &"smoke_the_meat"
+label = "Hang it in the smoke over the hearth"
+effects = Array[ExtResource("2_k0rql")]([SubResource("Resource_lkmn3"), SubResource("Resource_u1uao")])
+
+[sub_resource type="Resource" id="Resource_a0epp"]
+script = ExtResource("3_7xi7q")
+kind = 8
+amount = 2
+
+[sub_resource type="Resource" id="Resource_7o05r"]
+script = ExtResource("3_7xi7q")
+kind = 11
+amount = 98
+
+[sub_resource type="Resource" id="Resource_wu6td"]
+script = ExtResource("3_7xi7q")
+key = &"salt"
+
+[resource]
+script = ExtResource("4_046nh")
+id = &"salt_again"
+title = "Salt again"
+body = "The salt is nearly gone, and the winter meat is nearly here."
+category = &"settlement"
+requires = Array[ExtResource("3_7xi7q")]([SubResource("Resource_a0epp"), SubResource("Resource_7o05r"), SubResource("Resource_wu6td")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_y03ge")]([SubResource("Resource_rfxey"), SubResource("Resource_0jb0b")])

@@ -1,0 +1,97 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_lign7"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_2ui2j"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_gi7us"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_t065k"]
+
+[sub_resource type="Resource" id="Resource_wyb2m"]
+script = ExtResource("2_2ui2j")
+kind = 13
+amount = 2
+
+[sub_resource type="Resource" id="Resource_es4by"]
+script = ExtResource("2_2ui2j")
+kind = 1
+key = &"door_open"
+
+[sub_resource type="Resource" id="Resource_wkun6"]
+script = ExtResource("2_2ui2j")
+text = "The family was taken in, and the village grew by two more mouths and two more pairs of hands."
+
+[sub_resource type="Resource" id="Resource_ttvhc"]
+script = ExtResource("1_lign7")
+id = &"take_them_in"
+label = "Take them in"
+effects = Array[ExtResource("2_2ui2j")]([SubResource("Resource_wyb2m"), SubResource("Resource_es4by"), SubResource("Resource_wkun6")])
+
+[sub_resource type="Resource" id="Resource_7cq7p"]
+script = ExtResource("2_2ui2j")
+kind = 0
+key = &"wood"
+amount = -10
+
+[sub_resource type="Resource" id="Resource_7p4e4"]
+script = ExtResource("2_2ui2j")
+kind = 1
+key = &"roof_by_the_river"
+
+[sub_resource type="Resource" id="Resource_1becj"]
+script = ExtResource("2_2ui2j")
+text = "The whole village turned out for a day to raise a roof by the river, and the family moved in before dark."
+
+[sub_resource type="Resource" id="Resource_0imuo"]
+script = ExtResource("3_gi7us")
+kind = 2
+key = &"wood"
+amount = 10
+
+[sub_resource type="Resource" id="Resource_3w41i"]
+script = ExtResource("1_lign7")
+id = &"raise_them_a_roof"
+label = "Help them raise a roof of their own by the river"
+requires = Array[ExtResource("3_gi7us")]([SubResource("Resource_0imuo")])
+effects = Array[ExtResource("2_2ui2j")]([SubResource("Resource_7cq7p"), SubResource("Resource_7p4e4"), SubResource("Resource_1becj")])
+
+[sub_resource type="Resource" id="Resource_660u3"]
+script = ExtResource("3_gi7us")
+kind = 8
+amount = 1
+
+[sub_resource type="Resource" id="Resource_gepc1"]
+script = ExtResource("3_gi7us")
+kind = 11
+amount = 232
+
+[sub_resource type="Resource" id="Resource_geqe1"]
+script = ExtResource("3_gi7us")
+kind = 9
+key = &"a_village"
+
+[sub_resource type="Resource" id="Resource_xyyyk"]
+script = ExtResource("3_gi7us")
+kind = 12
+amount = 2
+
+[sub_resource type="Resource" id="Resource_bpqnr"]
+script = ExtResource("3_gi7us")
+kind = 2
+key = &"food"
+amount = 16
+
+[sub_resource type="Resource" id="Resource_mnxkl"]
+script = ExtResource("3_gi7us")
+kind = 2
+key = &"wood"
+amount = 10
+
+[resource]
+script = ExtResource("4_t065k")
+id = &"family_at_the_door"
+title = "Another family at the door"
+body = "A family has come up the road with everything they own on their backs. They have heard there is bread here."
+category = &"exploration"
+requires = Array[ExtResource("3_gi7us")]([SubResource("Resource_660u3"), SubResource("Resource_gepc1"), SubResource("Resource_geqe1"), SubResource("Resource_xyyyk"), SubResource("Resource_bpqnr"), SubResource("Resource_mnxkl")])
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_lign7")]([SubResource("Resource_ttvhc"), SubResource("Resource_3w41i")])

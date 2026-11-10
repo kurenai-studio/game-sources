@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_wrpm1"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_qim0r"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_cc7br"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_e5jax"]
+
+[sub_resource type="Resource" id="Resource_ubhty"]
+script = ExtResource("2_qim0r")
+text = "A copy of the charter was carried to a far town, and read aloud there, and somebody said it sounded very like home."
+
+[sub_resource type="Resource" id="Resource_v0dq4"]
+script = ExtResource("3_cc7br")
+kind = 8
+amount = 4
+
+[sub_resource type="Resource" id="Resource_36bqq"]
+script = ExtResource("3_cc7br")
+key = &"charter_written"
+
+[resource]
+script = ExtResource("4_e5jax")
+id = &"the_charter_copied"
+title = "A quiet moment"
+category = &"nature"
+requires = Array[ExtResource("3_cc7br")]([SubResource("Resource_v0dq4"), SubResource("Resource_36bqq")])
+chance_per_tick = 0.002
+cooldown_ticks = 360
+effects = Array[ExtResource("2_qim0r")]([SubResource("Resource_ubhty")])

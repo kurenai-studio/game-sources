@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_quouc"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_u3q07"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_be4gn"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_0xeo5"]
+
+[sub_resource type="Resource" id="Resource_vywqk"]
+script = ExtResource("2_u3q07")
+kind = 6
+key = &"western_ridge"
+amount = 14
+
+[sub_resource type="Resource" id="Resource_5sax8"]
+script = ExtResource("2_u3q07")
+kind = 7
+key = &"ridge_empty"
+amount = 14
+
+[sub_resource type="Resource" id="Resource_2eli6"]
+script = ExtResource("2_u3q07")
+text = "{subject} set off up the ridge to find out who was making the smoke."
+
+[sub_resource type="Resource" id="Resource_353pa"]
+script = ExtResource("1_quouc")
+id = &"climb_up"
+label = "Send them up to look"
+effects = Array[ExtResource("2_u3q07")]([SubResource("Resource_vywqk"), SubResource("Resource_5sax8"), SubResource("Resource_2eli6")])
+
+[sub_resource type="Resource" id="Resource_5qqv4"]
+script = ExtResource("2_u3q07")
+kind = 1
+key = &"ridge_watched"
+
+[sub_resource type="Resource" id="Resource_vtlv2"]
+script = ExtResource("2_u3q07")
+text = "The smoke came and went. Someone was always at the lookout that week."
+
+[sub_resource type="Resource" id="Resource_qtdk7"]
+script = ExtResource("1_quouc")
+id = &"keep_watching"
+label = "Keep watching from the lookout"
+effects = Array[ExtResource("2_u3q07")]([SubResource("Resource_5qqv4"), SubResource("Resource_vtlv2")])
+
+[sub_resource type="Resource" id="Resource_lvt05"]
+script = ExtResource("3_be4gn")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_1tqqs"]
+script = ExtResource("3_be4gn")
+kind = 5
+amount = 140
+
+[sub_resource type="Resource" id="Resource_d5fqk"]
+script = ExtResource("3_be4gn")
+kind = 0
+key = &"lookout"
+
+[sub_resource type="Resource" id="Resource_f67q4"]
+script = ExtResource("3_be4gn")
+kind = 9
+key = &"bigger_group"
+negate = true
+
+[sub_resource type="Resource" id="Resource_1m8lx"]
+script = ExtResource("3_be4gn")
+kind = 7
+
+[resource]
+script = ExtResource("4_0xeo5")
+id = &"smoke_on_the_ridge"
+title = "Smoke on the ridge"
+body = "A thin line of smoke has been rising from the far ridge, where nobody has lived."
+category = &"exploration"
+requires = Array[ExtResource("3_be4gn")]([SubResource("Resource_lvt05"), SubResource("Resource_1tqqs"), SubResource("Resource_d5fqk"), SubResource("Resource_f67q4")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_be4gn")]([SubResource("Resource_1m8lx")])
+trait_weights = Dictionary[StringName, float]({
+&"curious": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_quouc")]([SubResource("Resource_353pa"), SubResource("Resource_qtdk7")])

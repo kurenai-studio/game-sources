@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_v740q"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_agqaa"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_200s4"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_mx7ib"]
+
+[sub_resource type="Resource" id="Resource_fsxck"]
+script = ExtResource("2_agqaa")
+kind = 1
+key = &"log_drum"
+
+[sub_resource type="Resource" id="Resource_k5nae"]
+script = ExtResource("2_agqaa")
+text = "{subject} stretched a hide across the log, and the whole valley heard the first drum."
+
+[sub_resource type="Resource" id="Resource_h63ig"]
+script = ExtResource("1_v740q")
+id = &"beat_a_drum"
+label = "Stretch a hide over the end, and beat it"
+effects = Array[ExtResource("2_agqaa")]([SubResource("Resource_fsxck"), SubResource("Resource_k5nae")])
+
+[sub_resource type="Resource" id="Resource_4trpk"]
+script = ExtResource("2_agqaa")
+kind = 1
+key = &"bone_pipe"
+
+[sub_resource type="Resource" id="Resource_gc8bv"]
+script = ExtResource("2_agqaa")
+text = "{subject} bored holes in a bird bone, and by dusk it was a small clear voice."
+
+[sub_resource type="Resource" id="Resource_awec6"]
+script = ExtResource("1_v740q")
+id = &"carve_a_flute"
+label = "Carve a bone into a pipe instead"
+effects = Array[ExtResource("2_agqaa")]([SubResource("Resource_4trpk"), SubResource("Resource_gc8bv")])
+
+[sub_resource type="Resource" id="Resource_wdn7j"]
+script = ExtResource("3_200s4")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_w6lnj"]
+script = ExtResource("3_200s4")
+kind = 5
+amount = 265
+
+[sub_resource type="Resource" id="Resource_ajufr"]
+script = ExtResource("3_200s4")
+kind = 7
+
+[resource]
+script = ExtResource("4_mx7ib")
+id = &"hollow_log"
+title = "A hollow log"
+body = "{subject} found a hollow log, and found it made a sound when struck."
+requires = Array[ExtResource("3_200s4")]([SubResource("Resource_wdn7j"), SubResource("Resource_w6lnj")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_200s4")]([SubResource("Resource_ajufr")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_v740q")]([SubResource("Resource_h63ig"), SubResource("Resource_awec6")])

@@ -1,0 +1,48 @@
+# Normalise line endings. Godot writes LF; committing CRLF causes noisy diffs
+# and spurious merge conflicts in .tscn/.tres files.
+* text=auto eol=lf
+
+# --- Godot text formats -----------------------------------------------------
+# Plain text on purpose: they diff, merge and review well. Never mark them binary.
+*.gd      text eol=lf
+*.gdshader text eol=lf
+*.gdshaderinc text eol=lf
+*.tscn    text eol=lf
+*.tres    text eol=lf
+*.godot   text eol=lf
+*.cfg     text eol=lf
+*.import  text eol=lf
+*.json    text eol=lf
+*.md      text eol=lf
+*.js      text eol=lf
+*.py      text eol=lf
+*.ps1     text eol=lf
+
+# Windows-only helper scripts must stay CRLF
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# --- Binary assets ----------------------------------------------------------
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.webp    binary
+*.ico     binary
+*.bmp     binary
+*.svg     text eol=lf
+*.ttf     binary
+*.otf     binary
+*.woff    binary
+*.woff2   binary
+*.wav     binary
+*.ogg     binary
+*.mp3     binary
+*.aseprite binary
+*.ase     binary
+
+# --- Linguist ---------------------------------------------------------------
+# Stop GitHub counting vendored/generated files as source.
+game/addons/** linguist-vendored
+game/assets/** linguist-vendored
+art/** linguist-vendored

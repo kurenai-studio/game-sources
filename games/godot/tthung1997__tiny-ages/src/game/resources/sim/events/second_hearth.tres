@@ -1,0 +1,77 @@
+[gd_resource type="Resource" script_class="EventDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/choice_def.gd" id="1_w7e27"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_effect.gd" id="2_ddj1g"]
+[ext_resource type="Script" path="res://scripts/sim/data/sim_condition.gd" id="3_55nhg"]
+[ext_resource type="Script" path="res://scripts/sim/data/event_def.gd" id="4_braub"]
+
+[sub_resource type="Resource" id="Resource_uewa4"]
+script = ExtResource("2_ddj1g")
+kind = 0
+key = &"wood"
+amount = -6
+
+[sub_resource type="Resource" id="Resource_6fkp8"]
+script = ExtResource("2_ddj1g")
+kind = 1
+key = &"second_hearth"
+
+[sub_resource type="Resource" id="Resource_nnrtm"]
+script = ExtResource("2_ddj1g")
+text = "A second ring of stones was laid, and the evenings got louder."
+
+[sub_resource type="Resource" id="Resource_t43fx"]
+script = ExtResource("3_55nhg")
+kind = 2
+key = &"wood"
+amount = 6
+
+[sub_resource type="Resource" id="Resource_i0q5y"]
+script = ExtResource("1_w7e27")
+id = &"build_second_hearth"
+label = "Lay a second small fire"
+requires = Array[ExtResource("3_55nhg")]([SubResource("Resource_t43fx")])
+effects = Array[ExtResource("2_ddj1g")]([SubResource("Resource_uewa4"), SubResource("Resource_6fkp8"), SubResource("Resource_nnrtm")])
+
+[sub_resource type="Resource" id="Resource_t8610"]
+script = ExtResource("2_ddj1g")
+kind = 1
+key = &"fire_turns"
+
+[sub_resource type="Resource" id="Resource_ecmrj"]
+script = ExtResource("2_ddj1g")
+text = "They agreed to take turns, mostly."
+
+[sub_resource type="Resource" id="Resource_jaap8"]
+script = ExtResource("1_w7e27")
+id = &"take_turns"
+label = "Take turns by the fire"
+effects = Array[ExtResource("2_ddj1g")]([SubResource("Resource_t8610"), SubResource("Resource_ecmrj")])
+
+[sub_resource type="Resource" id="Resource_d25sb"]
+script = ExtResource("3_55nhg")
+key = &"fire_found"
+
+[sub_resource type="Resource" id="Resource_jy24r"]
+script = ExtResource("3_55nhg")
+kind = 5
+amount = 72
+
+[sub_resource type="Resource" id="Resource_wt63d"]
+script = ExtResource("3_55nhg")
+kind = 7
+
+[resource]
+script = ExtResource("4_braub")
+id = &"second_hearth"
+title = "The warm spot"
+body = "Two of the group both want the warm place by the fire, and {subject} has taken to sitting at the edge of the light, alone."
+requires = Array[ExtResource("3_55nhg")]([SubResource("Resource_d25sb"), SubResource("Resource_jy24r")])
+needs_subject = true
+subject_requires = Array[ExtResource("3_55nhg")]([SubResource("Resource_wt63d")])
+trait_weights = Dictionary[StringName, float]({
+&"social": 3.0
+})
+chance_per_tick = 0.05
+once = true
+choices = Array[ExtResource("1_w7e27")]([SubResource("Resource_i0q5y"), SubResource("Resource_jaap8")])

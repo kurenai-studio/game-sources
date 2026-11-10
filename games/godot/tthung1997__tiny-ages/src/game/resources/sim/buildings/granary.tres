@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BuildingDef" format=3]
+
+[ext_resource type="Script" path="res://scripts/sim/data/building_def.gd" id="1_hm012"]
+
+[resource]
+script = ExtResource("1_hm012")
+id = &"granary"
+display_name = "Granary"
+description = "A raised timber store on stone legs, where the grain keeps dry and the mice keep out."
+cost = Dictionary[StringName, int]({
+&"wood": 14
+})
+work_required = 40
+daily_output = Dictionary[StringName, float]({
+&"food": 0.5
+})
