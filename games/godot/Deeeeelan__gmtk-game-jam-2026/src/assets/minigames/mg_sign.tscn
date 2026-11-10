@@ -1,0 +1,95 @@
+[gd_scene format=3 uid="uid://cjemsgciw5b7u"]
+
+[ext_resource type="Script" uid="uid://txnw3l5tlm2s" path="res://scripts/minigames/mg_sign.gd" id="1_r3yog"]
+[ext_resource type="Texture2D" uid="uid://b4i3o5ydoxatb" path="res://assets/images/os_window/9slice_window.png" id="2_8dnaa"]
+[ext_resource type="Texture2D" uid="uid://is6i0wan8s3x" path="res://assets/images/minigames/mg_draw_3.png" id="3_8dnaa"]
+
+[node name="MG_Sign" type="Control" unique_id=1222474499]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_r3yog")
+
+[node name="Page" type="ColorRect" parent="." unique_id=1902225715]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.25
+anchor_top = 0.1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -4.0
+offset_bottom = -4.0
+color = Color(0.5802277, 0.58022773, 0.58022773, 1)
+
+[node name="Top" type="NinePatchRect" parent="." unique_id=2049101252]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 0.1
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_8dnaa")
+patch_margin_left = 5
+patch_margin_top = 5
+patch_margin_right = 5
+patch_margin_bottom = 5
+
+[node name="Left" type="NinePatchRect" parent="." unique_id=838181520]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.1
+anchor_right = 0.25
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_8dnaa")
+patch_margin_left = 5
+patch_margin_top = 5
+patch_margin_right = 5
+patch_margin_bottom = 5
+
+[node name="Page" type="ColorRect" parent="Left" unique_id=1628995022]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+
+[node name="DocList" type="VBoxContainer" parent="Left/Page" unique_id=1661452633]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Canvas" type="GridContainer" parent="." unique_id=1295106592]
+layout_mode = 0
+offset_left = 364.0
+offset_top = 390.0
+offset_right = 467.0
+offset_bottom = 425.0
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=595362165]
+custom_minimum_size = Vector2(170, 220)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -60.0
+offset_top = -150.0
+offset_right = 110.0
+offset_bottom = 70.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("3_8dnaa")
+expand_mode = 3
+stretch_mode = 5

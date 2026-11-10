@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://d1wfssblvtuy1"]
+
+[ext_resource type="Texture2D" uid="uid://cmn27ifrauvil" path="res://assets/images/app_icons/word.png" id="1_grw78"]
+[ext_resource type="Script" uid="uid://l6w2cbmm7hic" path="res://scripts/minigames/open_minigame.gd" id="2_srcxb"]
+
+[node name="App" type="MarginContainer" unique_id=441199121]
+offset_right = 103.0
+offset_bottom = 132.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="List" type="VBoxContainer" parent="." unique_id=470720115]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="List" unique_id=607670265]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Icon" type="TextureRect" parent="List/MarginContainer" unique_id=1433568706]
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("1_grw78")
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="List" unique_id=1750188574]
+custom_minimum_size = Vector2(64, 32)
+custom_maximum_size = Vector2(128, 128)
+layout_mode = 2
+text = "Lorem Ipsum..."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Button" type="Button" parent="." unique_id=409029506]
+z_index = 1
+layout_mode = 2
+mouse_filter = 1
+mouse_default_cursor_shape = 2
+flat = true
+script = ExtResource("2_srcxb")
+game_path = "res://assets/minigames/mg_word.tscn"
+game_name = "Word"
