@@ -1,0 +1,32 @@
+; Engine configuration file.
+; Galaxy Shooter — Godot 4.3 project (Web + Android + Desktop).
+
+config_version=5
+
+[application]
+
+config/name="Galaxy Shooter"
+config/description="A fast, beautiful space shooter with multiple levels, guest & account play, and a global leaderboard. Runs on Web and Mobile."
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.3", "Mobile")
+config/icon="res://icon.svg"
+
+[autoload]
+
+Session="*res://scripts/session.gd"
+ApiClient="*res://scripts/api_client.gd"
+Sfx="*res://scripts/sfx.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
+environment/defaults/default_clear_color=Color(0.012, 0.016, 0.043, 1)
