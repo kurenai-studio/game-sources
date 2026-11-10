@@ -1,0 +1,33 @@
+name: Dependabot auto-merge
+
+# Turns on GitHub's auto-merge for Dependabot's PRs: GitHub then merges
+# each one by itself once the required checks pass (the `nix flake check`
+# job of ci.yml, set as required on `main` in the repo's branch rules —
+# without that rule, auto-merge would merge straight away, untested).
+#
+# Merged automatically: every flake.lock update (Nix inputs have no
+# version numbers, and `nix flake check` builds and tests everything they
+# touch), and patch/minor updates of GitHub Actions. Major Actions updates
+# are left for a human: some steps (the release ones) only run on tags, so
+# CI can't vouch for them.
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Read what Dependabot updates
+        id: meta
+        uses: dependabot/fetch-metadata@v3
+
+      - name: Enable auto-merge
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --auto --merge "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
