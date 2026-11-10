@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://xal0832scki6"]
+
+[ext_resource type="Script" path="res://World/Level/EnemySpawner.gd" id="1_pfakr"]
+
+[node name="EnemySpawner" type="Marker2D" groups=["Spawner"]]
+gizmo_extents = 0.0
+script = ExtResource("1_pfakr")
+
+[node name="SpawnTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+
+[connection signal="timeout" from="SpawnTimer" to="." method="_on_spawn_timer_timeout"]

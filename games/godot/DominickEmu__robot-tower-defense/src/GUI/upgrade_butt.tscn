@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://cupe2kl7jscld"]
+
+[ext_resource type="Script" path="res://GUI/upgrade_butt.gd" id="1_l17yx"]
+
+[node name="UpgradeButt" type="Button"]
+custom_minimum_size = Vector2(900, 140)
+theme_override_font_sizes/font_size = 48
+text = "???
+$0"
+script = ExtResource("1_l17yx")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]
