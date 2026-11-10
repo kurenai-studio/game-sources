@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://civ6oawcgsfa2"]
+
+[ext_resource type="Script" path="res://Towers/Projs/proj.gd" id="1_t0pag"]
+[ext_resource type="Texture2D" uid="uid://hluvuxi4e1ld" path="res://Textures/Towers/towerRad.png" id="2_hr48b"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gwlop"]
+radius = 21.4709
+
+[node name="Proj" type="Area2D" groups=["Projs"]]
+script = ExtResource("1_t0pag")
+
+[node name="Proj" type="Sprite2D" parent="."]
+scale = Vector2(0.08, 0.08)
+texture = ExtResource("2_hr48b")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_gwlop")
+
+[node name="DespawnTimer" type="Timer" parent="."]
+wait_time = 0.2
+one_shot = true
+
+[connection signal="timeout" from="DespawnTimer" to="." method="_on_despawn_timer_timeout"]

@@ -1,0 +1,58 @@
+[gd_scene load_steps=6 format=3 uid="uid://cf2fadlm25ndh"]
+
+[ext_resource type="Texture2D" uid="uid://ceov27l8civ2q" path="res://icon.svg" id="1_sofqa"]
+[ext_resource type="Script" path="res://Towers/tower.gd" id="2_xuhve"]
+[ext_resource type="Texture2D" uid="uid://hluvuxi4e1ld" path="res://Textures/Towers/towerRad.png" id="3_0chjh"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_xslbx"]
+radius = 58.8889
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p436m"]
+radius = 302.973
+
+[node name="Jukebot" type="Sprite2D" groups=["Jukebot"]]
+modulate = Color(0.12549, 0.462745, 0.737255, 1)
+self_modulate = Color(0.380392, 0.380392, 0.380392, 1)
+scale = Vector2(0.68, 0.68)
+texture = ExtResource("1_sofqa")
+script = ExtResource("2_xuhve")
+damage = 3
+rotation_delta = 0.0
+proj_speed = 200
+proj_lifespan = 0.35
+fire_rate = 0.537
+pierce = 9999
+min_fire_rate = 0.1
+energy_max = 90
+buff = 1
+cost = 300
+upgrade_opts = Array[String](["damage", "energy_consumpt", "buff", "proj_lifespan"])
+
+[node name="HoverArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HoverArea"]
+shape = SubResource("CircleShape2D_xslbx")
+
+[node name="Range" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Range"]
+shape = SubResource("CircleShape2D_p436m")
+debug_color = Color(0, 0.6, 0.701961, 0.164706)
+
+[node name="TowerRad" type="Sprite2D" parent="Range"]
+unique_name_in_owner = true
+self_modulate = Color(1, 1, 1, 0.286275)
+position = Vector2(3.57628e-07, 2.5034e-06)
+scale = Vector2(1.403, 1.403)
+texture = ExtResource("3_0chjh")
+
+[node name="FireCooldown" type="Timer" parent="."]
+
+[node name="ConsumeEnergy" type="Timer" parent="."]
+
+[connection signal="mouse_entered" from="HoverArea" to="." method="_on_hover_area_mouse_entered"]
+[connection signal="mouse_exited" from="HoverArea" to="." method="_on_hover_area_mouse_exited"]
+[connection signal="body_entered" from="Range" to="." method="_on_range_body_entered"]
+[connection signal="body_exited" from="Range" to="." method="_on_range_body_exited"]
+[connection signal="timeout" from="FireCooldown" to="." method="_on_fire_cooldown_timeout"]
+[connection signal="timeout" from="ConsumeEnergy" to="." method="_on_consume_energy_timeout"]

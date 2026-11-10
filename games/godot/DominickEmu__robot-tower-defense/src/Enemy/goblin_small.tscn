@@ -1,0 +1,45 @@
+[gd_scene load_steps=5 format=3 uid="uid://7iuwek58nuar"]
+
+[ext_resource type="Script" path="res://Enemy/enemy.gd" id="1_xup28"]
+[ext_resource type="Texture2D" uid="uid://uwca50bxh10l" path="res://Textures/Enemy/Goblins1.png" id="2_dnt7i"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_yo1qv"]
+radius = 6.19772
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_634pk"]
+radius = 27.8488
+
+[node name="GoblinSmall" type="CharacterBody2D"]
+rotation = -0.785398
+scale = Vector2(1.5, 1.5)
+collision_layer = 3
+collision_mask = 2
+motion_mode = 1
+script = ExtResource("1_xup28")
+hp_max = 15
+
+[node name="Goblins2" type="Sprite2D" parent="."]
+texture_filter = 1
+position = Vector2(4.71405, 6.59967)
+rotation = -0.785398
+scale = Vector2(0.092, 0.092)
+texture = ExtResource("2_dnt7i")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-2, 2)
+rotation = -0.785398
+shape = SubResource("CircleShape2D_yo1qv")
+debug_color = Color(0, 0.6, 0.701961, 0.27451)
+
+[node name="Hurtbox" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+position = Vector2(-4.24264, 1.41421)
+shape = SubResource("CircleShape2D_634pk")
+
+[node name="HitFlashTimer" type="Timer" parent="."]
+wait_time = 0.07
+one_shot = true
+
+[connection signal="area_entered" from="Hurtbox" to="." method="_on_hitbox_area_entered"]
+[connection signal="timeout" from="HitFlashTimer" to="." method="_on_hit_flash_timer_timeout"]

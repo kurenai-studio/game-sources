@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://eugbuwjkus6i"]
+
+[ext_resource type="Script" path="res://GUI/buy_butt.gd" id="1_j34ch"]
+
+[node name="BuyButt" type="Button"]
+offset_right = 371.0
+offset_bottom = 142.0
+theme_override_font_sizes/font_size = 48
+text = "archOS
+(75)"
+script = ExtResource("1_j34ch")
+
+[connection signal="pressed" from="." to="." method="_on_pressed"]

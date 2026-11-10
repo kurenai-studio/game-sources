@@ -1,0 +1,42 @@
+[gd_scene load_steps=6 format=3 uid="uid://c3w3wo7gnfu5"]
+
+[ext_resource type="Script" path="res://Towers/Projs/boom_proj.gd" id="1_lk4vh"]
+[ext_resource type="Texture2D" uid="uid://vdj4ibm2i0yd" path="res://Textures/Towers/explosion.png" id="2_4kkqi"]
+[ext_resource type="Texture2D" uid="uid://hluvuxi4e1ld" path="res://Textures/Towers/towerRad.png" id="2_cgdvp"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gwlop"]
+radius = 22.0227
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_uuj3e"]
+radius = 295.941
+
+[node name="Proj" type="Area2D" groups=["Projs"]]
+scale = Vector2(0.73, 0.73)
+script = ExtResource("1_lk4vh")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_gwlop")
+
+[node name="BoomArea" type="Area2D" parent="."]
+
+[node name="BoomRad" type="CollisionShape2D" parent="BoomArea"]
+unique_name_in_owner = true
+shape = SubResource("CircleShape2D_uuj3e")
+
+[node name="Proj" type="Sprite2D" parent="."]
+scale = Vector2(0.087, 0.087)
+texture = ExtResource("2_cgdvp")
+
+[node name="Explosion" type="Sprite2D" parent="."]
+visible = false
+scale = Vector2(5, 5)
+texture = ExtResource("2_4kkqi")
+
+[node name="DespawnTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="BoomDuration" type="Timer" parent="."]
+wait_time = 0.09
+
+[connection signal="timeout" from="DespawnTimer" to="." method="_on_despawn_timer_timeout"]
+[connection signal="timeout" from="BoomDuration" to="." method="_on_boom_duration_timeout"]

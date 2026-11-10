@@ -1,0 +1,60 @@
+[gd_scene load_steps=6 format=3 uid="uid://b4hayp2uoyosv"]
+
+[ext_resource type="Texture2D" uid="uid://ceov27l8civ2q" path="res://icon.svg" id="1_ecvpc"]
+[ext_resource type="Script" path="res://Towers/tower.gd" id="2_uj3on"]
+[ext_resource type="Texture2D" uid="uid://hluvuxi4e1ld" path="res://Textures/Towers/towerRad.png" id="3_pcbr5"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_xslbx"]
+radius = 58.8889
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p436m"]
+radius = 623.337
+
+[node name="GatGol" type="Sprite2D" groups=["Gatling Golem"]]
+modulate = Color(0.231373, 1, 0.231373, 1)
+self_modulate = Color(0.380392, 0.380392, 0.380392, 1)
+scale = Vector2(0.9, 0.9)
+texture = ExtResource("1_ecvpc")
+script = ExtResource("2_uj3on")
+damage = 8
+rotation_delta = 5.5
+proj_lifespan = 0.5
+fire_rate = 0.4
+acceleration = 0.03
+min_fire_rate = 0.1
+energy_max = 100
+cost = 750
+upgrade_opts = Array[String](["damage", "energy_consumpt", "acceleration", "min_fire_rate"])
+
+[node name="HoverArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HoverArea"]
+shape = SubResource("CircleShape2D_xslbx")
+
+[node name="Range" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Range"]
+shape = SubResource("CircleShape2D_p436m")
+debug_color = Color(0, 0.6, 0.701961, 0.164706)
+
+[node name="TowerRad" type="Sprite2D" parent="Range"]
+unique_name_in_owner = true
+self_modulate = Color(1, 1, 1, 0.286275)
+position = Vector2(3.57628e-07, 2.5034e-06)
+scale = Vector2(2.583, 2.583)
+texture = ExtResource("3_pcbr5")
+
+[node name="FireCooldown" type="Timer" parent="."]
+
+[node name="ConsumeEnergy" type="Timer" parent="."]
+
+[node name="BuffDespawn" type="Timer" parent="."]
+wait_time = 0.112
+
+[connection signal="area_entered" from="HoverArea" to="." method="_on_hover_area_area_entered"]
+[connection signal="mouse_entered" from="HoverArea" to="." method="_on_hover_area_mouse_entered"]
+[connection signal="mouse_exited" from="HoverArea" to="." method="_on_hover_area_mouse_exited"]
+[connection signal="body_entered" from="Range" to="." method="_on_range_body_entered"]
+[connection signal="body_exited" from="Range" to="." method="_on_range_body_exited"]
+[connection signal="timeout" from="FireCooldown" to="." method="_on_fire_cooldown_timeout"]
+[connection signal="timeout" from="ConsumeEnergy" to="." method="_on_consume_energy_timeout"]
