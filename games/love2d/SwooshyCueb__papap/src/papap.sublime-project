@@ -1,0 +1,27 @@
+{
+    "folders":
+    [
+        {
+            "path": ".",
+            "folder_exclude_patterns": [".git"],
+        }
+    ],
+    "settings":
+    [
+        {
+            "ensure_newline_at_eof_on_save": true,
+            "translate_tabs_to_spaces": true,
+            "trim_trailing_white_space_on_save": true,
+            "tab_size": 4
+        }
+    ],
+    "build_systems":
+    [
+        {
+            "name": "Love2D",
+            "shell": false,
+            "cmd": ["love", "$project_path/src"],
+            "file_regex": "^Error: (?:[^:]+: )?([^: ]+?):(\\d+):() ([^:]*)$"
+        }
+    ]
+}
