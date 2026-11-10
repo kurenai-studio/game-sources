@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/Gameplay/PlayerController.cs" id="1_player"]
+[ext_resource type="Script" path="res://src/Gameplay/PlayerVisual.cs" id="2_visual"]
+[ext_resource type="PackedScene" path="res://assets/models/player.glb" id="3_model"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_1"]
+radius = 0.34
+height = 1.7
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_player")
+
+[node name="Collision" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+shape = SubResource("CapsuleShape3D_1")
+
+[node name="Visual" type="Node3D" parent="."]
+script = ExtResource("2_visual")
+
+[node name="PlayerModel" parent="Visual" instance=ExtResource("3_model")]
