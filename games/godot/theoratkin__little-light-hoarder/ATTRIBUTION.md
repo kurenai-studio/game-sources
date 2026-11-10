@@ -14,6 +14,6 @@
 - **Third-party assets:**
   - Tileset "Cavernas" by Adam Saltsman (CC0), credited in the in-game credits menu.
   - Texture files also include Caves of Gallet tiles by Adam Saltsman (CC0).
-  - Music: "Meditation - In Eternity" (`531506__andrewkn__ambient-meditation-in-eternity.mp3`) by Andrewkn on Freesound, credited in the in-game credits menu.
+  - Music: Freesound "Ambient, Meditation - In Eternity" by Andrewkn (https://freesound.org/people/Andrewkn/sounds/531506/) is licensed CC BY-NC 4.0 and was excluded from this snapshot. The `music` AudioStreamPlayer in `src/scene/root.tscn` no longer references it, and the in-game credits line was removed.
   - SFX: `521332__skylarjulian__mein-bottle-pling.mp3` by skylarjulian and `water-cave__klangkobold__443061.mp3` by klangkobold on Freesound (IDs in the filenames).
 - **Notes:** Complete Godot 3.x jam game with main menu, options, credits, a hub, and five levels. No Git LFS, no addons, no editor `.tmp`.
