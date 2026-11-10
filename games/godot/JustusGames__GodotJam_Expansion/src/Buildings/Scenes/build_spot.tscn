@@ -1,0 +1,67 @@
+[gd_scene load_steps=6 format=3 uid="uid://cr6ik3hlc2dq6"]
+
+[ext_resource type="Script" uid="uid://jfgtyorp2gdg" path="res://Buildings/Scripts/build_spot.gd" id="1_2mc8t"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_30sun"]
+size = Vector3(9.36133, 1.58105, 8.71777)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dbm8p"]
+albedo_color = Color(0.705882, 0.321569, 0.32549, 1)
+roughness = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2mc8t"]
+albedo_color = Color(0.988, 0.71, 0.231, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jcjnq"]
+transparency = 1
+albedo_color = Color(1, 0.906, 0.592, 0.305)
+emission_enabled = true
+emission = Color(1, 0.905882, 0.592157, 1)
+emission_energy_multiplier = 2.02
+
+[node name="BuildSpot" type="Area3D"]
+collision_mask = 0
+script = ExtResource("1_2mc8t")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47421, 0)
+shape = SubResource("BoxShape3D_30sun")
+
+[node name="Base" type="Node3D" parent="."]
+
+[node name="CSGBox3D" type="CSGBox3D" parent="Base"]
+transform = Transform3D(1, 0, 0, 0, 0.223038, 0, 0, 0, 1, 0, -0.0706684, 0)
+size = Vector3(9.20508, 1, 8.36157)
+material = SubResource("StandardMaterial3D_dbm8p")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="Base"]
+transform = Transform3D(1, 0, 0, 0, 0.223038, 0, 0, 0, 1, 0, -0.0300807, 0)
+size = Vector3(8.16699, 1, 5.28418)
+material = SubResource("StandardMaterial3D_2mc8t")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="Base"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 0.391232, 0, -1, 0, -4.37114e-08, 0, -0.0300807, 0)
+size = Vector3(6.94336, 1, 2.8772)
+material = SubResource("StandardMaterial3D_2mc8t")
+
+[node name="BaseSelectedHighlight" type="Node3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0, 0)
+visible = false
+
+[node name="CSGBox3D" type="CSGBox3D" parent="BaseSelectedHighlight"]
+transform = Transform3D(1, 0, 0, 0, 0.223038, 0, 0, 0, 1, 0, -0.0706684, 0)
+size = Vector3(9.20508, 1, 8.36157)
+material = SubResource("StandardMaterial3D_jcjnq")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="BaseSelectedHighlight"]
+transform = Transform3D(1, 0, 0, 0, 0.223038, 0, 0, 0, 1, 0, -0.0300807, 0)
+size = Vector3(8.16699, 1, 5.28418)
+material = SubResource("StandardMaterial3D_jcjnq")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="BaseSelectedHighlight"]
+transform = Transform3D(-4.37114e-08, 0, 1, 0, 0.391232, 0, -1, 0, -4.37114e-08, 0, -0.0300807, 0)
+size = Vector3(6.94336, 1, 2.8772)
+material = SubResource("StandardMaterial3D_jcjnq")
+
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]

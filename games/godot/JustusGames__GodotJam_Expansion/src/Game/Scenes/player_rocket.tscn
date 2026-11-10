@@ -1,0 +1,99 @@
+[gd_scene load_steps=7 format=3 uid="uid://cggu4nthkp6ix"]
+
+[ext_resource type="Script" uid="uid://di0w0jg8te38f" path="res://Game/Scripts/basic_bullet.gd" id="1_gv0nq"]
+[ext_resource type="PackedScene" uid="uid://cgbpcs1vnk6cv" path="res://Game/VFX/explosion_particles.tscn" id="2_5pwkg"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1rlgt"]
+radius = 1.1703331
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4371a"]
+shading_mode = 2
+albedo_color = Color(0.2890713, 0.4468699, 0.32812226, 1)
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_agnw6"]
+albedo_color = Color(0.30388498, 0.67535853, 0.7216015, 1)
+metallic = 0.83
+roughness = 0.57
+emission = Color(0.9884736, 0, 0.27702147, 1)
+emission_energy_multiplier = 6.43
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1rpsa"]
+albedo_color = Color(0.9490679, 1.6364455e-06, 0.5704014, 1)
+emission_enabled = true
+emission = Color(0.98577446, 0.4092424, 0.99394065, 1)
+emission_energy_multiplier = 1.55
+
+[node name="Rocket" type="CharacterBody3D" groups=["NeedsCleaning"]]
+collision_layer = 0
+collision_mask = 3
+motion_mode = 1
+script = ExtResource("1_gv0nq")
+speed = 200.0
+projectile_damage = 20.0
+_impact_particles = ExtResource("2_5pwkg")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07910156, -1.817497)
+shape = SubResource("SphereShape3D_1rlgt")
+
+[node name="CSGSphere3D4" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.15864995, 0, 0, 0, 0.14932732, 0.30099466, 0, -0.08475045, 0.530342, 6.731292e-05, 0.20948347, 0.95250666)
+cast_shadow = 0
+radius = 1.668875
+radial_segments = 4
+rings = 4
+smooth_faces = false
+material = SubResource("StandardMaterial3D_4371a")
+
+[node name="CSGSphere3D6" type="CSGSphere3D" parent="."]
+transform = Transform3D(-7.580036e-09, -0.1289367, -0.36468703, 0.15864994, -7.1238193e-09, -1.2864691e-08, -1.5334133e-09, -0.099678755, 0.47173077, -0.1910039, -0.10911667, 0.64705104)
+cast_shadow = 0
+radius = 1.668875
+radial_segments = 4
+rings = 4
+smooth_faces = false
+material = SubResource("StandardMaterial3D_4371a")
+
+[node name="CSGSphere3D7" type="CSGSphere3D" parent="."]
+transform = Transform3D(-3.4726018e-09, -0.20322932, 0.3599617, 0.15864994, -1.1130295e-08, -1.2890639e-08, 6.910091e-09, 0.15341133, 0.4768538, 0.19242379, -0.10911667, 0.64705104)
+cast_shadow = 0
+radius = 1.668875
+radial_segments = 4
+rings = 4
+smooth_faces = false
+material = SubResource("StandardMaterial3D_4371a")
+
+[node name="CSGSphere3D5" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.15864994, 0, 0, 0, 0.21270406, -0.31147152, 0, 0.12690276, 0.5220632, 6.731292e-05, -0.21889111, 0.95250666)
+cast_shadow = 0
+radius = 1.668875
+radial_segments = 4
+rings = 4
+smooth_faces = false
+material = SubResource("StandardMaterial3D_4371a")
+
+[node name="CSGSphere3D3" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.31290644, 0, 0, 0, 0.20418622, 0, 0, 0, 0.77090514, 6.731292e-05, -0.018281212, -0.9966217)
+cast_shadow = 0
+radius = 1.668875
+radial_segments = 4
+rings = 4
+smooth_faces = false
+material = SubResource("StandardMaterial3D_agnw6")
+
+[node name="CSGSphere3D2" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.27023137, 0, 0, 0, 0.23202154, 0, 0, 0, 1.6076453, -0.0006428062, -0.019970901, 1.1268582)
+cast_shadow = 0
+radius = 1.7432814
+radial_segments = 4
+rings = 2
+smooth_faces = false
+material = SubResource("StandardMaterial3D_1rpsa")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.5496831, 0, 0, 0, -3.2886856e-08, 0.5496831, 0, -0.75236356, -2.4027411e-08, 6.731292e-05, -0.018281214, 0.058120012)
+radius = 0.5957031
+height = 2.8330078
+smooth_faces = false
+material = SubResource("StandardMaterial3D_agnw6")

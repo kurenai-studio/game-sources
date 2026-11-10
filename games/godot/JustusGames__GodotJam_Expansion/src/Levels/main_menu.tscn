@@ -1,0 +1,277 @@
+[gd_scene load_steps=12 format=3 uid="uid://dtre5knehpd71"]
+
+[ext_resource type="PackedScene" uid="uid://dnupi7fhcfwr2" path="res://Game/Scenes/standard_turret_art.tscn" id="1_6ucrw"]
+[ext_resource type="Script" uid="uid://bhpw8j1tf3q24" path="res://Interface/Scripts/main_menu.gd" id="2_jy27m"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jy27m"]
+albedo_color = Color(0.26534176, 0.6162392, 0.12180809, 1)
+roughness = 0.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_3es34"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8md67"]
+albedo_color = Color(0.7947191, 0.4843105, 0.43380594, 1)
+metallic = 0.93
+roughness = 0.57
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_15p6s"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5qvx8"]
+albedo_color = Color(0.6461008, 0.706487, 0.44471303, 1)
+metallic = 1.0
+roughness = 0.57
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g3rti"]
+albedo_color = Color(0.5127564, 0.38924325, 0.23619345, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hllw6"]
+material = SubResource("StandardMaterial3D_g3rti")
+top_radius = 0.8
+bottom_radius = 0.8
+
+[sub_resource type="Environment" id="Environment_6ucrw"]
+background_mode = 1
+background_color = Color(0.18401447, 0.08856543, 0.017623652, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.766843, 0.23733434, 0.16198674, 1)
+ambient_light_energy = 0.55
+glow_enabled = true
+fog_enabled = true
+fog_mode = 1
+fog_light_color = Color(0.3207888, 0.33979413, 0.61935484, 1)
+fog_density = 1.0
+fog_depth_begin = 0.0
+fog_depth_end = 642.9
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jy27m"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.53, 0.13223498, 0.111299984, 0.26666668)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="MainMenu" type="Node3D"]
+
+[node name="Terrain" type="CSGBox3D" parent="."]
+transform = Transform3D(99.462685, 0.00027343095, 0.035000786, -0.12834093, 0.21185195, -0.1580429, -0.026529474, 0.00025357585, 131.99892, -6.322955, -13.145977, -6.8631854)
+use_collision = true
+size = Vector3(14.857422, 107.12024, 8.940247)
+material = SubResource("StandardMaterial3D_jy27m")
+
+[node name="StandardTurretBase" type="Node3D" parent="."]
+
+[node name="CSGMesh3D18" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(3.88781, 0, 0, 0, 3.88781, 0, 0, 0, 3.88781, 0.0531948, 6.18548, 0.0925354)
+use_collision = true
+mesh = SubResource("SphereMesh_3es34")
+material = SubResource("StandardMaterial3D_8md67")
+
+[node name="CSGMesh3D19" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(4.43323, 0, 0, 0, 3.07744, 0, 0, 0, 4.43323, 0.0599859, 3.05598, 0.0894531)
+use_collision = true
+mesh = SubResource("CylinderMesh_15p6s")
+material = SubResource("StandardMaterial3D_5qvx8")
+
+[node name="CSGMesh3D21" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(2.50916, 0, 0, 0, 1.15576, 0, 0, 0, 2.50916, 0.0531948, 6.99668, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_15p6s")
+material = SubResource("StandardMaterial3D_5qvx8")
+
+[node name="CSGMesh3D20" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(5.36943, 0, 0, 0, 1.4793, 0, 0, 0, 5.36943, 0.0531948, 0.283624, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_15p6s")
+material = SubResource("StandardMaterial3D_8md67")
+
+[node name="CSGMesh3D22" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(80, 0, 0, 0, 1.523, 0, 0, 0, 80, 0.0531948, -1.3737, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_15p6s")
+
+[node name="CSGMesh3D23" type="CSGMesh3D" parent="StandardTurretBase"]
+transform = Transform3D(80, 0, 0, 0, 3.386675, 0, 0, 0, 80, 0.0531948, -4.5436983, 0.0925354)
+use_collision = true
+mesh = SubResource("CylinderMesh_hllw6")
+
+[node name="StandardTurret" parent="StandardTurretBase" instance=ExtResource("1_6ucrw")]
+transform = Transform3D(0.5690724, -0.28618908, -0.7708781, 0.19719619, 0.9576206, -0.20994452, 0.7982924, -0.03254047, 0.6013908, 0, 8.820557, 0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-0.7526792, 0, -0.6583874, 0, 1, 0, 0.6583874, 0, -0.7526792, -2.2409892, 5.239746, -11.62442)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.948485, 0.041398313, -0.31410572, -0.15100601, 0.8124964, 0.563069, 0.27852, 0.5814938, -0.76438975, -5.27732, 12.6201, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_6ucrw")
+
+[node name="MainMenu" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_jy27m")
+
+[node name="LeftMenuSplit" type="HBoxContainer" parent="MainMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuContainerRoot" type="VBoxContainer" parent="MainMenu/LeftMenuSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Menu" type="VBoxContainer" parent="MainMenu/LeftMenuSplit/MenuContainerRoot"]
+layout_mode = 2
+size_flags_vertical = 4
+alignment = 1
+
+[node name="Label" type="Label" parent="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "TOWER OF FIREPOWER
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StartGame" type="Button" parent="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "START GAME"
+
+[node name="HowToPlay" type="Button" parent="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "HOW TO PLAY"
+
+[node name="Options" type="Button" parent="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+text = "OPTIONS"
+
+[node name="Exit" type="Button" parent="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "EXIT"
+
+[node name="MarginContainer" type="MarginContainer" parent="MainMenu/LeftMenuSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HowToPlay_BG" type="Panel" parent="MainMenu/LeftMenuSplit/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_jy27m")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer3" type="MarginContainer" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label2" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+modulate = Color(0.18671894, 0.5646071, 0.9999998, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Turret Mode:"
+
+[node name="Label" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "LEFT CLICK to Fire"
+
+[node name="Label4" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "RIGHT CLICK to launch missiles (one acquired)"
+
+[node name="Label3" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Move Mouse to Look Around"
+
+[node name="Label5" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "TAB to switch to building mode"
+
+[node name="MarginContainer" type="MarginContainer" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label6" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+modulate = Color(0.18671894, 0.5646071, 0.9999998, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Building Mode:"
+
+[node name="Label7" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "LEFT CLICK on building foundations to start building"
+
+[node name="Label8" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "MOVE MOUSE to edges of screen to scroll"
+
+[node name="Label9" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "WASD or Arrow keys to scroll map"
+
+[node name="Label10" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "TAB to switch to turret mode"
+
+[node name="MarginContainer2" type="MarginContainer" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label11" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+modulate = Color(0.18671894, 0.5646071, 0.9999998, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Goal:"
+
+[node name="Label12" type="Label" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Survive 3 waves and a boss. Destroy enemies to collect resources in Turret Mode. In Build Mode, use Resources to construct buildings that fortify, upgrade and heal you.
+
+Scrap - Basic resource. Gained from destroying enemies
+Power - Charges your forcefield and determines fire rate.
+Ammo - Consumed during firing. Ammo depots can generate more ammo once built."
+autowrap_mode = 2
+
+[node name="MarginContainer5" type="MarginContainer" parent="MainMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[connection signal="button_down" from="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu/StartGame" to="MainMenu" method="_on_start_game_button_down"]
+[connection signal="button_down" from="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu/HowToPlay" to="MainMenu" method="_on_how_to_play_button_down"]
+[connection signal="button_down" from="MainMenu/LeftMenuSplit/MenuContainerRoot/Menu/Exit" to="MainMenu" method="_on_exit_button_down"]

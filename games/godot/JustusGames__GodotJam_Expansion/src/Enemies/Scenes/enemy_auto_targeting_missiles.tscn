@@ -1,0 +1,345 @@
+[gd_scene load_steps=10 format=3 uid="uid://igwab6bvtirj"]
+
+[ext_resource type="Script" uid="uid://drnspnlsomd22" path="res://Enemies/Scripts/tank_missile_body.gd" id="1_m8y6f"]
+[ext_resource type="PackedScene" uid="uid://dqqlwv5brlcoe" path="res://Enemies/Projectiles/enemy_rocket.tscn" id="2_6ggky"]
+[ext_resource type="PackedScene" uid="uid://cgbpcs1vnk6cv" path="res://Game/VFX/explosion_particles.tscn" id="3_1rf5i"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hj4kx"]
+size = Vector3(10.876953, 19.996094, 22.992931)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j5xm6"]
+shading_mode = 2
+albedo_color = Color(0.9666725, 0.4300282, 0.19206819, 1)
+emission_enabled = true
+rim = 0.01
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jywq3"]
+shading_mode = 2
+albedo_color = Color(0.2890713, 0.4468699, 0.32812226, 1)
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kfdm6"]
+shading_mode = 2
+albedo_color = Color(0.13979033, 0.07600755, 0.04364916, 1)
+metallic = 1.0
+emission_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m8y6f"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.84391916, 0, 0.066081785, 1)
+grow = true
+grow_amount = 0.101
+stencil_mode = 3
+stencil_flags = 1
+stencil_compare = 5
+metadata/_stencil_owned = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ggky"]
+next_pass = SubResource("StandardMaterial3D_m8y6f")
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+depth_draw_mode = 1
+shading_mode = 0
+albedo_color = Color(0.9942741, 0, 0.039242156, 0.7137255)
+grow = true
+grow_amount = 0.02
+stencil_mode = 1
+stencil_flags = 2
+stencil_color = Color(0.84391916, 0, 0.066081785, 1)
+stencil_outline_thickness = 0.101
+
+[node name="AutoTargetingTurret" type="CharacterBody3D"]
+collision_layer = 2
+collision_mask = 0
+script = ExtResource("1_m8y6f")
+_enemy_body_root_path = NodePath("MissileBattery")
+_enemy_body_hit_root_path = NodePath("MissileBattery/MissileBatteryHIT")
+Projectile = ExtResource("2_6ggky")
+Enemy_Type = 7
+_explosion_particles = ExtResource("3_1rf5i")
+_min_fire_delay = 2.0
+_max_fire_delay = 3.0
+Allow_LookAt = false
+TrackingMissiles = true
+
+[node name="CollisionShape3D6" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8.335484)
+shape = SubResource("BoxShape3D_hj4kx")
+
+[node name="MissileBattery" type="Node3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(-0.8, 0, -1.2079664e-07, 0, 0.8, 0, 1.2079664e-07, 0, -0.8, 0, 10.639, 0)
+
+[node name="BatterySingle" type="Node3D" parent="MissileBattery"]
+
+[node name="CSGBox3D" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(2.1882548, 0, 0, 0, 2.071835, 0, 0, 0, 3.2164035, 0.06774099, -13.88927, -2.9990196)
+size = Vector3(5.597168, 8.976807, 1.8901367)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(2.1882548, 0, 0, 0, 2.071835, 0, 0, 0, 3.2164035, 0.067740984, -2.623559, -3.0704775)
+size = Vector3(3.0527344, 1.9793091, 1.9345703)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D8" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(2.1882548, 0, 0, 0, 2.071835, 0, 0, 0, 3.2164035, 0.067740984, -25.327394, -2.9002738)
+size = Vector3(2.9501953, 2.3241272, 1.8287354)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.8517874, 1.1133347, -4.135876e-08, -1.1334435, 1.8189341, -1.467942e-07, -2.7917906e-08, 9.733081e-08, 3.2164035, -3.4237823, -3.598359, -3.1811984)
+size = Vector3(1.2666016, 2.6099243, 1.8676758)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(-1.8517871, -1.1133347, -2.3982813e-07, -1.1334432, 1.8189341, -1.467942e-07, 1.8980629e-07, 1.4210855e-14, -3.216403, 3.6969573, -3.598359, -3.1588206)
+size = Vector3(1.2666016, 2.6099243, 1.8537598)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(-1.8517874, -1.1133349, -5.2101507e-07, 1.1334437, -1.818934, 1.4679426e-07, -3.5169472e-07, -9.7330805e-08, 3.216403, 3.6969573, -24.796047, -3.1442935)
+size = Vector3(1.2666016, 2.6099243, 1.8447266)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D7" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.8517874, 1.1133344, 8.022021e-07, 1.133443, -1.8189342, 1.4679415e-07, 5.1358313e-07, 1.9466162e-07, -3.216403, -3.4237823, -24.796047, -3.1680458)
+size = Vector3(1.2666016, 2.6099243, 1.8594971)
+material = SubResource("StandardMaterial3D_j5xm6")
+
+[node name="CSGBox3D9" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 8.526513e-14, 0, 1.1670047, 0.06983439, -13.88927, 1.3285083)
+size = Vector3(5.597168, 8.976807, 3.7529297)
+material = SubResource("StandardMaterial3D_jywq3")
+
+[node name="CSGBox3D12" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 8.526513e-14, 0, 1.1670047, 0.06983439, -2.623559, 1.3285083)
+size = Vector3(3.0527344, 1.9793091, 3.7529297)
+material = SubResource("StandardMaterial3D_jywq3")
+
+[node name="CSGBox3D13" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 8.526513e-14, 0, 1.1670047, 0.06983439, -25.327394, 1.3285083)
+size = Vector3(2.9501953, 2.3241272, 3.7529297)
+material = SubResource("StandardMaterial3D_jywq3")
+
+[node name="CSGBox3D14" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.7670964, 1.0816057, -1.5006165e-08, -1.0816057, 1.7670964, -5.3261214e-08, -2.6641203e-08, 9.455702e-08, 1.1670047, -3.2359328, -3.598359, 1.3285083)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_jywq3")
+
+[node name="CSGBox3D15" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(-1.7670964, -1.0816057, -8.701663e-08, -1.0816057, 1.7670964, -5.3261214e-08, 1.8112567e-07, 1.4210855e-14, -1.1670046, 3.5059683, -3.598359, 1.3285087)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_jywq3")
+
+[node name="CSGBox3D16" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(-1.7670964, -1.0816059, -1.8903945e-07, 1.0816059, -1.7670964, 5.3261232e-08, -3.3561003e-07, -9.455703e-08, 1.1670046, 3.5059683, -24.796047, 1.3285087)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_jywq3")
+
+[node name="CSGBox3D17" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.7670965, 1.0816056, 2.9106224e-07, 1.0816056, -1.7670964, 5.326119e-08, 4.900946e-07, 1.8911396e-07, -1.1670046, -3.2359316, -24.796047, 1.3285083)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_jywq3")
+
+[node name="CSGBox3D18" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.637908, -15.71712, 3.9793417)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D21" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.637908, -20.568054, 3.9793417)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D19" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.637908, -11.065044, 3.9793417)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D20" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.637908, -6.94884, 3.9793417)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D22" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -15.71712, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D23" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -20.568054, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D24" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -11.065044, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="CSGBox3D25" type="CSGBox3D" parent="MissileBattery/BatterySingle"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -6.94884, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_kfdm6")
+
+[node name="MissileBatteryHIT" type="Node3D" parent="MissileBattery"]
+unique_name_in_owner = true
+visible = false
+
+[node name="CSGBox3D4" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.1882548, 0, 0, 0, 2.071835, 0, 0, 0, 3.2164035, 0.067740984, -13.88927, -5.994766)
+size = Vector3(5.597168, 8.976807, 3.7529297)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D28" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.1882548, 7.934907e-08, 2.8419265e-08, -8.380785e-08, 1.8624383, 1.40907, 1.9334692e-08, -0.9076476, 2.891327, 0.068466604, -11.8630495, -11.519307)
+size = Vector3(4.6936035, 4.9606934, 4.9625854)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D29" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.1882548, -8.951502e-08, 3.6740005e-08, 9.454497e-08, 1.8011284, -1.589595, 2.4995757e-08, 1.0239322, 2.7961469, 0.068465896, -17.283194, -14.649509)
+size = Vector3(4.890381, 2.9771729, 5.6336365)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D10" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.1882548, 0, 0, 0, 2.071835, 0, 0, 0, 3.2164035, 0.067740984, -2.623559, -5.994766)
+size = Vector3(3.0527344, 1.9793091, 3.7529297)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D11" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.1882548, 0, 0, 0, 2.071835, 0, 0, 0, 3.2164035, 0.067740984, -25.327394, -5.994766)
+size = Vector3(2.9501953, 2.3241272, 3.7529297)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D30" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.8517874, 1.1133347, -4.135876e-08, -1.1334435, 1.8189341, -1.467942e-07, -2.7917906e-08, 9.733081e-08, 3.2164035, -3.4237816, -3.598359, -5.994766)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D31" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(-1.8517871, -1.1133347, -2.3982813e-07, -1.1334432, 1.8189341, -1.467942e-07, 1.8980629e-07, 1.4210855e-14, -3.216403, 3.6969573, -3.598359, -5.9947677)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D32" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(-1.8517874, -1.1133349, -5.2101507e-07, 1.1334437, -1.818934, 1.4679426e-07, -3.5169472e-07, -9.7330805e-08, 3.216403, 3.6969578, -24.796047, -5.9947677)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D33" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.8517874, 1.1133344, 8.022021e-07, 1.133443, -1.8189342, 1.4679415e-07, 5.1358313e-07, 1.9466162e-07, -3.216403, -3.4237816, -24.796047, -5.994766)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D34" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 8.526513e-14, 0, 1.1670047, 0.06983439, -13.88927, 1.3285083)
+size = Vector3(5.597168, 8.976807, 3.7529297)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D35" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 8.526513e-14, 0, 1.1670047, 0.06983439, -2.623559, 1.3285083)
+size = Vector3(3.0527344, 1.9793091, 3.7529297)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D36" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(2.071835, 0, 0, 0, 2.071835, 0, 8.526513e-14, 0, 1.1670047, 0.06983439, -25.327394, 1.3285083)
+size = Vector3(2.9501953, 2.3241272, 3.7529297)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D37" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.7670964, 1.0816057, -1.5006165e-08, -1.0816057, 1.7670964, -5.3261214e-08, -2.6641231e-08, 9.455704e-08, 1.1670047, -3.2359328, -3.598359, 1.3285083)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D38" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(-1.7670964, -1.0816057, -8.701663e-08, -1.0816057, 1.7670964, -5.3261214e-08, 1.8112567e-07, 1.4210855e-14, -1.1670046, 3.5059686, -3.598359, 1.3285086)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D39" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(-1.7670964, -1.0816059, -1.8903945e-07, 1.0816059, -1.7670964, 5.3261232e-08, -3.3561003e-07, -9.455703e-08, 1.1670046, 3.5059686, -24.796047, 1.3285086)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D40" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.7670965, 1.0816056, 2.9106224e-07, 1.0816056, -1.7670964, 5.326119e-08, 4.900946e-07, 1.8911396e-07, -1.1670046, -3.2359316, -24.796047, 1.3285083)
+size = Vector3(1.2666016, 2.6099243, 3.6171875)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D41" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.6379082, -15.71712, 3.9793415)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D42" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.6379082, -20.568054, 3.9793415)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D43" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.6379082, -11.065044, 3.9793415)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D44" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, -2.6379082, -6.94884, 3.9793415)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D45" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -15.71712, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D46" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -20.568054, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D47" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -11.065044, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="CSGBox3D48" type="CSGBox3D" parent="MissileBattery/MissileBatteryHIT"]
+transform = Transform3D(1.1049697, 0, -2.7711167e-13, 0, 0.77609, 0, -9.379164e-13, 0, 0.4142596, 2.8824048, -6.94884, 3.979343)
+size = Vector3(3.058838, 4.5117188, 8.244324)
+material = SubResource("StandardMaterial3D_6ggky")
+
+[node name="LaunchPoints" type="Node3D" parent="MissileBattery"]
+unique_name_in_owner = true
+
+[node name="FirePoint" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, 3.2276344, -7.0597954, 6.173876)
+
+[node name="FirePoint2" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, 3.2276344, -11.082539, 6.173876)
+
+[node name="FirePoint3" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, 3.2276344, -16.082539, 6.173876)
+
+[node name="FirePoint4" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, 3.2276344, -20.780361, 6.173876)
+
+[node name="FirePoint5" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, -2.4542434, -7.0597954, 6.173875)
+
+[node name="FirePoint6" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, -2.4542434, -11.082539, 6.173875)
+
+[node name="FirePoint7" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, -2.4542434, -16.082539, 6.173875)
+
+[node name="FirePoint8" type="Marker3D" parent="MissileBattery/LaunchPoints"]
+unique_name_in_owner = true
+transform = Transform3D(-1.25, 0, 1.8874475e-07, 0, 1.25, 0, -1.8874475e-07, 0, -1.25, -2.4542434, -20.780361, 6.173875)

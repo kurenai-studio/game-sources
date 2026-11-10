@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3 uid="uid://b652wodijebwt"]
+
+[ext_resource type="Script" uid="uid://4kmjqwh4jhyl" path="res://Enemies/Scripts/squadron_formations.gd" id="1_e3y8m"]
+[ext_resource type="PackedScene" uid="uid://c610okaeoghbs" path="res://Enemies/Scenes/bomber_flyer.tscn" id="2_pml7g"]
+
+[node name="Squadron1" type="Node3D"]
+script = ExtResource("1_e3y8m")
+
+[node name="Bomber" parent="." instance=ExtResource("2_pml7g")]
+transform = Transform3D(0.9968071, -6.579924e-11, 0.07996336, 0.0023879588, 0.9995661, -0.02976781, -0.07992761, 0.02986332, 0.99636143, 0, 0, 0)
+
+[node name="Bomber2" parent="." instance=ExtResource("2_pml7g")]
+transform = Transform3D(0.996807, 1.8363322e-10, 0.07996334, 0.002387959, 0.99956596, -0.029767806, -0.07992761, 0.029863311, 0.9963613, -18.553518, -0.3369751, 11.279144)
+
+[node name="Bomber3" parent="." instance=ExtResource("2_pml7g")]
+transform = Transform3D(0.9968069, 3.4992154e-10, 0.079963334, 0.002387959, 0.9995659, -0.029767804, -0.0799276, 0.029863305, 0.99636126, 19.976887, -0.24467468, 8.189636)
+
+[node name="Bomber4" parent="." instance=ExtResource("2_pml7g")]
+transform = Transform3D(0.99680686, 2.8412228e-10, 0.07996333, 0.002387959, 0.99956584, -0.029767802, -0.0799276, 0.029863302, 0.9963612, -38.98565, -0.6739731, 22.558563)
+
+[node name="Bomber5" parent="." instance=ExtResource("2_pml7g")]
+transform = Transform3D(0.9968068, 1.3517887e-10, 0.07996331, 0.0023879593, 0.9995658, -0.0297678, -0.0799276, 0.029863298, 0.99636114, 38.89712, -0.4873886, 16.31366)

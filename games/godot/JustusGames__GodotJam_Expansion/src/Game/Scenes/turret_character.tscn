@@ -1,0 +1,447 @@
+[gd_scene load_steps=13 format=3 uid="uid://cw564qmankkyx"]
+
+[ext_resource type="Script" uid="uid://ckfqsdw7e36c3" path="res://Game/Scripts/turret_character.gd" id="1_8qsus"]
+[ext_resource type="PackedScene" uid="uid://dnupi7fhcfwr2" path="res://Game/Scenes/standard_turret_art.tscn" id="1_ng2sk"]
+[ext_resource type="PackedScene" uid="uid://dhwe0ffpst6pq" path="res://Game/Scenes/basic_bullet.tscn" id="2_8v08b"]
+[ext_resource type="Script" uid="uid://boswcora5umu0" path="res://Game/Scripts/turret_camera.gd" id="3_l2n02"]
+[ext_resource type="Script" uid="uid://c0gkos5vfd1we" path="res://Interface/Scripts/hud.gd" id="5_qagab"]
+[ext_resource type="PackedScene" uid="uid://c0c3cphfu7a2g" path="res://Interface/Scenes/building_select_popup.tscn" id="6_x46a0"]
+[ext_resource type="Texture2D" uid="uid://c8rs5egapl00w" path="res://Interface/Textures/reticle_color_01.png" id="7_eu8te"]
+[ext_resource type="Script" uid="uid://dnje3j7rqwm1l" path="res://Interface/Scripts/pause_menu.gd" id="8_eyho6"]
+[ext_resource type="Script" uid="uid://cyps4lsm1kmds" path="res://Interface/Scripts/win_or_lose.gd" id="9_hbbjy"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_8qsus"]
+radius = 3.5234792
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x46a0"]
+bg_color = Color(0.0262533, 0.0449922, 0.145252, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hbbjy"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.53, 0.13223498, 0.111299984, 0.26666668)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+corner_detail = 5
+
+[node name="TurretCharacter" type="CharacterBody3D" groups=["Player"]]
+collision_layer = 36
+collision_mask = 0
+script = ExtResource("1_8qsus")
+_basic_bullet = ExtResource("2_8v08b")
+Fire_Rate = 3.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05991, 0.07455361)
+shape = SubResource("SphereShape3D_8qsus")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.22797, 2.12989)
+current = true
+fov = 63.9
+script = ExtResource("3_l2n02")
+
+[node name="StandardTurret" parent="." instance=ExtResource("1_ng2sk")]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.2632e-07, 0.611208, 0.010591)
+
+[node name="Indicator_LookAt" type="Marker3D" parent="."]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4395032, 0)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="CanvasLayer"]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("5_qagab")
+_building_pop_scene = ExtResource("6_x46a0")
+
+[node name="Reticle" type="TextureRect" parent="CanvasLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_eu8te")
+stretch_mode = 5
+
+[node name="Reticle_Mid" type="TextureRect" parent="CanvasLayer/HUD"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_eu8te")
+stretch_mode = 5
+
+[node name="Reticle_Lead" type="TextureRect" parent="CanvasLayer/HUD"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = 32.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_eu8te")
+stretch_mode = 5
+
+[node name="DamageIndicators" type="Control" parent="CanvasLayer/HUD"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="Panel" type="Panel" parent="CanvasLayer/HUD"]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 512.0
+offset_top = -112.0
+offset_right = -512.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_x46a0")
+
+[node name="HealthAmmoEnergy" type="HBoxContainer" parent="CanvasLayer/HUD/Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="HealthLabel" type="Label" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+modulate = Color(0.855457, 0, 0.135306, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Health"
+horizontal_alignment = 2
+
+[node name="HealthBar" type="ProgressBar" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+unique_name_in_owner = true
+modulate = Color(0, 0.8738, 0.473634, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+value = 100.0
+
+[node name="AmmoLabel" type="Label" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+text = "99"
+horizontal_alignment = 2
+
+[node name="AmmoReloadLabel" type="Label" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+unique_name_in_owner = true
+modulate = Color(0.027, 0.043, 0.145, 1)
+layout_mode = 2
+text = "+1"
+
+[node name="EnergyBar" type="ProgressBar" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+unique_name_in_owner = true
+modulate = Color(0.943595, 0.740173, 1.54018e-06, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+value = 100.0
+
+[node name="EnergyLabel" type="Label" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+modulate = Color(0.855457, 0, 0.135306, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Energy"
+
+[node name="ScrapLabel" type="Label" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+modulate = Color(0.855457, 0, 0.135306, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Scrap"
+horizontal_alignment = 2
+
+[node name="ScrapDisplay" type="Label" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+unique_name_in_owner = true
+modulate = Color(0.855457, 0, 0.135306, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "0"
+horizontal_alignment = 1
+
+[node name="AmmoReloadTimer" type="Timer" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+unique_name_in_owner = true
+wait_time = 5.0
+autostart = true
+
+[node name="HealTimer" type="Timer" parent="CanvasLayer/HUD/Panel/HealthAmmoEnergy"]
+unique_name_in_owner = true
+wait_time = 5.0
+autostart = true
+
+[node name="PauseMenu" type="Control" parent="CanvasLayer"]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("8_eyho6")
+
+[node name="LeftMenuSplit" type="HBoxContainer" parent="CanvasLayer/PauseMenu"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuContainerRoot" type="VBoxContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="Menu" type="VBoxContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot"]
+layout_mode = 2
+size_flags_vertical = 4
+alignment = 1
+
+[node name="Label" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "TOWER OF FIREPOWER
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StartGame" type="Button" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "RESUME"
+
+[node name="HowToPlay" type="Button" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "HOW TO PLAY"
+
+[node name="Options" type="Button" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 4
+text = "OPTIONS"
+
+[node name="Exit" type="Button" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu"]
+layout_mode = 2
+size_flags_vertical = 4
+text = "EXIT"
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HowToPlay_BG" type="Panel" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_hbbjy")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer3" type="MarginContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label2" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+modulate = Color(0.18671894, 0.5646071, 0.9999998, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Turret Mode:"
+
+[node name="Label" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "LEFT CLICK to Fire"
+
+[node name="Label4" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "RIGHT CLICK to launch missiles (one acquired)"
+
+[node name="Label3" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Move Mouse to Look Around"
+
+[node name="Label5" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "TAB to switch to building mode"
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label6" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+modulate = Color(0.18671894, 0.5646071, 0.9999998, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Building Mode:"
+
+[node name="Label7" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "LEFT CLICK on building foundations to start building"
+
+[node name="Label8" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "MOVE MOUSE to edges of screen to scroll"
+
+[node name="Label9" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "WASD or Arrow keys to scroll map"
+
+[node name="Label10" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "TAB to switch to turret mode"
+
+[node name="MarginContainer2" type="MarginContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Label11" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+modulate = Color(0.18671894, 0.5646071, 0.9999998, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Goal:"
+
+[node name="Label12" type="Label" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Survive 3 waves and a boss. Destroy enemies to collect resources in Turret Mode. In Build Mode, use Resources to construct buildings that fortify, upgrade and heal you.
+
+Scrap - Basic resource. Gained from destroying enemies
+Power - Charges your forcefield and determines fire rate.
+Ammo - Consumed during firing. Ammo depots can generate more ammo once built."
+autowrap_mode = 2
+
+[node name="MarginContainer5" type="MarginContainer" parent="CanvasLayer/PauseMenu/LeftMenuSplit/MarginContainer/HowToPlay_BG/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="WinOrLose" type="Control" parent="CanvasLayer"]
+unique_name_in_owner = true
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 256.0
+offset_top = 256.0
+offset_right = -256.0
+offset_bottom = -256.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("9_hbbjy")
+
+[node name="Panel" type="Panel" parent="CanvasLayer/WinOrLose"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/WinOrLose/Panel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 256.0
+offset_right = -256.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="WinOrLoseLabel" type="Label" parent="CanvasLayer/WinOrLose/Panel/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "GAME OVER"
+horizontal_alignment = 1
+
+[node name="Button" type="Button" parent="CanvasLayer/WinOrLose/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "MAIN MENU"
+
+[node name="Button2" type="Button" parent="CanvasLayer/WinOrLose/Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "EXIT
+"
+
+[connection signal="timeout" from="CanvasLayer/HUD/Panel/HealthAmmoEnergy/AmmoReloadTimer" to="." method="_on_ammo_reload_timer_timeout"]
+[connection signal="timeout" from="CanvasLayer/HUD/Panel/HealthAmmoEnergy/HealTimer" to="." method="_on_heal_timer_timeout"]
+[connection signal="button_down" from="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu/StartGame" to="CanvasLayer/PauseMenu" method="_on_start_game_button_down"]
+[connection signal="button_down" from="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu/HowToPlay" to="CanvasLayer/PauseMenu" method="_on_how_to_play_button_down"]
+[connection signal="button_down" from="CanvasLayer/PauseMenu/LeftMenuSplit/MenuContainerRoot/Menu/Exit" to="CanvasLayer/PauseMenu" method="_on_exit_button_down"]
+[connection signal="button_down" from="CanvasLayer/WinOrLose/Panel/VBoxContainer/Button" to="CanvasLayer/WinOrLose" method="_on_button_button_down"]
+[connection signal="button_down" from="CanvasLayer/WinOrLose/Panel/VBoxContainer/Button2" to="CanvasLayer/WinOrLose" method="_on_button_2_button_down"]

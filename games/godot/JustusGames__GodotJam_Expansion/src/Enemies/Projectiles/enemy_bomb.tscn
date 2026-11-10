@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3 uid="uid://crvkugdl6cshn"]
+
+[ext_resource type="Script" uid="uid://b3ktgwige8h2s" path="res://Enemies/Scripts/enemy_bomb.gd" id="1_smxnv"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1rlgt"]
+radius = 2.2909029
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_22cuo"]
+albedo_color = Color(0.88104606, 0.13963693, 0.74128616, 1)
+emission_enabled = true
+emission = Color(0.0110851675, 0.02817984, 0.07791569, 1)
+
+[node name="Bomb" type="RigidBody3D" groups=["NeedsCleaning"]]
+collision_layer = 16
+collision_mask = 5
+gravity_scale = 2.0
+contact_monitor = true
+max_contacts_reported = 2
+constant_force = Vector3(0, 0, 10)
+script = ExtResource("1_smxnv")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07910156, 0)
+shape = SubResource("SphereShape3D_1rlgt")
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.810853, 0, 0, 0, 0.5255044, 0, 0, 0, 1.3128011, 0, 0, 0)
+cast_shadow = 0
+radius = 1.1861323
+radial_segments = 4
+rings = 4
+smooth_faces = false
+material = SubResource("StandardMaterial3D_22cuo")

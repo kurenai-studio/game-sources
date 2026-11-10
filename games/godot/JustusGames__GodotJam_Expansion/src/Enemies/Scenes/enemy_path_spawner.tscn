@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://bbg4mt7x7bnjx"]
+
+[ext_resource type="Script" uid="uid://dlvbx33w2e5vt" path="res://Game/Scripts/enemy_path_follow.gd" id="1_pw22q"]
+
+[node name="EnemyPath" type="Path3D"]
+debug_custom_color = Color(1, 0.78969204, 0.78211087, 1)
+script = ExtResource("1_pw22q")
+Attack_Start_Ratio = 0.6
+Attack_End_Ratio = 0.8
+
+[node name="SpawnDelay" type="Timer" parent="."]
+unique_name_in_owner = true
+
+[connection signal="timeout" from="SpawnDelay" to="." method="_on_spawn_delay_timeout"]
