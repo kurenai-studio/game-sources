@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Horse Racing | User manual</title>
+<style>
+body { font: 1.05rem/1.6 system-ui, sans-serif; color: #231c16; background: #fffdf8; margin: 0; }
+header, nav, main { max-width: 76ch; margin: auto; padding: 1rem; }
+header { border-bottom: 0.15rem solid #8a2233; }
+h1, h2, h3 { line-height: 1.2; }
+a { color: #782030; }
+a:focus-visible, summary:focus-visible { outline: 0.15rem solid currentColor; outline-offset: 0.2rem; }
+nav ul, .setting-links { padding-inline-start: 1.4rem; }
+section { margin-block-end: 2rem; }
+article { margin-block-end: 1.5rem; }
+.planned { font-size: 0.9em; font-weight: 600; }
+@media print { body { background: white; color: black; } .skip, nav { display: none; } }
+</style>
+</head>
+<body>
+<header>
+<a class="skip" href="#main">Skip to main content</a>
+<h1>Horse Racing | User manual</h1>
+<p>SD mode</p>
+</header>
+<nav aria-label="Contents">
+<h2>Contents</h2>
+<ul>
+<li><a href="#quick">Quick start</a></li>
+<li><a href="#betting">Betting and Ready</a></li>
+<li><a href="#players">Players and PINs</a></li>
+<li><a href="#profiles">Settings profiles</a></li>
+<li><a href="#saves">Saved games</a></li>
+<li><a href="#credits">Virtual credits and operator actions</a></li>
+<li><a href="#payback">Card selection and long-run payback</a></li>
+<li><a href="#race-control">Race Control</a></li>
+<li><a href="#race">Race playback and result</a></li>
+<li><a href="#replay">Photo finish and replay</a></li>
+<li><a href="#announcers">Announcers and subtitles</a></li>
+<li><a href="#audio">Sounds and the start signal</a></li>
+<li><a href="#display">Display, camera and accessibility</a></li>
+<li><a href="#virtual">Virtual players and numbered styles</a></li>
+<li><a href="#virtual-factors">Working numbered-style controls</a></li>
+<li><a href="#status">SD mode and planned features</a></li>
+<li><a href="#logs">Local diagnostics</a></li>
+<li><a href="#support">Optional support</a></li>
+<li><a href="#settings-reference">Settings reference</a></li>
+</ul>
+</nav>
+<main id="main">
+<section id="quick">
+<h2>Quick start</h2>
+<p>Launch Horse Racing and play SD mode with whole virtual credits. The game has no real-money deposits, payments or redemption. Only Player 1 starts IN on a fresh installation.</p>
+<p>Select a player&#x27;s summary to open their betting console. If the seat is OUT, use IN to join. Press the upper part of a round BET button to add credits to a pair, or the bottom arrow to remove credits. A bright border marks a wager.</p>
+<p>Choose READY when satisfied. When every participating seat is Ready, select START RACE. Enter the Start PIN if the manager has enabled it. The race locks the wagers.</p>
+<p>The first two horses make the winning pair in either order. Watch the credits count up and choose Return to Betting. A close contest for second may get a replay.</p>
+<p>F1 opens help. In Settings, hover over or focus a setting and press F1, or select its question-mark button. F8 opens Settings and F11 toggles fullscreen.</p>
+</section>
+<section id="betting">
+<h2>Betting and Ready</h2>
+<p>SD uses a quinella. A 1-2 ticket wins when horses 1 and 2 take the first two places in either order. Each payoff is the total return per winning credit, including that credit&#x27;s stake. A 10x payoff on a one-credit winning ticket returns 10 credits. That is 9 credits above the stake.</p>
+<p>Available credits and reserved wagers are tracked separately. The wager-arrow increment applies to both the add and subtract regions. Clear bets releases draft wagers.</p>
+<p>Selecting another player&#x27;s summary keeps your draft bets and requests the destination player&#x27;s PIN if set. You may turn Ready off and change a wager until the start locks the round. A player needs credits or a reserved wager to join. OUT removes participation.</p>
+</section>
+<section id="players">
+<h2>Players and PINs</h2>
+<p>The player editor lets you choose nicknames, avatars and unique color combinations. Enter the same four digits twice to replace a player PIN. Leaving both fields blank preserves the existing PIN. Player and manager PIN edits apply on Return to Game.</p>
+<p>If a player forgets a PIN, open Settings from that player&#x27;s PIN prompt. After the manager unlocks Settings, that player&#x27;s page opens with the replacement field focused. Save the new PIN with Return to Game to return to the player&#x27;s PIN prompt.</p>
+<p>A player PIN protects access to that seat. The Start PIN is requested when Manager-only start is enabled. Settings and the protected operator and payout functions have separate purposes. These PINs are safeguards for a shared local game.</p>
+</section>
+<section id="profiles">
+<h2>Settings profiles</h2>
+<p>Use the Settings menu or search across sections. Active preferences apply immediately. Revert restores preferences from entry to Settings. Reset and preset actions describe their scope before confirmation.</p>
+<p>Named profiles store general preferences, such as audio, display and Race Control. Use Save, Replace, Rename, Delete, Import or Export in Saved profiles. Profile names are 1 to 40 characters. Applying a profile preserves balances, locked wagers, account PINs and game progress. Numbered virtual styles are part of the game save.</p>
+<p>A dimmed catalog control labeled Planned is disabled and does nothing. Some placeholders point to a working action or editor elsewhere.</p>
+</section>
+<section id="saves">
+<h2>Saved games</h2>
+<p>The current game saves locally. Settings &gt; Save Game records a named game, and Load Game opens the saved-game library. The full game save carries players, credits, wagers, general settings, card rotation and virtual-player configuration.</p>
+<p>Use Export game file in the saved-game library to make a portable .sdgame file and Import game file to restore it as a separate game. Import restores that game&#x27;s settings and progress. The local named-profile library stays available. Share save files only with people you trust because they can carry player and account information.</p>
+<p>New Game saves the current game first. It carries over the current settings, identities, PINs, active seats and virtual styles, starts players at 100 credits, and begins fresh wagers, results and rotation. Saving and switching games is available between races.</p>
+<p>The game keeps a backup of the current save. If loading reports damage, preserve the original and backup. A locked race is recovered from its saved state so restarting cannot reroll locked wagers.</p>
+</section>
+<section id="credits">
+<h2>Virtual credits and operator actions</h2>
+<p>Reload opens the operator&#x27;s controls to add, remove or set a seat&#x27;s virtual credits. The operator can settle or cancel a pending cash-out. A cash-out freezes credits for that operator action and cancels unconfirmed wagers. All of these actions concern game credits only.</p>
+<p>Operator changes are available between races. The operator console has its own PIN. The protected payback controls use a separate PIN.</p>
+</section>
+<section id="payback">
+<h2>Card selection and long-run payback</h2>
+<p>The protected configuration queues the next card rotation. The selected average payout percentage is a long-run target for the saved rotation. It is separate from a displayed pair payoff, and individual cards and sessions can vary. Choosing particular cards or changing stake by card can change a player&#x27;s average.</p>
+<p>The target range is 70% through 200%. Select SD source cards to use the corrected historical fan collection at 80%, with Variable cards at other targets. Select Variable cards to use the generated collection at any target. The historical collection is based on the available corrected cards and does not establish factory frequencies.</p>
+<p>Use for next round starts the new rotation on the next betting card. Current bets retain their quoted payouts. Each saved game has its own cards and rotation, and race results do not select future cards.</p>
+</section>
+<section id="race-control">
+<h2>Race Control</h2>
+<p>Lead changes and Average field separation alter pace across the full course. They work together. With both at True random, horses use the original movement pattern. Higher Lead changes gives more opportunity for visible swaps without requiring any particular number. Higher separation tends to spread the field.</p>
+<p>The pacing controls preserve the finish identities and winning chances. Race duration and replay settings change presentation. The Photo-finish target calibrates a separate replay decision from the gap behind second and reflects the active pace setup.</p>
+<p>The target is approximate across many races, not a quota. Its default is 20%. Set Replay travel and Photo replay duration on the Replay page to control what happens after a race qualifies.</p>
+</section>
+<section id="race">
+<h2>Race playback and result</h2>
+<p>Start Race locks wagers and prepares the recorded movement. Nominal race duration controls the time to the result in normal playback. Horses keep moving during the run-out. The normal race finishes before a qualifying replay begins.</p>
+<p>Position guides draw a faint line at each nose beneath the figures. You can make the guides brighter and adjust horse size, lane spacing, number size or the finish stripe for readability.</p>
+<p>The first two numbers identify the winning pair. Winning combinations highlight in the payoff strip and on player tickets. Reduced motion and Reduce flashing can keep those highlights steady.</p>
+</section>
+<section id="replay">
+<h2>Photo finish and replay</h2>
+<p>At the instant the second horse reaches the tape, the game measures the gap to the closest horse behind it. A close first/second finish alone does not qualify because their order leaves the winning pair unchanged. Photo-finish target in Race Control governs qualification.</p>
+<p>Replay travel looks backward through the recorded movement to find the chosen number of horse lengths covered by the second-place horse. The displayed horse size contributes to that length. Photo replay duration determines how long that window plays, with extra slowdown near the tape. A longer duration makes the same movement slower. Neither control changes eligibility.</p>
+<p>The replay camera frames all five horses and stops when the second horse&#x27;s nose reaches the finish. The decision hold controls how long the frozen photo is shown before payout presentation proceeds. Use monochrome, number enlargement or second-place highlighting to make the decision easier to see.</p>
+</section>
+<section id="announcers">
+<h2>Announcers and subtitles</h2>
+<p>Race calls the action and confirms the result. House handles the payout. Betting stays silent. Choose an automatic or named installed voice and try Test race voice or Test house voice. Separate mute and volume controls are on Audio.</p>
+<p>Humor, sarcasm, energy and detail blend independently for each role. They influence phrase selection, and energy also influences excited delivery. The director may speed up a call, up to 1.6x, to fit its window. Timing, available phrases, talkativeness and voice spacing affect how many calls you hear.</p>
+<p>Windows uses installed SAPI voices and measures the length of locally prepared audio clips. macOS and Linux use installed native system voices with estimated speaking times. Linux requires a working Speech Dispatcher service and voice. If a voice is missing or a sample is silent, check Master volume and the role&#x27;s mute and volume, then try a listed voice. Subtitles are available independently of audible output.</p>
+</section>
+<section id="audio">
+<h2>Sounds and the start signal</h2>
+<p>Bell is the SD default. Horn uses First Call, also called Call to the Post. Horn and bell plays both. Off skips the signal. The selected signal finishes before the race motion begins.</p>
+<p>Mechanical and hoof sounds have separate switches and volume sliders. Master volume controls the combined output. Celebration sound follows the largest award, while each player&#x27;s counter shows their own return.</p>
+</section>
+<section id="display">
+<h2>Display, camera and accessibility</h2>
+<p>Use Windowed, Maximized or Fullscreen. Window resolution selects a size for Windowed mode. F11 toggles fullscreen. Increase interface text, control sizes or horse numbers for readability.</p>
+<p>The working camera controls adjust seated height and normal track zoom. The other camera direction controls shown as Planned are disabled.</p>
+<p>Frame rate, synchronization and unfocused frame rate affect rendering load and smoothness. They do not change the recorded race.</p>
+</section>
+<section id="virtual">
+<h2>Virtual players and numbered styles</h2>
+<p>On the betting screen, use a seat&#x27;s V control to cycle through numbered styles and the two random modes, then back to human control. A virtual seat marks itself Ready and has no credit account. Its bets are simulated and do not use the human seat&#x27;s credits.</p>
+<p>In Virtual player styles, select a seat and edit its selected numbered style. Each of the ten styles is shared by the seats that select it. Restore a numbered style with Return Style to defaults. Apply these edits on Return to Game.</p>
+<p>Random Style: Fixed keeps its hidden personality while the mode is selected. Random Style: Each Race draws a fresh hidden personality for each race. Hidden personalities cannot be edited. The virtual player can choose no tickets if the style has zero appetite or no displayed payoff is in range, but it does not sit out automatically.</p>
+<p>The styles use the public card, the seat&#x27;s prior selections and the last public winner. They cannot see a future result. There is no rebuy or balance-fraction control for the simulated virtual seats.</p>
+</section>
+<section id="virtual-factors">
+<h2>Working numbered-style controls</h2>
+<p>Amount to bet sets a simulated stake budget. Amount variation changes that budget across races. Favorites to longshots shifts preference from lower to higher payoffs. Spread across combinations increases the number of candidates selected, subject to Maximum combinations.</p>
+<p>Random choice strength makes payoff-based weighting more even. Repeat previous selections favors the seat&#x27;s last choices. Follow last winning pair gives the last winning combination more weight when it qualifies.</p>
+<p>Minimum and Maximum preferred payoff set the inclusive range of eligible return multipliers, from 2x to 200x. Minimum must be at or below Maximum. A pair outside the range cannot be selected.</p>
+</section>
+<section id="status">
+<h2>SD mode and planned features</h2>
+<p>Horse Racing 0.22.0 uses SD mode and quinella wagering. Live Track, Off-Track TV and other wager types are shown as Planned and cannot be selected.</p>
+<p>Some planned fields have an active equivalent elsewhere. Use Save Game and Load Game for named games, the Announcers page to test voices, and the betting-panel V control and Virtual player styles page for simulated players.</p>
+</section>
+<section id="logs">
+<h2>Local diagnostics</h2>
+<p>The game keeps cumulative local diagnostics. Settings &gt; Export Log creates a ZIP for troubleshooting. The archive can include game activity, player nicknames and settings. Review it before sharing.</p>
+<p>Local diagnostic history does not travel with a game file. Imported games can accumulate their own history on the destination computer. The logging catalog controls labeled Planned are disabled.</p>
+</section>
+<section id="support">
+<h2>Optional support</h2>
+<p>Open the Optional support page from Settings for any support information included with your copy.</p>
+</section>
+<section id="settings-reference"><h2>Settings reference</h2>
+<section><h3>Display</h3>
+<ul class="setting-links"><li><a href="#setting-window_mode">Window mode</a></li>
+<li><a href="#setting-resolution">Window resolution</a></li>
+<li><a href="#setting-ui_scale">Interface scale</a></li>
+<li><a href="#setting-palette">Color style</a></li>
+<li><a href="#setting-brightness">Brightness</a></li>
+<li><a href="#setting-contrast">Contrast</a></li>
+<li><a href="#setting-show_firmware">Show firmware version</a></li>
+<li><a href="#setting-show_clock">Show clock</a></li>
+<li><a href="#setting-show_round">Show race number</a></li>
+<li><a href="#setting-cabinet_lights">Cabinet lights</a></li>
+<li><a href="#setting-light_intensity">Cabinet light intensity</a></li>
+<li><a href="#setting-background_style">Betting background</a></li></ul>
+<article id="setting-window_mode">
+<h4>Window mode</h4>
+<p>Choose Windowed, Maximized or Fullscreen. F11 toggles fullscreen.</p>
+</article>
+<article id="setting-resolution">
+<h4>Window resolution</h4>
+<p>Sets the window dimensions in Windowed mode.</p>
+</article>
+<article id="setting-ui_scale">
+<h4>Interface scale</h4>
+<p>Scales interface text. Larger interface text increases it further.</p>
+</article>
+<article id="setting-palette">
+<h4>Color style</h4>
+<p>Selects the game&#x27;s interface color scheme. Betting background can override the background color.</p>
+</article>
+<article id="setting-brightness">
+<h4>Brightness <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-contrast">
+<h4>Contrast <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-show_firmware">
+<h4>Show firmware version</h4>
+<p>Shows the version label on the game screen.</p>
+</article>
+<article id="setting-show_clock">
+<h4>Show clock</h4>
+<p>Shows the local clock on the game screen.</p>
+</article>
+<article id="setting-show_round">
+<h4>Show race number</h4>
+<p>Shows the round number beside the player summaries.</p>
+</article>
+<article id="setting-cabinet_lights">
+<h4>Cabinet lights</h4>
+<p>Turns the decorative marquee lights on or off.</p>
+</article>
+<article id="setting-light_intensity">
+<h4>Cabinet light intensity</h4>
+<p>Adjusts the brightness of the marquee lights when they are enabled.</p>
+</article>
+<article id="setting-background_style">
+<h4>Betting background</h4>
+<p>Choose Classic to follow the color scheme or use the Dark or Minimal background override.</p>
+</article>
+</section>
+<section><h3>Race Control</h3>
+<ul class="setting-links"><li><a href="#setting-race_lead_changes">Lead changes</a></li>
+<li><a href="#setting-race_spread">Average field separation</a></li>
+<li><a href="#setting-photo_frequency">Photo-finish target</a></li></ul>
+<article id="setting-race_lead_changes">
+<h4>Lead changes</h4>
+<p>Adjusts variation in each horse&#x27;s stride across the race so the lead can change more often. It works with Average field separation. Both at True random restore the original movement pattern. Finish identities and winning chances stay the same.</p>
+</article>
+<article id="setting-race_spread">
+<h4>Average field separation</h4>
+<p>Adjusts how spread out the field tends to look, including near the finish. It combines with Lead changes and can change the visible gap behind second place. The replay threshold is calibrated for the pacing setup. The winning pair and winning chances stay the same.</p>
+</article>
+<article id="setting-photo_frequency">
+<h4>Photo-finish target</h4>
+<p>Targets the approximate percentage of races reviewed. At the second horse&#x27;s crossing, the game compares the closest remaining nose with a calibrated gap. A first-versus-second gap alone does not count. The 20% midpoint is a target across many races. Travel and duration only affect replays already selected.</p>
+</article>
+</section>
+<section><h3>Race Playback</h3>
+<ul class="setting-links"><li><a href="#setting-race_seconds">Nominal race duration, seconds</a></li>
+<li><a href="#setting-post_finish_seconds">Post-finish movement, seconds</a></li>
+<li><a href="#setting-horse_animation">Mechanical horse animation</a></li>
+<li><a href="#setting-horse_scale">Mechanical horse size</a></li>
+<li><a href="#setting-lane_spacing">Visual lane spacing</a></li>
+<li><a href="#setting-animation_frames">Horse animation frames</a></li>
+<li><a href="#setting-stepping_strength">Mechanical stepping strength</a></li>
+<li><a href="#setting-show_horse_numbers">Show horse numbers</a></li>
+<li><a href="#setting-number_size">Horse number scale</a></li>
+<li><a href="#setting-leader_indicator">Leader indicator</a></li>
+<li><a href="#setting-position_strip">Running order strip</a></li>
+<li><a href="#setting-nose_guides">Horse-colored position guides</a></li>
+<li><a href="#setting-guide_opacity">Position guide brightness</a></li>
+<li><a href="#setting-finish_line_width">Finish line width</a></li></ul>
+<article id="setting-race_seconds">
+<h4>Nominal race duration, seconds</h4>
+<p>Sets normal playback time from movement start to the result. The start signal, run-out, replay and payout add time. A shorter race can leave less time for calls.</p>
+</article>
+<article id="setting-post_finish_seconds">
+<h4>Post-finish movement, seconds</h4>
+<p>Sets the run-out interval after the normal result. An active result call can delay the next phase.</p>
+</article>
+<article id="setting-horse_animation">
+<h4>Mechanical horse animation</h4>
+<p>Enables the stepping motion of the mechanical horse figures during normal movement. Reduced motion can suppress it.</p>
+</article>
+<article id="setting-horse_scale">
+<h4>Mechanical horse size</h4>
+<p>Changes the displayed size of the horses. Figure size also helps determine the length used by Replay travel.</p>
+</article>
+<article id="setting-lane_spacing">
+<h4>Visual lane spacing</h4>
+<p>Adjusts the visual spacing between racing lanes.</p>
+</article>
+<article id="setting-animation_frames">
+<h4>Horse animation frames</h4>
+<p>Changes the phase rate of the mechanical stepping effect when horse animation is on.</p>
+</article>
+<article id="setting-stepping_strength">
+<h4>Mechanical stepping strength</h4>
+<p>Adjusts how strongly horse figures bob when mechanical animation is active.</p>
+</article>
+<article id="setting-show_horse_numbers">
+<h4>Show horse numbers</h4>
+<p>Shows horse numbers during the race. The accessibility option Always identify horses by number can keep them visible even when this switch is off. Highlighted result horses also keep their numbers.</p>
+</article>
+<article id="setting-number_size">
+<h4>Horse number scale</h4>
+<p>Changes the normal size of horse numbers. Photo decisions may enlarge numbers further.</p>
+</article>
+<article id="setting-leader_indicator">
+<h4>Leader indicator <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-position_strip">
+<h4>Running order strip <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-nose_guides">
+<h4>Horse-colored position guides</h4>
+<p>Draws a horse-colored position guide at each nose to compare progress.</p>
+</article>
+<article id="setting-guide_opacity">
+<h4>Position guide brightness</h4>
+<p>Adjusts how visible the nose guides are while enabled.</p>
+</article>
+<article id="setting-finish_line_width">
+<h4>Finish line width</h4>
+<p>Changes the thickness of the normal track&#x27;s finish stripe.</p>
+</article>
+</section>
+<section><h3>Camera</h3>
+<ul class="setting-links"><li><a href="#setting-camera_mode">Camera direction</a></li>
+<li><a href="#setting-camera_height">Seated camera height</a></li>
+<li><a href="#setting-zoom">Camera zoom</a></li>
+<li><a href="#setting-pan_speed">Camera movement speed</a></li>
+<li><a href="#setting-transition_seconds">Camera transition, seconds</a></li>
+<li><a href="#setting-camera_cuts">Allow cinematic cuts</a></li>
+<li><a href="#setting-picture_in_picture">Runaway leader picture in picture</a></li>
+<li><a href="#setting-pip_position">Picture in picture position</a></li>
+<li><a href="#setting-pip_scale">Picture in picture size</a></li>
+<li><a href="#setting-follow_priority">Follow priority</a></li></ul>
+<article id="setting-camera_mode">
+<h4>Camera direction <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-camera_height">
+<h4>Seated camera height</h4>
+<p>Adjusts the vertical projection of the seated track view.</p>
+</article>
+<article id="setting-zoom">
+<h4>Camera zoom</h4>
+<p>Adjusts the scale of the normal track view. The replay frames the field separately.</p>
+</article>
+<article id="setting-pan_speed">
+<h4>Camera movement speed <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-transition_seconds">
+<h4>Camera transition, seconds <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-camera_cuts">
+<h4>Allow cinematic cuts <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-picture_in_picture">
+<h4>Runaway leader picture in picture <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-pip_position">
+<h4>Picture in picture position <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-pip_scale">
+<h4>Picture in picture size <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-follow_priority">
+<h4>Follow priority <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Replay</h3>
+<ul class="setting-links"><li><a href="#setting-replay_seconds">Photo replay duration</a></li>
+<li><a href="#setting-replay_lengths">Replay travel, horse lengths</a></li>
+<li><a href="#setting-photo_hold_seconds">Photo decision hold, seconds</a></li>
+<li><a href="#setting-photo_monochrome">Monochrome photo finish</a></li>
+<li><a href="#setting-photo_numbers">Enlarge photo numbers</a></li>
+<li><a href="#setting-photo_highlight">Highlight second-place horse</a></li>
+<li><a href="#setting-photo_include_trailers">Include nearby fourth and fifth</a></li>
+<li><a href="#setting-manual_replay">Offer replay after results</a></li></ul>
+<article id="setting-replay_seconds">
+<h4>Photo replay duration</h4>
+<p>Sets how many seconds a qualifying replay takes to cover its recorded travel window. More seconds make the same travel slower. The replay slows near the tape and stops when second place reaches it. Eligibility is set by Photo-finish target.</p>
+</article>
+<article id="setting-replay_lengths">
+<h4>Replay travel, horse lengths</h4>
+<p>Sets how far back to begin a qualifying replay, measured in displayed horse lengths traveled by the second-place horse before its nose reaches the finish. It changes the travel window, not the time or qualification rule. Photo replay duration sets the playback time.</p>
+</article>
+<article id="setting-photo_hold_seconds">
+<h4>Photo decision hold, seconds</h4>
+<p>Sets the length of the frozen decision phase after replay motion stops, before payout.</p>
+</article>
+<article id="setting-photo_monochrome">
+<h4>Monochrome photo finish</h4>
+<p>Uses monochrome for the frozen finish photo.</p>
+</article>
+<article id="setting-photo_numbers">
+<h4>Enlarge photo numbers</h4>
+<p>Makes numbers larger in the frozen photo to help identify the finishers.</p>
+</article>
+<article id="setting-photo_highlight">
+<h4>Highlight second-place horse</h4>
+<p>Emphasizes the second-place horse in the frozen finish photo.</p>
+</article>
+<article id="setting-photo_include_trailers">
+<h4>Include nearby fourth and fifth <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-manual_replay">
+<h4>Offer replay after results <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Audio</h3>
+<ul class="setting-links"><li><a href="#setting-master_volume">Master volume</a></li>
+<li><a href="#setting-race_mute">Mute race announcer</a></li>
+<li><a href="#setting-house_mute">Mute house announcer</a></li>
+<li><a href="#setting-race_volume">Race announcer volume</a></li>
+<li><a href="#setting-house_volume">House announcer volume</a></li>
+<li><a href="#setting-music_enabled">Music enabled</a></li>
+<li><a href="#setting-music_volume">Music volume</a></li>
+<li><a href="#setting-music_style">Music style</a></li>
+<li><a href="#setting-start_signal">Race start signal</a></li>
+<li><a href="#setting-bell_seconds">School bell duration</a></li>
+<li><a href="#setting-start_signal_volume">Start signal volume</a></li>
+<li><a href="#setting-mechanical_enabled">Mechanical sounds</a></li>
+<li><a href="#setting-mechanical_volume">Mechanical volume</a></li>
+<li><a href="#setting-ui_sounds">Button sounds</a></li>
+<li><a href="#setting-ui_volume">Button sound volume</a></li>
+<li><a href="#setting-win_volume">Win celebration volume</a></li>
+<li><a href="#setting-duck_music">Lower music during speech</a></li>
+<li><a href="#setting-hoof_enabled">Hoofbeat sound</a></li>
+<li><a href="#setting-hoof_volume">Hoofbeat volume</a></li>
+<li><a href="#setting-crowd_enabled">Crowd ambience</a></li>
+<li><a href="#setting-motor_pitch_enabled">Motor pitch follows race pace</a></li>
+<li><a href="#setting-crowd_volume">Crowd volume</a></li></ul>
+<article id="setting-master_volume">
+<h4>Master volume</h4>
+<p>Adjusts overall game volume.</p>
+</article>
+<article id="setting-race_mute">
+<h4>Mute race announcer</h4>
+<p>Silences the Race announcer.</p>
+</article>
+<article id="setting-house_mute">
+<h4>Mute house announcer</h4>
+<p>Silences the House announcer.</p>
+</article>
+<article id="setting-race_volume">
+<h4>Race announcer volume</h4>
+<p>Adjusts Race announcer volume.</p>
+</article>
+<article id="setting-house_volume">
+<h4>House announcer volume</h4>
+<p>Adjusts House announcer volume.</p>
+</article>
+<article id="setting-music_enabled">
+<h4>Music enabled <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-music_volume">
+<h4>Music volume <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-music_style">
+<h4>Music style <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-start_signal">
+<h4>Race start signal</h4>
+<p>Chooses the sound that plays before movement begins. Bell, Horn, Horn and bell, and Off are available.</p>
+</article>
+<article id="setting-bell_seconds">
+<h4>School bell duration</h4>
+<p>Sets the duration of the bell portion of the selected start signal.</p>
+</article>
+<article id="setting-start_signal_volume">
+<h4>Start signal volume</h4>
+<p>Adjusts the start signal volume.</p>
+</article>
+<article id="setting-mechanical_enabled">
+<h4>Mechanical sounds</h4>
+<p>Turns the track&#x27;s mechanical sound on or off.</p>
+</article>
+<article id="setting-mechanical_volume">
+<h4>Mechanical volume</h4>
+<p>Adjusts mechanical sound volume.</p>
+</article>
+<article id="setting-ui_sounds">
+<h4>Button sounds <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-ui_volume">
+<h4>Button sound volume <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-win_volume">
+<h4>Win celebration volume</h4>
+<p>Adjusts win celebration volume.</p>
+</article>
+<article id="setting-duck_music">
+<h4>Lower music during speech <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-hoof_enabled">
+<h4>Hoofbeat sound</h4>
+<p>Turns hoofbeat sound on or off.</p>
+</article>
+<article id="setting-hoof_volume">
+<h4>Hoofbeat volume</h4>
+<p>Adjusts hoofbeat volume.</p>
+</article>
+<article id="setting-crowd_enabled">
+<h4>Crowd ambience <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-motor_pitch_enabled">
+<h4>Motor pitch follows race pace <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-crowd_volume">
+<h4>Crowd volume <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Announcers</h3>
+<ul class="setting-links"><li><a href="#setting-race_talk">Race talkativeness</a></li>
+<li><a href="#setting-house_talk">House talkativeness</a></li>
+<li><a href="#setting-teasing">Playful teasing</a></li>
+<li><a href="#setting-use_nicknames">Say player nicknames</a></li>
+<li><a href="#setting-recognition">Player recognition frequency</a></li>
+<li><a href="#setting-comic_trailers">Occasional trailing-horse humor</a></li>
+<li><a href="#setting-history_comments">Comments based on betting history</a></li>
+<li><a href="#setting-subtitles">Announcer subtitles</a></li>
+<li><a href="#setting-subtitle_size">Subtitle font size</a></li>
+<li><a href="#setting-speech_gap">Minimum gap between voices, seconds</a></li>
+<li><a href="#setting-race_voice">Race voice selection</a></li>
+<li><a href="#setting-race_humor">Race humor</a></li>
+<li><a href="#setting-race_sarcasm">Race sarcasm</a></li>
+<li><a href="#setting-race_energy">Race energy</a></li>
+<li><a href="#setting-race_detail">Race commentary detail</a></li>
+<li><a href="#setting-house_voice">House voice selection</a></li>
+<li><a href="#setting-house_humor">House humor</a></li>
+<li><a href="#setting-house_sarcasm">House sarcasm</a></li>
+<li><a href="#setting-house_energy">House energy</a></li>
+<li><a href="#setting-house_detail">House commentary detail</a></li></ul>
+<article id="setting-race_talk">
+<h4>Race talkativeness</h4>
+<p>Changes how often Race can make optional in-race calls. Above the midpoint, calls can be shorter and more frequent. Calls still need to fit the current action. Essential calls are handled separately.</p>
+</article>
+<article id="setting-house_talk">
+<h4>House talkativeness</h4>
+<p>Controls House&#x27;s payout commentary. Set it to zero to omit the House payout call.</p>
+</article>
+<article id="setting-teasing">
+<h4>Playful teasing <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-use_nicknames">
+<h4>Say player nicknames <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-recognition">
+<h4>Player recognition frequency <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-comic_trailers">
+<h4>Occasional trailing-horse humor <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-history_comments">
+<h4>Comments based on betting history <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-subtitles">
+<h4>Announcer subtitles</h4>
+<p>Shows announcer captions. Captions can be used without audible speech.</p>
+</article>
+<article id="setting-subtitle_size">
+<h4>Subtitle font size</h4>
+<p>Sets the size of the announcer captions.</p>
+</article>
+<article id="setting-speech_gap">
+<h4>Minimum gap between voices, seconds</h4>
+<p>Sets the requested pause between optional spoken calls. An optional call may be skipped if the pause leaves too little time.</p>
+</article>
+<article id="setting-race_voice">
+<h4>Race voice selection</h4>
+<p>Selects the Race voice. Choose an automatic option, an installed voice slot or a listed system voice. The voice test plays a sample where speech is available.</p>
+</article>
+<article id="setting-race_humor">
+<h4>Race humor</h4>
+<p>Move toward the high end for more humorous wording from the Race announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+<article id="setting-race_sarcasm">
+<h4>Race sarcasm</h4>
+<p>Move toward the high end for drier or wittier wording from the Race announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+<article id="setting-race_energy">
+<h4>Race energy</h4>
+<p>Move toward the high end for more excited wording and delivery from the Race announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+<article id="setting-race_detail">
+<h4>Race commentary detail</h4>
+<p>Move toward the high end for more descriptive phrasing when time allows from the Race announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+<article id="setting-house_voice">
+<h4>House voice selection</h4>
+<p>Selects the House voice independently of Race. Available names and speech support depend on installed system voices. Use Test house voice to hear the selected voice.</p>
+</article>
+<article id="setting-house_humor">
+<h4>House humor</h4>
+<p>Move toward the high end for more humorous wording from the House announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+<article id="setting-house_sarcasm">
+<h4>House sarcasm</h4>
+<p>Move toward the high end for drier or wittier wording from the House announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+<article id="setting-house_energy">
+<h4>House energy</h4>
+<p>Move toward the high end for more excited wording and delivery from the House announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+<article id="setting-house_detail">
+<h4>House commentary detail</h4>
+<p>Move toward the high end for more descriptive phrasing when time allows from the House announcer. This blends with the role&#x27;s other personality settings.</p>
+</article>
+</section>
+<section><h3>Players</h3>
+<ul class="setting-links"><li><a href="#setting-credit_label">Credit label</a></li>
+<li><a href="#setting-compact_stations">Compact player stations</a></li>
+<li><a href="#setting-show_totals">Show total wager per station</a></li>
+<li><a href="#setting-show_last_win">Show previous win</a></li>
+<li><a href="#setting-confirm_clear">Confirm clearing all wagers</a></li>
+<li><a href="#setting-remember_nicknames">Remember nicknames</a></li>
+<li><a href="#setting-ready_highlight">Highlight ready stations</a></li></ul>
+<article id="setting-credit_label">
+<h4>Credit label</h4>
+<p>Displays Credits, Points or Tokens as the unit name. The amount and the rules are identical.</p>
+</article>
+<article id="setting-compact_stations">
+<h4>Compact player stations</h4>
+<p>Uses a shorter minimum height for player summaries when the contents fit.</p>
+</article>
+<article id="setting-show_totals">
+<h4>Show total wager per station</h4>
+<p>Shows the current wager total on the player panels.</p>
+</article>
+<article id="setting-show_last_win">
+<h4>Show previous win</h4>
+<p>Shows the previous win in the betting summaries.</p>
+</article>
+<article id="setting-confirm_clear">
+<h4>Confirm clearing all wagers</h4>
+<p>Asks for confirmation before clearing draft wagers.</p>
+</article>
+<article id="setting-remember_nicknames">
+<h4>Remember nicknames <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-ready_highlight">
+<h4>Highlight ready stations</h4>
+<p>Highlights Ready seats in the betting summaries. The selected seat can also be highlighted.</p>
+</article>
+</section>
+<section><h3>Controls</h3>
+<ul class="setting-links"><li><a href="#setting-bet_increment">Wager arrow increment</a></li>
+<li><a href="#setting-wheel_betting">Mouse wheel wager changes</a></li>
+<li><a href="#setting-keyboard_navigation">Keyboard navigation</a></li>
+<li><a href="#setting-tooltips">Show tooltips</a></li>
+<li><a href="#setting-tooltip_delay">Tooltip delay, seconds</a></li>
+<li><a href="#setting-haptics">Controller haptics when supported</a></li>
+<li><a href="#setting-haptic_strength">Haptic strength</a></li></ul>
+<article id="setting-bet_increment">
+<h4>Wager arrow increment</h4>
+<p>Sets the number of credits added or removed by one press of a wager control, subject to available credits and wager limits.</p>
+</article>
+<article id="setting-wheel_betting">
+<h4>Mouse wheel wager changes</h4>
+<p>Enables mouse-wheel wager changes over wager controls.</p>
+</article>
+<article id="setting-keyboard_navigation">
+<h4>Keyboard navigation</h4>
+<p>Allows game buttons to receive keyboard focus.</p>
+</article>
+<article id="setting-tooltips">
+<h4>Show tooltips</h4>
+<p>Shows hints on supported game controls.</p>
+</article>
+<article id="setting-tooltip_delay">
+<h4>Tooltip delay, seconds</h4>
+<p>Sets the delay before a tooltip appears.</p>
+</article>
+<article id="setting-haptics">
+<h4>Controller haptics when supported <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-haptic_strength">
+<h4>Haptic strength <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Accessibility</h3>
+<ul class="setting-links"><li><a href="#setting-large_text">Larger interface text</a></li>
+<li><a href="#setting-reduced_motion">Reduced camera and UI motion</a></li>
+<li><a href="#setting-reduce_flashing">Reduce flashing lights</a></li>
+<li><a href="#setting-colorblind_mode">Color accessibility</a></li>
+<li><a href="#setting-focus_outline">Strong keyboard focus outline</a></li>
+<li><a href="#setting-always_numbers">Always identify horses by number</a></li>
+<li><a href="#setting-large_targets">Larger button targets</a></li></ul>
+<article id="setting-large_text">
+<h4>Larger interface text</h4>
+<p>Increases interface text in addition to Interface scale.</p>
+</article>
+<article id="setting-reduced_motion">
+<h4>Reduced camera and UI motion</h4>
+<p>Reduces horse stepping and uses steady result highlights where supported. Recorded race motion still plays.</p>
+</article>
+<article id="setting-reduce_flashing">
+<h4>Reduce flashing lights</h4>
+<p>Uses steady highlighting in places that normally flash.</p>
+</article>
+<article id="setting-colorblind_mode">
+<h4>Color accessibility</h4>
+<p>Changes the track horse colors. Use numbers to identify horses independently of color.</p>
+</article>
+<article id="setting-focus_outline">
+<h4>Strong keyboard focus outline</h4>
+<p>Makes the keyboard-focus border thicker on game buttons and text fields.</p>
+</article>
+<article id="setting-always_numbers">
+<h4>Always identify horses by number</h4>
+<p>Keeps horse numbers visible when Show horse numbers is off.</p>
+</article>
+<article id="setting-large_targets">
+<h4>Larger button targets</h4>
+<p>Makes supported game buttons larger.</p>
+</article>
+</section>
+<section><h3>Reminders</h3>
+<ul class="setting-links"><li><a href="#setting-inactivity_enabled">Single inactivity reminder</a></li>
+<li><a href="#setting-inactivity_seconds">Inactivity delay, seconds</a></li>
+<li><a href="#setting-reminder_text">Show reminder text</a></li></ul>
+<article id="setting-inactivity_enabled">
+<h4>Single inactivity reminder</h4>
+<p>Allows a single inactivity reminder while waiting on the betting screen.</p>
+</article>
+<article id="setting-inactivity_seconds">
+<h4>Inactivity delay, seconds</h4>
+<p>Sets how long to wait before the inactivity reminder.</p>
+</article>
+<article id="setting-reminder_text">
+<h4>Show reminder text</h4>
+<p>Shows the text for the inactivity reminder.</p>
+</article>
+</section>
+<section><h3>Performance</h3>
+<ul class="setting-links"><li><a href="#setting-frame_limit">Frame rate limit</a></li>
+<li><a href="#setting-vsync">Vertical synchronization</a></li>
+<li><a href="#setting-antialiasing">Smooth edges</a></li>
+<li><a href="#setting-background_fps">Unfocused frame rate</a></li>
+<li><a href="#setting-quality_preset">Computer performance preset</a></li>
+<li><a href="#setting-match_horse_quality">Match horse detail to computer</a></li>
+<li><a href="#setting-av_preview">Audio and visual performance sample</a></li></ul>
+<article id="setting-frame_limit">
+<h4>Frame rate limit</h4>
+<p>Caps the rendering frame rate while the window is focused.</p>
+</article>
+<article id="setting-vsync">
+<h4>Vertical synchronization</h4>
+<p>Synchronizes drawing with the display refresh when supported.</p>
+</article>
+<article id="setting-antialiasing">
+<h4>Smooth edges <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-background_fps">
+<h4>Unfocused frame rate</h4>
+<p>Sets the lower frame rate used when the game window loses focus.</p>
+</article>
+<article id="setting-quality_preset">
+<h4>Computer performance preset <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-match_horse_quality">
+<h4>Match horse detail to computer <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-av_preview">
+<h4>Audio and visual performance sample <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Logging</h3>
+<ul class="setting-links"><li><a href="#setting-trace_sample_percent">Detailed race trace sampling, percent</a></li>
+<li><a href="#setting-anomaly_traces">Keep anomalous race traces</a></li>
+<li><a href="#setting-camera_events">Log significant camera events</a></li>
+<li><a href="#setting-announcer_events">Log announcer events</a></li></ul>
+<article id="setting-trace_sample_percent">
+<h4>Detailed race trace sampling, percent <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-anomaly_traces">
+<h4>Keep anomalous race traces <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-camera_events">
+<h4>Log significant camera events <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-announcer_events">
+<h4>Log announcer events <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Modes and skins</h3>
+<ul class="setting-links"><li><a href="#setting-presentation_mode">Presentation preset</a></li>
+<li><a href="#setting-operating_preset">Operating preset</a></li>
+<li><a href="#setting-single_player">Single-player fun mode</a></li>
+<li><a href="#setting-horse_style">Horse appearance</a></li>
+<li><a href="#setting-console_style">Betting-console skin</a></li>
+<li><a href="#setting-track_surface">Track surface</a></li>
+<li><a href="#setting-cabinet_palette">Cabinet color scheme</a></li>
+<li><a href="#setting-custom_cabinet_color">Custom cabinet color</a></li>
+<li><a href="#setting-custom_track_color">Custom track color</a></li>
+<li><a href="#setting-custom_infield_color">Custom infield color</a></li>
+<li><a href="#setting-custom_rail_color">Custom rail color</a></li>
+<li><a href="#setting-lighting_preset">Lighting preset</a></li></ul>
+<article id="setting-presentation_mode">
+<h4>Presentation preset <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-operating_preset">
+<h4>Operating preset <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-single_player">
+<h4>Single-player fun mode <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-horse_style">
+<h4>Horse appearance <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-console_style">
+<h4>Betting-console skin <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-track_surface">
+<h4>Track surface <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-cabinet_palette">
+<h4>Cabinet color scheme <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-custom_cabinet_color">
+<h4>Custom cabinet color <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-custom_track_color">
+<h4>Custom track color <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-custom_infield_color">
+<h4>Custom infield color <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-custom_rail_color">
+<h4>Custom rail color <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-lighting_preset">
+<h4>Lighting preset <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Profiles and previews</h3>
+<ul class="setting-links"><li><a href="#setting-sample_race">Settings-only sample race</a></li>
+<li><a href="#setting-unlimited_profiles">Unlimited named settings profiles</a></li>
+<li><a href="#setting-save_game_slots">Named game saves</a></li>
+<li><a href="#setting-preview_audio">Test selected audio and announcers</a></li></ul>
+<article id="setting-sample_race">
+<h4>Settings-only sample race <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-unlimited_profiles">
+<h4>Unlimited named settings profiles</h4>
+<p>Named settings profiles have no fixed count limit. Create and manage them on the Saved profiles page.</p>
+</article>
+<article id="setting-save_game_slots">
+<h4>Named game saves <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working Save Game and Load Game actions in Settings.</p>
+</article>
+<article id="setting-preview_audio">
+<h4>Test selected audio and announcers <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use Test race voice and Test house voice in Announcers.</p>
+</article>
+</section>
+<section><h3>Wager types</h3>
+<ul class="setting-links"><li><a href="#setting-enable_win">Single horse: Win</a></li>
+<li><a href="#setting-enable_place">Single horse: Place</a></li>
+<li><a href="#setting-enable_show">Single horse: Show</a></li>
+<li><a href="#setting-enable_quinella">Quinella</a></li>
+<li><a href="#setting-enable_exacta">Exacta</a></li>
+<li><a href="#setting-enable_exacta_box">Exacta Box</a></li>
+<li><a href="#setting-enable_trifecta">Trifecta</a></li>
+<li><a href="#setting-enable_trifecta_box">Trifecta Box</a></li>
+<li><a href="#setting-enable_superfecta">Superfecta</a></li>
+<li><a href="#setting-enable_superfecta_box">Superfecta Box</a></li>
+<li><a href="#setting-enable_full_order">Exact full five-horse order</a></li></ul>
+<article id="setting-enable_win">
+<h4>Single horse: Win <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_place">
+<h4>Single horse: Place <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_show">
+<h4>Single horse: Show <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_quinella">
+<h4>Quinella <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Quinella is already the fixed wager type in SD mode.</p>
+</article>
+<article id="setting-enable_exacta">
+<h4>Exacta <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_exacta_box">
+<h4>Exacta Box <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_trifecta">
+<h4>Trifecta <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_trifecta_box">
+<h4>Trifecta Box <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_superfecta">
+<h4>Superfecta <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_superfecta_box">
+<h4>Superfecta Box <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+<article id="setting-enable_full_order">
+<h4>Exact full five-horse order <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release.</p>
+</article>
+</section>
+<section><h3>Virtual players</h3>
+<ul class="setting-links"><li><a href="#setting-virtual_enabled">Allow virtual players</a></li>
+<li><a href="#setting-virtual_style">Private numbered betting-style preset</a></li>
+<li><a href="#setting-virtual_rebuy">Automatic virtual-player rebuy</a></li>
+<li><a href="#setting-virtual_rebuy_amount">Virtual rebuy credits</a></li></ul>
+<article id="setting-virtual_enabled">
+<h4>Allow virtual players <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working V control on a player seat.</p>
+</article>
+<article id="setting-virtual_style">
+<h4>Private numbered betting-style preset <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use V on a seat to choose its style and Virtual player styles to edit the numbered styles.</p>
+</article>
+<article id="setting-virtual_rebuy">
+<h4>Automatic virtual-player rebuy <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Virtual seats have no credit accounts.</p>
+</article>
+<article id="setting-virtual_rebuy_amount">
+<h4>Virtual rebuy credits <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Virtual seats have no credit accounts.</p>
+</article>
+</section>
+<section><h3>Virtual style factors</h3>
+<ul class="setting-links"><li><a href="#setting-virtual_appetite">Betting appetite</a></li>
+<li><a href="#setting-virtual_risk">Longshot preference</a></li>
+<li><a href="#setting-virtual_spread">Spread across combinations</a></li>
+<li><a href="#setting-virtual_randomness">Random choice strength</a></li>
+<li><a href="#setting-virtual_variation">Race-to-race variation</a></li>
+<li><a href="#setting-virtual_sit_out">Chance of sitting out</a></li>
+<li><a href="#setting-virtual_repeat">Repeat previous choices</a></li>
+<li><a href="#setting-virtual_history">Response to public results</a></li>
+<li><a href="#setting-virtual_balance_fraction">Maximum fraction of balance</a></li>
+<li><a href="#setting-virtual_max_bets">Maximum selections per race</a></li>
+<li><a href="#setting-virtual_min_odds">Minimum preferred odds</a></li>
+<li><a href="#setting-virtual_max_odds">Maximum preferred odds</a></li>
+<li><a href="#setting-virtual_reset_style">Restore selected style defaults</a></li></ul>
+<article id="setting-virtual_appetite">
+<h4>Betting appetite <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_risk">
+<h4>Longshot preference <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_spread">
+<h4>Spread across combinations <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_randomness">
+<h4>Random choice strength <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_variation">
+<h4>Race-to-race variation <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_sit_out">
+<h4>Chance of sitting out <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Virtual seats do not sit out automatically.</p>
+</article>
+<article id="setting-virtual_repeat">
+<h4>Repeat previous choices <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_history">
+<h4>Response to public results <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_balance_fraction">
+<h4>Maximum fraction of balance <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Virtual bets have a simulated stake ceiling and no balance.</p>
+</article>
+<article id="setting-virtual_max_bets">
+<h4>Maximum selections per race <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_min_odds">
+<h4>Minimum preferred odds <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_max_odds">
+<h4>Maximum preferred odds <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+<article id="setting-virtual_reset_style">
+<h4>Restore selected style defaults <span class="planned">(Planned)</span></h4>
+<p>Planned. This control is disabled and does nothing in this release. Use the working numbered-style editor on Virtual player styles.</p>
+</article>
+</section>
+<section><h3>Working numbered-style controls</h3>
+<ul class="setting-links"><li><a href="#virtual-factor-appetite">Amount to bet</a></li>
+<li><a href="#virtual-factor-risk">Favorites to longshots</a></li>
+<li><a href="#virtual-factor-spread">Spread across combinations</a></li>
+<li><a href="#virtual-factor-randomness">Random choice strength</a></li>
+<li><a href="#virtual-factor-variation">Amount variation</a></li>
+<li><a href="#virtual-factor-repeat">Repeat previous selections</a></li>
+<li><a href="#virtual-factor-history">Follow last winning pair</a></li>
+<li><a href="#virtual-factor-max_bets">Maximum combinations</a></li>
+<li><a href="#virtual-factor-min_odds">Minimum preferred payoff</a></li>
+<li><a href="#virtual-factor-max_odds">Maximum preferred payoff</a></li></ul>
+<article id="virtual-factor-appetite">
+<h4>Amount to bet</h4>
+<p>Sets a simulated stake budget up to 200 credits. Zero produces no tickets. Amount variation can change the budget from race to race.</p>
+</article>
+<article id="virtual-factor-risk">
+<h4>Favorites to longshots</h4>
+<p>Move toward Favorites to favor lower displayed payoffs or toward Longshots to favor higher payoffs. Random choice strength blends that preference toward equal weighting.</p>
+</article>
+<article id="virtual-factor-spread">
+<h4>Spread across combinations</h4>
+<p>Higher spread can select more eligible pairs. Maximum combinations and the simulated stake budget cap how many can be selected.</p>
+</article>
+<article id="virtual-factor-randomness">
+<h4>Random choice strength</h4>
+<p>Makes weighting by payoff more even. Repeating a prior selection or following the last winner can still favor a qualifying pair.</p>
+</article>
+<article id="virtual-factor-variation">
+<h4>Amount variation</h4>
+<p>Changes how much the simulated stake budget varies from one race to the next.</p>
+</article>
+<article id="virtual-factor-repeat">
+<h4>Repeat previous selections</h4>
+<p>Gives the seat&#x27;s previous selections extra weight when they still qualify under the current card and payoff range.</p>
+</article>
+<article id="virtual-factor-history">
+<h4>Follow last winning pair</h4>
+<p>Gives the most recent public winning pair more weight if it is eligible under the current payoff range.</p>
+</article>
+<article id="virtual-factor-max_bets">
+<h4>Maximum combinations</h4>
+<p>Caps the number of different simulated tickets from 1 to 10. Spread and the budget can result in fewer.</p>
+</article>
+<article id="virtual-factor-min_odds">
+<h4>Minimum preferred payoff</h4>
+<p>Sets the lowest eligible total return multiplier, from 2x to 200x. It must be at or below Maximum preferred payoff.</p>
+</article>
+<article id="virtual-factor-max_odds">
+<h4>Maximum preferred payoff</h4>
+<p>Sets the highest eligible total return multiplier, from 2x to 200x. It must be at or above Minimum preferred payoff.</p>
+</article>
+</section>
+</section>
+</main>
+</body>
+</html>
