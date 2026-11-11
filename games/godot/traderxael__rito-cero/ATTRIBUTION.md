@@ -27,6 +27,13 @@ A playable 3D action game: you explore an open world as Rito, a Roman character,
 
 No custom fonts or audio files are bundled.
 
+## AI-generated art
+
+Upstream design doc `docs/superpowers/specs/2026-11-02-rito-cero-web-design.md` (§7 "Arte generado con IA") states that these two images were generated with `ImageGen` (appearance notes in §6.5). The character sheet was then post-processed locally with Pillow.
+
+- `src/assets/rito_face.png` (md5 `b31a9a2462fcbb58387e38006fe10193`) — AI-generated frontal portrait used as the character face texture
+- `src/assets/rito_sheet.png` (md5 `2916dd446c99607ccda7f579163b92be`) — AI-generated full-body character sheet used for the boot overlay
+
 ## Engine
 
 Godot Engine (MIT), https://godotengine.org/license/
