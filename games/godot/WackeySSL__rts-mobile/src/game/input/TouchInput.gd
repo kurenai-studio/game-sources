@@ -1,0 +1,201 @@
+class_name TouchInput
+extends Node
+## The engine adapter for fingers (ADR 0004 section 1). It feeds a pure GestureRecognizer and
+## routes each GestureEvent at once: PAN, PINCH and CAMERA_END drive the RtsCamera. TAP, DOUBLE_TAP,
+## LONG_PRESS and BOX_* go to the PlayerController (none set: dropped), and LONG_PRESS also buzzes.
+## A press the GUI did not take reaches `_unhandled_input` and belongs to the recognizer. Its drags
+## and release are taken in `_input` and marked handled, so a pan that crosses a HUD button keeps
+## panning and never presses it. A touch that starts on a Control stays with it. Mouse buttons and
+## motion are ignored (desktop clicks arrive as emulated touches); only the wheel steps the zoom.
+## In placement mode (P86) a press on the ghost's silhouette grabs it: its drag is a GHOST_DRAG for
+## the controller, not a pan, and a hold starts no box. Every frame the grabbing finger is in an
+## edge band (P86b), the controller scrolls the map: GHOST_DRAG comes only when the finger moves.
+## While the recognizer is in the GRAB state `placement.dragging` is on (P86c): the check mark and
+## the X beside the ghost hide until the finger lets go.
+## A gesture on the map tells `map_gesture` once, before its first event is routed (ADR 0024
+## section 5): the build menu collapses on it, and the gesture then does what it always did. The
+## kinds that count are TAP, DOUBLE_TAP, LONG_PRESS, PAN, PINCH and GHOST_DRAG, and a wheel step;
+## the ends and cancels of a gesture (BOX_*, CAMERA_END) do not. A press the GUI took (any HUD
+## control) never gets here, so a touch on a HUD control never counts.
+## A turn of the phone cancels every gesture in flight (ADR 0015 section 3): the finger positions
+## belong to the old layout. A box is cancelled for the controller, the camera never hears the end
+## of a pan or pinch (it would snap the zoom about a stale anchor), and no tap is made. A modal
+## (P90: the result screen, a confirm) does the same when it shows, through CANCEL_GROUP: nothing
+## that holds a finger goes on under it.
+
+## The first event of a gesture on the map, or a wheel step: `HudState` folds the unfold, the build
+## drawer among them (`HudStateFeed`).
+signal map_gesture
+
+## What holds a finger joins this group and answers `cancel_gestures()`; a modal calls the group.
+const CANCEL_GROUP: StringName = &"cancel_gestures"
+
+## The gestures whose first event is a touch of the map (the rest are ends and cancels).
+const COUNTED: Array[GestureEvent.Kind] = [
+	GestureEvent.Kind.TAP,
+	GestureEvent.Kind.DOUBLE_TAP,
+	GestureEvent.Kind.LONG_PRESS,
+	GestureEvent.Kind.PAN,
+	GestureEvent.Kind.PINCH,
+	GestureEvent.Kind.GHOST_DRAG,
+]
+
+@export var settings: InputSettings
+@export var camera: RtsCamera
+@export var controller: PlayerController
+
+## Returns the time in ms. Tests replace it.
+var clock: Callable = Time.get_ticks_msec
+## Vibrates for the given ms. Tests replace it.
+var vibrate: Callable = Input.vibrate_handheld
+
+var _recognizer: GestureRecognizer = GestureRecognizer.new()
+var _portrait: bool = false  ## The window's orientation at the last size_changed.
+var _events: Array[GestureEvent] = []
+## Fingers that started on the map and are still down. The values are unused.
+var _owned: Dictionary[int, bool] = {}
+var _counted: bool = false  ## The gesture in flight has told `map_gesture` already.
+
+
+func _ready() -> void:
+	add_to_group(CANCEL_GROUP)
+	if settings == null:
+		settings = InputSettings.new()  # The script defaults are the ADR table.
+	_portrait = UiScale.is_portrait_size(get_tree().root.size)
+	get_viewport().size_changed.connect(_on_size_changed)
+	configure()
+	if controller != null and controller.placement != null:
+		var placement: PlacementController = controller.placement
+		_recognizer.grab_test = placement.grabs
+		placement.changed.connect(func() -> void: _recognizer.box_enabled = not placement.active)
+
+
+## Reads the thresholds again: dp is a different number of base px after a resize.
+func configure() -> void:
+	_recognizer.configure(settings, UiScale.base_px_per_dp())
+
+
+## Every resize reads the thresholds again, and a turn (another orientation than at the last
+## resize) ends the gestures. The first run of a flip's two sees the turn, the second finds the
+## orientation in place and changes nothing, whatever the order of the handlers.
+func _on_size_changed() -> void:
+	configure()
+	var portrait: bool = UiScale.is_portrait_size(get_tree().root.size)
+	if portrait == _portrait:
+		return
+	_portrait = portrait
+	_recognizer.cancel_all()
+	_counted = false
+	_sync_drag()
+	if _recognizer.take_events(_events) == 0:
+		return
+	for e: GestureEvent in _events:
+		if e.kind != GestureEvent.Kind.CAMERA_END:  # Its snap would undo the camera's turn rule.
+			_route(e)
+	_events.clear()
+
+
+func _process(delta: float) -> void:
+	_recognizer.advance(clock.call())  # A long-press arrives while the finger rests.
+	_dispatch()
+	# A ghost drag whose finger rests in an edge band keeps scrolling the map (P86b).
+	var placement: PlacementController = null if controller == null else controller.placement
+	if placement != null and _recognizer.state() == GestureRecognizer.State.GRAB:
+		placement.edge_pan(_recognizer.grab_position(), delta)
+
+
+func _notification(what: int) -> void:
+	# A finger that was down when the app lost focus may never send its release.
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		cancel_gestures()
+
+
+## Ends every finger and gesture in flight: no tap, no order, no more pan. The fingers go on to the
+## GUI, which has the screen now.
+func cancel_gestures() -> void:
+	_owned.clear()
+	_recognizer.cancel_all()
+	_counted = false
+	_dispatch()
+
+
+## Runs before the GUI, so a release is never missed and a pan drag never reaches a Control.
+func _input(event: InputEvent) -> void:
+	var touch: InputEventScreenTouch = event as InputEventScreenTouch
+	var drag: InputEventScreenDrag = event as InputEventScreenDrag
+	if touch != null and _owned.erase(touch.index):
+		# A press for a finger still down: its release was lost. End it, the press goes on.
+		_recognizer.touch_up(
+			touch.index, touch.position, clock.call(), touch.canceled or touch.pressed
+		)
+	elif drag != null and _owned.has(drag.index):
+		_recognizer.touch_move(drag.index, drag.position, clock.call())
+	else:
+		return
+	_dispatch()
+	if _owned.is_empty():
+		_counted = false  # The last finger of the gesture is up.
+	if touch == null or not touch.pressed:
+		get_viewport().set_input_as_handled()
+
+
+## Only presses the GUI did not take get here.
+func _unhandled_input(event: InputEvent) -> void:
+	var touch: InputEventScreenTouch = event as InputEventScreenTouch
+	var wheel: InputEventMouseButton = event as InputEventMouseButton
+	if touch != null and touch.pressed:
+		_owned[touch.index] = true
+		if _recognizer.state() == GestureRecognizer.State.IDLE:
+			# A new gesture. A finger held through a turn is nobody's now but stays in `_owned`, so
+			# the last finger's lift never clears the flag.
+			_counted = false
+		_recognizer.touch_down(touch.index, touch.position, clock.call())
+		_dispatch()
+	elif wheel != null and wheel.pressed:
+		if wheel.button_index == MOUSE_BUTTON_WHEEL_UP:
+			map_gesture.emit()
+			camera.step_zoom(1, wheel.position)
+		elif wheel.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			map_gesture.emit()
+			camera.step_zoom(-1, wheel.position)
+
+
+func _dispatch() -> void:
+	_sync_drag()
+	if _recognizer.take_events(_events) == 0:
+		return
+	for e: GestureEvent in _events:
+		_route(e)
+	_events.clear()
+
+
+## Tells the placement controller whether a finger holds the ghost: the recognizer is in GRAB.
+func _sync_drag() -> void:
+	if controller != null and controller.placement != null:
+		controller.placement.dragging = _recognizer.state() == GestureRecognizer.State.GRAB
+
+
+func _route(e: GestureEvent) -> void:
+	if not _counted and COUNTED.has(e.kind):
+		_counted = true
+		map_gesture.emit()
+	match e.kind:
+		GestureEvent.Kind.PAN:
+			camera.pan_by_screen(e.delta)
+		GestureEvent.Kind.PINCH:
+			# Two fingers moving in one frame give two events whose scales multiply.
+			camera.pan_by_screen(e.delta)
+			camera.pinch(e.centre, e.scale)
+		GestureEvent.Kind.CAMERA_END:
+			camera.end_gesture()
+		GestureEvent.Kind.LONG_PRESS:
+			if HudPrefs.vibrates(settings):
+				vibrate.call(settings.haptic_ms)
+			_to_controller(e)
+		_:  # TAP, DOUBLE_TAP and BOX_*.
+			_to_controller(e)
+
+
+func _to_controller(e: GestureEvent) -> void:
+	if controller != null:
+		controller.handle_gesture(e)

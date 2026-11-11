@@ -1,0 +1,91 @@
+class_name Power
+extends RefCounted
+## Power (ADR 0017 section 5, ADR 0018 section 4). `run` is the first half of ECONOMY: it brings the
+## derived row lists up to date (Buildings.rebuild_lists) and sums `type_power` over the building
+## rows into `power_made` (the positive entries) and `power_used` (the negative ones, as positive
+## numbers) per player, every ECONOMY: one pass over the building rows, so there is no stamp to
+## keep (and no field in the World) and nothing that a rebuild of the lists by someone else, or a
+## moved type table, can leave stale. Both are derived (ADR 0016): in no hash section, rebuilt from
+## the rows, and compared with a scan at every checkpoint by `tests/sim/test_power.gd`. A building
+## placed or lost in tick t counts in t's ECONOMY (the totals are built after REMOVE), so PRODUCTION
+## of tick t and FIRE of tick t+1 see it.
+##
+## A blacked-out building (P111, ADR 0023 section 10: `offline_until` above the stamp `world.tick +
+## 1` of the step in progress) counts neither its output nor its use, so the totals fall for exactly
+## the blackout's `type_strike_ticks` steps and come back at the stamp that reaches `offline_until`.
+## A building that is not complete (`build_left` not 0, ADR 0026: a site, or a cancelled one) counts
+## neither output nor use, as an offline row does. A site completes in PRODUCTION, after this sum,
+## so `Production.run` calls `run` again at the end of a step in which one did; a second call in a
+## step is safe (the totals are zeroed and summed from the rows, with the stamp of the step).
+## The totals are therefore a function of the hashed rows and of the step they were built in (the
+## stamp is a value, not a field to keep): a rebuild after that step must run with that step's tick,
+## one back from the tick the step left behind (`tests/sim/test_power_blackout.gd`).
+##
+## Low power is `power_used > power_made` (`is_low`; equal is not low). Its two effects are
+## elsewhere: the queues of a low player advance at `low_power_percent` (`scaled`, called by
+## `Production.run`), and the player's defences (building rows with a weapon) keep their targets but
+## do not shoot (`Combat.fire`, GDScript only, with the rule inlined over aliased arrays).
+
+## A percent divides by this: structure, not balance.
+const PERCENT: int = 100
+
+
+## ECONOMY, first half. The lists are rebuilt first (a no-op when `Production.producer_row` has
+## already done it in COMMANDS or PRODUCTION since the rows last moved), and its answer is not
+## asked: the totals are summed from the rows whatever it says.
+static func run(world: World) -> void:
+	Buildings.rebuild_lists(world)
+	var made: PackedInt32Array = world.power_made
+	var used: PackedInt32Array = world.power_used
+	var players: int = mini(made.size(), used.size())
+	# Not sized yet (prepare() has not run): nothing to write.
+	if players == 0:
+		return
+	made.fill(0)
+	used.fill(0)
+	var owners: PackedInt32Array = world.owner
+	var types: PackedInt32Array = world.type_index
+	var offline: PackedInt32Array = world.offline_until
+	var pending: PackedInt32Array = world.build_left
+	var table: PackedInt32Array = world.type_power
+	var known: int = table.size()
+	var stamp: int = world.tick + 1
+	for row: int in world.building_rows:
+		var player: int = owners[row]
+		var type: int = types[row]
+		# Entry 0 is the neutral player's and stays 0; a player past the arrays (a hand-built World
+		# whose player_count was raised after prepare()) and a type past the table have no entry.
+		# A blacked-out building (offline until a later stamp) has none for this step either, and
+		# neither has a site under construction (ADR 0026 section 4).
+		if (
+			player < 1
+			or player >= players
+			or type >= known
+			or offline[row] > stamp
+			or pending[row] != 0
+		):
+			continue
+		var power: int = table[type]
+		if power > 0:
+			made[player] += power
+		else:
+			used[player] -= power
+
+
+## Whether `player` is on low power: the totals `run` built have it using more than it makes. False
+## for the neutral player and for a player past the arrays. The totals are as ECONOMY left them, or
+## as `Production.run` summed them again at the end of a step that completed a site, so a site
+## counts from the end of its completing step and a row added since then does not count yet.
+static func is_low(world: World, player: int) -> bool:
+	var made: PackedInt32Array = world.power_made
+	var used: PackedInt32Array = world.power_used
+	return player >= 1 and player < mini(made.size(), used.size()) and used[player] > made[player]
+
+
+## `amount` as `player` earns it this tick: all of it, or `low_power_percent` of it on low power
+## (integer division, toward zero). A queue's progress step goes through here.
+@warning_ignore("integer_division")
+static func scaled(world: World, player: int, amount: int) -> int:
+	if is_low(world, player):
+		return amount * world.low_power_percent / PERCENT
+	return amount
