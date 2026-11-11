@@ -1,0 +1,42 @@
+extends SceneTree
+var failures:=0
+func check(ok: bool, why: String) -> void:
+	if not ok: failures+=1; printerr("FAIL: "+why)
+func _initialize() -> void: call_deferred("run")
+func run() -> void:
+	var identity=load("res://core/player_identity.gd")
+	check(identity.AVATARS.size()==20,"twenty distinct built-in icons")
+	for name in identity.AVATARS:
+		var avatar=load("res://ui/player_avatar.gd").new()
+		avatar.configure({"color":0,"avatar":name,"image":""})
+		check(avatar.texture!=null,"polished icon renders: "+name)
+		avatar.custom_minimum_size=Vector2(72,72)
+		avatar.configure({"color":1,"avatar":name,"image":""})
+		check(avatar.custom_minimum_size==Vector2(72,72),"preview keeps its requested size after refresh")
+		avatar.free()
+	var game=load("res://core/game_session.gd").new(); game.fund_demo(); game.access.set_pin("operator","1234")
+	var prefs=load("res://core/game_settings.gd").new()
+	var flow=load("res://core/player_flow.gd").new(game,prefs); flow.begin_settings("1234")
+	var editor=load("res://ui/player_settings.gd").new(); root.add_child(editor); editor.configure(flow)
+	check(editor.has_method("create_avatar_gallery"),"visual icon gallery available")
+	if editor.has_method("create_avatar_gallery"):
+		var preview=load("res://ui/player_avatar.gd").new(); preview.configure(flow.drafts[0].profile); editor.add_child(preview)
+		var caption:=Button.new(); editor.add_child(caption)
+		var image:=Image.create(64,32,false,Image.FORMAT_RGBA8); image.fill(Color.CORAL)
+		var encoded:=Marshalls.raw_to_base64(image.save_png_to_buffer())
+		flow.drafts[0].profile.image=encoded; preview.configure(flow.drafts[0].profile)
+		var dialog: AcceptDialog=editor.create_avatar_gallery(0,preview,caption)
+		check(flow.drafts[0].profile.image==encoded,"opening gallery preserves uploaded image")
+		var grid=dialog.find_child("AvatarChoices",true,false)
+		check(grid!=null and grid.get_child_count()==20,"all twenty choices visible")
+		grid.get_child(19).pressed.emit()
+		check(flow.drafts[0].profile.avatar==identity.AVATARS[19] and flow.drafts[0].profile.image.is_empty(),"selecting icon replaces only this draft upload")
+		check(game.player_profiles[0].avatar=="Racecar","selection commits only when returning to game")
+		check(flow.finish_settings() and game.player_profiles[0].avatar==identity.AVATARS[19],"gallery choice saves through normal player flow")
+		var restored=load("res://core/game_session.gd").new()
+		check(restored.restore(game.export_data()) and restored.player_profiles==game.player_profiles,"all identities survive save and reload")
+		var picker: FileDialog=editor.create_image_picker(0,preview)
+		check(picker.filters[0].contains("*.png"),"upload remains available")
+		picker.queue_free()
+	editor.queue_free(); await process_frame
+	print("Avatar 20 failures: ",failures); quit(1 if failures else 0)
