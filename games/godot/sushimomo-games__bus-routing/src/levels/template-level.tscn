@@ -1,0 +1,40 @@
+[gd_scene load_steps=7 format=3 uid="uid://dft6mjqp17vhb"]
+
+[ext_resource type="Script" uid="uid://c1omwi6nrcts5" path="res://levels/Level.cs" id="1_8iv2f"]
+[ext_resource type="Script" uid="uid://dcew74obwshpi" path="res://Camera.cs" id="2_4kxre"]
+[ext_resource type="Shader" uid="uid://5v7q2g6jpyk8" path="res://shaders/shadow-shader.gdshader" id="3_7c1ul"]
+[ext_resource type="PackedScene" uid="uid://dc2wfu8lyap4i" path="res://ui/level-ui/level-ui.tscn" id="8_8iv2f"]
+[ext_resource type="Texture2D" uid="uid://c4tx6cege7xq5" path="res://assets/gradient.tres" id="9_cbuuc"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8iv2f"]
+shader = ExtResource("3_7c1ul")
+shader_parameter/color = Color(0.09099999, 0.26801676, 0.65, 0.15686275)
+shader_parameter/angle = 124.9650059358375
+shader_parameter/max_dist = 20.00000095
+shader_parameter/gradientTexture = ExtResource("9_cbuuc")
+
+[node name="TemplateLevel" type="Node2D"]
+script = ExtResource("1_8iv2f")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(426.86, 166)
+scale = Vector2(-63.42596, -2.0827663)
+script = ExtResource("2_4kxre")
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="."]
+rotation = -4.1887903
+color = Color(1, 1, 1, 0.78431374)
+energy = 0.5
+
+[node name="IntersectionNodes" type="Node" parent="."]
+
+[node name="BuildingShadows" type="Polygon2D" parent="."]
+editor_description = "Shader: https://github.com/jess-hammer/2d-shadows-demo-godot"
+material = SubResource("ShaderMaterial_8iv2f")
+polygon = PackedVector2Array(-9, -32, 653, 58, 750, 424, -24, 410)
+metadata/_edit_lock_ = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="LevelUI" parent="CanvasLayer" instance=ExtResource("8_8iv2f")]
+metadata/_edit_lock_ = true

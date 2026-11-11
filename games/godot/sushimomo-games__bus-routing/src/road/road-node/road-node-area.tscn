@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3 uid="uid://o6lvivmce3jd"]
+
+[ext_resource type="Script" uid="uid://je30i5pxrofm" path="res://road/road-node/RoadNodeArea.cs" id="1_24qje"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ou3xf"]
+radius = 8.062258
+
+[node name="RoadNodeArea" type="Area2D"]
+editor_description = "This node is a component for BusStops and IntersectionNodes. It is a clickable area intended to help construct and edit routes."
+script = ExtResource("1_24qje")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_ou3xf")
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

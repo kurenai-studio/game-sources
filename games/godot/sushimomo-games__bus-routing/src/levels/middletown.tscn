@@ -1,0 +1,1455 @@
+[gd_scene load_steps=11 format=3 uid="uid://c8x7p2l5nak1"]
+
+[ext_resource type="Script" uid="uid://c1omwi6nrcts5" path="res://levels/Level.cs" id="1_8iv2f"]
+[ext_resource type="Script" uid="uid://dcew74obwshpi" path="res://camera/Camera.cs" id="2_4kxre"]
+[ext_resource type="PackedScene" uid="uid://sqsjlmlyneb6" path="res://road/intersection/intersection-node.tscn" id="3_cjkv6"]
+[ext_resource type="PackedScene" uid="uid://dc2wfu8lyap4i" path="res://ui/level-ui/level-ui.tscn" id="8_8iv2f"]
+[ext_resource type="Texture2D" uid="uid://gjwbpmv1y7b1" path="res://levels/level-mockup-assets/middletownbusgame.png" id="8_wyvd5"]
+[ext_resource type="PackedScene" uid="uid://cwiepcsny2a7m" path="res://buildings/house/house.tscn" id="8_yuoj6"]
+[ext_resource type="PackedScene" uid="uid://7sg83f1kmn6m" path="res://buildings/destination/destination.tscn" id="9_0cyv3"]
+[ext_resource type="Texture2D" uid="uid://c4tx6cege7xq5" path="res://assets/gradient.tres" id="9_cbuuc"]
+[ext_resource type="Shader" uid="uid://5v7q2g6jpyk8" path="res://shaders/shadow-shader.gdshader" id="10_yuoj6"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8iv2f"]
+shader = ExtResource("10_yuoj6")
+shader_parameter/color = Color(0.09099999, 0.26801676, 0.65, 0.15686275)
+shader_parameter/angle = 124.9650059358375
+shader_parameter/max_dist = 20.00000095
+shader_parameter/gradientTexture = ExtResource("9_cbuuc")
+
+[node name="Middletown" type="Node2D"]
+script = ExtResource("1_8iv2f")
+metadata/_edit_lock_ = true
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(561, 272)
+scale = Vector2(-63.42596, -2.0827663)
+script = ExtResource("2_4kxre")
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="."]
+rotation = -4.1887903
+color = Color(1, 1, 1, 0.78431374)
+energy = 0.5
+
+[node name="RoadLines" type="Node2D" parent="."]
+modulate = Color(0.8342127, 0.83978754, 0.84536046, 1)
+self_modulate = Color(1, 1, 1, 0)
+
+[node name="IntersectionNodes" type="Node" parent="."]
+
+[node name="IntersectionNode" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(462.9538, 175.88715)
+Neighbors = [NodePath("../@Node2D@27919"), NodePath("../@Node2D@27880"), NodePath("../@Node2D@27879"), NodePath("../@Node2D@27927")]
+
+[node name="@Node2D@27879" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(681.5999, 107.2923)
+Neighbors = [NodePath("../IntersectionNode"), NodePath("../@Node2D@27881"), NodePath("../@Node2D@27928")]
+
+[node name="@Node2D@27880" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(535.8987, 375.36713)
+Neighbors = [NodePath("../@Node2D@27881"), NodePath("../@Node2D@27883"), NodePath("../@Node2D@27885"), NodePath("../IntersectionNode")]
+
+[node name="@Node2D@27881" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(746.4474, 300.8566)
+Neighbors = [NodePath("../@Node2D@27882"), NodePath("../@Node2D@27880"), NodePath("../@Node2D@27879")]
+
+[node name="@Node2D@27882" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(828.29614, 478.6659)
+Neighbors = [NodePath("../@Node2D@27883"), NodePath("../@Node2D@27893"), NodePath("../@Node2D@27881")]
+
+[node name="@Node2D@27883" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(613.8197, 564.704)
+Neighbors = [NodePath("../@Node2D@27884"), NodePath("../@Node2D@27882"), NodePath("../@Node2D@27892"), NodePath("../@Node2D@27880")]
+
+[node name="@Node2D@27884" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(413.96997, 642.8407)
+Neighbors = [NodePath("../@Node2D@27889"), NodePath("../@Node2D@27887"), NodePath("../@Node2D@27883"), NodePath("../@Node2D@27885")]
+
+[node name="@Node2D@27885" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(332.82797, 444.49362)
+Neighbors = [NodePath("../@Node2D@27884"), NodePath("../@Node2D@27886"), NodePath("../@Node2D@27880")]
+
+[node name="@Node2D@27886" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(109.8681, 524.57526)
+Neighbors = [NodePath("../@Node2D@27885"), NodePath("../@Node2D@27887"), NodePath("../@Node2D@27904"), NodePath("../@Node2D@27919")]
+
+[node name="@Node2D@27887" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(139.15009, 754.83826)
+Neighbors = [NodePath("../@Node2D@27888"), NodePath("../@Node2D@27884"), NodePath("../@Node2D@27886")]
+
+[node name="@Node2D@27888" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(148, 880)
+Neighbors = [NodePath("../@Node2D@27895"), NodePath("../@Node2D@27889"), NodePath("../@Node2D@27887"), NodePath("../@Node2D@27903")]
+
+[node name="@Node2D@27889" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(469, 766)
+Neighbors = [NodePath("../@Node2D@27888"), NodePath("../@Node2D@27890"), NodePath("../@Node2D@27892"), NodePath("../@Node2D@27884")]
+
+[node name="@Node2D@27890" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(581, 1034)
+Neighbors = [NodePath("../@Node2D@27895"), NodePath("../@Node2D@27897"), NodePath("../@Node2D@27889"), NodePath("../@Node2D@27891")]
+
+[node name="@Node2D@27891" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(763, 955)
+Neighbors = [NodePath("../@Node2D@27890"), NodePath("../@Node2D@27898"), NodePath("../@Node2D@27894"), NodePath("../@Node2D@27892")]
+
+[node name="@Node2D@27892" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(662, 698)
+Neighbors = [NodePath("../@Node2D@27891"), NodePath("../@Node2D@27893"), NodePath("../@Node2D@27889"), NodePath("../@Node2D@27883")]
+
+[node name="@Node2D@27893" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(889.6057, 612.25366)
+Neighbors = [NodePath("../@Node2D@27894"), NodePath("../@Node2D@27892"), NodePath("../@Node2D@27882")]
+
+[node name="@Node2D@27894" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(998.0242, 837.6499)
+Neighbors = [NodePath("../@Node2D@27891"), NodePath("../@Node2D@27899"), NodePath("../@Node2D@27900"), NodePath("../@Node2D@27893")]
+
+[node name="@Node2D@27895" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(173.7138, 1076.0398)
+Neighbors = [NodePath("../@Node2D@27896"), NodePath("../@Node2D@27890"), NodePath("../@Node2D@27888")]
+
+[node name="@Node2D@27896" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(177.0138, 1125.5398)
+Neighbors = [NodePath("../@Node2D@27895")]
+
+[node name="@Node2D@27897" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(620.31384, 1120.0398)
+Neighbors = [NodePath("../@Node2D@27890")]
+
+[node name="@Node2D@27898" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(828.52747, 1123.2068)
+Neighbors = [NodePath("../@Node2D@27891")]
+
+[node name="@Node2D@27899" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1130.8895, 1120.067)
+Neighbors = [NodePath("../@Node2D@27894")]
+
+[node name="@Node2D@27900" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1868.5033, 851.1118)
+Neighbors = [NodePath("../@Node2D@27894"), NodePath("../@Node2D@27901"), NodePath("../@Node2D@27902")]
+
+[node name="@Node2D@27901" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1850.7875, 1124.8986)
+Neighbors = [NodePath("../@Node2D@27900")]
+
+[node name="@Node2D@27902" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(2185.1772, 861.7064)
+Neighbors = [NodePath("../@Node2D@27900")]
+
+[node name="@Node2D@27903" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-111.51312, 954.5122)
+Neighbors = [NodePath("../@Node2D@27888"), NodePath("../@Node2D@27904")]
+
+[node name="@Node2D@27904" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-180.4831, 635.0722)
+Neighbors = [NodePath("../@Node2D@27886"), NodePath("../@Node2D@27903"), NodePath("../@Node2D@27905"), NodePath("../@Node2D@27918")]
+
+[node name="@Node2D@27905" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-303.90308, 678.6322)
+Neighbors = [NodePath("../@Node2D@27904"), NodePath("../@Node2D@27906"), NodePath("../@Node2D@27909")]
+
+[node name="@Node2D@27906" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-607.61316, 775.4322)
+Neighbors = [NodePath("../@Node2D@27905"), NodePath("../@Node2D@27907"), NodePath("../@Node2D@27908")]
+
+[node name="@Node2D@27907" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-722.5631, 1120.2822)
+Neighbors = [NodePath("../@Node2D@27906")]
+
+[node name="@Node2D@27908" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-1058, 931)
+Neighbors = [NodePath("../@Node2D@27906")]
+
+[node name="@Node2D@27909" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-892.81805, 160.72726)
+Neighbors = [NodePath("../@Node2D@27905"), NodePath("../@Node2D@27910"), NodePath("../@Node2D@27911")]
+
+[node name="@Node2D@27910" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-1054.6362, 21.636368)
+Neighbors = [NodePath("../@Node2D@27909")]
+
+[node name="@Node2D@27911" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-868.27264, -69.27272)
+Neighbors = [NodePath("../@Node2D@27909"), NodePath("../@Node2D@27912"), NodePath("../@Node2D@27913")]
+
+[node name="@Node2D@27912" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-716.45447, -69.27272)
+Neighbors = [NodePath("../@Node2D@27911")]
+
+[node name="@Node2D@27913" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-847.33826, -301.87747)
+Neighbors = [NodePath("../@Node2D@27911"), NodePath("../@Node2D@27914"), NodePath("../@Node2D@27915")]
+
+[node name="@Node2D@27914" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-704.52637, -297.3617)
+Neighbors = [NodePath("../@Node2D@27913")]
+
+[node name="@Node2D@27915" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-832.66187, -460.49463)
+Neighbors = [NodePath("../@Node2D@27913"), NodePath("../@Node2D@27916"), NodePath("../@Node2D@27917")]
+
+[node name="@Node2D@27916" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-816.8566, -563.79333)
+Neighbors = [NodePath("../@Node2D@27915")]
+
+[node name="@Node2D@27917" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-1003.6975, -469.5262)
+Neighbors = [NodePath("../@Node2D@27915")]
+
+[node name="@Node2D@27918" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-201.72504, 394.69342)
+Neighbors = [NodePath("../@Node2D@27924"), NodePath("../@Node2D@27904"), NodePath("../@Node2D@27919")]
+
+[node name="@Node2D@27919" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(52.85266, 312.84473)
+Neighbors = [NodePath("../@Node2D@27918"), NodePath("../@Node2D@27886"), NodePath("../IntersectionNode"), NodePath("../@Node2D@27923")]
+
+[node name="@Node2D@27920" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-190, -561)
+Neighbors = [NodePath("../@Node2D@27922")]
+
+[node name="@Node2D@27921" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-434, -433)
+Neighbors = [NodePath("../@Node2D@27922")]
+
+[node name="@Node2D@27922" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-152, -438)
+Neighbors = [NodePath("../@Node2D@27925"), NodePath("../@Node2D@27923"), NodePath("../@Node2D@27920"), NodePath("../@Node2D@27921")]
+
+[node name="@Node2D@27923" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-63, -117)
+Neighbors = [NodePath("../@Node2D@27922"), NodePath("../@Node2D@27924"), NodePath("../@Node2D@27919")]
+
+[node name="@Node2D@27924" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(-226, -103)
+Neighbors = [NodePath("../@Node2D@27918"), NodePath("../@Node2D@27923")]
+
+[node name="@Node2D@27925" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(89, -474)
+Neighbors = [NodePath("../@Node2D@27927"), NodePath("../@Node2D@27926"), NodePath("../@Node2D@27922")]
+
+[node name="@Node2D@27926" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(8, -569)
+Neighbors = [NodePath("../@Node2D@27925")]
+
+[node name="@Node2D@27927" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(323.36145, -185.3357)
+Neighbors = [NodePath("../IntersectionNode"), NodePath("../@Node2D@27925"), NodePath("../@Node2D@27929")]
+
+[node name="@Node2D@27928" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(451.9768, -565.3356)
+Neighbors = [NodePath("../@Node2D@27879")]
+
+[node name="@Node2D@27929" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1077.5153, -358.7715)
+Neighbors = [NodePath("../@Node2D@27927"), NodePath("../@Node2D@27930"), NodePath("../@Node2D@27935")]
+
+[node name="@Node2D@27930" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1087.2587, -315.89972)
+Neighbors = [NodePath("../@Node2D@27929"), NodePath("../@Node2D@27931"), NodePath("../@Node2D@27932")]
+
+[node name="@Node2D@27931" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1169.1049, -333.43817)
+Neighbors = [NodePath("../@Node2D@27930"), NodePath("../@Node2D@27936")]
+
+[node name="@Node2D@27932" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1120.3871, -2.156189)
+Neighbors = [NodePath("../@Node2D@27930"), NodePath("../@Node2D@27933")]
+
+[node name="@Node2D@27933" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1282.1305, -31.386963)
+Neighbors = [NodePath("../@Node2D@27932"), NodePath("../@Node2D@27934"), NodePath("../@Node2D@27936")]
+
+[node name="@Node2D@27934" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1323.0536, 218.04883)
+Neighbors = [NodePath("../@Node2D@27933")]
+
+[node name="@Node2D@27935" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1580.19, -543.1487)
+Neighbors = [NodePath("../@Node2D@27929"), NodePath("../@Node2D@27937")]
+
+[node name="@Node2D@27936" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(1590.908, -103.71283)
+Neighbors = [NodePath("../@Node2D@27933"), NodePath("../@Node2D@27931"), NodePath("../@Node2D@27937")]
+
+[node name="@Node2D@27937" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("3_cjkv6")]
+position = Vector2(2128.9487, -200.17438)
+Neighbors = [NodePath("../@Node2D@27935"), NodePath("../@Node2D@27936")]
+
+[node name="BuildingShadows" type="Polygon2D" parent="."]
+editor_description = "Shader: https://github.com/jess-hammer/2d-shadows-demo-godot"
+material = SubResource("ShaderMaterial_8iv2f")
+polygon = PackedVector2Array(-9, -32, 1500, -32, 1500, 650, -9, 650)
+metadata/_edit_lock_ = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="LevelUI" parent="CanvasLayer" instance=ExtResource("8_8iv2f")]
+metadata/_edit_lock_ = true
+
+[node name="Houses" type="Node" parent="."]
+
+[node name="Destinations" type="Node" parent="."]
+
+[node name="Buildings" type="Node2D" parent="."]
+
+[node name="House" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(422, 219)
+rotation = -1.9006639
+BuildingColor = "Blue"
+
+[node name="@Node2D@27964" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(520, 185.99998)
+rotation = 1.2695053
+BuildingColor = "Blue"
+
+[node name="@Node2D@27965" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(535, 228.99998)
+rotation = 1.2456688
+BuildingColor = "Blue"
+
+[node name="@Node2D@27966" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(551, 271)
+rotation = 1.2104564
+BuildingColor = "Blue"
+
+[node name="@Node2D@30493" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(568.99994, 319)
+rotation = 1.3089969
+BuildingColor = "Blue"
+
+[node name="@Node2D@30947" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(433.7105, 273.31317)
+rotation = -1.8756434
+BuildingColor = "Blue"
+
+[node name="@Node2D@30948" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(452.98767, 308.78314)
+rotation = -1.9343234
+BuildingColor = "Blue"
+
+[node name="@Node2D@30949" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(473.807, 356.97604)
+rotation = -1.9049942
+BuildingColor = "Blue"
+
+[node name="@Node2D@30950" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(647.6052, 148.74997)
+rotation = -1.8991257
+BuildingColor = "Green"
+
+[node name="@Node2D@30951" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(664, 188.00005)
+rotation = -1.8946881
+BuildingColor = "Green"
+
+[node name="@Node2D@30952" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(676, 227.99997)
+rotation = -1.8850286
+BuildingColor = "Green"
+
+[node name="@Node2D@30953" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(692, 274)
+rotation = -1.858078
+BuildingColor = "Green"
+
+[node name="@Node2D@30954" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(624, 290)
+rotation = -0.32855153
+BuildingColor = "Yellow"
+
+[node name="@Node2D@30955" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(587.00006, 183)
+rotation = -3.45259
+BuildingColor = "Yellow"
+
+[node name="Business" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(1802, 904.99994)
+rotation = -3.0333214
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Yellow"
+
+[node name="@Node2D@32827" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(1929, 917)
+rotation = -3.0554752
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Blue"
+
+[node name="@Node2D@32828" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(1158, 1068)
+rotation = 1.5707964
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Green"
+
+[node name="@Node2D@22664" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-731, -340)
+BuildingColor = "Red"
+
+[node name="@Node2D@22665" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-661.00006, -345)
+rotation = 0.66806924
+BuildingColor = "Red"
+
+[node name="@Node2D@22666" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-812.69434, -263.46512)
+rotation = -3.0949588
+BuildingColor = "Red"
+
+[node name="@Node2D@22667" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-732, -252)
+rotation = -3.112825
+BuildingColor = "Green"
+
+[node name="@Node2D@22668" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-660, -251)
+rotation = -3.819059
+BuildingColor = "Red"
+
+[node name="@Node2D@22669" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-1026, -413)
+rotation = -2.6906173
+BuildingColor = "Green"
+
+[node name="@Node2D@22670" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-935.99994, -418)
+rotation = -3.0928514
+BuildingColor = "Red"
+
+[node name="@Node2D@22672" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-1021.00006, -519.00006)
+rotation = -0.47546905
+BuildingColor = "Green"
+
+[node name="@Node2D@22674" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-866.00006, -513.00006)
+rotation = 0.03369534
+BuildingColor = "Red"
+
+[node name="@Node2D@22675" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-825.00006, -120.99997)
+rotation = 0.047010448
+BuildingColor = "Green"
+
+[node name="@Node2D@22676" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-743.9999, -123.99999)
+rotation = 0.056280255
+BuildingColor = "Red"
+
+[node name="@Node2D@22677" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-678, -102.00003)
+rotation = 0.65858525
+BuildingColor = "Red"
+
+[node name="@Node2D@22678" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-840.99994, -28.000004)
+rotation = -2.9627995
+BuildingColor = "Red"
+
+[node name="@Node2D@22680" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-681, -24)
+rotation = -3.7115717
+BuildingColor = "Red"
+
+[node name="@Node2D@33293" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-737.5584, 747.1332)
+rotation = -0.31099832
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33294" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-434.0904, 784.4012)
+rotation = -3.541833
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33295" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-764.17847, 1065.2422)
+rotation = -1.2742509
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33296" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-1008.16016, 141.00461)
+rotation = -2.38058
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33297" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-909.8468, -204.20511)
+rotation = -1.4659191
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33298" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-801.1653, -541.13226)
+rotation = 0.8784617
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33299" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-301.27576, -477.40747)
+rotation = -0.2942345
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33300" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(1302.7983, 894.2003)
+rotation = -3.061763
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33301" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-1065.1929, 859.22345)
+rotation = -0.8557049
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33302" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-1039.9038, 949.73145)
+rotation = -2.5135045
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33303" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(418, -499.99997)
+rotation = -1.6548089
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33304" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(-269.86063, 217.39786)
+rotation = -1.7033479
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33305" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(1348.7273, 158.00002)
+rotation = 1.450173
+BuildingColor = "Yellow"
+
+[node name="@Node2D@33306" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(300.37103, 504.44208)
+rotation = -1.9159541
+BuildingColor = "Blue"
+
+[node name="@Node2D@33307" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(319.96432, 552.0258)
+rotation = -1.938777
+BuildingColor = "Blue"
+
+[node name="@Node2D@33308" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(344.51636, 603.91327)
+rotation = -1.9890208
+BuildingColor = "Blue"
+
+[node name="@Node2D@33309" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(396.68036, 463.53696)
+rotation = 1.1760045
+BuildingColor = "Blue"
+
+[node name="@Node2D@33310" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(425.0949, 518.6697)
+rotation = 1.1207236
+BuildingColor = "Blue"
+
+[node name="@Node2D@33311" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(441.6347, 567.865)
+rotation = 1.1670767
+BuildingColor = "Blue"
+
+[node name="@Node2D@33312" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(728.49585, 722.5256)
+rotation = 1.18392
+BuildingColor = "Blue"
+
+[node name="@Node2D@33313" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(758.3523, 783.1715)
+rotation = 1.2048749
+BuildingColor = "Blue"
+
+[node name="@Node2D@33314" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(776.5461, 825.6237)
+rotation = 1.1511456
+BuildingColor = "Blue"
+
+[node name="@Node2D@33315" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(799.87146, 870.4084)
+rotation = 1.2230283
+BuildingColor = "Blue"
+
+[node name="@Node2D@33316" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(6.117798, 373.33835)
+rotation = -1.8891337
+BuildingColor = "Blue"
+
+[node name="@Node2D@33317" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(16.27832, 417.9318)
+rotation = -1.8529204
+BuildingColor = "Blue"
+
+[node name="@Node2D@33318" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(24.180954, 463.65417)
+rotation = -1.933023
+BuildingColor = "Blue"
+
+[node name="@Node2D@33319" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(30.954636, 515.58575)
+rotation = -1.9272333
+BuildingColor = "Blue"
+
+[node name="@Node2D@33320" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-381.54483, -393.19727)
+rotation = -3.1415927
+BuildingColor = "Blue"
+
+[node name="@Node2D@33321" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-328.68958, -390.11832)
+rotation = -3.1415927
+BuildingColor = "Blue"
+
+[node name="@Node2D@33322" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-276.34744, -388.57886)
+rotation = -3.0940099
+BuildingColor = "Blue"
+
+[node name="@Node2D@33323" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-222.46585, -390.63147)
+rotation = -3.2322526
+BuildingColor = "Blue"
+
+[node name="@Node2D@33324" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-743.53723, 1018.4794)
+rotation = -1.1638265
+BuildingColor = "Blue"
+
+[node name="@Node2D@33325" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-656.3847, 1074.0767)
+rotation = -4.3175964
+BuildingColor = "Blue"
+
+[node name="@Node2D@33326" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(1272.246, 168.98027)
+rotation = -1.6983051
+BuildingColor = "Blue"
+
+[node name="@Node2D@33327" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(1257.0052, 120.999985)
+rotation = -1.7186455
+BuildingColor = "Blue"
+
+[node name="@Node2D@33328" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(1348.45, 100.114456)
+rotation = 1.4094206
+BuildingColor = "Blue"
+
+[node name="@Node2D@33329" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(465.347, 672.2809)
+rotation = -3.5293622
+BuildingColor = "Green"
+
+[node name="@Node2D@33330" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(509.1987, 716.13257)
+rotation = 1.1553038
+BuildingColor = "Green"
+
+[node name="@Node2D@33331" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(518.0623, 651.7546)
+rotation = -3.4799154
+BuildingColor = "Green"
+
+[node name="@Node2D@33332" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(563.31354, 631.69476)
+rotation = -3.6194253
+BuildingColor = "Green"
+
+[node name="@Node2D@33333" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(585.2394, 681.6111)
+rotation = -1.8817946
+BuildingColor = "Green"
+
+[node name="@Node2D@33334" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(494.81006, 425.74332)
+rotation = -1.9664862
+BuildingColor = "Green"
+
+[node name="@Node2D@33335" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(516.8246, 474.85254)
+rotation = -1.9974241
+BuildingColor = "Green"
+
+[node name="@Node2D@33336" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(541.0969, 528.47754)
+rotation = -1.9036157
+BuildingColor = "Green"
+
+[node name="@Node2D@33337" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(638.93695, 749.07214)
+rotation = -1.8870813
+BuildingColor = "Green"
+
+[node name="@Node2D@33338" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(650.5996, 812.98364)
+rotation = -1.9283614
+BuildingColor = "Green"
+
+[node name="@Node2D@33339" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(668.3269, 861.5004)
+rotation = -1.9367167
+BuildingColor = "Green"
+
+[node name="@Node2D@34033" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(698.00525, 914.69476)
+rotation = -1.951302
+BuildingColor = "Green"
+
+[node name="@Node2D@34034" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(482.97906, 127.658966)
+rotation = -0.31038725
+BuildingColor = "Green"
+
+[node name="@Node2D@34035" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(525.38885, 99.66853)
+rotation = -0.260602
+BuildingColor = "Green"
+
+[node name="@Node2D@34036" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(574.16003, 76.34316)
+rotation = -0.2715994
+BuildingColor = "Green"
+
+[node name="@Node2D@34037" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(625.89996, 67.86121)
+rotation = -0.17985392
+BuildingColor = "Green"
+
+[node name="@Node2D@34038" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(97.87256, 331.31027)
+rotation = 1.182479
+BuildingColor = "Green"
+
+[node name="@Node2D@34039" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(130.11798, 385.6368)
+rotation = 1.2490462
+BuildingColor = "Green"
+
+[node name="@Node2D@34040" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(147.25774, 420.3198)
+rotation = 1.219766
+BuildingColor = "Green"
+
+[node name="@Node2D@34041" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(164.08144, 465.5335)
+rotation = 1.261866
+BuildingColor = "Green"
+
+[node name="@Node2D@34042" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(222.56662, 437.99902)
+rotation = -0.40232003
+BuildingColor = "Red"
+
+[node name="@Node2D@34043" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(263.81973, 416.02307)
+rotation = -0.39585006
+BuildingColor = "Red"
+
+[node name="@Node2D@34044" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(308.54272, 394.0471)
+rotation = -0.32635903
+BuildingColor = "Red"
+
+[node name="@Node2D@34045" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(352.49466, 374.3844)
+rotation = -0.36717427
+BuildingColor = "Red"
+
+[node name="@Node2D@34046" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(398.75656, 364.26657)
+rotation = -0.3461362
+BuildingColor = "Red"
+
+[node name="@Node2D@34047" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(164.74608, 315.14343)
+rotation = -3.456808
+BuildingColor = "Red"
+
+[node name="@Node2D@34048" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(222.22707, 297.61874)
+rotation = -3.4563503
+BuildingColor = "Red"
+
+[node name="@Node2D@34049" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(276.55362, 285.35144)
+rotation = -3.6052413
+BuildingColor = "Red"
+
+[node name="@Node2D@34050" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(330.17917, 266.07428)
+rotation = -3.6820135
+BuildingColor = "Red"
+
+[node name="@Node2D@34051" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(375.0424, 258.36343)
+rotation = -3.513302
+BuildingColor = "Red"
+
+[node name="@Node2D@34052" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(380.2675, 690.4567)
+rotation = -1.9203191
+BuildingColor = "Red"
+
+[node name="@Node2D@34053" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(403.9673, 738.383)
+rotation = -1.8463609
+BuildingColor = "Red"
+
+[node name="@Node2D@34054" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(599.7652, 420.58038)
+rotation = -3.4878778
+BuildingColor = "Red"
+
+[node name="@Node2D@34055" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(655.1863, 398.5146)
+rotation = -3.5762634
+BuildingColor = "Red"
+
+[node name="@Node2D@34056" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(717.2784, 381.58038)
+rotation = -3.5346498
+BuildingColor = "Red"
+
+[node name="@Node2D@34057" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(629.5284, 498.5804)
+rotation = -0.32773852
+BuildingColor = "Red"
+
+[node name="@Node2D@34058" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(677.76526, 477.02777)
+rotation = -0.33832312
+BuildingColor = "Red"
+
+[node name="@Node2D@34059" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(728.0547, 448.29092)
+rotation = -0.34555614
+BuildingColor = "Red"
+
+[node name="@Node2D@34060" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(772.1863, 427.7646)
+rotation = -0.36835086
+BuildingColor = "Red"
+
+[node name="@Node2D@34061" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(404.70105, 157.75298)
+rotation = -1.9114126
+BuildingColor = "Red"
+
+[node name="@Node2D@34062" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(379.04315, 113.90129)
+rotation = -1.8442576
+BuildingColor = "Red"
+
+[node name="@Node2D@34063" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(365.04794, 69.11659)
+rotation = -1.8736812
+BuildingColor = "Red"
+
+[node name="@Node2D@34064" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(276.06808, 657.18445)
+rotation = -0.3671738
+BuildingColor = "Red"
+
+[node name="@Node2D@34065" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(226.95885, 671.8607)
+rotation = -0.30161858
+BuildingColor = "Red"
+
+[node name="@Node2D@34066" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(180.10751, 684.8436)
+rotation = -0.32855356
+BuildingColor = "Red"
+
+[node name="@Node2D@34067" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-0.7969971, 288.649)
+rotation = -1.9635572
+
+[node name="@Node2D@34068" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-14.139099, 236.30685)
+rotation = -1.9274163
+
+[node name="@Node2D@34069" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-28.507523, 189.09631)
+rotation = -1.9585664
+
+[node name="@Node2D@34070" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(667.906, 590.88074)
+rotation = -3.5644455
+
+[node name="@Node2D@34071" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(713.4702, 575.45905)
+rotation = -3.4161682
+
+[node name="@Node2D@34072" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(764.64233, 563.54224)
+rotation = -3.4697132
+
+[node name="@Node2D@34073" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(824.5768, 534.45123)
+rotation = -3.6645317
+
+[node name="@Node2D@34074" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-1001.69867, 868.21045)
+rotation = -0.32855356
+
+[node name="@Node2D@34075" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-962.6986, 980.0789)
+rotation = -3.3137846
+
+[node name="@Node2D@34076" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-789.7644, 777.38153)
+rotation = -0.50101316
+
+[node name="@Node2D@34077" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-920.5143, 3.7689514)
+rotation = -1.4405848
+
+[node name="@Node2D@34078" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-242.54544, -490.81818)
+
+[node name="@Node2D@34079" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-89.976685, -293.51764)
+rotation = -1.6247973
+
+[node name="@Node2D@34080" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(521.1192, 790.0165)
+rotation = -3.4400916
+
+[node name="@Node2D@34081" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(564.3772, 773.0526)
+rotation = -3.4267125
+
+[node name="@Node2D@34082" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(1287.7499, 264.87122)
+rotation = -2.6183128
+
+[node name="@Node2D@34083" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(1386.2762, 254.60808)
+rotation = -4.16603
+
+[node name="@Node2D@34084" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(103.999985, 1019)
+rotation = -1.6737181
+ResidentQuota = 0
+RandomizeQuota = true
+
+[node name="@Node2D@34540" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(1771, -505)
+rotation = 0.66477287
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Green"
+
+[node name="@Node2D@34541" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(1223.0001, -241)
+rotation = -2.5439563
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Blue"
+
+[node name="@Node2D@34542" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(1421, -264)
+rotation = 0.6831914
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Blue"
+
+[node name="@Node2D@34543" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-688.00006, 415.00006)
+rotation = -2.410686
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Red"
+
+[node name="@Node2D@34544" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(1403, -546)
+rotation = -0.31290126
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Red"
+
+[node name="@Node2D@34545" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(140.09093, -313.36362)
+rotation = -2.0998268
+ResidentQuota = 0
+RandomizeQuota = true
+
+[node name="@Node2D@34546" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(1783, -206)
+rotation = -0.25933182
+ResidentQuota = 0
+RandomizeQuota = true
+
+[node name="@Node2D@34547" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(1519, -207.00006)
+rotation = 0.5191461
+ResidentQuota = 0
+RandomizeQuota = true
+
+[node name="@Node2D@34548" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(1316, -189.00006)
+rotation = -2.616797
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Green"
+
+[node name="@Node2D@34549" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(1406.0001, -122.99997)
+rotation = -3.4862404
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Yellow"
+
+[node name="@Node2D@34550" parent="Buildings" instance=ExtResource("9_0cyv3")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(1330.0002, -317.00006)
+rotation = 0.61942685
+ResidentQuota = 0
+RandomizeQuota = true
+BuildingColor = "Red"
+
+[node name="@Node2D@37602" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(95.119965, 258.92157)
+rotation = 1.294469
+BuildingColor = "Green"
+
+[node name="@Node2D@37603" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(76.61389, 207.64432)
+rotation = 1.2899581
+BuildingColor = "Green"
+
+[node name="@Node2D@37604" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(65.81868, 155.98154)
+rotation = 1.3258172
+BuildingColor = "Green"
+
+[node name="@Node2D@37605" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-49.369385, 143.40121)
+rotation = -1.8701626
+BuildingColor = "Green"
+
+[node name="@Node2D@37606" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(735.59424, 1015.42664)
+rotation = -1.9513028
+BuildingColor = "Green"
+
+[node name="@Node2D@37607" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(835.9972, 1043.4302)
+rotation = 1.1659044
+BuildingColor = "Green"
+
+[node name="@Node2D@37608" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(510.88284, 976.4949)
+rotation = -1.820775
+BuildingColor = "Green"
+
+[node name="@Node2D@37609" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(1001.73035, 710.47485)
+rotation = 1.321834
+BuildingColor = "Green"
+
+[node name="@Node2D@37610" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(227.74078, 802.432)
+rotation = -0.4182254
+BuildingColor = "Green"
+
+[node name="@Node2D@37611" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(280.33282, 1008.29224)
+rotation = -0.2310909
+BuildingColor = "Green"
+
+[node name="@Node2D@37612" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-46.382446, 877.8585)
+rotation = -0.26339757
+BuildingColor = "Green"
+
+[node name="@Node2D@37613" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-200.38284, 816.4102)
+rotation = -1.8136915
+BuildingColor = "Green"
+
+[node name="@Node2D@37614" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-237.49738, 518.89856)
+rotation = -1.7628437
+BuildingColor = "Green"
+
+[node name="@Node2D@37615" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-168.18396, -171.24062)
+rotation = -0.2040186
+BuildingColor = "Green"
+
+[node name="@Node2D@37616" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-28.372253, -514.06836)
+rotation = -0.24053478
+BuildingColor = "Green"
+
+[node name="@Node2D@37617" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(394.31683, 1090.1436)
+rotation = -3.5067937
+BuildingColor = "Blue"
+
+[node name="@Node2D@37618" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(657.2397, 1064.3141)
+rotation = 1.3258158
+BuildingColor = "Blue"
+
+[node name="@Node2D@37619" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(54.33815, 848.6091)
+rotation = -0.21535802
+BuildingColor = "Blue"
+
+[node name="@Node2D@37620" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-151.02016, 431.91238)
+rotation = 1.4821404
+BuildingColor = "Blue"
+
+[node name="@Node2D@37621" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-171.58267, 36.439213)
+rotation = 1.422947
+BuildingColor = "Blue"
+
+[node name="@Node2D@37622" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(54.122314, 595.94446)
+rotation = -3.3981094
+BuildingColor = "Blue"
+
+[node name="@Node2D@37623" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0, 0.7490196, 1, 1)
+position = Vector2(-81.238525, 651.82733)
+rotation = -3.6260705
+BuildingColor = "Blue"
+
+[node name="@Node2D@37624" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(184.84732, 540.2335)
+rotation = -3.4772315
+
+[node name="@Node2D@37625" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(167.91309, 606.277)
+rotation = 1.3306254
+
+[node name="@Node2D@37626" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-117.359116, 730.9602)
+rotation = 1.3734013
+
+[node name="@Node2D@37627" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(222.84384, 1119.9828)
+rotation = -4.6499734
+
+[node name="@Node2D@37628" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(207.94174, 937.432)
+rotation = 1.2341226
+
+[node name="@Node2D@37629" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(562.5455, 887.2727)
+rotation = 1.0838963
+
+[node name="@Node2D@37630" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(884.7318, 697.10626)
+rotation = -1.9416869
+
+[node name="@Node2D@37631" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(707.1188, 643.7884)
+rotation = 1.1562887
+
+[node name="@Node2D@37632" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(821.86505, 600.75854)
+rotation = -1.9215256
+
+[node name="@Node2D@37633" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(179.21396, 204.97192)
+rotation = -0.43662703
+
+[node name="@Node2D@37634" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(238.61395, 185.17194)
+rotation = -0.4636476
+
+[node name="@Node2D@37635" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(294.71396, 158.77194)
+rotation = -0.5191462
+
+[node name="@Node2D@37636" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(344.72726, -5)
+rotation = -1.7942723
+
+[node name="@Node2D@37637" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(395.63635, -135.90909)
+rotation = 1.1978084
+
+[node name="@Node2D@37638" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(1342.3171, 288.0526)
+rotation = -3.419892
+
+[node name="@Node2D@37639" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(-209.47, -594.6734)
+rotation = -0.38831878
+
+[node name="@Node2D@37640" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.98039216, 0.92156863, 0.84313726, 1)
+position = Vector2(22.99057, -612.6339)
+rotation = 0.16514862
+
+[node name="@Node2D@37641" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-38.075226, -593.6471)
+rotation = -1.0603085
+BuildingColor = "Green"
+
+[node name="@Node2D@37642" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.13333334, 0.54509807, 0.13333334, 1)
+position = Vector2(-146.35158, -594.1603)
+rotation = 0.64704597
+BuildingColor = "Green"
+
+[node name="@Node2D@37643" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-1089.5708, 30.015427)
+rotation = -1.6539388
+BuildingColor = "Red"
+
+[node name="@Node2D@37644" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-1023.79333, -22.699905)
+rotation = 0.38328528
+BuildingColor = "Red"
+
+[node name="@Node2D@37645" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-988.33875, 14.154175)
+rotation = 0.75683486
+BuildingColor = "Red"
+
+[node name="@Node2D@37646" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-1060.1809, 79.465195)
+rotation = -2.2636766
+BuildingColor = "Red"
+
+[node name="@Node2D@37647" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-683.07434, 1142.2561)
+rotation = -3.395269
+BuildingColor = "Red"
+
+[node name="@Node2D@37648" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-781.4215, 1146.3884)
+rotation = -2.0677648
+BuildingColor = "Red"
+
+[node name="@Node2D@37649" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-1101.2561, 886.8843)
+rotation = -0.85773504
+BuildingColor = "Red"
+
+[node name="@Node2D@37650" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(-1105.3884, 953.8264)
+rotation = -2.0596478
+BuildingColor = "Red"
+
+[node name="@Node2D@37651" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(0.8039216, 0.36078432, 0.36078432, 1)
+position = Vector2(507.00003, -574)
+rotation = 1.289023
+BuildingColor = "Red"
+
+[node name="@Node2D@37652" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(398.31012, -559.99786)
+rotation = -1.4233595
+BuildingColor = "Yellow"
+
+[node name="@Node2D@37653" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(527.99994, -518)
+rotation = 1.4542102
+BuildingColor = "Yellow"
+
+[node name="@Node2D@37654" parent="Buildings" instance=ExtResource("8_yuoj6")]
+modulate = Color(1, 0.84313726, 0, 1)
+position = Vector2(434, -438)
+rotation = -2.1379685
+BuildingColor = "Yellow"
+
+[node name="Middletownbusgame" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(567, 283)
+texture = ExtResource("8_wyvd5")
+metadata/_edit_lock_ = true

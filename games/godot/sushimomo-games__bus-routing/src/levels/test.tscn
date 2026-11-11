@@ -1,0 +1,93 @@
+[gd_scene load_steps=8 format=3 uid="uid://duqrtbaco8d75"]
+
+[ext_resource type="Script" uid="uid://c1omwi6nrcts5" path="res://levels/Level.cs" id="1_8iv2f"]
+[ext_resource type="Script" uid="uid://dcew74obwshpi" path="res://Camera.cs" id="2_4kxre"]
+[ext_resource type="Shader" uid="uid://5v7q2g6jpyk8" path="res://shaders/shadow-shader.gdshader" id="4_6g8e2"]
+[ext_resource type="PackedScene" uid="uid://sqsjlmlyneb6" path="res://road/intersection/intersection-node.tscn" id="6_q4dte"]
+[ext_resource type="PackedScene" uid="uid://dc2wfu8lyap4i" path="res://ui/level-ui/level-ui.tscn" id="8_8iv2f"]
+[ext_resource type="Texture2D" uid="uid://c4tx6cege7xq5" path="res://assets/gradient.tres" id="9_cbuuc"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8iv2f"]
+shader = ExtResource("4_6g8e2")
+shader_parameter/color = Color(0.09099999, 0.26801676, 0.65, 0.15686275)
+shader_parameter/angle = 124.9650059358375
+shader_parameter/max_dist = 20.00000095
+shader_parameter/gradientTexture = ExtResource("9_cbuuc")
+
+[node name="TestLevel" type="Node2D"]
+script = ExtResource("1_8iv2f")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(426.86, 166)
+script = ExtResource("2_4kxre")
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="."]
+rotation = -4.1887903
+color = Color(1, 1, 1, 0.78431374)
+energy = 0.5
+
+[node name="RoadLines" type="Node2D" parent="."]
+modulate = Color(0.8342127, 0.83978754, 0.84536046, 1)
+self_modulate = Color(1, 1, 1, 0)
+
+[node name="Line2D" type="Line2D" parent="RoadLines"]
+points = PackedVector2Array(30, 66, 271, 61)
+width = 20.0
+default_color = Color(0.61200005, 0.6642, 0.72, 1)
+
+[node name="Line2D2" type="Line2D" parent="RoadLines"]
+points = PackedVector2Array(271, 61, 343, 194)
+width = 20.0
+default_color = Color(0.61200005, 0.6642, 0.72, 1)
+
+[node name="Line2D3" type="Line2D" parent="RoadLines"]
+points = PackedVector2Array(343, 194, 217, 283)
+width = 20.0
+default_color = Color(0.61200005, 0.6642, 0.72, 1)
+
+[node name="Line2D4" type="Line2D" parent="RoadLines"]
+points = PackedVector2Array(217, 283, 204, 160)
+width = 20.0
+default_color = Color(0.61200005, 0.6642, 0.72, 1)
+
+[node name="Line2D5" type="Line2D" parent="RoadLines"]
+points = PackedVector2Array(217, 283, 66, 500)
+width = 20.0
+default_color = Color(0.61200005, 0.6642, 0.72, 1)
+
+[node name="IntersectionNodes" type="Node" parent="."]
+
+[node name="IntersectionNode1" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(30, 66)
+Neighbors = [NodePath("../IntersectionNode2")]
+
+[node name="IntersectionNode2" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(271, 61)
+Neighbors = [NodePath("../IntersectionNode1"), NodePath("../IntersectionNode5")]
+
+[node name="IntersectionNode3" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(204, 160)
+Neighbors = [NodePath("../IntersectionNode4")]
+
+[node name="IntersectionNode4" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(217, 283)
+Neighbors = [NodePath("../IntersectionNode3"), NodePath("../IntersectionNode5"), NodePath("../IntersectionNode6")]
+
+[node name="IntersectionNode5" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(343, 194)
+Neighbors = [NodePath("../IntersectionNode2"), NodePath("../IntersectionNode4")]
+
+[node name="IntersectionNode6" parent="IntersectionNodes" node_paths=PackedStringArray("Neighbors") instance=ExtResource("6_q4dte")]
+position = Vector2(66, 500)
+Neighbors = [NodePath("../IntersectionNode4")]
+
+[node name="BuildingShadows" type="Polygon2D" parent="."]
+editor_description = "Shader: https://github.com/jess-hammer/2d-shadows-demo-godot"
+material = SubResource("ShaderMaterial_8iv2f")
+polygon = PackedVector2Array(-9, -32, 653, 58, 750, 424, -24, 410)
+metadata/_edit_lock_ = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="LevelUI" parent="CanvasLayer" instance=ExtResource("8_8iv2f")]
+metadata/_edit_lock_ = true

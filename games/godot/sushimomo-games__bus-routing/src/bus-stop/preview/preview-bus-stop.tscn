@@ -1,0 +1,38 @@
+[gd_scene load_steps=6 format=3 uid="uid://c5dqou2q7scf7"]
+
+[ext_resource type="Script" uid="uid://htt2571rjh6r" path="res://bus-stop/preview/PreviewBusStop.cs" id="1_p0ic7"]
+[ext_resource type="Texture2D" uid="uid://uhvh86snav6" path="res://assets/bus-stop.svg" id="2_p0ic7"]
+[ext_resource type="PackedScene" uid="uid://jxdx0w5h5cxi" path="res://bus-stop/walk_radius.tscn" id="3_p0ic7"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_63k7h"]
+radius = 7.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_p0ic7"]
+
+[node name="PreviewBusStop" type="Node2D"]
+editor_description = "This node is for the player to see where a potential bus stop is going to go."
+z_index = 1
+script = ExtResource("1_p0ic7")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.5, 0.5)
+texture = ExtResource("2_p0ic7")
+
+[node name="RoadDetector" type="Area2D" parent="."]
+editor_description = "This area is responsible for validating the placement of a bus stop on a road. A bus stop placement is valid if the road's area is overlapping with this area, guaranteeing the bus stop is in contact with the road surface.
+
+This node is getting indexed in BusStopPlacement.cs (currently index 1). The index must be changed in the script if reordered in the editor."
+collision_layer = 2
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RoadDetector"]
+shape = SubResource("CircleShape2D_63k7h")
+
+[node name="WalkRadius" parent="." instance=ExtResource("3_p0ic7")]
+collision_mask = 32
+
+[node name="IntersectionDetector" type="Area2D" parent="."]
+collision_layer = 16
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="IntersectionDetector"]
+shape = SubResource("CircleShape2D_p0ic7")

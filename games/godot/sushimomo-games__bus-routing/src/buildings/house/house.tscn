@@ -1,0 +1,78 @@
+[gd_scene load_steps=12 format=3 uid="uid://cwiepcsny2a7m"]
+
+[ext_resource type="Script" uid="uid://byktl3yiod0js" path="res://buildings/house/House.cs" id="1_05tlr"]
+[ext_resource type="Shader" uid="uid://bkiw64o711wls" path="res://shaders/outline.gdshader" id="2_4q48n"]
+[ext_resource type="Texture2D" uid="uid://cqawfm0pi26ew" path="res://assets/house.png" id="2_nxes2"]
+[ext_resource type="PackedScene" uid="uid://d3qg57hamhtvr" path="res://bus-stop/detector/bus-stop-detector.tscn" id="3_t6m4b"]
+[ext_resource type="Texture2D" uid="uid://dj2f0o0u1jk17" path="res://assets/normal-maps/house-nm.png" id="4_gypbq"]
+[ext_resource type="Texture2D" uid="uid://b00hifirxyl02" path="res://assets/check.svg" id="4_nxes2"]
+[ext_resource type="PackedScene" uid="uid://c2lauycuruhka" path="res://ui/info-popup/info-popup.tscn" id="6_4q48n"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4q48n"]
+shader = ExtResource("2_4q48n")
+shader_parameter/line_color = Color(0, 0, 0, 1)
+shader_parameter/line_thickness = 0.0
+shader_parameter/sprite_scale = Vector2(1, 1)
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_1cpkg"]
+diffuse_texture = ExtResource("2_nxes2")
+normal_texture = ExtResource("4_gypbq")
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_q8k63"]
+polygon = PackedVector2Array(-325, 180, 245, 180, 245, 98, 325, 98, 325, -98, 244, -98, 244, -180, -325, -180)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_4er1f"]
+size = Vector2(36, 56)
+
+[node name="House" type="Node2D"]
+editor_description = "Z-index of sprite must be on layer 1 in order for the map editor plugin to function properly."
+script = ExtResource("1_05tlr")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+editor_description = "Z-index must be on layer 1 in order for map editor plugin to function properly."
+visibility_layer = 512
+z_index = 1
+material = SubResource("ShaderMaterial_4q48n")
+position = Vector2(0, 5.6843405e-14)
+rotation = 1.5707964
+scale = Vector2(0.1, 0.1)
+texture = SubResource("CanvasTexture_1cpkg")
+region_rect = Rect2(0, 0, 650, 360)
+
+[node name="BusStopDetector" parent="." instance=ExtResource("3_t6m4b")]
+target_position = Vector2(0, 41)
+
+[node name="Check" type="Sprite2D" parent="."]
+visible = false
+position = Vector2(18, 17)
+texture = ExtResource("4_nxes2")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+position = Vector2(-1.1920929e-07, 0)
+rotation = 1.5707964
+scale = Vector2(0.1, 0.1)
+occluder = SubResource("OccluderPolygon2D_q8k63")
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 128
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(0, -4)
+shape = SubResource("RectangleShape2D_4er1f")
+
+[node name="InfoPopup" parent="." instance=ExtResource("6_4q48n")]
+visible = false
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 18.0
+offset_top = -33.0
+offset_right = 18.0
+offset_bottom = -33.0
+grow_horizontal = 1
+grow_vertical = 1
+
+[connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]
+[connection signal="input_event" from="Area2D" to="." method="_on_house_clicked"]

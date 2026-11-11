@@ -1,0 +1,76 @@
+
+[gd_scene load_steps=3 format=3 uid="uid://jofckxx88jrf"]
+
+[ext_resource type="Script" uid="uid://c8a3fyhw73emf" path="res://ui/settings-menu/SettingsMenu.cs" id="1_settings"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_settings"]
+bg_color = Color(0.5689727, 0.56897277, 0.56897265, 1)
+
+[node name="SettingsMenu" type="PanelContainer"]
+process_mode = 3
+custom_minimum_size = Vector2(300, 300)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -150.0
+offset_right = 150.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_settings")
+script = ExtResource("1_settings")
+
+[node name="SettingsVBox" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="SettingsTitle" type="Label" parent="SettingsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 31
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="VolumeContainer" type="VBoxContainer" parent="SettingsVBox"]
+layout_mode = 2
+
+[node name="VolumeLabel" type="Label" parent="SettingsVBox/VolumeContainer"]
+layout_mode = 2
+text = "Volume Adjustment"
+horizontal_alignment = 1
+
+[node name="VolumeSlider" type="HSlider" parent="SettingsVBox/VolumeContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+value = 50.0
+
+[node name="SaveButton" type="Button" parent="SettingsVBox"]
+custom_minimum_size = Vector2(50, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Save"
+
+[node name="ResetButton" type="Button" parent="SettingsVBox"]
+custom_minimum_size = Vector2(60, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Reset"
+autowrap_mode = 3
+autowrap_trim_flags = 0
+
+[node name="CloseMenuButton" type="Button" parent="SettingsVBox"]
+custom_minimum_size = Vector2(50, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Close Menu"
+
+[node name="ExitGameButton" type="Button" parent="SettingsVBox"]
+custom_minimum_size = Vector2(50, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Exit Game"

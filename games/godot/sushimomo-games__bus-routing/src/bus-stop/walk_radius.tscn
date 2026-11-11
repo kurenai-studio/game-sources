@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3 uid="uid://jxdx0w5h5cxi"]
+
+[ext_resource type="Texture2D" uid="uid://ckneaxqxvrrsq" path="res://assets/circle.png" id="1_cn68u"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bhde8"]
+radius = 108.0
+
+[node name="WalkRadius" type="Area2D"]
+editor_description = "This area determines whether or not people will want to walk to a bus stop instance. "
+collision_layer = 2
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_bhde8")
+
+[node name="WalkRadiusSprite" type="Sprite2D" parent="."]
+modulate = Color(0.35686275, 1, 1, 0.3529412)
+scale = Vector2(1.6725259, 1.6725259)
+texture = ExtResource("1_cn68u")
