@@ -1,0 +1,2203 @@
+extends Control
+class_name SettingsMenu
+const Kit := preload("res://scripts/ui/components/menu_screen_kit.gd")
+## SettingsMenu - responsive clubhouse settings workspace.
+##
+## Preferences are grouped into Display, Controls and Audio, and Data holds the
+## buttons that delete what this device keeps (see PlayerDataStore). Like the
+## Main Menu and the other fullscreen screens, it sits on the shared
+## MenuBackdrop artwork.
+##
+## The page is the shared screen header over the page's own settings card and
+## nothing else: it has no bottom row and no category rail or strip. The four
+## categories are Display, Controls, Audio and Data buttons in the header's top
+## right corner, laid out the way the Course Map's mode buttons are - one tap to
+## another page wherever the screen is opened - and Display is the page the
+## screen starts on, being the first button in that row. Every control keeps
+## its original live behavior and saves changes to user://settings.cfg.
+##
+## Every change applies and saves as it is made, so there is nothing to confirm
+## on the way out - the header's Back button, Esc and the controller's B all
+## close the screen (see _on_close and _input).
+
+signal close_requested
+## The Display category's benchmark card asks Main to open the fullscreen
+## Benchmark Results screen over the settings menu: the last run's report
+## and the shelf of past runs behind it.
+signal results_requested
+## ...or to close the menus and run the course benchmark tour - the game's
+## only benchmark - which prepares its own throwaway course (Main owns the
+## tour runner). Only emitted when this menu was opened from the Main Menu -
+## benchmarks run from the title screen only, never over a game in
+## progress.
+signal tour_requested(suite_id: String)
+## The Data page deleted something. The host can refresh whatever it built from
+## those files - the title screen's Continue card reads the save list, for one.
+signal data_deleted(groups: Array[String])
+## Deleting the saved courses during a pause session leaves the running course
+## with nowhere to autosave, so the host closes the course and goes back to the
+## title screen once the deletion is done.
+signal quit_to_menu_requested()
+
+## Where this menu was opened from. Main sets it before adding the menu:
+## MAIN_MENU from the title screen, PAUSE_MENU from an in-game pause
+## session. It decides whether the benchmarks may run (see
+## benchmarks_allowed): measuring is a title-screen job, so a paused game
+## is never borrowed, paused mid-frame, as the test scene.
+enum Origin { MAIN_MENU, PAUSE_MENU }
+
+## The four settings pages, in the order their header buttons read: Display
+## first, then Controls, Audio and Data. Display is the page the screen opens
+## on - it holds the things a player most often comes here to change (window,
+## UI scale, the menu background, the graphics preset and the benchmark) - and
+## Data, the page that deletes things, is kept at the end of the row.
+##
+## The numbers are the button order, not the order the text tables below are
+## written in, so those tables are keyed by this enum rather than indexed.
+enum Category { DISPLAY, CONTROLS, AUDIO, DATA }
+
+const DESKTOP_MIN_WIDTH := MenuScreenKit.DESKTOP_MIN_WIDTH
+const DESKTOP_MIN_HEIGHT := MenuScreenKit.DESKTOP_MIN_HEIGHT
+const TABLET_MIN_WIDTH := MenuScreenKit.TABLET_MIN_WIDTH
+const TABLET_MIN_HEIGHT := MenuScreenKit.TABLET_MIN_HEIGHT
+
+const COLOR_SURFACE := MenuStyle.SHEET_BG
+const COLOR_RAISED := MenuStyle.RAIL_BG
+const COLOR_INSET := MenuStyle.INSET_BG
+const COLOR_BORDER := UIConstants.COLOR_BORDER
+const COLOR_TEXT := MenuStyle.TITLE_COLOR
+const COLOR_MUTED := UIConstants.COLOR_TEXT_DIM
+const COLOR_QUIET := UIConstants.COLOR_TEXT_MUTED
+const COLOR_GOLD := MenuStyle.ACCENT_PRIMARY
+const COLOR_MINT := MenuStyle.ACCENT_SECONDARY
+
+## Set by Main when opened from a pause session so the course camera can still
+## be moved from the dimmed backdrop.
+var camera: IsometricCamera = null
+
+## Set by Main before the menu is added (see Origin). The default treats a
+## host that does not say - a test harness adding the menu directly - as
+## the title screen; Main always sets it in the game.
+var origin: int = Origin.MAIN_MENU
+
+## Why the run button stands down away from the Main Menu, worded once for
+## the card, the tooltip and the refused-run message.
+const BENCHMARK_GATE_TEXT := "Benchmarks run from the Main Menu - open Settings there to measure this device. Nothing here touches the game in progress."
+
+## What the one benchmark does, for the card that offers it.
+const BENCHMARK_TOUR_TEXT := "Prepare a throwaway course, then build and play every fixed test course on it - preparing each one, course types, hole counts, terrain, buildings, golfers, camera moves, editing and game speeds - and measure each part. About 95 seconds; Esc cancels it."
+## What the card says once a run has landed on the shelf.
+const BENCHMARK_DONE_TEXT := "Complete. Open Past Results for the full report and the runs behind it; reports stay on this machine."
+## What the card says with an empty shelf. Named so the Data page can put the
+## card back on these lines after deleting the reports.
+const BENCHMARK_READY_TEXT := "Ready. The tour prepares its own course and builds every test course on screen - about 95 seconds. Esc cancels it."
+const BENCHMARK_EMPTY_SUMMARY_TEXT := "No results yet. Every run builds the same fixed test courses - every course type, hole count and game speed - so runs compare on any device."
+const BENCHMARK_EMPTY_DETAILS_TEXT := "The tour prepares a throwaway course from here and takes it down afterwards; no game is opened or written. Reports stay on this machine."
+
+## The course tour - the game's only benchmark - runs only when this menu
+## was accessed from the Main Menu screen. Reading the last run and the
+## past results is not running one, and stays available wherever Settings
+## was opened from.
+func benchmarks_allowed() -> bool:
+	return origin == Origin.MAIN_MENU
+
+## The page the screen opens on: Display, the first button in the header row
+## and the page a player most often comes here for. _select_category moves it.
+var _category: int = Category.DISPLAY
+var _layout_mode: int = Kit.LayoutMode.PHONE_PORTRAIT
+var _built_size := Vector2.ZERO
+var _panel: Control
+var _benchmark_run_button: Button
+var _benchmark_status_label: Label
+var _benchmark_summary_label: Label
+var _benchmark_details_label: Label
+var _benchmark_results_button: Button
+var _benchmark_stars_row: BenchmarkVisuals.StarRow
+var _benchmark_score_meter: BenchmarkVisuals.SegmentMeter
+var _benchmark_stars: int = 0
+var _benchmark_score: float = 0.0
+var _benchmark_status_text: String = BENCHMARK_READY_TEXT
+var _benchmark_summary_text: String = BENCHMARK_EMPTY_SUMMARY_TEXT
+var _benchmark_details_text: String = BENCHMARK_EMPTY_DETAILS_TEXT
+## Camera zoom limit controls (Controls → Camera). Rebuilt with the page so
+## references are cleared each build.
+var _min_zoom_slider: HSlider = null
+var _max_zoom_slider: HSlider = null
+var _min_zoom_value_label: Label = null
+var _max_zoom_value_label: Label = null
+var _minimap_toggle: CheckButton = null
+var _edge_pan_toggle: CheckButton = null
+## The UI scale card: automatic (follow the device) or a pinned manual size.
+## Cleared with every rebuild and kept in step by Screen.ui_scale_changed.
+var _ui_scale_slider: HSlider = null
+var _ui_scale_auto_toggle: CheckButton = null
+var _ui_scale_value_label: Label = null
+var _ui_scale_hint: Label = null
+## While the player is moving the scale slider the page would otherwise
+## rebuild on every step (the logical window changes), re-creating the slider
+## under their pointer. Hold the rebuild until they stop.
+var _ui_scale_hold_until_msec: int = 0
+var _ui_scale_rebuild_pending: bool = false
+## Live controls for each independent part of the graphics configuration.
+var _graphics_preset_options: OptionButton = null
+var _graphics_setting_options: Dictionary = {}
+## The Background card on Display: the picture and overlay pickers, their
+## Auto rows and the per-overlay settings (the stripe angle, the sparkle
+## density). Rebuilt with the page; the handlers refresh in place so a choice
+## does not throw the player's scroll position away.
+var _background_options: OptionButton = null
+var _overlay_options: OptionButton = null
+var _background_auto_toggle: CheckButton = null
+var _overlay_auto_toggle: CheckButton = null
+var _background_auto_hint: Label = null
+var _overlay_setting_rows: VBoxContainer = null
+var _background_preview: MenuBackdrop = null
+## The Controls page's editable keycaps and their reset buttons, keyed by
+## InputBindings action. They are rebuilt with the page; the signal handlers
+## refresh their captions in place instead of rebuilding the page, so focus
+## and scroll position survive a rebind.
+var _binding_buttons: Dictionary = {}
+var _binding_reset_buttons: Dictionary = {}
+var _controls_status_label: Label = null
+var _reset_all_controls_button: Button = null
+## The action whose row is listening for the next key, or "" when none is.
+var _capturing_action: String = ""
+var _controls_status_text: String = "Click a binding, then press a key or controller button. Esc cancels; Backspace unbinds."
+
+## The Data page. Its status line survives a rebuild (a resize, or the rebuild
+## that follows a deletion) so the player still reads what just happened.
+var _data_status_text: String = "Choose what to delete. This cannot be undone."
+## The confirm card standing over the page while a deletion waits for its
+## second press, or null when nothing is being confirmed.
+var _data_confirmation: Control = null
+
+func _ready() -> void:
+	name = "SettingsMenu"
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	# Only needed while a UI scale change is settling (see _hold_ui_scale_rebuild).
+	set_process(false)
+	_adopt_last_benchmark()
+	if not benchmarks_allowed():
+		_benchmark_status_text = BENCHMARK_GATE_TEXT
+	if has_node("/root/Screen") and not Screen.changed.is_connected(_on_screen_changed):
+		Screen.changed.connect(_on_screen_changed)
+	if has_node("/root/Screen") and not Screen.ui_scale_changed.is_connected(_on_ui_scale_changed):
+		Screen.ui_scale_changed.connect(_on_ui_scale_changed)
+	_build()
+
+	if has_node("/root/InputManager"):
+		InputManager.register_scope(self)
+	if not InputBindings.bindings_changed.is_connected(_on_binding_changed):
+		InputBindings.bindings_changed.connect(_on_binding_changed)
+	if not InputBindings.bindings_reset.is_connected(_on_bindings_reset):
+		InputBindings.bindings_reset.connect(_on_bindings_reset)
+	if EventBus.has_signal("minimap_enabled_changed") and not EventBus.minimap_enabled_changed.is_connected(_on_minimap_enabled_changed):
+		EventBus.minimap_enabled_changed.connect(_on_minimap_enabled_changed)
+	if EventBus.has_signal("edge_pan_enabled_changed") and not EventBus.edge_pan_enabled_changed.is_connected(_on_edge_pan_enabled_changed):
+		EventBus.edge_pan_enabled_changed.connect(_on_edge_pan_enabled_changed)
+
+func _exit_tree() -> void:
+	if has_node("/root/Screen") and Screen.changed.is_connected(_on_screen_changed):
+		Screen.changed.disconnect(_on_screen_changed)
+	if has_node("/root/Screen") and Screen.ui_scale_changed.is_connected(_on_ui_scale_changed):
+		Screen.ui_scale_changed.disconnect(_on_ui_scale_changed)
+	if InputBindings.bindings_changed.is_connected(_on_binding_changed):
+		InputBindings.bindings_changed.disconnect(_on_binding_changed)
+	if InputBindings.bindings_reset.is_connected(_on_bindings_reset):
+		InputBindings.bindings_reset.disconnect(_on_bindings_reset)
+	if EventBus.has_signal("minimap_enabled_changed") and EventBus.minimap_enabled_changed.is_connected(_on_minimap_enabled_changed):
+		EventBus.minimap_enabled_changed.disconnect(_on_minimap_enabled_changed)
+	if EventBus.has_signal("edge_pan_enabled_changed") and EventBus.edge_pan_enabled_changed.is_connected(_on_edge_pan_enabled_changed):
+		EventBus.edge_pan_enabled_changed.disconnect(_on_edge_pan_enabled_changed)
+
+## Pure responsive breakpoint decision, also used by the layout tests.
+static func layout_mode_for(view: Vector2) -> int:
+	return Kit.layout_mode_for(view)
+
+func _window_size() -> Vector2:
+	if has_node("/root/Screen"):
+		return Screen.window_size
+	return get_viewport().get_visible_rect().size
+
+func _on_screen_changed(window_size: Vector2, _world_scale: float) -> void:
+	# The UI scale control changes this very page's logical size. Rebuilding
+	# between steps would recreate the slider under the drag; wait until the
+	# player lets go, then re-flow once at the final size.
+	if Time.get_ticks_msec() < _ui_scale_hold_until_msec:
+		_ui_scale_rebuild_pending = true
+		return
+	var new_layout := layout_mode_for(window_size)
+	var remeasure := absf(window_size.x - _built_size.x) > maxf(128.0, _built_size.x * 0.16) \
+		or absf(window_size.y - _built_size.y) > maxf(112.0, _built_size.y * 0.16)
+	if new_layout != _layout_mode or remeasure:
+		_build()
+
+func _process(_delta: float) -> void:
+	if _ui_scale_rebuild_pending and Time.get_ticks_msec() >= _ui_scale_hold_until_msec:
+		_ui_scale_rebuild_pending = false
+		set_process(false)
+		_on_screen_changed(_window_size(), Screen.world_scale)
+
+func _build() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	for child in get_children():
+		remove_child(child)
+		child.queue_free()
+	_panel = null
+	_benchmark_run_button = null
+	_benchmark_status_label = null
+	_benchmark_summary_label = null
+	_benchmark_details_label = null
+	_benchmark_results_button = null
+	_benchmark_stars_row = null
+	_benchmark_score_meter = null
+	_binding_buttons.clear()
+	_binding_reset_buttons.clear()
+	_controls_status_label = null
+	_reset_all_controls_button = null
+	_capturing_action = ""
+	_min_zoom_slider = null
+	_max_zoom_slider = null
+	_min_zoom_value_label = null
+	_max_zoom_value_label = null
+	_minimap_toggle = null
+	_edge_pan_toggle = null
+	_ui_scale_slider = null
+	_ui_scale_auto_toggle = null
+	_ui_scale_value_label = null
+	_ui_scale_hint = null
+	_ui_scale_rebuild_pending = false
+	set_process(false)
+	_graphics_preset_options = null
+	_graphics_setting_options.clear()
+	_background_options = null
+	_overlay_options = null
+	_background_auto_toggle = null
+	_overlay_auto_toggle = null
+	_background_auto_hint = null
+	_overlay_setting_rows = null
+	_background_preview = null
+	_data_confirmation = null
+	_layout_mode = layout_mode_for(_window_size())
+	_built_size = _window_size()
+
+	var backdrop := MenuBackdrop.new()
+	backdrop.name = "Backdrop"
+	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(backdrop)
+
+	var frame := MarginContainer.new()
+	frame.name = "SettingsFrame"
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var padding := _outer_padding(_layout_mode, _built_size)
+	_set_margins(frame, padding)
+	add_child(frame)
+
+	var page := VBoxContainer.new()
+	page.name = "SettingsPage"
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_theme_constant_override("separation", _page_gap(_layout_mode))
+	frame.add_child(page)
+	# The header over the workspace, and no row under them: the workspace runs
+	# down to the window's bottom margin, and the header's Back button closes.
+	page.add_child(_build_header(_layout_mode))
+	page.add_child(_build_workspace(_layout_mode, _built_size))
+
+func _outer_padding(mode: int, view: Vector2) -> int:
+	match mode:
+		Kit.LayoutMode.DESKTOP:
+			return int(clampf(minf(view.x, view.y) * 0.025, 20.0, 36.0))
+		Kit.LayoutMode.TABLET_LANDSCAPE:
+			return int(clampf(minf(view.x, view.y) * 0.022, 14.0, 26.0))
+		Kit.LayoutMode.PHONE_LANDSCAPE:
+			return 8
+		_:
+			return int(clampf(view.x * 0.030, 9.0, 16.0))
+
+func _page_gap(mode: int) -> int:
+	match mode:
+		Kit.LayoutMode.DESKTOP: return 13
+		Kit.LayoutMode.TABLET_LANDSCAPE: return 10
+		Kit.LayoutMode.PHONE_LANDSCAPE: return 7
+		_: return 8
+
+func _build_header(mode: int) -> Control:
+	# The four categories are the header's trailing controls, in the top right
+	# corner exactly as the Course Map puts its mode buttons there: one tap
+	# swaps the page under the header, whatever shape the window is.
+	var group := HBoxContainer.new()
+	group.name = "HeaderActions"
+	group.add_theme_constant_override("separation", 8 if not Kit.is_phone(mode) else 5)
+	group.size_flags_horizontal = Control.SIZE_SHRINK_END
+	if mode == Kit.LayoutMode.DESKTOP or Kit.is_tablet(mode):
+		# Changes save as they are made (see the class comment); the stamp sits
+		# beside the page buttons, as the Course Map's cash block does.
+		var saved := Kit.make_chip("SAVED AUTOMATICALLY", COLOR_GOLD, COLOR_GOLD, 10)
+		saved.custom_minimum_size = Vector2(0.0, 26.0)
+		saved.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		group.add_child(saved)
+	group.add_child(_build_category_tabs(mode))
+	var header := Kit.make_screen_header(mode, "Settings", _on_close, group, PixelIcon.Kind.GEAR)
+	if _uses_compact_tabs(mode):
+		# A small phone cannot carry the four page buttons and the screen mark
+		# in one row, and the buttons are what the header is for.
+		var mark := header.get_node_or_null("ScreenIcon")
+		if mark != null:
+			header.remove_child(mark)
+			mark.queue_free()
+	return header
+
+func _build_workspace(mode: int, view: Vector2) -> Control:
+	# With the categories in the header, the workspace is the settings card
+	# itself: it runs from under the header down to the window's bottom margin,
+	# with no rail or strip beside it.
+	var content := _build_category_content(mode, view)
+	content.name = "SettingsWorkspace"
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	return content
+
+## The page buttons' row. The four labels are the categories themselves, so the
+## row reads the way the Course Map's tabs do - one word per page.
+func _build_category_tabs(mode: int) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.name = "CategoryTabs"
+	row.add_theme_constant_override("separation",
+		4 if _uses_compact_tabs(mode) else (5 if Kit.is_phone(mode) else 6))
+	var group := ButtonGroup.new()
+	for category in Category.values():
+		row.add_child(_build_category_button(category, mode, group))
+	return row
+
+## A small portrait phone has the least room for the row, so it drops a font
+## step, tightens the frame padding and stands the screen mark down (see
+## _build_header). Everything else keeps the Course Map's tab sizing.
+func _uses_compact_tabs(mode: int) -> bool:
+	return mode == Kit.LayoutMode.PHONE_PORTRAIT and _window_size().x < 420.0
+
+func _build_category_button(category: int, mode: int, group: ButtonGroup) -> Button:
+	var compact := _uses_compact_tabs(mode)
+	var font_size := 10 if compact else (11 if Kit.is_phone(mode) else (12 if Kit.is_tablet(mode) else 13))
+	var button := CourseMapStyle.choice(_category_name(category), font_size)
+	button.name = "Category_%s" % _category_key(category)
+	button.tooltip_text = _category_description(category)
+	button.button_group = group
+	button.button_pressed = category == _category
+	button.custom_minimum_size.y = 38.0
+	CourseMapStyle.pad(button, 5 if compact else (8 if Kit.is_phone(mode) else 11), 0)
+	button.add_theme_color_override("font_hover_pressed_color", COLOR_GOLD)
+	button.pressed.connect(_select_category.bind(category))
+	return button
+
+func _build_category_content(mode: int, view: Vector2) -> PanelContainer:
+	var panel := Kit.make_panel(COLOR_SURFACE, MenuStyle.with_alpha(COLOR_BORDER, 0.44))
+	panel.name = "CategoryContent"
+	_panel = panel
+	var margin := MarginContainer.new()
+	var pad := 17 if mode == Kit.LayoutMode.DESKTOP else (13 if Kit.is_tablet(mode) else 10)
+	_set_margins(margin, pad)
+	panel.add_child(margin)
+	var page := VBoxContainer.new()
+	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_theme_constant_override("separation", 8 if mode == Kit.LayoutMode.PHONE_LANDSCAPE else 11)
+	margin.add_child(page)
+
+	var category_header := VBoxContainer.new()
+	category_header.add_theme_constant_override("separation", 2)
+	category_header.add_child(Kit.make_label("SETTINGS  /  %s" % _category_name(_category).to_upper(), 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_GOLD))
+	var title := Kit.make_label(_category_title(_category), 18 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 22, COLOR_TEXT)
+	title.name = "CategoryTitle"
+	category_header.add_child(title)
+	var description := Kit.make_label(_category_description(_category), 10 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 12, COLOR_MUTED)
+	description.name = "CategoryDescription"
+	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	category_header.add_child(description)
+	page.add_child(category_header)
+
+	var scroll := ScrollContainer.new()
+	scroll.name = "SettingsContentScroll"
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.follow_focus = true
+	scroll.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	page.add_child(scroll)
+	var grid := GridContainer.new()
+	grid.name = "SettingsCardGrid"
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.add_theme_constant_override("h_separation", 10 if mode == Kit.LayoutMode.DESKTOP else 8)
+	grid.add_theme_constant_override("v_separation", 10 if mode == Kit.LayoutMode.DESKTOP else 8)
+	grid.columns = 2 if _use_two_columns(mode, view) else 1
+	scroll.add_child(grid)
+	for card in _build_category_cards(mode):
+		card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		grid.add_child(card)
+	return panel
+
+func _use_two_columns(mode: int, view: Vector2) -> bool:
+	return mode == Kit.LayoutMode.DESKTOP or (Kit.is_tablet(mode) and view.x > view.y)
+
+func _build_category_cards(mode: int) -> Array[Control]:
+	match _category:
+		Category.AUDIO: return _build_audio_cards(mode)
+		Category.DISPLAY: return _build_display_cards(mode)
+		Category.CONTROLS: return _build_controls_cards(mode)
+		Category.DATA: return _build_data_cards(mode)
+	return []
+
+func _build_audio_cards(mode: int) -> Array[Control]:
+	var cards: Array[Control] = []
+	var mixer := _make_group("SOUND MIXER", "Set the balance for your clubhouse atmosphere.", mode)
+	var mixer_body: VBoxContainer = mixer["body"]
+	_add_volume_control(mixer_body, "Master Volume", "Overall output level", SoundManager.master_volume,
+		_set_master_volume, mode)
+	mixer_body.add_child(_make_separator())
+	_add_volume_control(mixer_body, "Effects", "Clubhouse and course sounds", SoundManager.sfx_volume,
+		_set_sfx_volume, mode)
+	mixer_body.add_child(_make_separator())
+	_add_volume_control(mixer_body, "Ambience", "Wind, rain and birdsong", SoundManager.ambient_volume,
+		_set_ambient_volume, mode)
+	cards.append(mixer["panel"])
+
+	var output := _make_group("CLUBHOUSE AUDIO", "Mute is useful for a quiet round; your level settings are kept for next time.", mode)
+	var output_body: VBoxContainer = output["body"]
+	_add_toggle_row(output_body, "Mute all audio", "Silence effects and course ambience.",
+		SoundManager.is_muted, _set_muted, mode)
+	var badge := Kit.make_chip("MUTED" if SoundManager.is_muted else "SOUND ON", COLOR_GOLD, COLOR_GOLD, 9)
+	badge.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	output_body.add_child(badge)
+	cards.append(output["panel"])
+	return cards
+
+func _build_display_cards(mode: int) -> Array[Control]:
+	var cards: Array[Control] = []
+	var window := _make_group("WINDOW", "Choose how Golf Tycoon fills your screen.", mode)
+	var window_body: VBoxContainer = window["body"]
+	var mode_label := Kit.make_label("Window mode", 12, COLOR_TEXT)
+	window_body.add_child(mode_label)
+	var mode_options := OptionButton.new()
+	mode_options.name = "WindowMode"
+	mode_options.add_item("Windowed", 0)
+	mode_options.add_item("Borderless Fullscreen", 1)
+	mode_options.add_item("Fullscreen", 2)
+	mode_options.custom_minimum_size.y = 42
+	mode_options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mode_options.add_theme_font_size_override("font_size", 12)
+	var current_mode := DisplayServer.window_get_mode()
+	if current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN or current_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+		mode_options.select(2)
+	elif DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS):
+		mode_options.select(1)
+	else:
+		mode_options.select(0)
+	mode_options.item_selected.connect(_on_window_mode_selected)
+	window_body.add_child(mode_options)
+	cards.append(window["panel"])
+	# The background sits next to the window controls: both are about what the
+	# screen looks like, and it is the first thing a new player wants to try.
+	cards.append(_build_background_card(mode))
+	# Keep the counter near the top of Display, ahead of the longer quality
+	# controls, so it is easy to find on a phone as well as on desktop.
+	cards.append(_build_fps_counter_card(mode))
+
+	var performance := _make_group("PERFORMANCE & SCALE",
+		"Tune each course-rendering budget independently, or apply a preset. The UI size follows this display unless you set it yourself.", mode)
+	var performance_body: VBoxContainer = performance["body"]
+	_add_toggle_row(performance_body, "VSync", "Match the display refresh to reduce tearing.",
+		DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED, _set_vsync, mode)
+	performance_body.add_child(_make_separator())
+	performance_body.add_child(Kit.make_label("Graphics quality preset", 12, COLOR_TEXT))
+	_graphics_preset_options = OptionButton.new()
+	_graphics_preset_options.name = "GraphicsPreset"
+	_graphics_preset_options.custom_minimum_size.y = 42
+	_graphics_preset_options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_graphics_preset_options.add_theme_font_size_override("font_size", 12)
+	for preset in range(PerformanceSettings.PRESET_LABELS.size()):
+		_graphics_preset_options.add_item(PerformanceSettings.preset_label(preset), preset)
+	_graphics_preset_options.set_item_disabled(
+		_graphics_preset_options.get_item_index(PerformanceSettings.GraphicsPreset.CUSTOM), true)
+	_graphics_preset_options.select(PerformanceSettings.graphics_preset)
+	_graphics_preset_options.item_selected.connect(func(index: int):
+		PerformanceSettings.set_graphics_preset(_graphics_preset_options.get_item_id(index))
+		_sync_graphics_controls()
+		_save_display_settings())
+	performance_body.add_child(_graphics_preset_options)
+	var graphics_hint := Kit.make_label(
+		"A preset sets every option below. Change any one option for a Custom setup. Auto chooses Performance on phones, Web and lower-core devices.",
+		10, COLOR_MUTED)
+	graphics_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	performance_body.add_child(graphics_hint)
+	performance_body.add_child(_make_separator())
+	_add_graphics_setting(performance_body, "Terrain rendering", "TerrainQuality",
+		PerformanceSettings.GraphicsSetting.TERRAIN_QUALITY, [
+			{"label": "Fast", "value": PerformanceSettings.TerrainQuality.FAST},
+			{"label": "Full", "value": PerformanceSettings.TerrainQuality.FULL},
+		])
+	_add_graphics_setting(performance_body, "Grass blades", "GrassQuality",
+		PerformanceSettings.GraphicsSetting.GRASS_QUALITY, [
+			{"label": "Off", "value": PerformanceSettings.GrassQuality.OFF},
+			{"label": "Full", "value": PerformanceSettings.GrassQuality.FULL},
+		])
+	_add_graphics_setting(performance_body, "Terrain-aware tree occlusion", "TreeOcclusion",
+		PerformanceSettings.GraphicsSetting.TREE_OCCLUSION, [
+			{"label": "Off", "value": 0}, {"label": "On", "value": 1},
+		])
+	_add_graphics_setting(performance_body, "Water shimmer detail", "WaterQuality",
+		PerformanceSettings.GraphicsSetting.WATER_QUALITY, [
+			{"label": "Reduced", "value": PerformanceSettings.WaterQuality.REDUCED},
+			{"label": "Full", "value": PerformanceSettings.WaterQuality.FULL},
+		])
+	_add_graphics_setting(performance_body, "Wind flag outlines", "WindFlagQuality",
+		PerformanceSettings.GraphicsSetting.WIND_FLAG_QUALITY, [
+			{"label": "Reduced", "value": PerformanceSettings.WindFlagQuality.REDUCED},
+			{"label": "Full", "value": PerformanceSettings.WindFlagQuality.FULL},
+		])
+	performance_body.add_child(_make_separator())
+	var detail_hint := Kit.make_label(
+		"Decoration costs draw calls, not simulation: trimming it speeds a busy course up without changing how it plays.",
+		10, COLOR_MUTED)
+	detail_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	performance_body.add_child(detail_hint)
+	_add_graphics_setting(performance_body, "Prop & ball shadows", "ShadowDetail",
+		PerformanceSettings.GraphicsSetting.SHADOW_DETAIL, [
+			{"label": "Off", "value": PerformanceSettings.ShadowDetail.OFF},
+			{"label": "Contact only", "value": PerformanceSettings.ShadowDetail.CONTACT_ONLY},
+			{"label": "Full", "value": PerformanceSettings.ShadowDetail.FULL},
+		])
+	_add_graphics_setting(performance_body, "Course wildlife", "WildlifeDetail",
+		PerformanceSettings.GraphicsSetting.WILDLIFE_DETAIL, [
+			{"label": "Off", "value": PerformanceSettings.WildlifeDetail.OFF},
+			{"label": "Reduced", "value": PerformanceSettings.WildlifeDetail.REDUCED},
+			{"label": "Full", "value": PerformanceSettings.WildlifeDetail.FULL},
+		])
+	_add_graphics_setting(performance_body, "Impact particle effects", "EffectDetail",
+		PerformanceSettings.GraphicsSetting.EFFECT_DETAIL, [
+			{"label": "Off", "value": PerformanceSettings.EffectDetail.OFF},
+			{"label": "Reduced", "value": PerformanceSettings.EffectDetail.REDUCED},
+			{"label": "Full", "value": PerformanceSettings.EffectDetail.FULL},
+		])
+	_add_graphics_setting(performance_body, "Decorative animation rate", "AnimationRate",
+		PerformanceSettings.GraphicsSetting.ANIMATION_RATE, _animation_rate_options())
+	_add_graphics_setting(performance_body, "Camera redraw rate", "CameraUpdateRate",
+		PerformanceSettings.GraphicsSetting.CAMERA_UPDATE_RATE, _update_rate_options())
+	_add_graphics_setting(performance_body, "Golfer coordination rate", "GolferUpdateRate",
+		PerformanceSettings.GraphicsSetting.GOLFER_UPDATE_RATE, _update_rate_options())
+	performance_body.add_child(_make_separator())
+	_add_ui_scale_control(performance_body, mode)
+	cards.append(performance["panel"])
+
+	var hud := _make_group("COURSE HUD", "Choose which overlays stay on the course screen.", mode)
+	var hud_body: VBoxContainer = hud["body"]
+	_minimap_toggle = _add_toggle_row(hud_body, "Minimap",
+		"Show the course overview map in the bottom-left corner.",
+		GameManager.minimap_enabled, _set_minimap_enabled, mode)
+	cards.append(hud["panel"])
+
+	var accessibility := _make_group("ACCESSIBILITY", "Alternative course colours for colour-vision needs.", mode)
+	var accessibility_body: VBoxContainer = accessibility["body"]
+	accessibility_body.add_child(Kit.make_label("Course colour palette", 12, COLOR_TEXT))
+	var color_options := OptionButton.new()
+	color_options.name = "ColorblindMode"
+	for color_mode in ColorblindMode.get_all_modes():
+		color_options.add_item(ColorblindMode.get_mode_name(color_mode), color_mode)
+	color_options.custom_minimum_size.y = 42
+	color_options.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	color_options.add_theme_font_size_override("font_size", 12)
+	color_options.select(GameManager.colorblind_mode)
+	color_options.item_selected.connect(func(index: int):
+		GameManager.set_colorblind_mode(index)
+		_save_display_settings())
+	accessibility_body.add_child(color_options)
+	cards.append(accessibility["panel"])
+
+	var benchmark := _build_benchmark_card(mode)
+	cards.append(benchmark)
+	return cards
+
+## The Background card: which picture the menus sit on, and which overlay is
+## painted over it. Both offer Auto - the default - and both say what Auto is
+## currently picking, because "follow the calendar" is only a good default if
+## the player can see what it did. Every style the game ships and every style a
+## mod adds is in the same list, marked with the mod that contributed it.
+##
+## The card carries its own live preview: a MenuBackdrop strip that repaints as
+## the player changes either picker, so a choice can be judged before the
+## menus behind the settings screen are rebuilt.
+func _build_background_card(mode: int) -> PanelContainer:
+	var card := _make_group("BACKGROUND",
+		"Pick the picture behind the menus and an overlay to paint over it. Auto follows the season and your course - mods can add to both lists.",
+		mode)
+	var body: VBoxContainer = card["body"]
+
+	# The preview: the shared backdrop in a framed strip, so it crops and tints
+	# exactly as the menus will.
+	var frame := PanelContainer.new()
+	frame.name = "BackgroundPreviewFrame"
+	frame.add_theme_stylebox_override("panel", MenuStyle.panel(COLOR_INSET,
+		MenuStyle.with_alpha(COLOR_BORDER, 0.5), 8, 0, 0, 1))
+	frame.clip_contents = true
+	frame.custom_minimum_size = Vector2(0.0, 92.0 if mode != Kit.LayoutMode.DESKTOP else 112.0)
+	var preview := MenuBackdrop.new()
+	preview.name = "BackgroundPreview"
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(preview)
+	_background_preview = preview
+	body.add_child(frame)
+	body.add_child(_make_separator())
+
+	# Background picture.
+	var background_header := _add_picker_auto_row(body, "Background picture",
+		"Auto follows the season, then your course's theme.",
+		true, _on_background_auto_toggled)
+	_background_auto_toggle = background_header["toggle"]
+	var background_lists := _add_style_picker(body, "Background", _background_labels(),
+		_current_background_id(), _on_background_selected)
+	_background_options = background_lists
+	_background_auto_hint = _add_auto_hint(body)
+	body.add_child(_make_separator())
+
+	# Overlay.
+	var overlay_header := _add_picker_auto_row(body, "Background overlay",
+		"Auto follows the season, then your course's theme.",
+		false, _on_overlay_auto_toggled)
+	_overlay_auto_toggle = overlay_header["toggle"]
+	_overlay_options = _add_style_picker(body, "Overlay", _overlay_labels(),
+		_current_overlay_id(), _on_overlay_selected)
+	_overlay_setting_rows = VBoxContainer.new()
+	_overlay_setting_rows.name = "OverlaySettingRows"
+	_overlay_setting_rows.add_theme_constant_override("separation", 8)
+	body.add_child(_overlay_setting_rows)
+	body.add_child(_make_separator())
+
+	var footer := HBoxContainer.new()
+	footer.add_theme_constant_override("separation", 8)
+	var note := Kit.make_label(
+		"Community mods appear here automatically once they are enabled in Mods.",
+		9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer.add_child(note)
+	var reset := Button.new()
+	reset.name = "BackgroundReset"
+	reset.text = "Reset"
+	reset.tooltip_text = "Back to Auto for both the picture and the overlay."
+	reset.custom_minimum_size = Vector2(84.0, 40.0)
+	reset.add_theme_font_size_override("font_size", 11)
+	Kit.paint_utility_button(reset, false)
+	reset.pressed.connect(_on_background_reset)
+	footer.add_child(reset)
+	body.add_child(footer)
+
+	_sync_background_controls()
+	return card["panel"]
+
+
+## A title, a one-line explanation and the Auto switch, used for both pickers.
+func _add_picker_auto_row(parent: VBoxContainer, title: String, hint: String,
+		background: bool, on_toggle: Callable) -> Dictionary:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.add_theme_constant_override("separation", 1)
+	copy.add_child(Kit.make_label(title, 12, COLOR_TEXT))
+	var detail := Kit.make_label(hint, 9, COLOR_QUIET)
+	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	copy.add_child(detail)
+	row.add_child(copy)
+	var auto_label := Kit.make_label("AUTO", 10, COLOR_GOLD)
+	auto_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(auto_label)
+	var toggle := CheckButton.new()
+	toggle.name = "BackgroundAuto" if background else "OverlayAuto"
+	toggle.accessibility_name = title + " automatic"
+	toggle.tooltip_text = hint
+	toggle.custom_minimum_size = Vector2(54.0, 36.0)
+	toggle.button_pressed = _is_auto(background)
+	toggle.toggled.connect(func(value: bool): on_toggle.call(value))
+	row.add_child(toggle)
+	parent.add_child(row)
+	return {"toggle": toggle}
+
+
+## The OptionButton listing every style on offer. Items carry the catalogue id,
+## never the index, so installing a mod cannot move a saved choice; the ones a
+## mod added are marked with the mod's id.
+func _add_style_picker(parent: VBoxContainer, label_text: String, labels: Array,
+		selected_id: String, on_select: Callable) -> OptionButton:
+	parent.add_child(Kit.make_label(label_text, 12, COLOR_TEXT))
+	var picker := OptionButton.new()
+	picker.name = "BackgroundPicker" if label_text == "Background" else "OverlayPicker"
+	picker.accessibility_name = label_text
+	picker.custom_minimum_size.y = 40
+	picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	picker.add_theme_font_size_override("font_size", 12)
+	for entry in labels:
+		var index := picker.item_count
+		picker.add_item(str(entry["label"]), index)
+		picker.set_item_metadata(index, str(entry["id"]))
+		picker.set_item_tooltip(index, str(entry.get("description", "")))
+	var index_of := -1
+	for i in range(picker.item_count):
+		if str(picker.get_item_metadata(i)) == selected_id:
+			index_of = i
+			picker.tooltip_text = str(labels[i].get("description", ""))
+			break
+	picker.select(maxi(index_of, 0))
+	picker.item_selected.connect(func(index: int):
+		picker.tooltip_text = str(labels[index].get("description", ""))
+		on_select.call(str(picker.get_item_metadata(index))))
+	parent.add_child(picker)
+	return picker
+
+
+## The line under each picker saying what Auto is choosing right now.
+func _add_auto_hint(parent: VBoxContainer) -> Label:
+	var hint := Kit.make_label("", 9, COLOR_MUTED)
+	hint.name = "BackgroundAutoHint"
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parent.add_child(hint)
+	return hint
+
+
+## Every background style on offer, Auto first. Mod-contributed styles say
+## whose they are, so a player can tell the shipped four from the library.
+func _background_labels() -> Array:
+	var labels: Array = [{
+		"id": Backdrops.AUTO, "label": "Auto (recommended)",
+		"description": "Let the season and the open course choose the menu picture.",
+	}]
+	for entry in MenuBackdropCatalog.backdrops():
+		labels.append({
+			"id": str(entry.get("id", "")), "label": _style_label(entry),
+			"description": str(entry.get("description", "")),
+		})
+	return labels
+
+
+func _overlay_labels() -> Array:
+	var labels: Array = [{
+		"id": Backdrops.AUTO, "label": "Auto (recommended)",
+		"description": "Let the season and the open course choose the painted overlay.",
+	}]
+	for entry in MenuBackdropCatalog.overlays():
+		labels.append({
+			"id": str(entry.get("id", "")), "label": _style_label(entry),
+			"description": str(entry.get("description", "")),
+		})
+	return labels
+
+
+func _style_label(entry: Dictionary) -> String:
+	var label: String = str(entry.get("name", entry.get("id", "")))
+	if not bool(_is_shipped_style(entry)):
+		label += "  ·  %s" % str(entry.get("source", "mod"))
+	return label
+
+
+func _is_shipped_style(entry: Dictionary) -> bool:
+	return str(entry.get("source", "core")) == "core"
+
+
+func _is_auto(background: bool) -> bool:
+	return (Backdrops.background_choice if background else Backdrops.overlay_choice) == Backdrops.AUTO
+
+
+func _current_background_id() -> String:
+	return Backdrops.background_choice
+
+
+func _current_overlay_id() -> String:
+	return Backdrops.overlay_choice
+
+
+func _build_fps_counter_card(mode: int) -> PanelContainer:
+	var card := _make_group("FPS COUNTER",
+		"See the live frame rate over menus and the course. Changes apply immediately.", mode)
+	var body: VBoxContainer = card["body"]
+	var toggle := _add_toggle_row(body, "Show FPS counter",
+		"Display frames per second without blocking clicks or touches.",
+		PerformanceSettings.fps_counter_enabled, _set_fps_counter_enabled, mode)
+	toggle.accessibility_name = "Show FPS counter"
+	_add_fps_option(body, "Position", "FpsCounterPosition", PerformanceSettings.FPS_POSITION_LABELS,
+		PerformanceSettings.fps_counter_position, PerformanceSettings.set_fps_counter_position)
+	_add_fps_option(body, "Text size", "FpsCounterSize", PerformanceSettings.FPS_SIZE_LABELS,
+		PerformanceSettings.fps_counter_size, PerformanceSettings.set_fps_counter_size)
+	_add_fps_option(body, "Refresh interval", "FpsCounterRefresh", PerformanceSettings.FPS_REFRESH_LABELS,
+		PerformanceSettings.fps_counter_refresh, PerformanceSettings.set_fps_counter_refresh)
+	return card["panel"]
+
+## These remain editable while the counter is off, so it can be configured
+## before it is shown. Like the other display controls, each choice saves now.
+func _add_fps_option(body: VBoxContainer, title: String, node_name: String,
+		labels: Array[String], current: int, on_change: Callable) -> void:
+	body.add_child(Kit.make_label(title, 12, COLOR_TEXT))
+	var selector := OptionButton.new()
+	selector.name = node_name
+	selector.accessibility_name = "FPS counter " + title.to_lower()
+	selector.custom_minimum_size.y = 42
+	selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	selector.add_theme_font_size_override("font_size", 12)
+	for choice in range(labels.size()):
+		selector.add_item(labels[choice], choice)
+	selector.select(current)
+	selector.item_selected.connect(func(index: int):
+		on_change.call(selector.get_item_id(index))
+		_save_display_settings())
+	body.add_child(selector)
+
+func _add_graphics_setting(body: VBoxContainer, title: String, node_name: String,
+		setting: int, options: Array) -> OptionButton:
+	body.add_child(Kit.make_label(title, 12, COLOR_TEXT))
+	var selector := OptionButton.new()
+	selector.name = node_name
+	selector.custom_minimum_size.y = 38
+	selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	selector.add_theme_font_size_override("font_size", 12)
+	for option_data in options:
+		selector.add_item(option_data["label"], int(option_data["value"]))
+	var selected_index := selector.get_item_index(PerformanceSettings.get_graphics_setting(setting))
+	if selected_index >= 0:
+		selector.select(selected_index)
+	selector.item_selected.connect(func(index: int):
+		PerformanceSettings.set_graphics_setting(setting, selector.get_item_id(index))
+		_sync_graphics_controls()
+		_save_display_settings())
+	body.add_child(selector)
+	_graphics_setting_options[setting] = selector
+	return selector
+
+func _update_rate_options() -> Array:
+	return [
+		{"label": "Low — 15 Hz", "value": PerformanceSettings.UpdateRate.LOW},
+		{"label": "Standard — 30 Hz", "value": PerformanceSettings.UpdateRate.STANDARD},
+		{"label": "High — 60 Hz", "value": PerformanceSettings.UpdateRate.HIGH},
+	]
+
+func _animation_rate_options() -> Array:
+	return [
+		{"label": "Low — 4 Hz", "value": PerformanceSettings.UpdateRate.LOW},
+		{"label": "Standard — 15 Hz", "value": PerformanceSettings.UpdateRate.STANDARD},
+		{"label": "High — 30 Hz", "value": PerformanceSettings.UpdateRate.HIGH},
+	]
+
+func _sync_graphics_controls() -> void:
+	if is_instance_valid(_graphics_preset_options):
+		var preset_index := _graphics_preset_options.get_item_index(PerformanceSettings.graphics_preset)
+		if preset_index >= 0:
+			_graphics_preset_options.select(preset_index)
+	for setting in _graphics_setting_options:
+		var selector: OptionButton = _graphics_setting_options[setting]
+		if not is_instance_valid(selector):
+			continue
+		var selected_index := selector.get_item_index(PerformanceSettings.get_graphics_setting(setting))
+		if selected_index >= 0:
+			selector.select(selected_index)
+
+## Background card handlers. A choice applies at once - the preview strip and
+## the menus behind this screen repaint from Backdrops.backdrop_changed - and
+## the whole Display section is written to settings.cfg once at the end, the
+## same way the window and graphics controls save.
+func _on_background_auto_toggled(enabled: bool) -> void:
+	Backdrops.set_background_choice_quietly(
+		Backdrops.AUTO if enabled else _fallback_choice(true))
+	_save_display_settings()
+	_sync_background_controls()
+
+
+func _on_overlay_auto_toggled(enabled: bool) -> void:
+	Backdrops.set_overlay_choice_quietly(
+		Backdrops.AUTO if enabled else _fallback_choice(false))
+	_save_display_settings()
+	_sync_background_controls()
+
+
+## Where a picker lands when Auto is switched off: whatever Auto is showing
+## right now, so turning Auto off does not change the picture on the very frame
+## the player wanted to keep it.
+func _fallback_choice(background: bool) -> String:
+	if background:
+		return Backdrops.auto_background_id()
+	return Backdrops.auto_overlay_id()
+
+
+func _on_background_selected(id: String) -> void:
+	Backdrops.set_background_choice_quietly(id)
+	_save_display_settings()
+	_sync_background_controls()
+
+
+func _on_overlay_selected(id: String) -> void:
+	Backdrops.set_overlay_choice_quietly(id)
+	_save_display_settings()
+	_sync_background_controls()
+
+
+func _on_background_reset() -> void:
+	Backdrops.reset_choices()
+	_save_display_settings()
+	_sync_background_controls()
+
+
+## One of the chosen overlay's own settings (the stripe angle, the sparkle
+## density). The value is stored per overlay id, so switching away and back
+## keeps it.
+func _on_overlay_setting_selected(overlay_id: String, key: String, value: Variant) -> void:
+	Backdrops.set_overlay_setting(overlay_id, key, value)
+	_save_display_settings()
+	_sync_background_controls()
+
+
+## Keep the whole card showing Backdrops' current decision: the switches, the
+## two pickers (a picker never offers a style that is not installed), the
+## sentence saying what Auto picked, and the settings rows for the overlay in
+## force. Selecting through `set_item_index` is silent, so syncing never
+## re-enters the handlers.
+func _sync_background_controls() -> void:
+	var background_auto := Backdrops.background_choice == Backdrops.AUTO
+	var overlay_auto := Backdrops.overlay_choice == Backdrops.AUTO
+	if is_instance_valid(_background_auto_toggle):
+		_background_auto_toggle.set_pressed_no_signal(background_auto)
+	if is_instance_valid(_overlay_auto_toggle):
+		_overlay_auto_toggle.set_pressed_no_signal(overlay_auto)
+	_select_picker(_background_options,
+		Backdrops.background_choice if not background_auto else Backdrops.AUTO)
+	_select_picker(_overlay_options,
+		Backdrops.overlay_choice if not overlay_auto else Backdrops.AUTO)
+	if is_instance_valid(_background_auto_hint):
+		_background_auto_hint.text = Backdrops.auto_explanation()
+	_rebuild_overlay_settings()
+	if is_instance_valid(_background_preview):
+		_background_preview.refresh_style()
+
+
+## Point a picker at `id` without emitting. A style that vanished (its mod was
+## switched off) falls back to the first row rather than leaving the picker on
+## a stale index.
+func _select_picker(picker: OptionButton, id: String) -> void:
+	if not is_instance_valid(picker):
+		return
+	for index in range(picker.item_count):
+		if str(picker.get_item_metadata(index)) == id:
+			picker.select(index)
+			return
+	picker.select(0)
+
+
+## The settings the overlay in force exposes (none for most): a row of choices
+## per setting, laid out like the graphics controls above them. Rebuilt when
+## the overlay changes so the card never shows a knob the picture ignores.
+func _rebuild_overlay_settings() -> void:
+	if not is_instance_valid(_overlay_setting_rows):
+		return
+	for child in _overlay_setting_rows.get_children():
+		_overlay_setting_rows.remove_child(child)
+		child.queue_free()
+	var overlay_id := _overlay_in_force()
+	var schemas := MenuBackdropCatalog.settings_for(overlay_id)
+	if schemas.is_empty():
+		return
+	_overlay_setting_rows.add_child(_make_separator())
+	for schema in schemas:
+		_overlay_setting_rows.add_child(Kit.make_label(str(schema["name"]), 12, COLOR_TEXT))
+		var description := str(schema.get("description", ""))
+		if not description.is_empty():
+			var hint := Kit.make_label(description, 9, COLOR_QUIET)
+			hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			_overlay_setting_rows.add_child(hint)
+		var picker := OptionButton.new()
+		picker.name = "OverlaySetting_%s" % str(schema["key"])
+		picker.accessibility_name = str(schema["name"])
+		picker.custom_minimum_size.y = 38
+		picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		picker.add_theme_font_size_override("font_size", 12)
+		var values: Array = schema["values"]
+		var labels: Array = schema["choices"]
+		for index in range(values.size()):
+			picker.add_item(str(labels[index]) if index < labels.size() else str(values[index]), index)
+			picker.set_item_metadata(index, values[index])
+		var current: Variant = Backdrops.overlay_settings.get(overlay_id, {}).get(
+			str(schema["key"]), schema["default"])
+		for index in range(values.size()):
+			if values[index] == current:
+				picker.select(index)
+				break
+		var key: String = str(schema["key"])
+		picker.item_selected.connect(func(index: int):
+			_on_overlay_setting_selected(overlay_id, key, picker.get_item_metadata(index)))
+		_overlay_setting_rows.add_child(picker)
+
+
+## The overlay id whose picture is on screen: the player's pick, or the one
+## Auto resolved to.
+func _overlay_in_force() -> String:
+	if Backdrops.overlay_choice != Backdrops.AUTO:
+		return Backdrops.overlay_choice
+	return Backdrops.auto_overlay_id()
+
+
+## The one card the game's only benchmark gets: what the tour does, the
+## rating the last run earned, and two buttons - Run Benchmark, which hands
+## the screen to the tour, and Past Results, which opens the full report and
+## the shelf of runs behind it.
+func _build_benchmark_card(mode: int) -> PanelContainer:
+	var card_text := BENCHMARK_TOUR_TEXT \
+		if benchmarks_allowed() else BENCHMARK_GATE_TEXT + " The last run and the past results still show here."
+	var benchmark := _make_group("BENCHMARK", card_text, mode)
+	var body: VBoxContainer = benchmark["body"]
+	body.add_child(_make_separator())
+
+	var summary := Kit.make_label(_benchmark_summary_text, 11, COLOR_TEXT)
+	summary.name = "BenchmarkSummary"
+	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_benchmark_summary_label = summary
+	body.add_child(summary)
+
+	# The last run's rating in miniature: the five stars it earned and a
+	# segmented meter for the score behind them.
+	var rating := HBoxContainer.new()
+	rating.name = "BenchmarkRating"
+	rating.add_theme_constant_override("separation", 8)
+	var stars := BenchmarkVisuals.make_star_row(_benchmark_stars, 16, "BenchmarkStars")
+	stars.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_benchmark_stars_row = stars
+	rating.add_child(stars)
+	var meter := BenchmarkVisuals.make_meter(_benchmark_score / 100.0,
+		BenchmarkVisuals.score_color(_benchmark_score), "BenchmarkScoreMeter", 12)
+	meter.custom_minimum_size.y = 10
+	meter.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	meter.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_benchmark_score_meter = meter
+	rating.add_child(meter)
+	body.add_child(rating)
+
+	var details := Kit.make_label(_benchmark_details_text, 10, COLOR_MUTED)
+	details.name = "BenchmarkDetails"
+	details.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_benchmark_details_label = details
+	body.add_child(details)
+
+	var actions := HBoxContainer.new()
+	actions.name = "BenchmarkActions"
+	actions.add_theme_constant_override("separation", 7)
+
+	var run_button := Button.new()
+	run_button.name = "RunBenchmarkButton"
+	run_button.text = "Run Benchmark"
+	run_button.tooltip_text = ("Close the menus and watch the benchmark prepare, build and play every test course (about 95 seconds). Esc cancels it and the throwaway course is taken down afterwards." \
+		if benchmarks_allowed() else BENCHMARK_GATE_TEXT)
+	run_button.custom_minimum_size = Vector2(0, 44)
+	run_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	run_button.size_flags_stretch_ratio = 1.4
+	run_button.add_theme_font_size_override("font_size", 11 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 12)
+	MenuStyle.paint_card(run_button, COLOR_GOLD, 0.0, 7, COLOR_TEXT, COLOR_TEXT)
+	run_button.add_theme_color_override("font_color", COLOR_TEXT)
+	run_button.add_theme_color_override("font_hover_color", COLOR_TEXT)
+	run_button.add_theme_color_override("font_pressed_color", COLOR_TEXT)
+	run_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	run_button.pressed.connect(_request_tour)
+	_benchmark_run_button = run_button
+	actions.add_child(run_button)
+
+	var results_button := Button.new()
+	results_button.name = "PastResultsButton"
+	results_button.text = "Past Results"
+	results_button.tooltip_text = "Open the Benchmark Results screen: the last report, the scorecard and the runs kept on this machine."
+	results_button.custom_minimum_size = Vector2(0, 44)
+	results_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	results_button.add_theme_font_size_override("font_size", 11 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 12)
+	MenuStyle.paint_card(results_button, COLOR_MINT, 0.0, 7, COLOR_TEXT, COLOR_TEXT)
+	results_button.add_theme_color_override("font_color", COLOR_TEXT)
+	results_button.add_theme_color_override("font_hover_color", COLOR_TEXT)
+	results_button.add_theme_color_override("font_pressed_color", COLOR_TEXT)
+	results_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	results_button.pressed.connect(func(): results_requested.emit())
+	_benchmark_results_button = results_button
+	actions.add_child(results_button)
+	body.add_child(actions)
+
+	var status := Kit.make_label(_benchmark_status_text, 10, COLOR_QUIET)
+	status.name = "BenchmarkStatus"
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_benchmark_status_label = status
+	body.add_child(status)
+
+	_refresh_benchmark_controls()
+	return benchmark["panel"]
+
+## The Data page: what this device keeps, one delete button per group, and a
+## button that clears all of it. Every deletion asks first - a confirm card over
+## the page, with the safe answer focused - and the page is rebuilt afterwards
+## so its lines and buttons tell the truth about what is left.
+func _build_data_cards(mode: int) -> Array[Control]:
+	var cards: Array[Control] = []
+	var overview := _make_group("ON THIS DEVICE",
+		"Golf Tycoon keeps everything here on this device - nothing is uploaded. Delete a part, or all of it, and it is gone for good.",
+		mode)
+	var overview_body: VBoxContainer = overview["body"]
+	var summary := Kit.make_label(PlayerDataStore.total_label(), 11, COLOR_TEXT)
+	summary.name = "PlayerDataSummary"
+	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	overview_body.add_child(summary)
+	var status := Kit.make_label(_data_status_text,
+		10 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 11, COLOR_MINT)
+	status.name = "DataStatus"
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	overview_body.add_child(status)
+	cards.append(overview["panel"])
+	for id in PlayerDataStore.GROUP_IDS:
+		cards.append(_build_data_group_card(id, mode))
+	cards.append(_build_delete_all_card(mode))
+	return cards
+
+
+## One group: what it holds now, and the button that deletes it. The button is
+## disabled while the group is empty, so a dead action never invites a press.
+func _build_data_group_card(id: String, mode: int) -> Control:
+	var use := PlayerDataStore.usage(id)
+	var group := _make_group(PlayerDataStore.group_title(id),
+		PlayerDataStore.group_description(id), mode)
+	var body: VBoxContainer = group["body"]
+	var present := bool(use["present"])
+	var line := Kit.make_label(str(use["label"]), 11, COLOR_TEXT if present else COLOR_QUIET)
+	line.name = "DataUsage_%s" % id
+	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(line)
+	var button := _make_data_button("DeleteData_%s" % id,
+		PlayerDataStore.group_action(id, int(use["count"])), mode)
+	button.tooltip_text = PlayerDataStore.group_confirm_message(id, int(use["count"]))
+	button.disabled = not present
+	button.pressed.connect(_request_data_delete.bind(id))
+	body.add_child(button)
+	return group["panel"]
+
+
+func _build_delete_all_card(mode: int) -> Control:
+	var card := _make_group("ALL PLAYER DATA",
+		"Saved courses, preferences, career records, benchmark reports and custom skins. Mods are managed on the Mods screen and are not touched.",
+		mode)
+	var body: VBoxContainer = card["body"]
+	var warning := Kit.make_label("Removes every group above. This cannot be undone.",
+		11, COLOR_MUTED)
+	warning.name = "DeleteAllWarning"
+	warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(warning)
+	var button := _make_data_button("DeleteAllDataButton", "Delete All Player Data", mode)
+	button.tooltip_text = "Remove every saved course, preference, career record, benchmark report and custom golfer skin from this device."
+	button.disabled = not PlayerDataStore.anything_stored()
+	button.pressed.connect(_request_all_data_delete)
+	body.add_child(button)
+	return card["panel"]
+
+
+## The destructive action both the group cards and the all-data card use.
+func _make_data_button(node_name: String, text: String, mode: int) -> Button:
+	var button := Button.new()
+	button.name = node_name
+	button.text = text
+	button.accessibility_name = text
+	button.custom_minimum_size = Vector2(0, 44)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.add_theme_font_size_override("font_size", 11 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 12)
+	Kit.paint_danger_button(button)
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	return button
+
+
+func _request_data_delete(id: String) -> void:
+	var use := PlayerDataStore.usage(id)
+	var message := PlayerDataStore.group_confirm_message(id, int(use["count"]))
+	if id == PlayerDataStore.SAVED_COURSES and origin == Origin.PAUSE_MENU:
+		message += " Your current course will close, and progress since the last save will be lost."
+	_show_data_confirmation(PlayerDataStore.group_confirm_title(id), message,
+		PlayerDataStore.group_action(id, int(use["count"])),
+		func(): _delete_player_data([id]))
+
+
+func _request_all_data_delete() -> void:
+	var message := "Every saved course, preference, career record, benchmark report and custom golfer skin on this device is removed, leaving Golf Tycoon as it was on its first launch."
+	if origin == Origin.PAUSE_MENU:
+		message += " Your current course will close, and progress since the last save will be lost."
+	_show_data_confirmation("Delete all player data?", message, "Delete Everything",
+		func(): _delete_player_data(PlayerDataStore.GROUP_IDS))
+
+
+func _delete_player_data(ids: Array) -> void:
+	var result := PlayerDataStore.erase_many(ids)
+	var errors: Array = result.get("errors", [])
+	if errors.is_empty():
+		_data_status_text = "%s deleted from this device." % _deleted_summary(ids)
+	else:
+		_data_status_text = "Some data could not be deleted: %s" % str(errors[0])
+	if ids.has(PlayerDataStore.BENCHMARK_REPORTS):
+		_reset_benchmark_card()
+	EventBus.notify(_data_status_text, "success" if errors.is_empty() else "error")
+	data_deleted.emit(_group_ids(ids))
+	# Rebuild first, so the page is already true if the host keeps it open.
+	_build()
+	# A pause session has nothing left to autosave into once the saved courses
+	# are gone, so it is handed back to the title screen instead of quietly
+	# writing a fresh autosave over the files the player just deleted.
+	if ids.has(PlayerDataStore.SAVED_COURSES) and origin == Origin.PAUSE_MENU:
+		quit_to_menu_requested.emit()
+
+
+func _deleted_summary(ids: Array) -> String:
+	if ids.size() >= PlayerDataStore.GROUP_IDS.size():
+		return "All player data"
+	var names: Array[String] = []
+	for id in ids:
+		names.append(PlayerDataStore.group_name(str(id)))
+	return ", ".join(names)
+
+
+func _group_ids(ids: Array) -> Array[String]:
+	var typed: Array[String] = []
+	for id in ids:
+		typed.append(str(id))
+	return typed
+
+
+## The confirm card: the same notched panel and pinned footer as the archive's
+## confirmation, sized to the window so it fits a phone.
+func _show_data_confirmation(title_text: String, message_text: String,
+		confirm_text: String, on_confirm: Callable) -> void:
+	_close_data_confirmation()
+	_data_confirmation = Control.new()
+	_data_confirmation.name = "SettingsConfirmation"
+	_data_confirmation.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_data_confirmation.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_data_confirmation)
+
+	var shade := ColorRect.new()
+	shade.color = Color(0.0, 0.0, 0.0, 0.72)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_STOP
+	_data_confirmation.add_child(shade)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_data_confirmation.add_child(center)
+	var view := _window_size()
+	var panel := PanelContainer.new()
+	panel.name = "ConfirmationCard"
+	panel.custom_minimum_size.x = minf(470.0, maxf(280.0, view.x - 28.0))
+	panel.add_theme_stylebox_override("panel", MenuStyle.panel(COLOR_SURFACE,
+		MenuStyle.with_alpha(UIConstants.COLOR_DANGER, 0.75), 14, 20, 18, 2))
+	center.add_child(panel)
+	var content := VBoxContainer.new()
+	content.add_theme_constant_override("separation", 12)
+	panel.add_child(content)
+	var title := Kit.make_label(title_text, 19, UIConstants.COLOR_DANGER)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	content.add_child(title)
+	var message := Kit.make_label(message_text, 13, COLOR_MUTED)
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message.custom_minimum_size.x = panel.custom_minimum_size.x - 44.0
+	content.add_child(message)
+	var buttons := HBoxContainer.new()
+	buttons.add_theme_constant_override("separation", 9)
+	content.add_child(buttons)
+	var cancel := Button.new()
+	cancel.name = "KeepDataButton"
+	cancel.text = "Keep it"
+	cancel.custom_minimum_size = Vector2(0, 44)
+	cancel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	Kit.paint_utility_button(cancel, false)
+	cancel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	# Deleting is destructive: the safe answer takes focus, as in ConfirmDialog.
+	cancel.set_meta(InputManager.DEFAULT_FOCUS_META, true)
+	cancel.pressed.connect(_close_data_confirmation)
+	buttons.add_child(cancel)
+	var confirm := Button.new()
+	confirm.name = "ConfirmDataDeleteButton"
+	confirm.text = confirm_text
+	confirm.custom_minimum_size = Vector2(0, 44)
+	confirm.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	confirm.add_theme_font_size_override("font_size", 12)
+	Kit.paint_danger_button(confirm)
+	confirm.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	confirm.pressed.connect(func():
+		_close_data_confirmation()
+		on_confirm.call())
+	buttons.add_child(confirm)
+	# The card is its own focus scope while it is up, so the arrow keys and
+	# Tab stay on its two answers and the safe one starts focused. Closing it
+	# hands focus back to the settings page.
+	if has_node("/root/InputManager"):
+		InputManager.register_scope(_data_confirmation)
+	else:
+		cancel.grab_focus()
+
+
+func _close_data_confirmation() -> void:
+	if is_instance_valid(_data_confirmation):
+		_data_confirmation.queue_free()
+	_data_confirmation = null
+
+
+## The Controls page: one editable keycap per rebindable action, grouped the
+## way InputBindings groups them, plus the camera's own edge-panning and
+## invert-zoom toggles and the zoom-limit sliders. Changes apply live and save
+## at once; the intro card carries the listening hint, the result message and
+## Reset All.
+func _build_controls_cards(mode: int) -> Array[Control]:
+	var cards: Array[Control] = []
+	cards.append(_build_controls_intro_card(mode))
+	for group in InputBindings.groups():
+		var group_id := str(group.get("id", ""))
+		var group_card := _make_group(str(group.get("title", group_id)).to_upper(),
+			str(group.get("description", "")), mode)
+		var body: VBoxContainer = group_card["body"]
+		if group_id == "camera":
+			_edge_pan_toggle = _add_toggle_row(body, "Edge Panning",
+				"Pan the camera by moving the pointer to the edge of the screen. Off keeps the view still until you drag, use the keys or the stick.",
+				GameManager.edge_pan_enabled, _set_edge_pan_enabled, mode)
+			body.add_child(_make_separator())
+			_add_toggle_row(body, "Invert Scroll Zoom", "Reverse the scroll wheel zoom direction.",
+				GameManager.invert_zoom_scroll, _on_invert_zoom_toggled, mode)
+			body.add_child(_make_separator())
+			_add_camera_zoom_controls(body, mode)
+			body.add_child(_make_separator())
+		for action in InputBindings.actions_in_group(group_id):
+			body.add_child(_build_binding_row(action, mode))
+		cards.append(group_card["panel"])
+	return cards
+
+func _build_controls_intro_card(mode: int) -> Control:
+	var intro := _make_group("EDIT CONTROLS",
+		"Every course action can be rebound to the key or controller button that suits you.", mode)
+	var body: VBoxContainer = intro["body"]
+
+	var status := Kit.make_label(_controls_status_text, 10 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 11, COLOR_MINT)
+	status.name = "ControlsStatus"
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_controls_status_label = status
+	body.add_child(status)
+
+	var note := Kit.make_label("Click a keycap to listen. Esc cancels, Backspace unbinds, and the arrow button resets one control. Mouse, touch and the menu keys (Esc, Tab, Enter and the arrows) stay fixed.",
+		9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.add_child(note)
+	body.add_child(_make_separator())
+
+	var reset_all := Button.new()
+	reset_all.name = "ResetAllControlsButton"
+	reset_all.text = "Reset All Controls"
+	reset_all.tooltip_text = "Put every course control back on its default key or button. Changes save as you make them."
+	reset_all.custom_minimum_size = Vector2(0, 44)
+	reset_all.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reset_all.add_theme_font_size_override("font_size", 11 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 12)
+	MenuStyle.paint_card(reset_all, COLOR_GOLD, 0.0, 8, COLOR_TEXT, COLOR_TEXT)
+	reset_all.add_theme_color_override("font_color", COLOR_TEXT)
+	reset_all.add_theme_color_override("font_hover_color", COLOR_TEXT)
+	reset_all.add_theme_color_override("font_pressed_color", COLOR_TEXT)
+	reset_all.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	reset_all.disabled = not InputBindings.has_custom_bindings()
+	reset_all.pressed.connect(_reset_all_controls)
+	_reset_all_controls_button = reset_all
+	body.add_child(reset_all)
+	return intro["panel"]
+
+## One action's row: what it does, its current keycap and a per-action reset.
+func _build_binding_row(action: String, mode: int) -> Control:
+	var row := HBoxContainer.new()
+	row.name = "BindingRow_%s" % action
+	row.custom_minimum_size.y = 44
+	row.add_theme_constant_override("separation", 7)
+
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	copy.add_theme_constant_override("separation", 0)
+	var action_label := Kit.make_label(InputBindings.action_label(action), 11 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 12, COLOR_TEXT)
+	action_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	copy.add_child(action_label)
+	var hint := InputBindings.action_hint(action)
+	if not hint.is_empty():
+		var hint_label := Kit.make_label(hint, 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+		hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		copy.add_child(hint_label)
+	row.add_child(copy)
+
+	var keycap := Button.new()
+	keycap.name = "Binding_%s" % action
+	keycap.text = InputBindings.binding_text(action)
+	_update_keycap_tooltip(action, keycap)
+	keycap.custom_minimum_size = Vector2(98 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 130, 44)
+	keycap.add_theme_font_size_override("font_size", 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10)
+	keycap.clip_text = true
+	keycap.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	keycap.focus_mode = Control.FOCUS_ALL
+	keycap.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_paint_keycap(keycap, false)
+	keycap.pressed.connect(_begin_rebinding.bind(action))
+	_binding_buttons[action] = keycap
+	row.add_child(keycap)
+
+	var reset := Button.new()
+	reset.name = "Reset_%s" % action
+	reset.text = "↺"
+	reset.tooltip_text = "Reset %s to its default (%s)." % [
+		InputBindings.action_label(action), InputBindings.default_binding_text(action)]
+	reset.custom_minimum_size = Vector2(40, 44)
+	reset.add_theme_font_size_override("font_size", 16)
+	reset.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	Kit.paint_utility_button(reset, false)
+	reset.disabled = not InputBindings.is_customized(action)
+	reset.pressed.connect(_reset_one_binding.bind(action))
+	_binding_reset_buttons[action] = reset
+	row.add_child(reset)
+	return row
+
+func _paint_keycap(button: Button, listening: bool) -> void:
+	var accent := COLOR_GOLD if listening else COLOR_MINT
+	MenuStyle.paint_card(button, accent, 0.0, 6, accent, COLOR_TEXT)
+	button.add_theme_color_override("font_color", accent)
+	button.add_theme_color_override("font_hover_color", COLOR_TEXT)
+	button.add_theme_color_override("font_pressed_color", accent)
+
+## Start listening on one row. Clicking the keycap again, clicking elsewhere,
+## Escape or B leaves the binding as it was.
+func _begin_rebinding(action: String) -> void:
+	if not InputBindings.has_action(action):
+		return
+	if not _capturing_action.is_empty():
+		_restore_binding_button(_capturing_action)
+	_capturing_action = action
+	var button := _binding_buttons.get(action) as Button
+	if is_instance_valid(button):
+		button.text = "Press a key…"
+		_paint_keycap(button, true)
+	_set_controls_status("Listening for %s. Press a key or controller button; Esc cancels, Backspace unbinds." % InputBindings.action_label(action))
+
+func _restore_binding_button(action: String) -> void:
+	var button := _binding_buttons.get(action) as Button
+	if is_instance_valid(button):
+		button.text = InputBindings.binding_text(action)
+		_update_keycap_tooltip(action, button)
+		_paint_keycap(button, false)
+
+func _update_keycap_tooltip(action: String, button: Button) -> void:
+	button.tooltip_text = "%s: %s. Click, then press a key or controller button." % [
+		InputBindings.action_label(action), InputBindings.binding_text(action)]
+
+## Returns true when the event belonged to the capture and must not reach the
+## rest of the screen. A mouse press cancels the capture but is passed on, so
+## clicking another keycap starts on that row.
+func _handle_capture(event: InputEvent) -> bool:
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if not key.pressed or key.echo:
+			return true
+		if key.keycode == KEY_ESCAPE:
+			_finish_capture("Binding unchanged.")
+			return true
+		if key.keycode == KEY_BACKSPACE or key.keycode == KEY_DELETE:
+			_unbind_captured_action()
+			return true
+		if key.keycode in [KEY_SHIFT, KEY_CTRL, KEY_ALT, KEY_META, KEY_CAPSLOCK, KEY_NUMLOCK, KEY_SCROLLLOCK]:
+			return true
+		_apply_captured_event(event)
+		return true
+	if event is InputEventJoypadButton:
+		var button := event as InputEventJoypadButton
+		if not button.pressed:
+			return true
+		if button.button_index == JOY_BUTTON_B:
+			_finish_capture("Binding unchanged.")
+			return true
+		_apply_captured_event(event)
+		return true
+	if event is InputEventJoypadMotion:
+		var motion := event as InputEventJoypadMotion
+		if absf(motion.axis_value) < InputBindings.JOY_MOTION_CAPTURE_THRESHOLD:
+			return false
+		_apply_captured_event(event)
+		return true
+	if event is InputEventMouseButton and event.pressed:
+		_finish_capture("Binding unchanged.")
+		return false
+	return false
+
+func _apply_captured_event(event: InputEvent) -> void:
+	if _capturing_action.is_empty():
+		return
+	var action := _capturing_action
+	var label := InputBindings.action_label(action)
+	var result := InputBindings.assign_binding(action, event)
+	if not bool(result.get("ok", false)):
+		# A reserved key keeps the row listening so the player can try again.
+		_set_controls_status(str(result.get("message", "That cannot be bound.")))
+		return
+	if bool(result.get("unchanged", false)):
+		_finish_capture("%s is already bound to %s." % [label, InputBindings.binding_text(action)])
+		return
+	var message := "Bound %s to %s." % [label, InputBindings.binding_text(action)]
+	var conflicts: Array = result.get("conflicts", [])
+	if not conflicts.is_empty():
+		var names: Array[String] = []
+		for other in conflicts:
+			names.append(InputBindings.action_label(str(other)))
+		if bool(result.get("swapped", false)):
+			message += " %s took over the key it replaced." % ", ".join(names)
+		else:
+			message += " Removed it from %s." % ", ".join(names)
+	_finish_capture(message)
+
+func _unbind_captured_action() -> void:
+	if _capturing_action.is_empty():
+		return
+	var action := _capturing_action
+	var label := InputBindings.action_label(action)
+	InputBindings.clear_binding(action)
+	_finish_capture("%s is unbound. ↺ restores its default (%s)." % [
+		label, InputBindings.default_binding_text(action)])
+
+func _finish_capture(message: String) -> void:
+	var action := _capturing_action
+	_capturing_action = ""
+	_restore_binding_button(action)
+	_refresh_binding_rows()
+	_set_controls_status(message)
+	var button := _binding_buttons.get(action) as Button
+	if is_instance_valid(button):
+		button.grab_focus()
+
+func _reset_one_binding(action: String) -> void:
+	if not _capturing_action.is_empty():
+		_finish_capture("")
+	InputBindings.reset_binding(action)
+	_refresh_binding_rows()
+	_set_controls_status("%s is back on its default (%s)." % [
+		InputBindings.action_label(action), InputBindings.default_binding_text(action)])
+
+func _reset_all_controls() -> void:
+	if not _capturing_action.is_empty():
+		_finish_capture("")
+	InputBindings.reset_all()
+	_refresh_binding_rows()
+	_set_controls_status("All controls are back on their defaults.")
+
+func _on_binding_changed(_action: String) -> void:
+	_refresh_binding_rows()
+
+func _on_bindings_reset() -> void:
+	_refresh_binding_rows()
+
+## Refresh captions and reset availability in place (a rebind must not rebuild
+## the page and throw away focus or scroll position).
+func _refresh_binding_rows() -> void:
+	for action in _binding_buttons:
+		var button := _binding_buttons[action] as Button
+		if not is_instance_valid(button) or action == _capturing_action:
+			continue
+		button.text = InputBindings.binding_text(str(action))
+		_update_keycap_tooltip(str(action), button)
+		_paint_keycap(button, false)
+	for action in _binding_reset_buttons:
+		var reset := _binding_reset_buttons[action] as Button
+		if is_instance_valid(reset):
+			reset.disabled = not InputBindings.is_customized(str(action))
+	if is_instance_valid(_reset_all_controls_button):
+		_reset_all_controls_button.disabled = not InputBindings.has_custom_bindings()
+
+func _set_controls_status(text: String) -> void:
+	_controls_status_text = text
+	if is_instance_valid(_controls_status_label):
+		_controls_status_label.text = text
+
+func _make_group(title: String, description: String, mode: int) -> Dictionary:
+	var panel := Kit.make_panel(COLOR_RAISED, MenuStyle.with_alpha(COLOR_BORDER, 0.32))
+	panel.name = "Group_%s" % title.to_lower().replace(" ", "_").replace("&", "and")
+	var margin := MarginContainer.new()
+	_set_margins(margin, 13 if mode == Kit.LayoutMode.DESKTOP else (11 if Kit.is_tablet(mode) else 9))
+	panel.add_child(margin)
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 8 if mode == Kit.LayoutMode.PHONE_LANDSCAPE else 10)
+	margin.add_child(stack)
+	var kicker := Kit.make_label(title, 10 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 11, COLOR_GOLD)
+	stack.add_child(kicker)
+	if not description.is_empty():
+		var detail := Kit.make_label(description, 10 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 11, COLOR_MUTED)
+		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		stack.add_child(detail)
+	return {"panel": panel, "body": stack}
+
+func _add_volume_control(parent: VBoxContainer, title: String, hint: String, value: float,
+		on_change: Callable, mode: int) -> void:
+	var stack := VBoxContainer.new()
+	stack.add_theme_constant_override("separation", 1)
+	var heading := HBoxContainer.new()
+	var label_box := VBoxContainer.new()
+	label_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label_box.add_theme_constant_override("separation", 0)
+	label_box.add_child(Kit.make_label(title, 12, COLOR_TEXT))
+	var hint_label := Kit.make_label(hint, 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label_box.add_child(hint_label)
+	heading.add_child(label_box)
+	var value_label := Kit.make_label("%d%%" % int(value * 100), 11, COLOR_GOLD)
+	value_label.custom_minimum_size.x = 42
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	heading.add_child(value_label)
+	stack.add_child(heading)
+	var slider := HSlider.new()
+	slider.name = "Volume_%s" % title.replace(" ", "")
+	slider.min_value = 0.0
+	slider.max_value = 1.0
+	slider.step = 0.05
+	slider.value = value
+	slider.custom_minimum_size.y = 24
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(func(new_value: float):
+		on_change.call(new_value)
+		value_label.text = "%d%%" % int(new_value * 100))
+	stack.add_child(slider)
+	parent.add_child(stack)
+
+## UI size. "Match this display" is the default: Screen follows the device's
+## system display scale (Retina, Windows DPI scaling, phone density,
+## devicePixelRatio) so the game is the same physical size as everything else
+## on the screen. Moving the slider takes manual control instead.
+func _add_ui_scale_control(parent: VBoxContainer, mode: int) -> void:
+	var stack := VBoxContainer.new()
+	stack.name = "UIScaleStack"
+	stack.add_theme_constant_override("separation", 4)
+	var header := HBoxContainer.new()
+	var label := Kit.make_label("UI Scale", 12, COLOR_TEXT)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	header.add_child(label)
+	_ui_scale_value_label = Kit.make_label("", 11, COLOR_GOLD)
+	_ui_scale_value_label.custom_minimum_size.x = 76
+	_ui_scale_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	header.add_child(_ui_scale_value_label)
+	stack.add_child(header)
+
+	_ui_scale_auto_toggle = _add_toggle_row(stack, "Match this display",
+		"Detect the UI size from the system display scale and this window. Turn off to set it yourself.",
+		not has_node("/root/Screen") or Screen.uses_automatic_ui_scale(),
+		_on_ui_scale_auto_toggled, mode)
+	_ui_scale_auto_toggle.accessibility_name = "Match this display's UI scale"
+
+	var minimum := 0.8
+	var maximum := 4.0
+	var step := 0.1
+	if has_node("/root/Screen"):
+		minimum = Screen.MIN_UI_SCALE
+		maximum = Screen.MAX_UI_SCALE
+		step = Screen.UI_SCALE_STEP
+	_ui_scale_slider = HSlider.new()
+	_ui_scale_slider.name = "UIScale"
+	_ui_scale_slider.min_value = minimum
+	_ui_scale_slider.max_value = maximum
+	_ui_scale_slider.step = step
+	_ui_scale_slider.custom_minimum_size.y = 25
+	_ui_scale_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_ui_scale_slider.value_changed.connect(_on_ui_scale_slider_changed)
+	stack.add_child(_ui_scale_slider)
+
+	_ui_scale_hint = Kit.make_label("", 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	_ui_scale_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	stack.add_child(_ui_scale_hint)
+	var range_label := Kit.make_label(
+		"%s  ·  %s" % [_ui_scale_text(minimum), _ui_scale_text(maximum)],
+		9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	range_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	stack.add_child(range_label)
+	parent.add_child(stack)
+	_sync_ui_scale_controls()
+
+func _on_ui_scale_auto_toggled(enabled: bool) -> void:
+	if not has_node("/root/Screen"):
+		return
+	Screen.set_ui_scale_mode(
+		Screen.UIScaleMode.AUTO if enabled else Screen.UIScaleMode.MANUAL, false)
+	_hold_ui_scale_rebuild()
+	_save_display_settings()
+	_sync_ui_scale_controls()
+
+func _on_ui_scale_slider_changed(value: float) -> void:
+	if not has_node("/root/Screen"):
+		get_tree().root.content_scale_factor = value
+		return
+	# Touching the slider is how a player chooses a size of their own, so it
+	# leaves automatic mode even when the new value matches the detected one.
+	Screen.set_ui_scale(value, false)
+	_hold_ui_scale_rebuild()
+	_save_display_settings()
+	_sync_ui_scale_controls()
+
+func _on_ui_scale_changed(_scale: float, _mode: int) -> void:
+	_sync_ui_scale_controls()
+
+## Keep the label, switch and slider showing Screen's current decision. The
+## slider is updated without its signal so syncing never re-enters.
+func _sync_ui_scale_controls() -> void:
+	if not has_node("/root/Screen"):
+		return
+	var automatic: bool = Screen.uses_automatic_ui_scale()
+	if is_instance_valid(_ui_scale_auto_toggle):
+		_ui_scale_auto_toggle.set_pressed_no_signal(automatic)
+	if is_instance_valid(_ui_scale_value_label):
+		_ui_scale_value_label.text = ("AUTO · " if automatic else "") + _ui_scale_text(Screen.ui_scale)
+	if is_instance_valid(_ui_scale_slider):
+		_ui_scale_slider.set_value_no_signal(Screen.ui_scale)
+	if is_instance_valid(_ui_scale_hint):
+		if automatic:
+			_ui_scale_hint.text = Screen.auto_ui_scale_hint()
+		else:
+			_ui_scale_hint.text = "Manual — %s. This display suggests %s; Match this display switches back." % [
+				_ui_scale_text(Screen.ui_scale), _ui_scale_text(Screen.detected_ui_scale)]
+
+func _ui_scale_text(value: float) -> String:
+	return "%d%%" % int(roundf(value * 100.0))
+
+## The slider changes the logical window, and so this page's own layout. Let
+## the control settle before the page rebuilds around it.
+func _hold_ui_scale_rebuild() -> void:
+	_ui_scale_hold_until_msec = Time.get_ticks_msec() + 350
+	_ui_scale_rebuild_pending = true
+	set_process(true)
+
+func _add_toggle_row(parent: VBoxContainer, title: String, description: String, enabled: bool,
+		on_change: Callable, mode: int) -> CheckButton:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	var copy := VBoxContainer.new()
+	copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	copy.add_theme_constant_override("separation", 2)
+	var label := Kit.make_label(title, 12 if mode != Kit.LayoutMode.DESKTOP else 13, COLOR_TEXT)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	copy.add_child(label)
+	var detail := Kit.make_label(description, 10 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 11, COLOR_MUTED)
+	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	copy.add_child(detail)
+	row.add_child(copy)
+	var toggle := CheckButton.new()
+	toggle.name = "Toggle_%s" % title.to_lower().replace(" ", "_")
+	toggle.button_pressed = enabled
+	toggle.custom_minimum_size = Vector2(54, 42)
+	toggle.tooltip_text = description
+	toggle.toggled.connect(func(value: bool): on_change.call(value))
+	row.add_child(toggle)
+	parent.add_child(row)
+	return toggle
+
+## Zoom limits (Settings → Controls → Camera).
+func _format_zoom_value(value: float) -> String:
+	return "%.1f×" % value
+
+func _update_zoom_labels() -> void:
+	if is_instance_valid(_min_zoom_value_label):
+		_min_zoom_value_label.text = _format_zoom_value(GameManager.camera_min_zoom)
+	if is_instance_valid(_max_zoom_value_label):
+		_max_zoom_value_label.text = _format_zoom_value(GameManager.camera_max_zoom)
+	# Keep sliders in sync if limits were clamped elsewhere.
+	if is_instance_valid(_min_zoom_slider) and not is_equal_approx(_min_zoom_slider.value, GameManager.camera_min_zoom):
+		_min_zoom_slider.value = GameManager.camera_min_zoom
+	if is_instance_valid(_max_zoom_slider) and not is_equal_approx(_max_zoom_slider.value, GameManager.camera_max_zoom):
+		_max_zoom_slider.value = GameManager.camera_max_zoom
+
+func _add_zoom_slider_row(parent: VBoxContainer, title: String, hint: String, value: float, on_change: Callable, mode: int, slider_name: String) -> Dictionary:
+	var stack := VBoxContainer.new()
+	stack.name = slider_name + "Row"
+	stack.add_theme_constant_override("separation", 1)
+	var heading := HBoxContainer.new()
+	var label_box := VBoxContainer.new()
+	label_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label_box.add_theme_constant_override("separation", 0)
+	label_box.add_child(Kit.make_label(title, 12, COLOR_TEXT))
+	var hint_label := Kit.make_label(hint, 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label_box.add_child(hint_label)
+	heading.add_child(label_box)
+	var value_label := Kit.make_label(_format_zoom_value(value), 11, COLOR_GOLD)
+	value_label.custom_minimum_size.x = 42
+	value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	heading.add_child(value_label)
+	stack.add_child(heading)
+	var slider := HSlider.new()
+	slider.name = slider_name
+	slider.min_value = GameManager.CAMERA_ZOOM_ABSOLUTE_MIN
+	slider.max_value = GameManager.CAMERA_ZOOM_ABSOLUTE_MAX
+	slider.step = 0.1
+	slider.value = value
+	slider.custom_minimum_size.y = 24
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.tooltip_text = hint
+	var captured_label := value_label
+	slider.value_changed.connect(func(new_value: float):
+		on_change.call(new_value)
+		captured_label.text = _format_zoom_value(new_value))
+	stack.add_child(slider)
+	var range_label := Kit.make_label("%.1f×  ·  %.1f×" % [GameManager.CAMERA_ZOOM_ABSOLUTE_MIN, GameManager.CAMERA_ZOOM_ABSOLUTE_MAX], 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	range_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	stack.add_child(range_label)
+	parent.add_child(stack)
+	return {"slider": slider, "value_label": value_label, "root": stack}
+
+func _add_camera_zoom_controls(parent: VBoxContainer, mode: int) -> void:
+	var hint := Kit.make_label("Set how far the camera can zoom out and in. The view stays inside these limits whether you use the wheel, keys, pinch or the Course Map drag.", 9 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 10, COLOR_QUIET)
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	parent.add_child(hint)
+	var min_row := _add_zoom_slider_row(parent, "Minimum Zoom", "Farthest out — widest view of the course", GameManager.camera_min_zoom, _on_min_zoom_changed, mode, "MinZoom")
+	_min_zoom_slider = min_row["slider"]
+	_min_zoom_value_label = min_row["value_label"]
+	parent.add_child(_make_separator())
+	var max_row := _add_zoom_slider_row(parent, "Maximum Zoom", "Closest in — most detail on the fairway", GameManager.camera_max_zoom, _on_max_zoom_changed, mode, "MaxZoom")
+	_max_zoom_slider = max_row["slider"]
+	_max_zoom_value_label = max_row["value_label"]
+	parent.add_child(_make_separator())
+	var reset := Button.new()
+	reset.name = "ResetZoomButton"
+	reset.text = "Reset Zoom Limits"
+	reset.tooltip_text = "Put the zoom limits back on %.1f× to %.1f×." % [GameManager.CAMERA_MIN_ZOOM_DEFAULT, GameManager.CAMERA_MAX_ZOOM_DEFAULT]
+	reset.custom_minimum_size = Vector2(0, 40)
+	reset.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	reset.add_theme_font_size_override("font_size", 11 if mode == Kit.LayoutMode.PHONE_PORTRAIT else 12)
+	MenuStyle.paint_card(reset, COLOR_MINT, 0.0, 7, COLOR_TEXT, COLOR_TEXT)
+	reset.add_theme_color_override("font_color", COLOR_TEXT)
+	reset.add_theme_color_override("font_hover_color", COLOR_TEXT)
+	reset.add_theme_color_override("font_pressed_color", COLOR_TEXT)
+	reset.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	reset.pressed.connect(_on_reset_zoom_limits)
+	parent.add_child(reset)
+
+func _on_min_zoom_changed(value: float) -> void:
+	var clamped := clampf(value, GameManager.CAMERA_ZOOM_ABSOLUTE_MIN, GameManager.CAMERA_ZOOM_ABSOLUTE_MAX)
+	if clamped >= GameManager.camera_max_zoom:
+		clamped = GameManager.camera_max_zoom - 0.1
+		clamped = clampf(clamped, GameManager.CAMERA_ZOOM_ABSOLUTE_MIN, GameManager.CAMERA_ZOOM_ABSOLUTE_MAX - 0.1)
+		if is_instance_valid(_min_zoom_slider) and not is_equal_approx(_min_zoom_slider.value, clamped):
+			_min_zoom_slider.value = clamped
+			return
+	GameManager.set_camera_min_zoom(clamped)
+	_update_zoom_labels()
+	_save_camera_settings()
+
+func _on_max_zoom_changed(value: float) -> void:
+	var clamped := clampf(value, GameManager.CAMERA_ZOOM_ABSOLUTE_MIN, GameManager.CAMERA_ZOOM_ABSOLUTE_MAX)
+	if clamped <= GameManager.camera_min_zoom:
+		clamped = GameManager.camera_min_zoom + 0.1
+		clamped = clampf(clamped, GameManager.CAMERA_ZOOM_ABSOLUTE_MIN + 0.1, GameManager.CAMERA_ZOOM_ABSOLUTE_MAX)
+		if is_instance_valid(_max_zoom_slider) and not is_equal_approx(_max_zoom_slider.value, clamped):
+			_max_zoom_slider.value = clamped
+			return
+	GameManager.set_camera_max_zoom(clamped)
+	_update_zoom_labels()
+	_save_camera_settings()
+
+func _on_reset_zoom_limits() -> void:
+	GameManager.reset_camera_zoom_limits()
+	_update_zoom_labels()
+	_save_camera_settings()
+	if is_instance_valid(_min_zoom_slider):
+		_min_zoom_slider.value = GameManager.camera_min_zoom
+	if is_instance_valid(_max_zoom_slider):
+		_max_zoom_slider.value = GameManager.camera_max_zoom
+
+## The one run there is: Main closes this menu and the tour prepares its own
+## throwaway course to build every test course on. Only a menu accessed from
+## the Main Menu may ask - away from it the card says so instead.
+func _request_tour() -> void:
+	if not benchmarks_allowed():
+		_benchmark_status_text = BENCHMARK_GATE_TEXT
+		_refresh_benchmark_controls()
+		return
+	_benchmark_status_text = "Starting the course tour - watch it prepare, build and play every test course. Esc cancels and takes the benchmark course down."
+	_refresh_benchmark_controls()
+	tour_requested.emit(CourseBenchmarkScenarios.SUITE_FULL)
+
+## Back to "no results yet" once the Data page has deleted the shelf. The card
+## caches these lines between rebuilds, so clearing the run alone would leave it
+## describing a report that is no longer on the device.
+func _reset_benchmark_card() -> void:
+	_benchmark_stars = 0
+	_benchmark_score = 0.0
+	_benchmark_status_text = BENCHMARK_READY_TEXT if benchmarks_allowed() else BENCHMARK_GATE_TEXT
+	_benchmark_summary_text = BENCHMARK_EMPTY_SUMMARY_TEXT
+	_benchmark_details_text = BENCHMARK_EMPTY_DETAILS_TEXT
+
+
+## Pick up the run the tour finished, so the card opens showing the newest
+## report this machine holds - the tour publishes it as it ends.
+func _adopt_last_benchmark() -> void:
+	var result := PerformanceBenchmark.last_result
+	if result.is_empty():
+		return
+	_benchmark_summary_text = _benchmark_summary_for(result)
+	_benchmark_details_text = _benchmark_details_for(result)
+	_benchmark_status_text = BENCHMARK_DONE_TEXT
+	_apply_benchmark_score(result)
+
+func _apply_benchmark_score(result: Dictionary) -> void:
+	var score: Dictionary = result.get("score", PerformanceBenchmark.score_result(result))
+	_benchmark_stars = int(score.get("stars", 0))
+	_benchmark_score = float(score.get("overall", 0.0))
+
+## The card's headline: the tier and the score first, then the frame pacing.
+func _benchmark_summary_for(result: Dictionary) -> String:
+	var score: Dictionary = result.get("score", PerformanceBenchmark.score_result(result))
+	var frame: Dictionary = result.get("frame", {})
+	if int(frame.get("sample_count", 0)) <= 0:
+		return PerformanceBenchmark.format_summary(result)
+	return "%s · %d/100 · avg %.1f FPS · 1%% low %.1f FPS" % [
+		str(score.get("tier", "Unrated")), int(round(float(score.get("overall", 0.0)))),
+		float(frame.get("average_fps", 0.0)), float(frame.get("one_percent_low_fps", 0.0)),
+	]
+
+## The card's second line: what the run pointed at, GPU included.
+func _benchmark_details_for(result: Dictionary) -> String:
+	var frame: Dictionary = result.get("frame", {})
+	var engine: Dictionary = result.get("engine", {})
+	var gpu: Dictionary = result.get("gpu", {})
+	if int(frame.get("sample_count", 0)) <= 0:
+		return "No frame samples were captured. Run again with the settings screen visible for a full frame-pacing sample."
+	var gpu_text := "GPU %.0f MPix/s" % float(gpu.get("peak_megapixels_per_second", 0.0)) \
+		if bool(gpu.get("available", false)) else "GPU test skipped"
+	var tour: Dictionary = result.get("tour", {})
+	if not tour.is_empty():
+		var rollup: Dictionary = tour.get("rollup", {})
+		var simulation: Dictionary = rollup.get("simulation", {})
+		return "Course tour: %d courses · heaviest %s at %.1f FPS · frame p95 %.1f ms · %s. Open Past Results for every course." % [
+			int(rollup.get("scenario_count", 0)),
+			str(simulation.get("worst_scenario", "-")),
+			float(simulation.get("worst_fps", 0.0)),
+			float(frame.get("p95_frame_ms", 0.0)), gpu_text,
+		]
+	return "Frame p95 %.1f ms · game process %.1f ms/frame · %s. Open Past Results for the scorecard and the runs behind it." % [
+		float(frame.get("p95_frame_ms", 0.0)), float(engine.get("process_ms_per_frame", 0.0)),
+		gpu_text,
+	]
+
+## The card after a rebuild: Run stands down away from the Main Menu, the
+## last run's rating is drawn, and every line says what it currently is.
+## Past Results is never locked - reading a report is not running one.
+func _refresh_benchmark_controls() -> void:
+	if is_instance_valid(_benchmark_run_button):
+		_benchmark_run_button.disabled = not benchmarks_allowed()
+	if is_instance_valid(_benchmark_status_label):
+		_benchmark_status_label.text = _benchmark_status_text
+	if is_instance_valid(_benchmark_summary_label):
+		_benchmark_summary_label.text = _benchmark_summary_text
+	if is_instance_valid(_benchmark_details_label):
+		_benchmark_details_label.text = _benchmark_details_text
+	if is_instance_valid(_benchmark_stars_row):
+		_benchmark_stars_row.set_stars(_benchmark_stars)
+	if is_instance_valid(_benchmark_score_meter):
+		_benchmark_score_meter.set_fraction(_benchmark_score / 100.0,
+			BenchmarkVisuals.score_color(_benchmark_score))
+
+func _select_category(category: int) -> void:
+	if category == _category:
+		return
+	_category = category
+	if category != Category.DATA:
+		# A deletion message belongs to the page it happened on.
+		_data_status_text = "Choose what to delete. This cannot be undone."
+	# The page rebuilds under the header, so the header's page buttons (which
+	# live in the page) are rebuilt with it and light the new page then.
+	_build()
+
+func _on_window_mode_selected(index: int) -> void:
+	match index:
+		0:
+			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, false)
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		1:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+		2:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	_save_display_settings()
+
+func _set_master_volume(value: float) -> void:
+	SoundManager.set_master_volume(value)
+
+func _set_sfx_volume(value: float) -> void:
+	SoundManager.sfx_volume = clampf(value, 0.0, 1.0)
+	SoundManager._save_settings()
+
+func _set_ambient_volume(value: float) -> void:
+	SoundManager.ambient_volume = clampf(value, 0.0, 1.0)
+	SoundManager._update_ambient_volumes()
+	SoundManager._save_settings()
+
+func _set_muted(value: bool) -> void:
+	SoundManager.set_muted(value)
+
+func _set_vsync(enabled: bool) -> void:
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if enabled else DisplayServer.VSYNC_DISABLED)
+	_save_display_settings()
+
+func _set_fps_counter_enabled(enabled: bool) -> void:
+	PerformanceSettings.set_fps_counter_enabled(enabled)
+	_save_display_settings()
+
+func _set_minimap_enabled(enabled: bool) -> void:
+	GameManager.set_minimap_enabled(enabled)
+	_save_display_settings()
+
+func _on_minimap_enabled_changed(enabled: bool) -> void:
+	if is_instance_valid(_minimap_toggle):
+		_minimap_toggle.set_pressed_no_signal(enabled)
+
+func _set_edge_pan_enabled(enabled: bool) -> void:
+	GameManager.set_edge_pan_enabled(enabled)
+	_save_camera_settings()
+
+func _on_edge_pan_enabled_changed(enabled: bool) -> void:
+	if is_instance_valid(_edge_pan_toggle):
+		_edge_pan_toggle.set_pressed_no_signal(enabled)
+
+func _on_invert_zoom_toggled(enabled: bool) -> void:
+	GameManager.invert_zoom_scroll = enabled
+	_save_controls_settings()
+
+func _save_controls_settings() -> void:
+	var config := ConfigFile.new()
+	config.load(SaveManager.SETTINGS_PATH)
+	config.set_value("controls", "invert_zoom_scroll", GameManager.invert_zoom_scroll)
+	config.save(SaveManager.SETTINGS_PATH)
+
+func _save_camera_settings() -> void:
+	var config := ConfigFile.new()
+	config.load(SaveManager.SETTINGS_PATH)
+	config.set_value("camera", "min_zoom", GameManager.camera_min_zoom)
+	config.set_value("camera", "max_zoom", GameManager.camera_max_zoom)
+	config.set_value("camera", "edge_pan_enabled", GameManager.edge_pan_enabled)
+	config.save(SaveManager.SETTINGS_PATH)
+
+func _save_display_settings() -> void:
+	var config := ConfigFile.new()
+	config.load(SaveManager.SETTINGS_PATH)
+	config.set_value("display", "window_mode", DisplayServer.window_get_mode())
+	config.set_value("display", "borderless", DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS))
+	config.set_value("display", "vsync", DisplayServer.window_get_vsync_mode())
+	if has_node("/root/Screen"):
+		Screen.save_ui_scale_to_config(config)
+	else:
+		config.set_value("display", "ui_scale", get_tree().root.content_scale_factor)
+	config.set_value("display", "colorblind_mode", ColorblindMode.to_string_name(GameManager.colorblind_mode))
+	config.set_value("display", "minimap_enabled", GameManager.minimap_enabled)
+	PerformanceSettings.save_to_config(config)
+	# The menu background and overlay choices live in the Display section too,
+	# so they ride along with the rest of this page's settings.
+	if is_instance_valid(Backdrops):
+		Backdrops.save_to_config(config)
+	config.save(SaveManager.SETTINGS_PATH)
+
+func _category_key(category: int) -> String:
+	return {
+		Category.DISPLAY: "display",
+		Category.CONTROLS: "controls",
+		Category.AUDIO: "audio",
+		Category.DATA: "data",
+	}.get(category, "display")
+
+func _category_name(category: int) -> String:
+	return {
+		Category.DISPLAY: "Display",
+		Category.CONTROLS: "Controls",
+		Category.AUDIO: "Audio",
+		Category.DATA: "Data",
+	}.get(category, "Display")
+
+func _category_title(category: int) -> String:
+	return {
+		Category.DISPLAY: "Screen & accessibility",
+		Category.CONTROLS: "Your controls",
+		Category.AUDIO: "Sound & ambience",
+		Category.DATA: "Your data",
+	}.get(category, "Screen & accessibility")
+
+func _category_description(category: int) -> String:
+	var descriptions := {
+		Category.DISPLAY: "Adjust how the game looks and feels on this display.",
+		Category.CONTROLS: "Rebind every course action, reset one control or reset them all.",
+		Category.AUDIO: "Balance the master, effects and ambient volume for the course.",
+		Category.DATA: "What this device keeps: saved courses, records and custom art - delete any part, or all of it.",
+	}
+	return str(descriptions.get(category, "Adjust how the game looks and feels on this display."))
+
+func _make_separator() -> HSeparator:
+	var separator := HSeparator.new()
+	separator.add_theme_color_override("color", MenuStyle.with_alpha(COLOR_BORDER, 0.5))
+	return separator
+
+func _set_margins(container: MarginContainer, margin: int) -> void:
+	for side in ["left", "right", "top", "bottom"]:
+		container.add_theme_constant_override("margin_" + side, margin)
+
+func _on_close() -> void:
+	close_requested.emit()
+	queue_free()
+
+func _input(event: InputEvent) -> void:
+	# The confirm card is the innermost thing on screen: Escape or Cancel puts
+	# the data back, and the menu itself stays open.
+	if is_instance_valid(_data_confirmation):
+		if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+			_close_data_confirmation()
+			get_viewport().set_input_as_handled()
+			return
+		if event is InputEventJoypadButton and event.is_action_pressed("cancel"):
+			_close_data_confirmation()
+			get_viewport().set_input_as_handled()
+			return
+	# A listening keycap consumes the next key or controller button before
+	# Escape can close the menu, the GUI can press a button, or a gameplay
+	# hotkey can reach the course behind it.
+	if not _capturing_action.is_empty():
+		if _handle_capture(event):
+			get_viewport().set_input_as_handled()
+			return
+	if event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_ESCAPE:
+			_on_close()
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventJoypadButton and event.is_action_pressed("cancel"):
+		_on_close()
+		get_viewport().set_input_as_handled()
+		return
+	if camera != null and _is_camera_event(event):
+		camera.handle_input_event(event, true)
+
+func _is_camera_event(event: InputEvent) -> bool:
+	if event is InputEventMagnifyGesture:
+		return _hover_is_backdrop()
+	if event is InputEventMouseMotion:
+		return camera.is_dragging() or _hover_is_backdrop()
+	if event is InputEventMouseButton:
+		if camera.is_dragging():
+			return true
+		if not _hover_is_backdrop():
+			return false
+		return event.button_index == MOUSE_BUTTON_MIDDLE \
+			or event.button_index == MOUSE_BUTTON_WHEEL_UP \
+			or event.button_index == MOUSE_BUTTON_WHEEL_DOWN
+	return false
+
+func _hover_is_backdrop() -> bool:
+	var hovered := _get_hovered_control()
+	return hovered == null or not _is_interactive_control(hovered)
+
+func _get_hovered_control() -> Control:
+	return get_viewport().gui_get_hovered_control()
+
+func _is_interactive_control(control: Control) -> bool:
+	var node: Node = control
+	while node != null and node != self:
+		if node is Button or node is LineEdit or node is Range or node is ScrollContainer:
+			return true
+		node = node.get_parent()
+	return false

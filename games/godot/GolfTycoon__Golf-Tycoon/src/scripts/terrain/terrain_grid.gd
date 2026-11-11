@@ -1,0 +1,1636 @@
+extends Node2D
+class_name TerrainGrid
+## TerrainGrid - Manages the tile grid for the golf course
+
+@export var grid_width: int = 128
+@export var grid_height: int = 128
+const DEFAULT_TILE_WIDTH: int = 64
+const DEFAULT_TILE_HEIGHT: int = 32
+@export var tile_width: int = DEFAULT_TILE_WIDTH
+@export var tile_height: int = DEFAULT_TILE_HEIGHT
+const view_isometric: bool = true
+@export_range(0, 3) var view_orientation: int = 0
+
+## Grid <-> world projection shared by every renderer and the input handlers.
+var projection: GridProjection = GridProjection.new()
+
+## Elevation levels run 0..10: 0 is the deepest a vertex can be dug down and
+## 10 the highest it can be raised. Flat, untouched ground sits mid-range at
+## BASE_ELEVATION so the terrain can still move five levels in each direction.
+const MIN_ELEVATION: int = 0
+const MAX_ELEVATION: int = 10
+## Level of flat ground ("sea level"): what a fresh course lies at, and the
+## middle of the MIN..MAX range. Screen displacement is measured from here.
+const BASE_ELEVATION: int = 5
+const SLOPE_SAMPLE_STEP: float = 0.5
+const ELEVATION_STEP_Y: float = 10.0
+## Screen-space elevation is a ray/heightfield intersection, not a fixed-point
+## iteration. A vertical screen ray crosses at most eight tile boundaries over
+## the elevation range; solving each tile's bilinear patch exactly avoids both
+## coarse-sample cliff artifacts and razor-thin peaks hidden between samples.
+const ELEVATION_RAY_MAX_TILE_STEPS: int = 12
+const ELEVATION_RAY_EPSILON: float = 0.00001
+const INVALID_GRID_POINT := Vector2(-1.0, -1.0)
+## How far (in tiles) past the map's rim a pointer still snaps to the rim's
+## centres and vertices. A rim anchor's catchment extends half a tile outward,
+## so without this the far-edge vertices could only be picked from their inner half.
+const ANCHOR_RIM_MARGIN: float = 0.5
+
+var _grid: Dictionary = {}
+var _vertex_elevation: PackedInt32Array = PackedInt32Array()  # (grid_width+1) * (grid_height+1)
+var _vertex_stride: int = 0  # Row length of _vertex_elevation (grid_width + 1)
+## Maintained as heights are edited/loaded so flat courses can skip the shader's
+## per-pixel heightfield ray intersection and relief-normal sampling entirely.
+var _non_base_vertex_count: int = 0
+var _player_placed_tiles: Dictionary = {}  # Vector2i -> true for tiles player placed (for maintenance)
+## Green tiles carrying a cup that is not yet part of a hole — a "Green With Hole" tile
+## waiting to be paired with a tee box. Once a hole is opened the marker is consumed and
+## the cup lives on as the hole's `hole_position`, so every marker here is unused.
+var _cup_tiles: Dictionary = {}  # Vector2i -> true
+## Tiles carrying the Path improvement: a thin walking path laid ON TOP of
+## hostable ground (see TerrainTypes.WALKING_PATH_TERRAINS) without replacing
+## the terrain underneath. Repainting a tile to non-hostable ground removes
+## the path. See set_walking_path().
+var _walking_paths: Dictionary = {}  # Vector2i -> true
+## Tiles an older save stored as cart path terrain (id 9, now retired). Filled by
+## deserialize() and folded into the trail layer by deserialize_walking_paths().
+var _retired_cart_paths: Dictionary = {}  # Vector2i -> true
+## Index of TEE_BOX tiles, kept in step with _grid so the tee placement rule
+## ("no waiting tee box on the course") is a dictionary lookup, not a grid scan.
+var _tee_box_tiles: Dictionary = {}  # Vector2i -> true
+var _elevation_overlay: ElevationOverlay = null
+var _course_surface: CourseSurface = null
+var _wildlife: CourseWildlife = null
+
+signal surface_refreshed
+signal tile_changed(position: Vector2i, old_type: int, new_type: int)
+signal elevation_changed(position: Vector2i, old_elevation: int, new_elevation: int)
+signal vertex_elevation_changed(vertex: Vector2i, old_elevation: int, new_elevation: int)
+signal view_rotated(orientation: int, isometric: bool)
+## Emitted whenever a "Green With Hole" (cup) marker is added or removed.
+signal cup_tiles_changed
+## Emitted whenever the Path improvement (walking path) layer changes.
+signal walking_paths_changed
+
+## Bumped on every terrain type or elevation write — including the quiet bulk
+## paths (load, generation) that emit no per-tile signals — so caches of
+## terrain-derived results (see HolePathPlanner) can tell when they went stale.
+var terrain_revision: int = 0
+
+## Batch mode — defers signals until end_batch() to avoid overlay redraw cascade
+var _batch_mode: bool = false
+var _batch_changes: Array = []  # Array of {pos, old_type, new_type, record_undo}
+## Context of the tile_changed signal currently being emitted. Entity
+## foundations still notify renderers and the EventBus, but their terrain work
+## belongs to the building action, not to a separate terrain undo action.
+var tile_change_records_undo: bool = true
+
+var _ob_markers_overlay: OBMarkersOverlay = null
+var _cup_overlay: CupOverlay = null
+var _tee_aim_overlay: TeeAimOverlay = null
+var _water_overlay: WaterOverlay = null
+var _bunker_overlay: BunkerOverlay = null
+var _grass_overlay: GrassOverlay = null
+var _fairway_overlay: FairwayOverlay = null
+var _tree_overlay: TreeOverlay = null
+var _flower_overlay: FlowerOverlay = null
+var _walking_path_overlay: WalkingPathOverlay = null
+var _debug_overlay: TerrainDebugOverlay = null
+var _land_boundary_overlay: LandBoundaryOverlay = null
+var _wind_flag_overlay: WindFlagOverlay = null
+var _shot_heatmap_overlay: ShotHeatmapOverlay = null
+var _fairway_width_overlay: FairwayWidthOverlay = null
+
+## Shader-driven heightmap elevation system
+var _heightmap: Heightmap = null
+var _elevation_shader_controller: ElevationShaderController = null
+var _elevation_shader_rect: ColorRect = null
+
+## Ground detail painted on the surface, bottom-up. All of it shares the terrain
+## band (`z_index` 1): the entity band opens at 2, so no whole number is left to
+## rank a canopy against the trail it crosses, and Godot settles a tie inside one
+## band by the order the children sit in the tree. Sibling order decides who
+## covers whom, so this list is the ranking and `_order_ground_detail()` applies
+## it. A trail is trodden ground and a tree grows through it, so the standing
+## trees are painted last: woodland always covers the path graphics, and no
+## trunk is cut in half by a ribbon of paving. Whatever else the grid lays over
+## the ground — the wildlife, added after this band — keeps its place, and the
+## entities with their shadows ride their own bands above.
+## See docs/architecture.md, Draw Order.
+const GROUND_DETAIL_ORDER: Array[String] = [
+	"FlowerOverlay", "WalkingPathOverlay", "TreeOverlay",
+]
+
+## Camera tracking for the viewport-culling overlays. A pan only changes what
+## a culling overlay has to paint once it reaches a tile it did not have before:
+## a sub-pixel drift inside the tile window leaves every cached draw list valid,
+## so it must not queue a rebuild. The zoom step catches the zoom-dependent
+## detail levels an overlay picks (the elevation lattice), which can change
+## without the tile window moving.
+const CAMERA_ZOOM_STEP: float = 0.05
+var _last_visible_min: Vector2i = Vector2i(-1, -1)
+var _last_visible_max: Vector2i = Vector2i(-1, -1)
+var _last_camera_zoom_step: float = -1.0
+var _camera_redraw_elapsed: float = 0.0
+var _camera_redraw_pending: bool = false
+var _last_camera_redraw_ms: int = 0
+## How many camera-driven repaints the ground overlays have been given. The
+## count is the thing a pan is charged for (see `_process`), so the tests read
+## it to prove that drifting inside a tile window costs nothing.
+var camera_repaint_count: int = 0
+
+func _ready() -> void:
+	_init_projection()
+	_course_surface = CourseSurface.new()
+	_initialize_grid()
+	_course_surface.name = "CourseSurface"
+	add_child(_course_surface)
+	_course_surface.initialize(self)
+	_setup_ob_markers_overlay()
+	_setup_cup_overlay()
+	_setup_tee_aim_overlay()
+	# The continuous surface supplies turf, sand, water, stones, and paths on
+	# every platform; the overlays paint what stands on it. Keep the legacy
+	# overlay classes available for older tools, but don't double draw.
+	# The ground detail is added bottom-up and then ranked once, by
+	# `_order_ground_detail()`: flowers and the walking trail on the turf, the
+	# standing trees over both.
+	_setup_flower_overlay()
+	_setup_walking_path_overlay()
+	_setup_tree_overlay()
+	_order_ground_detail()
+	_setup_elevation_overlay()
+	_setup_debug_overlay()
+	_setup_land_boundary_overlay()
+	_setup_wind_flag_overlay()
+	_setup_elevation_shader()
+	_setup_fairway_width_overlay()
+	_wildlife = CourseWildlife.new()
+	_wildlife.name = "CourseWildlife"
+	add_child(_wildlife)
+	_wildlife.initialize(self)
+
+func _process(_delta: float) -> void:
+	# Flush any pending heightmap blur + texture uploads (batched for performance)
+	if _heightmap:
+		_heightmap.flush_dirty()
+	# Canvas overlays cull their draw lists to the camera. Queue them at a capped
+	# cadence instead of once per rendered frame while the player pans/zooms;
+	# the small prefetch margin keeps the screen edges filled between redraws.
+	# The overlap of the old and new tile windows is what makes a pan cheap:
+	# every redraw rebuilds the visible draw lists, so it is only worth one when
+	# the window actually gained or lost tiles (see `get_visible_tile_range()`).
+	var viewport := get_viewport()
+	var camera := viewport.get_camera_2d() if viewport else null
+	if not camera:
+		return
+	var tile_range := get_visible_tile_range()
+	if tile_range.size() < 2:
+		return
+	var first: Vector2i = tile_range[0]
+	var last: Vector2i = tile_range[1]
+	var zoom_step := snappedf(camera.zoom.x, CAMERA_ZOOM_STEP)
+	if first != _last_visible_min or last != _last_visible_max \
+			or not is_equal_approx(zoom_step, _last_camera_zoom_step):
+		_last_visible_min = first
+		_last_visible_max = last
+		_last_camera_zoom_step = zoom_step
+		_camera_redraw_pending = true
+	if not _camera_redraw_pending:
+		return
+	# Wall-clock cadence: the overlays, like the camera that moves under them,
+	# are player-facing UI. A delta scaled by Engine.time_scale is 0 while the
+	# game is paused, which used to freeze the overlays with the simulation (and
+	# made a paused pan look free while a live one paid for every repaint).
+	var now_ms := Time.get_ticks_msec()
+	if _last_camera_redraw_ms <= 0:
+		_last_camera_redraw_ms = now_ms
+	var real_delta := clampf(float(now_ms - _last_camera_redraw_ms) / 1000.0, 0.0, 0.1)
+	_last_camera_redraw_ms = now_ms
+	_camera_redraw_elapsed += real_delta
+	if _camera_redraw_elapsed >= PerformanceSettings.camera_redraw_interval():
+		_camera_redraw_elapsed = 0.0
+		_camera_redraw_pending = false
+		camera_repaint_count += 1
+		_redraw_all_overlays()
+		if _tree_overlay:
+			_tree_overlay.update_visible_trees()
+
+
+func _redraw_all_overlays() -> void:
+	if _cup_overlay:
+		_cup_overlay.queue_redraw()
+	if _tee_aim_overlay:
+		_tee_aim_overlay.queue_redraw()
+	if _wildlife:
+		_wildlife.queue_redraw()
+	if _water_overlay:
+		_water_overlay.queue_redraw()
+	if _bunker_overlay:
+		_bunker_overlay.queue_redraw()
+	if _grass_overlay:
+		_grass_overlay.queue_redraw()
+	if _fairway_overlay:
+		_fairway_overlay.queue_redraw()
+	# Tree visuals are persistent, Y-sorted child CanvasItems. Camera movement
+	# only changes which ones are instantiated, not how their art is drawn.
+	if _flower_overlay:
+		_flower_overlay.queue_redraw()
+	if _walking_path_overlay:
+		_walking_path_overlay.queue_redraw()
+	if _shot_heatmap_overlay:
+		_shot_heatmap_overlay.queue_redraw()
+	if _elevation_overlay:
+		_elevation_overlay.queue_redraw()
+	if _ob_markers_overlay:
+		_ob_markers_overlay.queue_redraw()
+	if _debug_overlay:
+		_debug_overlay.queue_redraw()
+	if _land_boundary_overlay:
+		_land_boundary_overlay.queue_redraw()
+	if _fairway_width_overlay:
+		_fairway_width_overlay.queue_redraw()
+
+## Reposition redraw-cached ground art after the heightfield moves. Texture
+## uploads are handled separately; these are the CanvasItems whose projected
+## vertices and child-node anchors would otherwise remain at the old height.
+func _refresh_elevation_visuals() -> void:
+	# Projected ground art keeps a per-tile shelf so a camera repaint is cheap;
+	# the heightfield just moved, so the shelf is stale.
+	if _walking_path_overlay:
+		_walking_path_overlay.invalidate_ground()
+	if _land_boundary_overlay:
+		_land_boundary_overlay.invalidate_ground()
+	_redraw_all_overlays()
+	if _cup_overlay:
+		_cup_overlay.refresh_pin_positions()
+	if _wind_flag_overlay:
+		_wind_flag_overlay.refresh_flag_positions()
+	if _fairway_width_overlay:
+		_fairway_width_overlay.refresh_elevation()
+
+func _initialize_grid() -> void:
+	terrain_revision += 1
+	# A new course may carry a different grid and a different view: forget the
+	# window the last one wore so the first frame after a load repaints.
+	_last_visible_min = Vector2i(-1, -1)
+	_last_visible_max = Vector2i(-1, -1)
+	_ensure_vertex_storage()
+	_tee_box_tiles.clear()
+	_walking_paths.clear()
+	for x in range(grid_width):
+		for y in range(grid_height):
+			var pos = Vector2i(x, y)
+			_grid[pos] = TerrainTypes.Type.GRASS
+
+func _init_projection() -> void:
+	projection.configure(Vector2i(grid_width, grid_height), Vector2(tile_width, tile_height))
+	projection.set_orientation(view_orientation)
+	view_orientation = projection.orientation
+
+func get_elevation_displacement(grid_pos: Vector2) -> Vector2:
+	if not view_isometric or ELEVATION_STEP_Y == 0.0:
+		return Vector2.ZERO
+	return Vector2(0.0, -(get_elevation_at(grid_pos) - BASE_ELEVATION) * ELEVATION_STEP_Y)
+
+func get_vertex_elevation_displacement(vertex: Vector2i) -> Vector2:
+	if not view_isometric or ELEVATION_STEP_Y == 0.0:
+		return Vector2.ZERO
+	return Vector2(0.0, -float(get_vertex_elevation(vertex) - BASE_ELEVATION) * ELEVATION_STEP_Y)
+
+func screen_to_grid(screen_pos: Vector2) -> Vector2i:
+	var g := screen_to_grid_point(screen_pos)
+	return Vector2i(floori(g.x), floori(g.y))
+
+func screen_to_grid_precise(screen_pos: Vector2) -> Vector2:
+	return screen_to_grid_point(screen_pos) - Vector2(0.5, 0.5)
+
+## Snap a world-space pointer position to the closest useful shot target on the
+## nearby terrain: either a tile centre or one of its vertices. The returned
+## `point` uses the game's precise grid convention (integer = tile centre).
+## Distances are compared after projection, so the result remains correct after
+## view rotation and on sculpted terrain. A pointer up to `ANCHOR_RIM_MARGIN`
+## past the map's edge still snaps to the rim anchor it is nearest to (the far-edge
+## vertices sit exactly on that edge); further out there is nothing to aim at.
+func snap_world_to_tile_anchor(world_pos: Vector2) -> Dictionary:
+	var grid_point := screen_to_grid_point(world_pos)
+	if grid_point == INVALID_GRID_POINT:
+		# Anchor snapping deliberately accepts a pointer half a tile beyond the
+		# visible surface, so retain the flat position for that rim catchment.
+		grid_point = projection.unproject(world_pos)
+	if grid_point.x < -ANCHOR_RIM_MARGIN or grid_point.y < -ANCHOR_RIM_MARGIN \
+			or grid_point.x > float(grid_width) + ANCHOR_RIM_MARGIN \
+			or grid_point.y > float(grid_height) + ANCHOR_RIM_MARGIN:
+		return {}
+	# Search around the nearest in-map cell; the nearest anchor is still chosen by
+	# its distance to the actual pointer below.
+	grid_point = grid_point.clamp(Vector2.ZERO, Vector2(grid_width, grid_height))
+
+	var base_x := floori(grid_point.x)
+	var base_y := floori(grid_point.y)
+	var best_distance_squared := INF
+	var best_point := Vector2.ZERO
+	var best_grid_point := Vector2.ZERO
+	var best_type := ""
+	var best_tile := Vector2i.ZERO
+
+	# The hovered cell and its neighbours cover every centre/vertex that can be
+	# nearest to a point inside the cell (including points on its edges).
+	for x in range(base_x - 1, base_x + 2):
+		for y in range(base_y - 1, base_y + 2):
+			# Tile centre.
+			if x >= 0 and x < grid_width and y >= 0 and y < grid_height:
+				var centre_grid := Vector2(x, y) + Vector2(0.5, 0.5)
+				var centre_screen := grid_point_to_screen(centre_grid)
+				var centre_distance_squared := world_pos.distance_squared_to(centre_screen)
+				if centre_distance_squared < best_distance_squared:
+					best_distance_squared = centre_distance_squared
+					best_grid_point = centre_grid
+					best_point = centre_grid - Vector2(0.5, 0.5)
+					best_type = "center"
+					best_tile = Vector2i(x, y)
+
+			# Four shared vertices. Include map-edge vertices, but never coordinates
+			# beyond the edge of the terrain mesh.
+			if x >= 0 and x <= grid_width and y >= 0 and y <= grid_height:
+				var vertex_grid := Vector2(x, y)
+				var vertex_screen := grid_point_to_screen(vertex_grid)
+				var vertex_distance_squared := world_pos.distance_squared_to(vertex_screen)
+				if vertex_distance_squared < best_distance_squared:
+					best_distance_squared = vertex_distance_squared
+					best_grid_point = vertex_grid
+					best_point = vertex_grid - Vector2(0.5, 0.5)
+					best_type = "vertex"
+					best_tile = Vector2i(clampi(x, 0, grid_width - 1), clampi(y, 0, grid_height - 1))
+
+	if best_type.is_empty():
+		return {}
+	return {
+		"point": best_point,
+		"grid_point": best_grid_point,
+		"screen_position": grid_point_to_screen(best_grid_point),
+		"anchor_type": best_type,
+		"tile": best_tile,
+		"distance": sqrt(best_distance_squared),
+	}
+
+func screen_to_grid_point(screen_pos: Vector2) -> Vector2:
+	var flat_point := projection.unproject(screen_pos)
+	if not view_isometric or ELEVATION_STEP_Y == 0.0:
+		return flat_point
+
+	# A screen pixel is a vertical ray through the heightfield. Along that ray
+	# g(t) = flat_point + ray_direction * t and the visible surface satisfies
+	# t = (height(g(t)) - BASE_ELEVATION) * ELEVATION_STEP_Y. Search from the
+	# greatest possible height downwards: the first crossing is the front-most
+	# surface when steep slopes overlap each other on screen.
+	var ray_direction := projection.unproject(screen_pos + Vector2(0.0, 1.0)) - flat_point
+	var lower_t := float(MIN_ELEVATION - BASE_ELEVATION) * ELEVATION_STEP_Y
+	var upper_t := float(MAX_ELEVATION - BASE_ELEVATION) * ELEVATION_STEP_Y
+
+	# Clip the ray to the course rectangle before intersecting it. This prevents
+	# clamped edge heights from inventing ground beyond the visible map rim.
+	for axis in range(2):
+		var start: float = flat_point[axis]
+		var direction: float = ray_direction[axis]
+		var extent: float = float(grid_width if axis == 0 else grid_height)
+		if absf(direction) < 0.000001:
+			if start < 0.0 or start > extent:
+				return INVALID_GRID_POINT
+			continue
+		var edge_a: float = -start / direction
+		var edge_b: float = (extent - start) / direction
+		lower_t = maxf(lower_t, minf(edge_a, edge_b))
+		upper_t = minf(upper_t, maxf(edge_a, edge_b))
+	if lower_t > upper_t:
+		return INVALID_GRID_POINT
+	if absf(upper_t - lower_t) <= ELEVATION_RAY_EPSILON:
+		var rim_point := flat_point + ray_direction * upper_t
+		var rim_value := upper_t - (get_elevation_at(rim_point) - BASE_ELEVATION) * ELEVATION_STEP_Y
+		return rim_point if absf(rim_value) <= ELEVATION_RAY_EPSILON else INVALID_GRID_POINT
+
+	# Walk only the tiles the ray actually crosses. Height is bilinear inside a
+	# tile, so F(t) is a quadratic and every crossing (including a tangent peak)
+	# can be found exactly instead of relying on a sampled sign change.
+	var current_t := upper_t
+	for _segment in range(ELEVATION_RAY_MAX_TILE_STEPS):
+		var current_point := flat_point + ray_direction * current_t
+		var next_t := lower_t
+		for axis in range(2):
+			var direction: float = ray_direction[axis]
+			if absf(direction) < 0.000001:
+				continue
+			# Select the first integer grid boundary strictly below current_t.
+			var boundary := floorf(current_point[axis] - ELEVATION_RAY_EPSILON) \
+					if direction > 0.0 else ceilf(current_point[axis] + ELEVATION_RAY_EPSILON)
+			var boundary_t: float = (boundary - flat_point[axis]) / direction
+			if boundary_t < current_t and boundary_t > next_t:
+				next_t = boundary_t
+		if next_t >= current_t - ELEVATION_RAY_EPSILON:
+			break
+
+		var middle_t := (current_t + next_t) * 0.5
+		var middle_point := flat_point + ray_direction * middle_t
+		var cell := Vector2i(floori(middle_point.x), floori(middle_point.y))
+		if is_valid_position(cell):
+			var root_t := _intersect_elevation_tile(flat_point, ray_direction, cell,
+					current_t, next_t, middle_t)
+			if root_t != INF:
+				return (flat_point + ray_direction * root_t).clamp(
+						Vector2.ZERO, Vector2(grid_width, grid_height))
+		if next_t <= lower_t + ELEVATION_RAY_EPSILON:
+			break
+		current_t = next_t
+
+	# Above the highest surface or below the lowest one: there is no terrain
+	# under this pointer, even if its flat projection happens to lie on the map.
+	return INVALID_GRID_POINT
+
+## Return the greatest root in [low_t, high_t], or INF when this tile misses.
+## The quadratic is centred on the tile interval for stable float arithmetic.
+func _intersect_elevation_tile(flat_point: Vector2, ray_direction: Vector2,
+		cell: Vector2i, high_t: float, low_t: float, middle_t: float) -> float:
+	var h00 := float(get_vertex_elevation(cell) - BASE_ELEVATION)
+	var h10 := float(get_vertex_elevation(cell + Vector2i(1, 0)) - BASE_ELEVATION)
+	var h01 := float(get_vertex_elevation(cell + Vector2i(0, 1)) - BASE_ELEVATION)
+	var h11 := float(get_vertex_elevation(cell + Vector2i(1, 1)) - BASE_ELEVATION)
+	var hx := h10 - h00
+	var hy := h01 - h00
+	var hxy := h11 - h10 - h01 + h00
+	var middle_point := flat_point + ray_direction * middle_t
+	var u := middle_point.x - float(cell.x)
+	var v := middle_point.y - float(cell.y)
+	var c0 := h00 + hx * u + hy * v + hxy * u * v
+	var c1 := hx * ray_direction.x + hy * ray_direction.y \
+			+ hxy * (u * ray_direction.y + v * ray_direction.x)
+	var c2 := hxy * ray_direction.x * ray_direction.y
+
+	# q = t - middle_t. F(q) = a*q^2 + b*q + c.
+	var a := -ELEVATION_STEP_Y * c2
+	var b := 1.0 - ELEVATION_STEP_Y * c1
+	var c := middle_t - ELEVATION_STEP_Y * c0
+	var low_q := low_t - middle_t
+	var high_q := high_t - middle_t
+	var best_q := -INF
+	if absf(a) <= ELEVATION_RAY_EPSILON:
+		if absf(b) <= ELEVATION_RAY_EPSILON:
+			# An edge-on patch can coincide with the whole ray interval. Its high
+			# endpoint is still the front-most point.
+			return high_t if absf(c) <= ELEVATION_RAY_EPSILON else INF
+		var q := -c / b
+		if q >= low_q - ELEVATION_RAY_EPSILON and q <= high_q + ELEVATION_RAY_EPSILON:
+			best_q = q
+	else:
+		var discriminant := b * b - 4.0 * a * c
+		if discriminant >= -ELEVATION_RAY_EPSILON:
+			var root := sqrt(maxf(0.0, discriminant))
+			var q := (-b + root) / (2.0 * a)
+			if q >= low_q - ELEVATION_RAY_EPSILON and q <= high_q + ELEVATION_RAY_EPSILON:
+				best_q = maxf(best_q, q)
+			q = (-b - root) / (2.0 * a)
+			if q >= low_q - ELEVATION_RAY_EPSILON and q <= high_q + ELEVATION_RAY_EPSILON:
+				best_q = maxf(best_q, q)
+	return middle_t + best_q if best_q != -INF else INF
+
+func grid_to_screen(grid_pos: Vector2i) -> Vector2:
+	return projection.cell_corner(grid_pos) + get_vertex_elevation_displacement(grid_pos)
+
+func grid_to_screen_center(grid_pos: Vector2i) -> Vector2:
+	# Returns the center of the tile (for entity positioning)
+	return projection.cell_center(grid_pos) + get_elevation_displacement(Vector2(grid_pos) + Vector2(0.5, 0.5))
+
+func grid_to_screen_precise(grid_pos: Vector2) -> Vector2:
+	# Returns screen position for a sub-tile grid coordinate (used for putting precision)
+	var pos := grid_pos + Vector2(0.5, 0.5)
+	return projection.project(pos) + get_elevation_displacement(pos)
+
+func grid_point_to_screen(grid_pos: Vector2) -> Vector2:
+	return projection.project(grid_pos) + get_elevation_displacement(grid_pos)
+
+func tile_polygon(grid_pos: Vector2i) -> PackedVector2Array:
+	var p := Vector2(grid_pos)
+	return PackedVector2Array([
+		grid_point_to_screen(p),
+		grid_point_to_screen(p + Vector2(1, 0)),
+		grid_point_to_screen(p + Vector2(1, 1)),
+		grid_point_to_screen(p + Vector2(0, 1)),
+	])
+
+func tile_world_rect(grid_pos: Vector2i) -> Rect2:
+	return projection.cell_world_rect(grid_pos)
+
+func world_bounds() -> Rect2:
+	return projection.world_bounds()
+
+static func _apply_projection_uniforms(shader_material: ShaderMaterial, proj: GridProjection) -> void:
+	shader_material.set_shader_parameter("grid_origin", proj.grid_origin())
+	shader_material.set_shader_parameter("grid_axis_x", proj.axis_x())
+	shader_material.set_shader_parameter("grid_axis_y", proj.axis_y())
+	shader_material.set_shader_parameter("surface_origin", proj.world_bounds().position)
+
+func rotate_view_cw() -> void:
+	_apply_view(projection.orientation + 1)
+
+func rotate_view_ccw() -> void:
+	_apply_view(projection.orientation - 1)
+
+func is_view_isometric() -> bool:
+	return projection.isometric
+
+func get_view_orientation() -> int:
+	return projection.orientation
+
+func set_view_orientation(orientation: int) -> void:
+	_apply_view(orientation)
+
+func _apply_view(orientation: int) -> void:
+	projection.set_orientation(orientation)
+	view_orientation = projection.orientation
+	_sync_projection_dependents()
+	view_rotated.emit(projection.orientation, projection.isometric)
+	EventBus.view_rotated.emit(projection.orientation, projection.isometric)
+
+func _sync_projection_dependents() -> void:
+	var bounds := projection.world_bounds()
+	if _course_surface:
+		_course_surface.apply_projection(projection)
+	if _elevation_shader_rect:
+		_elevation_shader_rect.position = bounds.position
+		_elevation_shader_rect.size = bounds.size
+	if _elevation_shader_controller:
+		_elevation_shader_controller.apply_projection(projection)
+	_redraw_all_overlays()
+	if _wind_flag_overlay:
+		_wind_flag_overlay.refresh_flag_positions()
+	if _cup_overlay:
+		_cup_overlay.refresh_pin_positions()
+	queue_redraw()
+
+func is_valid_position(pos: Vector2i) -> bool:
+	return pos.x >= 0 and pos.x < grid_width and pos.y >= 0 and pos.y < grid_height
+
+func get_tile(pos: Vector2i) -> int:
+	if not is_valid_position(pos):
+		return TerrainTypes.Type.OUT_OF_BOUNDS
+	return _grid.get(pos, TerrainTypes.Type.EMPTY)
+
+## Begin batch mode — tile changes won't emit signals until end_batch()
+func begin_batch() -> void:
+	_batch_mode = true
+	_batch_changes.clear()
+
+## End batch mode and emit deferred change signals so surfaces and overlays update.
+func end_batch() -> void:
+	_batch_mode = false
+	for change in _batch_changes:
+		_emit_tile_change(change.pos, change.old_type, change.new_type, change.record_undo)
+	_batch_changes.clear()
+
+## End batch mode without emitting deferred signals (for bulk generation/load).
+## Call refresh_all_overlays() after to rescan terrain state.
+func end_batch_quiet() -> void:
+	_batch_mode = false
+	_batch_changes.clear()
+
+## Force all overlays to rescan terrain from scratch and redraw.
+## Use after bulk terrain changes (generation, load) that bypassed per-tile signals.
+func refresh_all_overlays() -> void:
+	surface_refreshed.emit()
+	if _wildlife:
+		_wildlife.rebuild()
+	if _course_surface:
+		_course_surface.rebuild()
+	if _water_overlay and _water_overlay.has_method("_scan_water_tiles"):
+		_water_overlay._scan_water_tiles()
+		_water_overlay.queue_redraw()
+	if _bunker_overlay and _bunker_overlay.has_method("_scan_bunker_tiles"):
+		_bunker_overlay._scan_bunker_tiles()
+		_bunker_overlay.queue_redraw()
+	if _grass_overlay and _grass_overlay.has_method("_regenerate_grass"):
+		_grass_overlay._regenerate_grass()
+		_grass_overlay.queue_redraw()
+	if _fairway_overlay and _fairway_overlay.has_method("_scan_tiles"):
+		_fairway_overlay._scan_tiles()
+		_fairway_overlay.queue_redraw()
+	if _tree_overlay:
+		_tree_overlay.rescan()
+	if _flower_overlay and _flower_overlay.has_method("_scan_flower_tiles"):
+		_flower_overlay._scan_flower_tiles()
+		_flower_overlay.queue_redraw()
+	if _walking_path_overlay:
+		_walking_path_overlay.rebuild()
+	if _ob_markers_overlay and _ob_markers_overlay.has_method("_calculate_boundaries"):
+		_ob_markers_overlay._calculate_boundaries()
+	if _cup_overlay:
+		_cup_overlay.queue_redraw()
+	if _tee_aim_overlay:
+		_tee_aim_overlay.rebuild()
+	if _heightmap:
+		# Deferred to the next frame's flush: a run of generation passes that
+		# each refresh the overlays rebuilds the texture once.
+		_heightmap.request_rebuild(self)
+	if _shot_heatmap_overlay:
+		_shot_heatmap_overlay.queue_redraw()
+	queue_redraw()
+
+func set_tile(pos: Vector2i, terrain_type: int, player_placed: bool = true,
+		record_undo: bool = true) -> void:
+	if not is_valid_position(pos):
+		return
+	var old_type = _grid.get(pos, TerrainTypes.Type.EMPTY)
+	if old_type == terrain_type:
+		return
+	_grid[pos] = terrain_type
+	terrain_revision += 1
+	# A walking path only survives on hostable ground (see TerrainTypes.
+	# WALKING_PATH_TERRAINS) — repainting the tile to anything else clears it.
+	if _walking_paths.has(pos) and not TerrainTypes.can_host_walking_path(terrain_type):
+		_walking_paths.erase(pos)
+		walking_paths_changed.emit()
+	# Painting over a "Green With Hole" tile with anything else removes its cup.
+	if terrain_type != TerrainTypes.Type.GREEN and _cup_tiles.has(pos):
+		remove_cup_tile(pos)
+	if terrain_type == TerrainTypes.Type.TEE_BOX:
+		_tee_box_tiles[pos] = true
+	else:
+		_tee_box_tiles.erase(pos)
+	# Track player-placed tiles for maintenance cost calculation
+	if player_placed:
+		_player_placed_tiles[pos] = true
+	if _batch_mode:
+		_batch_changes.append({pos = pos, old_type = old_type, new_type = terrain_type,
+				record_undo = record_undo})
+	else:
+		_emit_tile_change(pos, old_type, terrain_type, record_undo)
+
+func _emit_tile_change(pos: Vector2i, old_type: int, new_type: int, record_undo: bool) -> void:
+	# Preserve the outer context if a listener causes another tile change.
+	var previous := tile_change_records_undo
+	tile_change_records_undo = record_undo
+	tile_changed.emit(pos, old_type, new_type)
+	EventBus.terrain_tile_changed.emit(pos, old_type, new_type)
+	tile_change_records_undo = previous
+
+## Set tile without marking as player-placed (for auto-generation).
+func set_tile_natural(pos: Vector2i, terrain_type: int, record_undo: bool = true) -> void:
+	set_tile(pos, terrain_type, false, record_undo)
+
+func paint_tiles(positions: Array, terrain_type: int) -> void:
+	for pos in positions:
+		if pos is Vector2i:
+			set_tile(pos, terrain_type)
+
+func get_brush_tiles(center: Vector2i, brush_size: int, round_shape: bool = true) -> Array:
+	var tiles: Array = []
+	for offset in TerrainBrush.offsets(brush_size, round_shape):
+		var pos: Vector2i = center + offset
+		if is_valid_position(pos): tiles.append(pos)
+	return tiles
+
+# =============================================================================
+# Cup tiles — "Green With Hole" markers waiting to be paired with a tee box
+# =============================================================================
+
+## Mark a green tile as carrying a cup (a "Green With Hole" tile).
+## Only valid on GREEN terrain; returns true when a marker was added.
+func add_cup_tile(pos: Vector2i) -> bool:
+	if not is_valid_position(pos) or get_tile(pos) != TerrainTypes.Type.GREEN:
+		return false
+	if _cup_tiles.has(pos):
+		return false
+	_cup_tiles[pos] = true
+	cup_tiles_changed.emit()
+	return true
+
+## Remove the cup marker from a tile. Returns true when a marker was removed.
+func remove_cup_tile(pos: Vector2i) -> bool:
+	if not _cup_tiles.has(pos):
+		return false
+	_cup_tiles.erase(pos)
+	cup_tiles_changed.emit()
+	return true
+
+func has_cup_tile(pos: Vector2i) -> bool:
+	return _cup_tiles.has(pos)
+
+## Every green tile that carries a cup.
+func get_cup_tiles() -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	for pos in _cup_tiles:
+		tiles.append(pos)
+	return tiles
+
+## Every TEE_BOX tile on the course (index maintained by set_tile).
+func get_tee_box_tiles() -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	for pos in _tee_box_tiles:
+		tiles.append(pos)
+	return tiles
+
+## Rebuild the tee box index after bulk grid writes (load, generation).
+func _reindex_tee_boxes() -> void:
+	_tee_box_tiles.clear()
+	for pos in _grid:
+		if _grid[pos] == TerrainTypes.Type.TEE_BOX:
+			_tee_box_tiles[pos] = true
+
+func clear_cup_tiles() -> void:
+	if _cup_tiles.is_empty():
+		return
+	_cup_tiles.clear()
+	cup_tiles_changed.emit()
+
+func serialize_cup_tiles() -> Array:
+	var data: Array = []
+	for pos in _cup_tiles:
+		data.append("%d,%d" % [pos.x, pos.y])
+	return data
+
+func deserialize_cup_tiles(data) -> void:
+	_cup_tiles.clear()
+	if data == null:
+		return
+	for key in data:
+		var parts = str(key).split(",")
+		if parts.size() == 2:
+			var pos = Vector2i(int(parts[0]), int(parts[1]))
+			# Only keep markers that survived on a green tile.
+			if is_valid_position(pos) and get_tile(pos) == TerrainTypes.Type.GREEN:
+				_cup_tiles[pos] = true
+	cup_tiles_changed.emit()
+
+# =============================================================================
+# Walking paths — the Path improvement laid over hostable ground
+# =============================================================================
+
+## Does this tile carry a walking path?
+func has_walking_path(pos: Vector2i) -> bool:
+	return _walking_paths.has(pos)
+
+## Can a walking path be laid on this tile (valid position, hostable ground)?
+func can_place_walking_path(pos: Vector2i) -> bool:
+	return is_valid_position(pos) and TerrainTypes.can_host_walking_path(get_tile(pos))
+
+## Player-facing reason a walking path cannot be laid here ("" when it can).
+func walking_path_placement_error(pos: Vector2i) -> String:
+	if not is_valid_position(pos):
+		return "Outside the course."
+	if not TerrainTypes.can_host_walking_path(get_tile(pos)):
+		return "Walking paths are laid on rough, deep rough, waste bunker, brush, rocks, boulders, streams, wild flowers and trees."
+	return ""
+
+## Lay (or remove) the walking path on a tile. Returns true when the layer
+## actually changed. Placement refuses non-hostable ground.
+func set_walking_path(pos: Vector2i, enabled: bool) -> bool:
+	if not is_valid_position(pos):
+		return false
+	if enabled == _walking_paths.has(pos):
+		return false
+	if enabled and not TerrainTypes.can_host_walking_path(get_tile(pos)):
+		return false
+	if enabled:
+		_walking_paths[pos] = true
+	else:
+		_walking_paths.erase(pos)
+	walking_paths_changed.emit()
+	return true
+
+## Lay a trail without announcing it: course generation lays a whole network,
+## and the overlay only needs rebuilding once at the end (see
+## refresh_all_overlays). Returns true when the layer actually changed.
+func set_walking_path_quiet(pos: Vector2i, enabled: bool) -> bool:
+	if not is_valid_position(pos):
+		return false
+	if enabled == _walking_paths.has(pos):
+		return false
+	if enabled and not TerrainTypes.can_host_walking_path(get_tile(pos)):
+		return false
+	if enabled:
+		_walking_paths[pos] = true
+	else:
+		_walking_paths.erase(pos)
+	return true
+
+## What a walker needs to know about a box of the course to plan a route: the
+## walk rate of every tile in it (row by row, `width` tiles per row), and the
+## quickest rate anything in the box is walked at — which is 0.0 when the box
+## carries no walking surface at all (no tile with the Path improvement),
+## meaning there is nothing quicker to walk on and no route to plan.
+##
+## Rates are 0.0 for a tile no walker enters — water, out of bounds or ground
+## outside the property, the same tiles Golfer._path_crosses_obstacle refuses —
+## and they already fold in the terrain's own rate and the walking path laid on
+## it.
+class WalkField:
+	var width: int = 0
+	var rate := PackedFloat32Array()
+	var best: float = 0.0
+
+func walk_field(bounds: Rect2i) -> WalkField:
+	var area := bounds.intersection(Rect2i(Vector2i.ZERO, Vector2i(grid_width, grid_height)))
+	var field := WalkField.new()
+	field.width = area.size.x
+	field.rate.resize(area.size.x * area.size.y)
+	var overlay := _walking_path_overlay
+	for y in range(area.size.y):
+		for x in range(field.width):
+			var pos := Vector2i(area.position.x + x, area.position.y + y)
+			var type: int = get_tile(pos)
+			if type in [TerrainTypes.Type.WATER, TerrainTypes.Type.OUT_OF_BOUNDS,
+					TerrainTypes.Type.EMPTY]:
+				continue
+			var rate: float = TerrainTypes.get_speed_modifier(type)
+			var laid := _walking_paths.has(pos)
+			if laid:
+				# A laid trail is walked quicker than the ground it crosses, and
+				# quicker still once its network reaches the clubhouse.
+				rate *= overlay.speed_modifier_at(pos) if overlay else WalkingPathOverlay.DIRT_SPEED_MODIFIER
+			if laid:
+				field.best = maxf(field.best, rate)
+			field.rate[y * field.width + x] = rate
+	return field
+
+## How quickly this tile is walked, as a multiplier on a golfer's own walking
+## speed: the terrain's own rate (deep rough 0.85x, brush 0.75x — see
+## TerrainTypes.PROPERTIES) times the walking path laid on it (a
+## dirt trail 1.25x, and 1.5x once its network reaches the clubhouse and the
+## trail is paved). Off a trail the terrain's rate is returned unchanged, so a
+## trail through long grass is still the quickest way through it.
+func walk_speed_modifier_at(pos: Vector2i) -> float:
+	var modifier := TerrainTypes.get_speed_modifier(get_tile(pos))
+	if not _walking_paths.has(pos):
+		return modifier
+	if _walking_path_overlay:
+		return modifier * _walking_path_overlay.speed_modifier_at(pos)
+	return modifier * WalkingPathOverlay.DIRT_SPEED_MODIFIER
+
+## Every tile carrying a walking path.
+func get_walking_paths() -> Array[Vector2i]:
+	var paths: Array[Vector2i] = []
+	for pos in _walking_paths:
+		paths.append(pos)
+	return paths
+
+func clear_walking_paths() -> void:
+	if _walking_paths.is_empty():
+		return
+	_walking_paths.clear()
+	walking_paths_changed.emit()
+
+func serialize_walking_paths() -> Array:
+	var data: Array = []
+	for pos in _walking_paths:
+		data.append("%d,%d" % [pos.x, pos.y])
+	return data
+
+func deserialize_walking_paths(data) -> void:
+	_walking_paths.clear()
+	if data != null:
+		for key in data:
+			var parts = str(key).split(",")
+			if parts.size() == 2:
+				var pos = Vector2i(int(parts[0]), int(parts[1]))
+				# Only keep paths whose ground still hosts them (a tree may have
+				# been cleared, a fairway painted over, ...).
+				if is_valid_position(pos) and TerrainTypes.can_host_walking_path(get_tile(pos)):
+					_walking_paths[pos] = true
+	# The gravel tiles an older save carried (see deserialize): they are rough
+	# now, and rough hosts the trail that replaced them.
+	for pos in _retired_cart_paths:
+		if TerrainTypes.can_host_walking_path(get_tile(pos)):
+			_walking_paths[pos] = true
+	_retired_cart_paths.clear()
+	walking_paths_changed.emit()
+
+## Reset to bare land so a new course starts clean: every tile back to GRASS and
+## all per-tile state cleared (player-placed marks, sculpted elevation, waiting
+## cups). New Game paints natural terrain over the existing grid, so without
+## this the previous course leaks into the next one — and a leftover tee box
+## would block the player's very first tee.
+func reset_for_new_course() -> void:
+	deserialize_elevation({})  # Zero the vertex field and refresh elevation dependents.
+	deserialize({})  # GRASS everywhere, clears player-placed marks and the tee index.
+	clear_cup_tiles()
+	clear_walking_paths()
+	if _bunker_overlay:
+		_bunker_overlay.queue_redraw()
+
+## A detached copy of the terrain that shot planning reads — tile types and
+## vertex elevation — with no overlays, surface or children. It never enters the
+## scene tree, so ShotAI can query it from a worker thread while the live grid
+## keeps changing (see HolePathPlanner). The caller owns the copy and must free() it.
+func create_analysis_copy() -> TerrainGrid:
+	var copy := TerrainGrid.new()
+	copy.grid_width = grid_width
+	copy.grid_height = grid_height
+	copy.tile_width = tile_width
+	copy.tile_height = tile_height
+	copy._grid = _grid.duplicate()
+	copy._walking_paths = _walking_paths.duplicate()
+	_ensure_vertex_storage()
+	copy._vertex_elevation = _vertex_elevation.duplicate()
+	copy._vertex_stride = _vertex_stride
+	copy._non_base_vertex_count = _non_base_vertex_count
+	copy.terrain_revision = terrain_revision
+	return copy
+
+## Overwrite a tile's terrain type with no side effects — no signals, indexes,
+## cup bookkeeping, visuals or revision bump. Only for "what if" questions on a
+## detached copy from create_analysis_copy(); the live grid must use set_tile().
+func set_analysis_tile(pos: Vector2i, terrain_type: int) -> void:
+	if is_valid_position(pos):
+		_grid[pos] = terrain_type
+
+func calculate_distance_yards(from: Vector2i, to: Vector2i) -> int:
+	const YARDS_PER_TILE: float = 22.0
+	var distance_tiles = Vector2(to - from).length()
+	return int(distance_tiles * YARDS_PER_TILE)
+
+func calculate_distance_yards_precise(from: Vector2, to: Vector2) -> int:
+	const YARDS_PER_TILE: float = 22.0
+	return int(from.distance_to(to) * YARDS_PER_TILE)
+
+## Get the world-space rectangle currently visible in the camera viewport.
+## Overlays use this to skip drawing off-screen tiles (viewport culling).
+func get_visible_world_rect() -> Rect2:
+	var fallback := world_bounds()
+	var viewport = get_viewport()
+	if not viewport:
+		return fallback
+	var camera = viewport.get_camera_2d()
+	if not camera:
+		return fallback
+	var viewport_size = viewport.get_visible_rect().size
+	var cam_zoom = camera.zoom
+	var visible_size = viewport_size / cam_zoom
+	var camera_pos = camera.global_position
+	return Rect2(camera_pos - visible_size / 2.0, visible_size)
+
+## Get the range of grid tiles currently visible in the camera viewport.
+## Returns [min_tile, max_tile] as Vector2i, clamped to grid bounds.
+func get_visible_tile_range() -> Array[Vector2i]:
+	var world_rect = get_visible_world_rect()
+	var margin = Vector2(tile_width * 3, tile_height * 4)
+	var grown = world_rect.grow_individual(margin.x, margin.y, margin.x, margin.y)
+	var corners: Array[Vector2] = [
+		projection.unproject(grown.position),
+		projection.unproject(Vector2(grown.end.x, grown.position.y)),
+		projection.unproject(grown.end),
+		projection.unproject(Vector2(grown.position.x, grown.end.y)),
+	]
+	var min_g: Vector2 = corners[0]
+	var max_g: Vector2 = corners[0]
+	for point in corners:
+		min_g = Vector2(minf(min_g.x, point.x), minf(min_g.y, point.y))
+		max_g = Vector2(maxf(max_g.x, point.x), maxf(max_g.y, point.y))
+	var min_tile = Vector2i(floori(min_g.x), floori(min_g.y))
+	var max_tile = Vector2i(ceili(max_g.x), ceili(max_g.y))
+	min_tile = Vector2i(maxi(min_tile.x, 0), maxi(min_tile.y, 0))
+	max_tile = Vector2i(mini(max_tile.x, grid_width - 1), mini(max_tile.y, grid_height - 1))
+	return [min_tile, max_tile]
+
+func get_total_maintenance_cost() -> int:
+	## Only count maintenance for player-placed tiles, not auto-generated terrain.
+	## Uses square-root scaling so costs grow sub-linearly with tile count,
+	## preventing large courses from being crushed by per-tile costs.
+	var raw_total: int = 0
+	for pos in _player_placed_tiles:
+		if _grid.has(pos):
+			raw_total += TerrainTypes.get_maintenance_cost(_grid[pos])
+	# sqrt scaling: raw $900 → ~$600, raw $1600 → ~$800, raw $100 → ~$200
+	return int(sqrt(float(raw_total)) * 20.0)
+
+func _setup_ob_markers_overlay() -> void:
+	_ob_markers_overlay = OBMarkersOverlay.new()
+	_ob_markers_overlay.name = "OBMarkersOverlay"
+	add_child(_ob_markers_overlay)
+	_ob_markers_overlay.initialize(self)
+
+func _setup_cup_overlay() -> void:
+	_cup_overlay = CupOverlay.new()
+	_cup_overlay.name = "CupOverlay"
+	add_child(_cup_overlay)
+	_cup_overlay.initialize(self)
+
+func _setup_tee_aim_overlay() -> void:
+	_tee_aim_overlay = TeeAimOverlay.new()
+	_tee_aim_overlay.name = "TeeAimOverlay"
+	add_child(_tee_aim_overlay)
+	_tee_aim_overlay.initialize(self)
+
+func _setup_water_overlay() -> void:
+	_water_overlay = WaterOverlay.new()
+	_water_overlay.name = "WaterOverlay"
+	add_child(_water_overlay)
+	_water_overlay.initialize(self)
+
+func _setup_bunker_overlay() -> void:
+	_bunker_overlay = BunkerOverlay.new()
+	_bunker_overlay.name = "BunkerOverlay"
+	add_child(_bunker_overlay)
+	_bunker_overlay.initialize(self)
+
+func _setup_grass_overlay() -> void:
+	_grass_overlay = GrassOverlay.new()
+	_grass_overlay.name = "GrassOverlay"
+	add_child(_grass_overlay)
+	_grass_overlay.setup(self)
+
+func _setup_fairway_overlay() -> void:
+	_fairway_overlay = FairwayOverlay.new()
+	_fairway_overlay.name = "FairwayOverlay"
+	add_child(_fairway_overlay)
+	_fairway_overlay.initialize(self)
+
+func _setup_tree_overlay() -> void:
+	_tree_overlay = TreeOverlay.new()
+	_tree_overlay.name = "TreeOverlay"
+	add_child(_tree_overlay)
+	_tree_overlay.initialize(self)
+
+func _setup_flower_overlay() -> void:
+	_flower_overlay = FlowerOverlay.new()
+	_flower_overlay.name = "FlowerOverlay"
+	add_child(_flower_overlay)
+	_flower_overlay.initialize(self)
+
+func _setup_walking_path_overlay() -> void:
+	_walking_path_overlay = WalkingPathOverlay.new()
+	_walking_path_overlay.name = "WalkingPathOverlay"
+	add_child(_walking_path_overlay)
+	_walking_path_overlay.initialize(self)
+
+## Rank the ground-detail overlays by `GROUND_DETAIL_ORDER`, the one laid lowest
+## first. They all paint in the terrain band, where Godot draws siblings in the
+## order they sit in the tree, so this is what keeps a wood over the walking
+## trail. The setups above already come bottom-up; ranking them here as well means
+## the canopies cannot be buried by an overlay added after them or by a call
+## reordered. The block is placed where its lowest overlay already lies, so
+## anything else the grid adds over the ground — the wildlife, next — keeps its
+## place.
+func _order_ground_detail() -> void:
+	var slot := -1
+	for overlay_name in GROUND_DETAIL_ORDER:
+		var overlay := get_node_or_null(overlay_name) as CanvasItem
+		if overlay == null or overlay.get_parent() != self:
+			continue
+		if slot < 0:
+			slot = overlay.get_index()
+		if overlay.get_index() != slot:
+			move_child(overlay, slot)
+		slot += 1
+
+func _setup_elevation_overlay() -> void:
+	_elevation_overlay = ElevationOverlay.new()
+	_elevation_overlay.name = "ElevationOverlay"
+	add_child(_elevation_overlay)
+	_elevation_overlay.initialize(self)
+
+func _setup_debug_overlay() -> void:
+	_debug_overlay = TerrainDebugOverlay.new()
+	_debug_overlay.name = "TerrainDebugOverlay"
+	add_child(_debug_overlay)
+	_debug_overlay.initialize(self)
+
+func _setup_land_boundary_overlay() -> void:
+	_land_boundary_overlay = LandBoundaryOverlay.new()
+	_land_boundary_overlay.name = "LandBoundaryOverlay"
+	add_child(_land_boundary_overlay)
+	_land_boundary_overlay.initialize(self)
+
+func _setup_wind_flag_overlay() -> void:
+	_wind_flag_overlay = WindFlagOverlay.new()
+	_wind_flag_overlay.name = "WindFlagOverlay"
+	add_child(_wind_flag_overlay)
+	_wind_flag_overlay.initialize(self)
+
+func _setup_elevation_shader() -> void:
+	# Create heightmap data model
+	_heightmap = Heightmap.new(grid_width, grid_height, GameManager.heightmap_noise_seed)
+
+	# Load platform-appropriate shader
+	var shader_path: String
+	if OS.get_name() == "Web" and ResourceLoader.exists("res://shaders/elevation_lighting_web.gdshader"):
+		shader_path = "res://shaders/elevation_lighting_web.gdshader"
+	elif ResourceLoader.exists("res://shaders/elevation_lighting.gdshader"):
+		shader_path = "res://shaders/elevation_lighting.gdshader"
+	else:
+		return
+
+	var shader: Shader = load(shader_path) as Shader
+	if not shader:
+		return
+
+	var shader_material: ShaderMaterial = ShaderMaterial.new()
+	shader_material.shader = shader
+	shader_material.set_shader_parameter("heightmap", _heightmap.get_texture())
+	shader_material.set_shader_parameter("heightmap_size", Vector2(grid_width * Heightmap.PIXELS_PER_TILE, grid_height * Heightmap.PIXELS_PER_TILE))
+	shader_material.set_shader_parameter("grid_size", Vector2(grid_width, grid_height))
+	shader_material.set_shader_parameter("tile_size", Vector2(tile_width, tile_height))
+	_apply_projection_uniforms(shader_material, projection)
+
+	# Create full-viewport ColorRect for shader overlay
+	_elevation_shader_rect = ColorRect.new()
+	_elevation_shader_rect.name = "ElevationShaderRect"
+	_elevation_shader_rect.z_index = 0  # Same as terrain; renders below entities.
+	_elevation_shader_rect.material = shader_material
+	_elevation_shader_rect.color = Color(1, 1, 1, 0)  # Transparent base — shader controls all output
+	_elevation_shader_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Cover the projected course (a diamond under isometric, sized to its AABB).
+	var bounds := projection.world_bounds()
+	_elevation_shader_rect.position = bounds.position
+	_elevation_shader_rect.size = bounds.size
+	add_child(_elevation_shader_rect)
+
+	# Create controller node to update uniforms each frame
+	_elevation_shader_controller = ElevationShaderController.new()
+	_elevation_shader_controller.name = "ElevationShaderController"
+	add_child(_elevation_shader_controller)
+	_elevation_shader_controller.setup(self, _elevation_shader_rect, shader_material)
+
+	# Connect signals for heightmap updates
+	_heightmap.initialize(self)
+	tile_changed.connect(_on_tile_changed_heightmap)
+
+	# Build initial heightmap from current grid state (at the first flush, so a
+	# grid that is regenerated straight away is only built once).
+	_heightmap.request_rebuild(self)
+
+func _on_tile_changed_heightmap(pos: Vector2i, _old: int, _new_type: int) -> void:
+	if _heightmap:
+		_heightmap.refresh_tile(pos)
+
+func _setup_fairway_width_overlay() -> void:
+	_fairway_width_overlay = FairwayWidthOverlay.new()
+	_fairway_width_overlay.name = "FairwayWidthOverlay"
+	add_child(_fairway_width_overlay)
+	_fairway_width_overlay.initialize(self)
+
+func toggle_fairway_width_overlay() -> void:
+	if _fairway_width_overlay:
+		_fairway_width_overlay.toggle()
+
+## Set up shot heatmap overlay (called from main.gd after tracker is created)
+func setup_shot_heatmap_overlay(tracker: ShotHeatmapTracker) -> void:
+	_shot_heatmap_overlay = ShotHeatmapOverlay.new()
+	_shot_heatmap_overlay.name = "ShotHeatmapOverlay"
+	add_child(_shot_heatmap_overlay)
+	_shot_heatmap_overlay.initialize(self, tracker)
+
+## Toggle shot heatmap visibility
+func toggle_shot_heatmap() -> void:
+	if _shot_heatmap_overlay:
+		_shot_heatmap_overlay.toggle()
+
+## Cycle shot heatmap mode (density <-> trouble)
+func cycle_shot_heatmap_mode() -> void:
+	if _shot_heatmap_overlay:
+		_shot_heatmap_overlay.cycle_mode()
+
+## Check if shot heatmap is enabled
+func is_shot_heatmap_enabled() -> bool:
+	return _shot_heatmap_overlay and _shot_heatmap_overlay.is_enabled()
+
+## Toggle debug overlay visibility
+func toggle_debug_overlay() -> void:
+	if _debug_overlay:
+		_debug_overlay.toggle()
+
+## Check if debug overlay is enabled
+func is_debug_overlay_enabled() -> bool:
+	return _debug_overlay and _debug_overlay.is_enabled()
+
+## Vertex field dimensions: a WxH tile grid has (W+1)x(H+1) vertices.
+func vertex_grid_size() -> Vector2i:
+	return Vector2i(grid_width + 1, grid_height + 1)
+
+## Whether any vertex differs from level ground. Read by the course renderer to
+## bypass elevation-ray work on flat courses.
+func has_relief() -> bool:
+	return _non_base_vertex_count > 0
+
+func is_valid_vertex(vertex: Vector2i) -> bool:
+	return vertex.x >= 0 and vertex.x <= grid_width \
+		and vertex.y >= 0 and vertex.y <= grid_height
+
+## Allocate (or re-allocate) the packed vertex height buffer
+func _ensure_vertex_storage() -> void:
+	var stride: int = grid_width + 1
+	var needed: int = stride * (grid_height + 1)
+	if needed <= 0:
+		return
+	if _vertex_elevation.size() == needed and _vertex_stride == stride:
+		return
+	var previous: PackedInt32Array = _vertex_elevation
+	var previous_stride: int = _vertex_stride
+	_vertex_elevation = PackedInt32Array()
+	_vertex_elevation.resize(needed)
+	_vertex_elevation.fill(BASE_ELEVATION)
+	_vertex_stride = stride
+	_non_base_vertex_count = 0
+	if previous.size() == 0 or previous_stride <= 0:
+		return
+	var rows: int = mini(int(previous.size() / float(previous_stride)), grid_height + 1)
+	var cols: int = mini(previous_stride, stride)
+	for y in rows:
+		for x in cols:
+			_vertex_elevation[y * stride + x] = previous[y * previous_stride + x]
+	for height in _vertex_elevation:
+		if height != BASE_ELEVATION:
+			_non_base_vertex_count += 1
+
+func _vertex_index(vertex: Vector2i) -> int:
+	return vertex.y * (grid_width + 1) + vertex.x
+
+func _recount_non_base_vertices() -> void:
+	_non_base_vertex_count = 0
+	for height in _vertex_elevation:
+		if height != BASE_ELEVATION:
+			_non_base_vertex_count += 1
+
+## Height stored at a grid vertex (clamped to MIN_ELEVATION..MAX_ELEVATION).
+## Off-grid vertices report BASE_ELEVATION so slopes at the rim stay level.
+func get_vertex_elevation(vertex: Vector2i) -> int:
+	if not is_valid_vertex(vertex):
+		return BASE_ELEVATION
+	_ensure_vertex_storage()
+	return _vertex_elevation[_vertex_index(vertex)]
+
+func set_vertex_elevation(vertex: Vector2i, height: int) -> void:
+	if not is_valid_vertex(vertex):
+		return
+	_ensure_vertex_storage()
+	var index: int = _vertex_index(vertex)
+	var new_height: int = clampi(height, MIN_ELEVATION, MAX_ELEVATION)
+	var old_height: int = _vertex_elevation[index]
+	if old_height == new_height:
+		return
+	if old_height == BASE_ELEVATION and new_height != BASE_ELEVATION:
+		_non_base_vertex_count += 1
+	elif old_height != BASE_ELEVATION and new_height == BASE_ELEVATION:
+		_non_base_vertex_count = maxi(0, _non_base_vertex_count - 1)
+
+	var affected: Array[Vector2i] = tiles_around_vertex(vertex)
+	var before: Dictionary = {}
+	for tile in affected:
+		before[tile] = get_elevation(tile)
+
+	_vertex_elevation[index] = new_height
+	terrain_revision += 1
+	vertex_elevation_changed.emit(vertex, old_height, new_height)
+	_queue_elevation_refresh(vertex, affected)
+
+	for tile in affected:
+		var after: int = get_elevation(tile)
+		if int(before[tile]) != after:
+			elevation_changed.emit(tile, int(before[tile]), after)
+	if _elevation_overlay:
+		_elevation_overlay.queue_redraw()
+
+func adjust_vertex_elevation(vertex: Vector2i, delta: int) -> int:
+	var updated: int = clampi(get_vertex_elevation(vertex) + delta, MIN_ELEVATION, MAX_ELEVATION)
+	set_vertex_elevation(vertex, updated)
+	return updated
+
+func vertices_of_tile(pos: Vector2i) -> Array[Vector2i]:
+	return [pos, pos + Vector2i(1, 0), pos + Vector2i(1, 1), pos + Vector2i(0, 1)]
+
+func tiles_around_vertex(vertex: Vector2i) -> Array[Vector2i]:
+	var tiles: Array[Vector2i] = []
+	for offset in [Vector2i(-1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 0)]:
+		var tile: Vector2i = vertex + offset
+		if is_valid_position(tile):
+			tiles.append(tile)
+	return tiles
+
+func nearest_vertex(grid_point: Vector2) -> Vector2i:
+	return Vector2i(
+		clampi(roundi(grid_point.x), 0, grid_width),
+		clampi(roundi(grid_point.y), 0, grid_height))
+
+func get_tile_corner_heights(pos: Vector2i) -> Vector4:
+	_ensure_vertex_storage()
+	var x0: int = clampi(pos.x, 0, grid_width)
+	var y0: int = clampi(pos.y, 0, grid_height)
+	var x1: int = mini(x0 + 1, grid_width)
+	var y1: int = mini(y0 + 1, grid_height)
+	var stride: int = grid_width + 1
+	return Vector4(
+		float(_vertex_elevation[y0 * stride + x0]),
+		float(_vertex_elevation[y0 * stride + x1]),
+		float(_vertex_elevation[y1 * stride + x0]),
+		float(_vertex_elevation[y1 * stride + x1]))
+
+func get_elevation_at(grid_point: Vector2) -> float:
+	_ensure_vertex_storage()
+	var gx: float = clampf(grid_point.x, 0.0, float(grid_width))
+	var gy: float = clampf(grid_point.y, 0.0, float(grid_height))
+	var x0: int = clampi(int(floor(gx)), 0, grid_width)
+	var y0: int = clampi(int(floor(gy)), 0, grid_height)
+	var x1: int = mini(x0 + 1, grid_width)
+	var y1: int = mini(y0 + 1, grid_height)
+	var fx: float = gx - float(x0)
+	var fy: float = gy - float(y0)
+	var stride: int = grid_width + 1
+	var h00: float = float(_vertex_elevation[y0 * stride + x0])
+	var h10: float = float(_vertex_elevation[y0 * stride + x1])
+	var h01: float = float(_vertex_elevation[y1 * stride + x0])
+	var h11: float = float(_vertex_elevation[y1 * stride + x1])
+	return lerpf(lerpf(h00, h10, fx), lerpf(h01, h11, fx), fy)
+
+func get_elevation_at_precise(precise_pos: Vector2) -> float:
+	return get_elevation_at(precise_pos + Vector2(0.5, 0.5))
+
+func get_tile_height(pos: Vector2i) -> float:
+	if not is_valid_position(pos):
+		return float(BASE_ELEVATION)
+	return get_elevation_at(Vector2(pos) + Vector2(0.5, 0.5))
+
+func get_elevation(pos: Vector2i) -> int:
+	return roundi(get_tile_height(pos))
+
+func set_elevation(pos: Vector2i, height: int) -> void:
+	if not is_valid_position(pos):
+		return
+	var clamped: int = clampi(height, MIN_ELEVATION, MAX_ELEVATION)
+	for vertex in vertices_of_tile(pos):
+		set_vertex_elevation(vertex, clamped)
+
+func get_elevation_difference(from: Vector2i, to: Vector2i) -> int:
+	return roundi(get_tile_height(to) - get_tile_height(from))
+
+func get_slope_at(grid_point: Vector2) -> Vector2:
+	var step: float = SLOPE_SAMPLE_STEP
+	var dhdx: float = (get_elevation_at(grid_point + Vector2(step, 0.0)) \
+		- get_elevation_at(grid_point - Vector2(step, 0.0))) / (2.0 * step)
+	var dhdy: float = (get_elevation_at(grid_point + Vector2(0.0, step)) \
+		- get_elevation_at(grid_point - Vector2(0.0, step))) / (2.0 * step)
+	return Vector2(-dhdx, -dhdy)
+
+## Downhill gradient for "precise" game coordinates (integers are tile centres).
+func get_slope_at_precise(precise_pos: Vector2) -> Vector2:
+	return get_slope_at(precise_pos + Vector2(0.5, 0.5))
+
+## Downhill slope direction at a tile (unit vector, zero on flat ground).
+func get_slope_direction(pos: Vector2i) -> Vector2:
+	if not is_valid_position(pos):
+		return Vector2.ZERO
+	var slope: Vector2 = get_slope_at(Vector2(pos) + Vector2(0.5, 0.5))
+	return slope.normalized() if slope.length_squared() > 0.000001 else Vector2.ZERO
+
+## Downhill slope direction at a tile-space point (unit vector).
+func get_slope_direction_at(grid_point: Vector2) -> Vector2:
+	var slope: Vector2 = get_slope_at(grid_point)
+	return slope.normalized() if slope.length_squared() > 0.000001 else Vector2.ZERO
+
+func vertex_enclosed_by_type(vertex: Vector2i, terrain_type: int) -> bool:
+	var tiles: Array[Vector2i] = tiles_around_vertex(vertex)
+	if tiles.is_empty():
+		return false
+	for tile in tiles:
+		if get_tile(tile) != terrain_type:
+			return false
+	return true
+
+func set_enclosed_elevation(bounds: Rect2i, terrain_type: int, height: int,
+		height_fn: Callable = Callable()) -> void:
+	var from_x: int = maxi(bounds.position.x, 0)
+	var from_y: int = maxi(bounds.position.y, 0)
+	var to_x: int = mini(bounds.end.x, grid_width)
+	var to_y: int = mini(bounds.end.y, grid_height)
+	for vx in range(from_x, to_x + 1):
+		for vy in range(from_y, to_y + 1):
+			var vertex := Vector2i(vx, vy)
+			if not vertex_enclosed_by_type(vertex, terrain_type):
+				continue
+			var target: int = height
+			if height_fn.is_valid():
+				target = int(height_fn.call(vertex))
+			set_vertex_elevation(vertex, target)
+
+func get_non_base_vertices() -> Array[Vector2i]:
+	## Vertices whose height differs from BASE_ELEVATION (flat ground).
+	_ensure_vertex_storage()
+	var result: Array[Vector2i] = []
+	var stride: int = grid_width + 1
+	for y in range(grid_height + 1):
+		for x in range(stride):
+			if _vertex_elevation[y * stride + x] != BASE_ELEVATION:
+				result.append(Vector2i(x, y))
+	return result
+
+func is_vertex_editable(vertex: Vector2i, entity_layer: EntityLayer = null,
+		protect_surfaces: bool = false) -> bool:
+	if not is_valid_vertex(vertex):
+		return false
+	for tile in tiles_around_vertex(vertex):
+		if protect_surfaces and get_tile(tile) in [TerrainTypes.Type.WATER,
+				TerrainTypes.Type.OUT_OF_BOUNDS]:
+			return false
+		if entity_layer and entity_layer.is_tile_occupied_by_building(tile):
+			return false
+		if GameManager.land_manager and not GameManager.land_manager.is_tile_owned(tile):
+			return false
+	return true
+
+func _queue_elevation_refresh(vertex: Vector2i, tiles: Array[Vector2i]) -> void:
+	if _course_surface:
+		_course_surface.update_vertex(vertex)
+	if _heightmap:
+		_heightmap.refresh_tiles(tiles)
+	_refresh_elevation_visuals()
+
+## Get the heightmap texture for external use (e.g., shader debugging)
+func get_heightmap_texture() -> ImageTexture:
+	if _heightmap:
+		return _heightmap.get_texture()
+	return null
+
+## Toggle elevation overlay prominence
+func set_elevation_overlay_active(active: bool) -> void:
+	if _elevation_overlay:
+		_elevation_overlay.set_elevation_mode_active(active)
+
+## Get tiles of a given type that are at the boundary (adjacent to a different type)
+func get_boundary_tiles(terrain_type: int) -> Array:
+	var boundary: Array = []
+	for x in range(grid_width):
+		for y in range(grid_height):
+			var pos = Vector2i(x, y)
+			if get_tile(pos) != terrain_type:
+				continue
+			# Check if any neighbor is a different type
+			var neighbors = [
+				pos + Vector2i(1, 0), pos + Vector2i(-1, 0),
+				pos + Vector2i(0, 1), pos + Vector2i(0, -1)
+			]
+			for neighbor in neighbors:
+				if not is_valid_position(neighbor):
+					continue
+				if get_tile(neighbor) != terrain_type:
+					boundary.append(pos)
+					break
+	return boundary
+
+## Flood-fill to find all connected tiles of the same type
+func get_connected_tiles(start_pos: Vector2i, terrain_type: int) -> Array:
+	var connected: Array = []
+	var visited: Dictionary = {}
+	var queue: Array = [start_pos]
+
+	while queue.size() > 0:
+		var pos = queue.pop_front()
+		if visited.has(pos):
+			continue
+		visited[pos] = true
+
+		if not is_valid_position(pos):
+			continue
+		if get_tile(pos) != terrain_type:
+			continue
+
+		connected.append(pos)
+
+		# Check 4 neighbors
+		queue.append(pos + Vector2i(1, 0))
+		queue.append(pos + Vector2i(-1, 0))
+		queue.append(pos + Vector2i(0, 1))
+		queue.append(pos + Vector2i(0, -1))
+
+	return connected
+
+## Get tiles in a corridor between two points (for difficulty calculation)
+func get_tiles_in_corridor(from: Vector2i, to: Vector2i, width: int) -> Array:
+	var tiles: Array = []
+	var direction = Vector2(to - from)
+	var length = direction.length()
+	if length < 1.0:
+		return tiles
+
+	var normalized = direction.normalized()
+	var perp = Vector2(-normalized.y, normalized.x)
+	var half_width = width / 2.0
+
+	var steps = int(length) + 1
+	for i in range(steps):
+		var t = float(i) / float(max(steps - 1, 1))
+		var center = Vector2(from) + direction * t
+
+		for w in range(-int(half_width), int(half_width) + 1):
+			var sample_pos = Vector2i(center + perp * float(w))
+			if is_valid_position(sample_pos) and sample_pos not in tiles:
+				tiles.append(sample_pos)
+
+	return tiles
+
+func serialize() -> Dictionary:
+	var data: Dictionary = {}
+	for pos in _grid:
+		if _grid[pos] != TerrainTypes.Type.GRASS:
+			data["%d,%d" % [pos.x, pos.y]] = _grid[pos]
+	return data
+
+func serialize_player_placed() -> Array:
+	## Serialize player-placed tile positions for maintenance tracking
+	var data: Array = []
+	for pos in _player_placed_tiles:
+		data.append("%d,%d" % [pos.x, pos.y])
+	return data
+
+func serialize_elevation() -> Dictionary:
+	## Sparse map: only vertices off BASE_ELEVATION are stored; a missing entry
+	## reads as BASE_ELEVATION on load (see deserialize_elevation).
+	_ensure_vertex_storage()
+	var data: Dictionary = {}
+	var stride: int = grid_width + 1
+	for y in range(grid_height + 1):
+		for x in range(stride):
+			var height: int = _vertex_elevation[y * stride + x]
+			if height != BASE_ELEVATION:
+				data["%d,%d" % [x, y]] = height
+	return data
+
+func deserialize(data: Dictionary) -> void:
+	_initialize_grid()
+	_player_placed_tiles.clear()
+	_retired_cart_paths.clear()
+	# First pass: set all terrain types
+	for key in data:
+		var parts = key.split(",")
+		if parts.size() == 2:
+			var pos = Vector2i(int(parts[0]), int(parts[1]))
+			if is_valid_position(pos):
+				var type := int(data[key])
+				# A save from before the cart path terrain was retired: its
+				# gravel becomes the rough it was laid over, carrying the trail
+				# the Path improvement lays now (applied by
+				# deserialize_walking_paths, which owns the trail layer).
+				if type == TerrainTypes.Type.RETIRED_PATH:
+					type = TerrainTypes.Type.ROUGH
+					_retired_cart_paths[pos] = true
+				_grid[pos] = type
+	terrain_revision += 1
+	_reindex_tee_boxes()
+	if _course_surface:
+		_course_surface.rebuild()
+
+func deserialize_player_placed(data: Array) -> void:
+	## Restore player-placed tile tracking for maintenance
+	_player_placed_tiles.clear()
+	for key in data:
+		var parts = key.split(",")
+		if parts.size() == 2:
+			var pos = Vector2i(int(parts[0]), int(parts[1]))
+			if is_valid_position(pos):
+				_player_placed_tiles[pos] = true
+
+func deserialize_elevation(data: Dictionary) -> void:
+	_ensure_vertex_storage()
+	_vertex_elevation.fill(BASE_ELEVATION)
+	for key in data:
+		var parts = str(key).split(",")
+		if parts.size() == 2:
+			var vertex = Vector2i(int(parts[0]), int(parts[1]))
+			if is_valid_vertex(vertex):
+				_vertex_elevation[_vertex_index(vertex)] = clampi(int(data[key]),
+						MIN_ELEVATION, MAX_ELEVATION)
+	_recount_non_base_vertices()
+	_after_elevation_bulk_load()
+
+func migrate_tile_elevation(data: Dictionary) -> void:
+	var tiles: Dictionary = {}
+	for key in data:
+		var parts = str(key).split(",")
+		if parts.size() == 2:
+			var pos = Vector2i(int(parts[0]), int(parts[1]))
+			if is_valid_position(pos):
+				tiles[pos] = clampi(int(data[key]), MIN_ELEVATION, MAX_ELEVATION)
+	_ensure_vertex_storage()
+	_vertex_elevation.fill(BASE_ELEVATION)
+	for y in range(grid_height + 1):
+		for x in range(grid_width + 1):
+			var vertex := Vector2i(x, y)
+			var total: int = 0
+			var count: int = 0
+			# Missing tiles are flat — the legacy map only stored non-flat ones.
+			for tile in tiles_around_vertex(vertex):
+				total += int(tiles.get(tile, BASE_ELEVATION))
+				count += 1
+			if count > 0:
+				_vertex_elevation[_vertex_index(vertex)] = roundi(float(total) / float(count))
+	_recount_non_base_vertices()
+	_after_elevation_bulk_load()
+
+## Rebuild every elevation-derived texture after a bulk write (load, migration).
+func _after_elevation_bulk_load() -> void:
+	terrain_revision += 1
+	if _course_surface:
+		_course_surface.rebuild_elevation()
+	if _elevation_overlay:
+		_elevation_overlay.invalidate()
+		_elevation_overlay.queue_redraw()
+	if _heightmap:
+		_heightmap.request_rebuild(self)
+	_refresh_elevation_visuals()
+	if _tree_overlay:
+		_tree_overlay.refresh_elevation_visuals()

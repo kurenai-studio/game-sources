@@ -1,0 +1,498 @@
+extends Node
+## WorldMap - Company-level world state: the locations on the globe, which ones
+## the player owns, and the company settings chosen on the Start New Game screen.
+##
+## Autoloaded as `WorldMap`. It owns three kinds of state:
+##
+##  * Company settings — company name, difficulty, starting-money option,
+##    generated-hole count, the enabled game features (weather/wind/seasons)
+##    and whether the tutorial walks the first empty course.
+##  * Location states — for every catalog location: its price, how many parcels
+##    of land came pre-cleared with the purchase ("already unlocked"), and
+##    whether the player owns it. Prices rise with the amount of cleared land,
+##    so Reset World re-rolls the map and re-prices it.
+##  * Per-location course snapshots — when the player swaps between owned
+##    locations, the course they leave behind is kept in memory (and in the save
+##    file) so it is exactly as they left it when they come back.
+
+signal world_reset()
+## A brand-new company was rolled (Start New Game / Quick Start / Reset from
+## nothing). Unlike world_reset - which also fires when a save re-loads its
+## world - this marks the start of a new save: per-save goals lock again.
+signal company_started()
+signal location_purchased(location_id: String)
+signal active_location_changed(location_id: String)
+
+## Starting-money option meaning "no budget limit".
+const UNLIMITED_MONEY: int = -1
+
+## Game feature keys used by the Start New Game screen.
+const FEATURE_WEATHER := "weather"
+const FEATURE_WIND := "wind"
+const FEATURE_SEASONS := "seasons"
+const FEATURE_KEYS: Array[String] = [FEATURE_WEATHER, FEATURE_WIND, FEATURE_SEASONS]
+
+## Company settings (chosen on the Start New Game screen).
+var company_name: String = "My Golf Company"
+var difficulty: int = DifficultyPresets.Preset.NORMAL
+var starting_money_option: int = 100000  # UNLIMITED_MONEY for unlimited funds
+var generated_holes: int = 0
+var features: Dictionary = {
+	FEATURE_WEATHER: false,
+	FEATURE_WIND: false,
+	FEATURE_SEASONS: false,
+}
+## The Start New Game tutorial choice. It is spent once the tutorial has been
+## offered on an empty course (see main.gd), so later empty sites of the same
+## company do not repeat it.
+var tutorial_enabled: bool = false
+
+## Location states: id -> { owned, unlocked: Array[Vector2i], price, seed }
+var locations: Dictionary = {}
+## Location currently being played (empty before the first course is bought).
+var active_location_id: String = ""
+## The first location the player bought in this company. Generated holes are
+## only laid out for this location (subsequent locations start empty so the
+## player builds them themselves).
+var first_purchased_location_id: String = ""
+## True once the generated holes from the Start New Game choice have been laid
+## out at the first purchased location (or the player chose zero holes). Used
+## to clear the value so Reset World and future purchases stop reserving land.
+var generated_holes_consumed: bool = false
+## id -> save-data dictionary captured when the player left that location.
+var location_snapshots: Dictionary = {}
+## Seed of the current world roll (shown nowhere, kept for reproducibility).
+var world_seed: int = 0
+var world_ready: bool = false
+
+func _ready() -> void:
+	if not world_ready:
+		# A default world keeps the world map usable before Start New Game has
+		# run (legacy flows and tests start a course directly).
+		new_world(default_options())
+
+## Generated holes Quick Start lays out on its first course.
+const QUICK_START_HOLES: int = 3
+
+## The options Quick Start uses: the defaults, with a 3-hole generated course.
+static func quick_start_options() -> Dictionary:
+	var options := default_options()
+	options["generated_holes"] = QUICK_START_HOLES
+	return options
+
+## The fallback options for a legacy game start.
+static func default_options() -> Dictionary:
+	return {
+		"company_name": WorldLocations.random_company_name(),
+		"difficulty": DifficultyPresets.Preset.NORMAL,
+		"starting_money": 100000,
+		"generated_holes": 0,
+		"features": {
+			FEATURE_WEATHER: false,
+			FEATURE_WIND: false,
+			FEATURE_SEASONS: false,
+		},
+		"tutorial": default_tutorial_enabled(),
+	}
+
+## Whether the tutorial is on when the company does not say: it runs for
+## players who have not finished it yet, as it always has. Start New Game
+## shows this as its starting choice.
+static func default_tutorial_enabled() -> bool:
+	return not TutorialSystem.is_tutorial_completed()
+
+## Roll a brand new world from Start New Game options (or Quick Start defaults).
+## Every location is re-priced and cleared of ownership; the player's choices
+## decide how much land must come pre-cleared so the generated first course fits.
+func new_world(options: Dictionary, rng_seed: int = -1) -> void:
+	var rng := RandomNumberGenerator.new()
+	if rng_seed >= 0:
+		rng.seed = rng_seed
+	else:
+		rng.randomize()
+	world_seed = rng.seed
+
+	company_name = str(options.get("company_name", "My Golf Company"))
+	if company_name.strip_edges().is_empty():
+		company_name = "My Golf Company"
+	difficulty = int(options.get("difficulty", DifficultyPresets.Preset.NORMAL))
+	starting_money_option = int(options.get("starting_money", 100000))
+	generated_holes = int(options.get("generated_holes", 0))
+	# The company's feature choices: the shipped systems plus anything a mod has
+	# put on the Start New Game screen. A mod's own key is stored here for it to
+	# read; the shipped three are what GameManager acts on.
+	var saved_features: Dictionary = options.get("features", {})
+	features.clear()
+	for key in FEATURE_KEYS:
+		features[key] = false
+	for key in saved_features:
+		features[str(key)] = bool(saved_features[key])
+	tutorial_enabled = bool(options.get("tutorial", default_tutorial_enabled()))
+
+	locations.clear()
+	location_snapshots.clear()
+	active_location_id = ""
+	first_purchased_location_id = ""
+	generated_holes_consumed = (generated_holes == 0)
+	_roll_locations(rng, generated_holes)
+
+	world_ready = true
+	# The company settings (including the opening budget) apply from here on:
+	# the world map prices locations against the budget the player chose.
+	apply_company_settings(true)
+	world_reset.emit()
+	company_started.emit()
+
+## Re-roll the pre-cleared land (and therefore the prices) of every location the
+## player does not own yet. Owned land is never taken away. Once the player has
+## bought their first location, no further locations reserve parcels for a
+## generated course (generated holes only apply to the first purchase).
+func reset_world() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	world_seed = rng.seed
+	var required := 0 if generated_holes_consumed else generated_holes
+	_roll_locations(rng, required)
+	world_reset.emit()
+
+func _roll_locations(rng: RandomNumberGenerator, required_holes: int) -> void:
+	var required: Array = WorldLocations.get_required_parcels(required_holes)
+	for def in WorldLocations.get_all():
+		var id := str(def["id"])
+		var existing: Dictionary = locations.get(id, {})
+		if bool(existing.get("owned", false)):
+			# Keep land the player already paid for.
+			continue
+		var size := int(def["size"])
+		var total := WorldLocations.get_parcel_count(size)
+		var max_unlocked := WorldLocations.max_unlocked_for_size(size)
+		var wanted := rng.randi_range(mini(WorldLocations.MIN_UNLOCKED_PARCELS, total), max_unlocked)
+		var unlocked := _pick_unlocked(size, wanted, required, rng)
+		locations[id] = {
+			"owned": false,
+			"unlocked": unlocked,
+			"price": WorldLocations.compute_price(id, unlocked.size()),
+			"seed": rng.randi(),
+		}
+
+## Build a location's unlocked set: the parcels the first course needs, plus
+## randomly chosen extra parcels (more land is always a bigger cluster).
+func _pick_unlocked(size: int, wanted: int, required: Array, rng: RandomNumberGenerator) -> Array:
+	var order := WorldLocations.layout_order(size, rng, required)
+	var unlocked: Array = []
+	for pos in required:
+		if order.has(pos) and not unlocked.has(pos):
+			unlocked.append(pos)
+	# The layout land is always unlocked; the roll then decides how many extra
+	# parcels come ready to build on.
+	var target: int = maxi(wanted, unlocked.size())
+	for pos in order:
+		if unlocked.size() >= target:
+			break
+		if not unlocked.has(pos):
+			unlocked.append(pos)
+	return unlocked
+
+## True when the player owns the location.
+func is_owned(location_id: String) -> bool:
+	return bool(locations.get(location_id, {}).get("owned", false))
+
+## The price of a location as currently rolled.
+func get_price(location_id: String) -> int:
+	return int(locations.get(location_id, {}).get("price", 0))
+
+## The parcels that come pre-cleared with a location.
+func get_unlocked_parcels(location_id: String) -> Array:
+	return locations.get(location_id, {}).get("unlocked", [])
+
+## The parcels that belong to a location's land (its full size block).
+func get_location_parcels(location_id: String) -> Array:
+	var def := WorldLocations.get_definition(location_id)
+	if def.is_empty():
+		return []
+	# The block is deterministic for a location (the per-world jitter comes out
+	# of its own seed). Before the first purchase it always includes the land
+	# the generated first course needs, so even a small site can host the
+	# course the player asked for. After the first purchase no further land is
+	# reserved for generated holes.
+	var required_holes := 0 if generated_holes_consumed else generated_holes
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(locations.get(location_id, {}).get("seed", 0))
+	return WorldLocations.layout_order(int(def["size"]), rng,
+		WorldLocations.get_required_parcels(required_holes))
+
+## Total number of parcels in a location's land.
+func get_total_parcels(location_id: String) -> int:
+	return get_location_parcels(location_id).size()
+
+## Can the player afford this location right now?
+func can_afford(location_id: String) -> bool:
+	if is_owned(location_id):
+		return true
+	return GameManager.can_afford(get_price(location_id))
+
+## Buy a location. Deducts the price and unlocks its pre-cleared land.
+func buy_location(location_id: String) -> bool:
+	if is_owned(location_id):
+		return true
+	if not WorldLocations.has_location(location_id):
+		return false
+	var price := get_price(location_id)
+	if not GameManager.can_afford(price):
+		EventBus.notify("Not enough money: %s costs $%s" % [
+			WorldLocations.get_definition(location_id).get("name", location_id),
+			_format_money(price)], "error")
+		return false
+	GameManager.modify_money(-price)
+	EventBus.log_transaction("Bought %s" % WorldLocations.get_definition(location_id).get("name", location_id), -price)
+	locations[location_id]["owned"] = true
+	# Remember the first bought location: only that one gets the pre-generated
+	# holes the player chose on the Start New Game screen. Every later purchase
+	# starts empty so the player builds the course themselves.
+	if first_purchased_location_id.is_empty():
+		first_purchased_location_id = location_id
+	EventBus.notify("%s purchased! %d parcels of land came ready to build on." % [
+		WorldLocations.get_definition(location_id).get("name", location_id),
+		get_unlocked_parcels(location_id).size()], "success")
+	location_purchased.emit(location_id)
+	return true
+
+## Pick a random location the company can afford right now (not yet owned).
+## Returns its id, or an empty string when nothing is affordable.
+func pick_random_affordable_location(rng_seed: int = -1) -> String:
+	var affordable: Array[String] = []
+	for def in WorldLocations.get_all():
+		var id := str(def["id"])
+		if not is_owned(id) and can_afford(id):
+			affordable.append(id)
+	if affordable.is_empty():
+		return ""
+	var rng := RandomNumberGenerator.new()
+	if rng_seed >= 0:
+		rng.seed = rng_seed
+	else:
+		rng.randomize()
+	return affordable[rng.randi_range(0, affordable.size() - 1)]
+
+## The location currently being played, or an empty dictionary.
+func get_active_location() -> Dictionary:
+	return WorldLocations.get_definition(active_location_id)
+
+## Mark a location as the one being played.
+func set_active_location(location_id: String) -> void:
+	if active_location_id == location_id:
+		return
+	active_location_id = location_id
+	active_location_changed.emit(location_id)
+
+## How many generated holes should be laid out at `location_id`. Returns the
+## player's Start New Game choice for the first location they bought, and 0 for
+## every location bought after that (and for 0-hole starts). Called before a
+## course is generated at a newly-activated location so the right number of
+## holes is queued.
+func holes_to_generate_for(location_id: String) -> int:
+	if generated_holes <= 0:
+		return 0
+	# If the player has bought at least one location, only the very first one
+	# gets the pre-generated holes. If nothing has been bought yet (legacy/
+	# quick-start paths) treat the incoming location as the first.
+	var target: String = first_purchased_location_id
+	if target.is_empty():
+		target = location_id
+	if location_id != target:
+		return 0
+	return generated_holes
+
+## Call once the generated holes have been placed on the first course. From
+## here on, no further location reserves land for a pre-generated layout —
+## later courses start empty so the player builds them.
+func mark_generated_holes_used() -> void:
+	if generated_holes_consumed:
+		return
+	generated_holes_consumed = true
+	# Re-roll unowned locations against a 0-hole requirement so their parcel
+	# blocks and prices no longer reserve land for the (now-used) layout.
+	var rng := RandomNumberGenerator.new()
+	rng.randomize()
+	world_seed = rng.seed
+	_roll_locations(rng, 0)
+
+## Apply the company settings to the GameManager. `with_money` is true when a
+## brand new game is starting (the budget option becomes the opening balance);
+## a loaded game keeps the balance from the save file.
+func apply_company_settings(with_money: bool = false) -> void:
+	GameManager.current_difficulty = difficulty
+	GameManager.company_name = company_name
+	# Every choice is offered to GameManager; it knows the shipped three and
+	# ignores the keys mods added (those mods read WorldMap.features themselves).
+	for key in features:
+		GameManager.set_feature_enabled(str(key), bool(features[key]))
+	GameManager.set_unlimited_money(starting_money_option == UNLIMITED_MONEY)
+	if with_money:
+		if starting_money_option == UNLIMITED_MONEY:
+			GameManager.money = GameManager.UNLIMITED_STARTING_BALANCE
+		else:
+			GameManager.money = starting_money_option
+		EventBus.money_changed.emit(0, GameManager.money)
+
+## Give the current location's land to the land manager: pre-cleared parcels are
+## owned, every other parcel of the location's block stays purchasable.
+func apply_location_land(location_id: String) -> void:
+	var land_manager = GameManager.land_manager
+	if not land_manager:
+		return
+	land_manager.set_location_parcels(get_location_parcels(location_id))
+	land_manager.grant_parcels(get_unlocked_parcels(location_id))
+
+## Apply the money option without touching difficulty or features (used when a
+## legacy start path begins a game directly).
+func apply_starting_money() -> void:
+	GameManager.set_unlimited_money(starting_money_option == UNLIMITED_MONEY)
+
+## Store the course a player just left.
+func take_snapshot(location_id: String, snapshot: Dictionary) -> void:
+	if location_id.is_empty():
+		return
+	location_snapshots[location_id] = snapshot
+
+func has_snapshot(location_id: String) -> bool:
+	return location_snapshots.has(location_id)
+
+func get_snapshot(location_id: String) -> Dictionary:
+	return location_snapshots.get(location_id, {})
+
+func clear_snapshot(location_id: String) -> void:
+	location_snapshots.erase(location_id)
+
+## Deterministic catalog location for a theme when a legacy save carries no
+## world-map active location of its own.
+static func legacy_location_for_theme(theme: int) -> String:
+	for def in WorldLocations.get_all():
+		if int(def["theme"]) == theme and int(def["size"]) != WorldLocations.Size.CHAMPIONSHIP:
+			return str(def["id"])
+	for def in WorldLocations.get_all():
+		if int(def["theme"]) == theme:
+			return str(def["id"])
+	var all := WorldLocations.get_all()
+	return str(all[0]["id"]) if not all.is_empty() else ""
+
+## Ensure a world exists for a game started outside the normal flow (legacy
+## "new game" entry points, tests and harnesses). The location matching the
+## requested theme is owned and made active.
+func ensure_legacy_world(theme: int) -> String:
+	if not world_ready or locations.is_empty():
+		new_world(default_options())
+	var preferred := legacy_location_for_theme(theme)
+	if preferred.is_empty():
+		return ""
+	locations[preferred]["owned"] = true
+	if first_purchased_location_id.is_empty():
+		first_purchased_location_id = preferred
+	set_active_location(preferred)
+	return preferred
+
+## ── Serialization ─────────────────────────────────────────────────────────
+
+func serialize() -> Dictionary:
+	var location_data: Dictionary = {}
+	for id in locations:
+		var state: Dictionary = locations[id]
+		var unlocked: Array = []
+		for parcel in state.get("unlocked", []):
+			unlocked.append({"x": parcel.x, "y": parcel.y})
+		location_data[id] = {
+			"owned": bool(state.get("owned", false)),
+			"unlocked": unlocked,
+			"price": int(state.get("price", 0)),
+			"seed": int(state.get("seed", 0)),
+		}
+	var snapshots: Dictionary = {}
+	for id in location_snapshots:
+		snapshots[id] = location_snapshots[id]
+	return {
+		"seed": world_seed,
+		"company_name": company_name,
+		"difficulty": DifficultyPresets.to_string_name(difficulty),
+		"starting_money": starting_money_option,
+		"generated_holes": generated_holes,
+		"first_purchased_location": first_purchased_location_id,
+		"generated_holes_consumed": generated_holes_consumed,
+		"features": features.duplicate(),
+		"tutorial": tutorial_enabled,
+		"active_location": active_location_id,
+		"locations": location_data,
+		"snapshots": snapshots,
+	}
+
+func deserialize(data: Dictionary) -> void:
+	if data.is_empty():
+		return
+	world_seed = int(data.get("seed", 0))
+	company_name = str(data.get("company_name", company_name))
+	difficulty = DifficultyPresets.from_string(str(data.get("difficulty", "normal")))
+	starting_money_option = int(data.get("starting_money", 100000))
+	generated_holes = int(data.get("generated_holes", 0))
+	first_purchased_location_id = str(data.get("first_purchased_location", ""))
+	# Older saves may not have the flag: if any location is already owned, the
+	# pre-generated holes (if any) were already laid out there.
+	if data.has("generated_holes_consumed"):
+		generated_holes_consumed = bool(data.get("generated_holes_consumed", false))
+	else:
+		var any_owned := false
+		for state in data.get("locations", {}).values():
+			if bool(state.get("owned", false)):
+				any_owned = true
+				break
+		generated_holes_consumed = any_owned or generated_holes == 0
+	var saved_features: Dictionary = data.get("features", {})
+	features.clear()
+	for key in FEATURE_KEYS:
+		features[key] = bool(saved_features.get(key, true))
+	for key in saved_features:
+		features[str(key)] = bool(saved_features[key])
+	# Saves from before the option existed keep the tutorial they always had.
+	tutorial_enabled = bool(data.get("tutorial", default_tutorial_enabled()))
+
+	var saved_locations: Dictionary = data.get("locations", {})
+	if saved_locations.is_empty():
+		# Older saves predate the world map: keep the rolled world, no owners.
+		world_ready = true
+	else:
+		locations.clear()
+		for id in saved_locations:
+			var state: Dictionary = saved_locations[id]
+			var unlocked: Array = []
+			for parcel in state.get("unlocked", []):
+				unlocked.append(Vector2i(int(parcel.get("x", 0)), int(parcel.get("y", 0))))
+			locations[id] = {
+				"owned": bool(state.get("owned", false)),
+				"unlocked": unlocked,
+				"price": int(state.get("price", 0)),
+				"seed": int(state.get("seed", 0)),
+			}
+		world_ready = true
+
+	location_snapshots.clear()
+	var saved_snapshots: Dictionary = data.get("snapshots", {})
+	for id in saved_snapshots:
+		var snapshot = saved_snapshots[id]
+		if snapshot is Dictionary:
+			var restored_snapshot: Dictionary = snapshot.duplicate(true)
+			# Pre-change site snapshots stored bunker depth separately. Standard
+			# Bunker terrain is always shallow now, so retire that legacy field.
+			restored_snapshot.erase("bunker_depth")
+			location_snapshots[id] = restored_snapshot
+	active_location_id = str(data.get("active_location", ""))
+	# Difficulty, budget option and the enabled features travel with the world.
+	# The balance itself comes from the save file, not the budget option.
+	apply_company_settings(false)
+	world_reset.emit()
+
+func _format_money(amount: int) -> String:
+	var s := str(absi(amount))
+	var result := ""
+	for i in range(s.length()):
+		if i > 0 and (s.length() - i) % 3 == 0:
+			result += ","
+		result += s[i]
+	return result
