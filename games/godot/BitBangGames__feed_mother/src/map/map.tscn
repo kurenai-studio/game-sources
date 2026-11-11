@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://jqmhnhbr8js3"]
+
+[ext_resource type="PackedScene" uid="uid://dlm1ex1dtsd7o" path="res://map/map_canvas.tscn" id="1_hgrid"]
+[ext_resource type="PackedScene" uid="uid://dl1cxtc0le0i6" path="res://src/egg.tscn" id="2_a0dt8"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ga8v5"]
+size = Vector3(96, 0, 96)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_p3r3l"]
+size = Vector3(0, 96, 96)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qg5kg"]
+size = Vector3(96, 96, 0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_xnnkc"]
+size = Vector3(64, 8, 64)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g31cv"]
+size = Vector3(32, 8, 32)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hgrid"]
+size = Vector3(16, 8, 16)
+
+[node name="Map" type="StaticBody3D" unique_id=1506366901]
+
+[node name="Floor" type="CollisionShape3D" parent="." unique_id=1157184750]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 0, 48)
+shape = SubResource("BoxShape3D_ga8v5")
+
+[node name="LeftWall" type="CollisionShape3D" parent="." unique_id=303864993]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 48, 48)
+shape = SubResource("BoxShape3D_p3r3l")
+
+[node name="RightWall" type="CollisionShape3D" parent="." unique_id=55712910]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 48, 0)
+shape = SubResource("BoxShape3D_qg5kg")
+
+[node name="Layer1" type="CollisionShape3D" parent="." unique_id=1937971755]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 4, 32)
+shape = SubResource("BoxShape3D_xnnkc")
+
+[node name="Layer2" type="CollisionShape3D" parent="." unique_id=491296636]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 12, 16)
+shape = SubResource("BoxShape3D_g31cv")
+
+[node name="Layer3" type="CollisionShape3D" parent="." unique_id=125244445]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 20, 8)
+shape = SubResource("BoxShape3D_hgrid")
+
+[node name="Layer4" type="CollisionShape3D" parent="." unique_id=1777855306]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 36, 32, 20)
+shape = SubResource("BoxShape3D_hgrid")
+
+[node name="Layer5" type="CollisionShape3D" parent="." unique_id=1572306856]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28, 40, 44)
+shape = SubResource("BoxShape3D_hgrid")
+
+[node name="MapCanvas" parent="." unique_id=557316898 instance=ExtResource("1_hgrid")]
+
+[node name="Egg" parent="." unique_id=2002394570 instance=ExtResource("2_a0dt8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 96, 24)
+
+[node name="Egg2" parent="." unique_id=980921115 instance=ExtResource("2_a0dt8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32, 96, 48)
+
+[node name="Egg3" parent="." unique_id=1276689914 instance=ExtResource("2_a0dt8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 96, 12)
+
+[node name="Egg4" parent="." unique_id=643577473 instance=ExtResource("2_a0dt8")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 96, 60)

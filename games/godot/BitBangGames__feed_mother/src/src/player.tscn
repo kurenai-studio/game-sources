@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://udxx8nvrhrjy"]
+
+[ext_resource type="Script" uid="uid://c87o1dcojkq8c" path="res://src/player.gd" id="1_lowyb"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_gmfve"]
+radius = 4.0
+
+[node name="Player" type="CharacterBody3D" unique_id=1865789274]
+script = ExtResource("1_lowyb")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=185733985]
+shape = SubResource("SphereShape3D_gmfve")

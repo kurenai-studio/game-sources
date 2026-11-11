@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://vb5ixhhpcqta"]
+
+[ext_resource type="LabelSettings" uid="uid://cwd2h0pgu7vpf" path="res://label_settings.tres" id="1_sqkml"]
+[ext_resource type="Script" uid="uid://c3am1vixny40a" path="res://src/text_box.gd" id="2_sqkml"]
+[ext_resource type="Texture2D" uid="uid://db1cpfanwiwtn" path="res://bkg/bkg_guide.png" id="3_vqffl"]
+
+[node name="TextBox" type="Label" unique_id=1149099625]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -19.0
+offset_right = 120.0
+grow_vertical = 0
+text = "Thank you for reading the source code."
+label_settings = ExtResource("1_sqkml")
+vertical_alignment = 2
+autowrap_mode = 2
+script = ExtResource("2_sqkml")
+
+[node name="Timer" type="Timer" parent="." unique_id=243265473]
+wait_time = 2.0
+autostart = true
+
+[node name="Guide" type="Control" parent="." unique_id=908632253]
+anchors_preset = 0
+offset_left = 16.0
+offset_top = -16.0
+offset_right = 16.0
+offset_bottom = -16.0
+
+[node name="Sprite2D" type="Sprite2D" parent="Guide" unique_id=1376376935]
+texture = ExtResource("3_vqffl")
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

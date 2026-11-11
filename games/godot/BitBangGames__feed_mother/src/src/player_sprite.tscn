@@ -1,0 +1,121 @@
+[gd_scene format=3 uid="uid://dc1lauqw736yy"]
+
+[ext_resource type="Texture2D" uid="uid://ei1qihcx2gu3" path="res://spr/spr_player.png" id="1_h8wey"]
+
+[sub_resource type="Animation" id="Animation_e1kxv"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_ludky"]
+resource_name = "back"
+length = 0.03333666840530932
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [2]
+}
+
+[sub_resource type="Animation" id="Animation_nut4y"]
+resource_name = "back_walk"
+length = 0.500025
+loop_mode = 1
+step = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [3, 2]
+}
+
+[sub_resource type="Animation" id="Animation_y1niv"]
+resource_name = "devour"
+length = 5.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.5666666, 0.8666668, 1.1333332, 2.1, 2.7333333, 3.3333333, 3.9, 4.5),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 0, 1, 0, 4, 5, 7, 8, 6]
+}
+
+[sub_resource type="Animation" id="Animation_h8wey"]
+resource_name = "front"
+length = 0.03333666840530932
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0.03333336),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [0]
+}
+
+[sub_resource type="Animation" id="Animation_bnbha"]
+resource_name = "front_walk"
+length = 0.500025
+loop_mode = 1
+step = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [1, 0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_e1kxv"]
+_data = {
+&"RESET": SubResource("Animation_e1kxv"),
+&"back": SubResource("Animation_ludky"),
+&"back_walk": SubResource("Animation_nut4y"),
+&"devour": SubResource("Animation_y1niv"),
+&"front": SubResource("Animation_h8wey"),
+&"front_walk": SubResource("Animation_bnbha")
+}
+
+[node name="PlayerSprite" type="Sprite2D" unique_id=1080093490]
+z_as_relative = false
+y_sort_enabled = true
+texture = ExtResource("1_h8wey")
+hframes = 9
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=889602681]
+libraries/ = SubResource("AnimationLibrary_e1kxv")
