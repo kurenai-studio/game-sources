@@ -1,0 +1,245 @@
+extends ColorRect
+class_name CourseSurface
+## Continuous, world-anchored terrain. Two textures feed the surface shader:
+##   R = terrain ID / 255, G = reserved (always 0),
+##   B = (tile elevation - MIN_ELEVATION) / (MAX_ELEVATION - MIN_ELEVATION),
+##   A = reserved (always 1).
+## The vertex_elevation image uses a symmetric byte encoding: 128 is flat and
+## 25 byte values are one elevation level. Every integer level and flat ground
+## therefore decode exactly before the GPU interpolates them (0.5 in an R8
+## texture would decode flat ground to a small but visible nonzero height).
+const ELEVATION_TEXTURE_ZERO: float = 128.0
+const ELEVATION_TEXTURE_SCALE: float = 25.0
+
+## Palette color key for each terrain ID, indexed by TerrainTypes.Type. The
+## shader reads the palette width, so appending a type only needs a key here —
+## and a retired id keeps its slot, so the ids after it still index their own
+## colour (id 9, the old cart path, reads as the rough it becomes on load).
+## The two boulder fields share the Rocks palette slot and tree tiles share
+## "trees" for theme/minimap base colors; course_surface.gdshader derives each
+## stony and woodland tile's own full-tile ground texture and border from its id.
+const PALETTE_KEYS: Array[String] = [
+	"empty", "grass", "fairway_light", "rough", "heavy_rough", "green_light",
+	"tee_box_light", "bunker", "water", "rough", "oob", "trees", "flower_bed", "rocks",
+	"firm_fairway", "pot_bunker", "stream", "deep_rough", "waste_bunker", "brush",
+	"rocks", "rocks",
+	# One per species tile: OAK, PINE, MAPLE, BIRCH, CACTUS, FESCUE, CATTAILS,
+	# SHRUB, PALM, DEAD_TREE, HEATHER.
+	"trees", "trees", "trees", "trees", "trees", "trees", "trees", "trees",
+	"trees", "trees", "trees",
+]
+## The colour an id the palette has no slot for is drawn with. A plain grey, so
+## a terrain type added without a palette key stands out rather than blending
+## into the grass.
+const UNKNOWN_COLOR := Color(0.3, 0.3, 0.3)
+
+var _grid: TerrainGrid
+var _data: Image
+var _texture: ImageTexture
+var _elevation_image: Image
+var _elevation_texture: ImageTexture
+var _palette: ImageTexture
+var _dirty := false
+var _elevation_dirty := false
+
+func initialize(grid: TerrainGrid) -> void:
+	_grid = grid
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_data = Image.create(grid.grid_width, grid.grid_height, false, Image.FORMAT_RGBA8)
+	_texture = ImageTexture.create_from_image(_data)
+	_elevation_image = Image.create(grid.grid_width + 1, grid.grid_height + 1, false, Image.FORMAT_R8)
+	_elevation_texture = ImageTexture.create_from_image(_elevation_image)
+	var surface_material := ShaderMaterial.new()
+	surface_material.shader = preload("res://shaders/course_surface.gdshader")
+	surface_material.set_shader_parameter("terrain_data", _texture)
+	surface_material.set_shader_parameter("vertex_elevation", _elevation_texture)
+	surface_material.set_shader_parameter("vertex_grid_size", Vector2(grid.grid_width + 1, grid.grid_height + 1))
+	surface_material.set_shader_parameter("grid_size", Vector2(grid.grid_width, grid.grid_height))
+	surface_material.set_shader_parameter("tile_size", Vector2(grid.tile_width, grid.tile_height))
+	surface_material.set_shader_parameter("elevation_step_y", grid.ELEVATION_STEP_Y)
+	surface_material.set_shader_parameter("elevation_texture_zero", ELEVATION_TEXTURE_ZERO)
+	surface_material.set_shader_parameter("elevation_texture_scale", ELEVATION_TEXTURE_SCALE)
+	surface_material.set_shader_parameter("elevation_levels", float(grid.MAX_ELEVATION - grid.MIN_ELEVATION))
+	surface_material.set_shader_parameter("is_isometric", grid.view_isometric)
+	surface_material.set_shader_parameter("has_elevation", grid.has_relief())
+	surface_material.set_shader_parameter("low_detail_mode",
+		PerformanceSettings.terrain_quality == PerformanceSettings.TerrainQuality.FAST)
+	material = surface_material
+	apply_projection(grid.projection)
+	refresh_palette()
+	rebuild()
+	rebuild_elevation()
+	grid.tile_changed.connect(_on_tile_changed)
+	grid.elevation_changed.connect(_on_elevation_changed)
+	grid.vertex_elevation_changed.connect(_on_vertex_elevation_changed)
+	EventBus.theme_changed.connect(_on_theme_changed)
+	EventBus.load_completed.connect(_on_load_completed)
+	PerformanceSettings.profile_changed.connect(_on_performance_profile_changed)
+
+func apply_projection(proj: GridProjection) -> void:
+	if proj == null:
+		return
+	var bounds := proj.world_bounds()
+	var vertical_padding: float = 128.0 if proj.isometric else 0.0
+	position = bounds.position - Vector2(0.0, vertical_padding)
+	size = bounds.size + Vector2(0.0, vertical_padding * 2.0)
+	if material == null:
+		return
+	var mat := material as ShaderMaterial
+	if mat == null:
+		return
+	mat.set_shader_parameter("grid_origin", proj.grid_origin())
+	mat.set_shader_parameter("grid_axis_x", proj.axis_x())
+	mat.set_shader_parameter("grid_axis_y", proj.axis_y())
+	mat.set_shader_parameter("surface_origin", position)
+	mat.set_shader_parameter("surface_size", size)
+	if _grid != null:
+		mat.set_shader_parameter("elevation_step_y", _grid.ELEVATION_STEP_Y)
+		mat.set_shader_parameter("is_isometric", _grid.view_isometric)
+
+## Give a standing terrain sprite the same heightfield and projection as the
+## ground. Its shader compares the front terrain surface with each sprite pixel,
+## so a nearer hill can hide the trunk without erasing a crown above the hill.
+func configure_sprite_occlusion(sprite_material: ShaderMaterial, ground_grid: Vector2,
+		ground_offset: Vector2) -> void:
+	if sprite_material == null or _grid == null:
+		return
+	sprite_material.set_shader_parameter("vertex_elevation", _elevation_texture)
+	sprite_material.set_shader_parameter("vertex_grid_size", Vector2(_grid.grid_width + 1, _grid.grid_height + 1))
+	sprite_material.set_shader_parameter("grid_size", Vector2(_grid.grid_width, _grid.grid_height))
+	sprite_material.set_shader_parameter("elevation_step_y", _grid.ELEVATION_STEP_Y)
+	sprite_material.set_shader_parameter("elevation_texture_zero", ELEVATION_TEXTURE_ZERO)
+	sprite_material.set_shader_parameter("elevation_texture_scale", ELEVATION_TEXTURE_SCALE)
+	sprite_material.set_shader_parameter("is_isometric", _grid.view_isometric)
+	sprite_material.set_shader_parameter("grid_origin", _grid.projection.grid_origin())
+	sprite_material.set_shader_parameter("grid_axis_x", _grid.projection.axis_x())
+	sprite_material.set_shader_parameter("grid_axis_y", _grid.projection.axis_y())
+	sprite_material.set_shader_parameter("ground_grid", ground_grid)
+	sprite_material.set_shader_parameter("ground_offset", ground_offset)
+
+## The theme colour key one terrain id is painted with, or "" for an id the
+## palette has no slot for.
+static func palette_key(terrain_type: int) -> String:
+	if terrain_type < 0 or terrain_type >= PALETTE_KEYS.size():
+		return ""
+	return PALETTE_KEYS[terrain_type]
+
+## The colour one tile of each terrain is drawn with, on every map of the course:
+## the surface the player plays on, the minimap and the Course Map. Keeping the
+## one lookup here is what stops the three of them disagreeing about what a tile
+## looks like.
+static func map_color(terrain_type: int) -> Color:
+	var key := palette_key(terrain_type)
+	if key.is_empty():
+		return UNKNOWN_COLOR
+	return TerrainPalette.get_color(key)
+
+## The toolbar's terrain swatches use this same palette and shader as the grid.
+static func make_palette_texture() -> ImageTexture:
+	var colors := Image.create(PALETTE_KEYS.size(), 1, false, Image.FORMAT_RGBA8)
+	for i in range(PALETTE_KEYS.size()):
+		colors.set_pixel(i, 0, map_color(i))
+	return ImageTexture.create_from_image(colors)
+
+func refresh_palette() -> void:
+	_palette = make_palette_texture()
+	material.set_shader_parameter("palette", _palette)
+	material.set_shader_parameter("fringe_color", TerrainPalette.get_color("fringe"))
+
+func rebuild() -> void:
+	for x in range(_grid.grid_width):
+		for y in range(_grid.grid_height):
+			_write_tile(Vector2i(x, y))
+	_dirty = true
+
+func rebuild_elevation() -> void:
+	if _elevation_image == null:
+		return
+	for x in range(_grid.grid_width + 1):
+		for y in range(_grid.grid_height + 1):
+			_write_vertex(Vector2i(x, y))
+	_elevation_dirty = true
+	_update_relief_uniform()
+
+func update_vertex(vertex: Vector2i) -> void:
+	_write_vertex(vertex)
+
+func _update_relief_uniform() -> void:
+	var surface_material := material as ShaderMaterial
+	if surface_material and _grid:
+		surface_material.set_shader_parameter("has_elevation", _grid.has_relief())
+
+func _on_vertex_elevation_changed(_vertex: Vector2i, _old: int, _new: int) -> void:
+	_update_relief_uniform()
+
+func _on_performance_profile_changed(_terrain_fast: bool) -> void:
+	var surface_material := material as ShaderMaterial
+	if not surface_material:
+		return
+	var terrain_fast := PerformanceSettings.terrain_quality == PerformanceSettings.TerrainQuality.FAST
+	if bool(surface_material.get_shader_parameter("low_detail_mode")) == terrain_fast:
+		return
+	surface_material.set_shader_parameter("low_detail_mode", terrain_fast)
+
+func _write_vertex(vertex: Vector2i) -> void:
+	if _elevation_image == null or not _grid.is_valid_vertex(vertex):
+		return
+	var level: int = clampi(_grid.get_vertex_elevation(vertex),
+			_grid.MIN_ELEVATION, _grid.MAX_ELEVATION)
+	var gray: float = (ELEVATION_TEXTURE_ZERO
+			+ float(level - _grid.BASE_ELEVATION) * ELEVATION_TEXTURE_SCALE) / 255.0
+	_elevation_image.set_pixel(vertex.x, vertex.y, Color(gray, 0.0, 0.0))
+	_elevation_dirty = true
+
+func flush_elevation() -> void:
+	if _elevation_dirty and _elevation_texture != null:
+		_elevation_texture.update(_elevation_image)
+		_elevation_dirty = false
+
+func _write_tile(pos: Vector2i) -> void:
+	_data.set_pixel(pos.x, pos.y, Color(float(_grid.get_tile(pos)) / 255.0,
+		0.0,
+		float(_grid.get_elevation(pos) - _grid.MIN_ELEVATION)
+				/ float(_grid.MAX_ELEVATION - _grid.MIN_ELEVATION),
+		1.0))
+
+func _on_tile_changed(pos: Vector2i, _old: int, _new: int) -> void:
+	update_tile(pos)
+
+func _on_elevation_changed(pos: Vector2i, _old: int, _new: int) -> void:
+	update_tile(pos)
+
+func update_tile(pos: Vector2i) -> void:
+	_write_tile(pos)
+	_dirty = true
+
+func _on_theme_changed(_theme: int) -> void:
+	refresh_palette()
+
+func _on_load_completed(success: bool) -> void:
+	if success:
+		rebuild()
+		rebuild_elevation()
+		refresh_palette()
+
+func _process(_delta: float) -> void:
+	# Painting/batch generation uploads at most once per frame, never per tile.
+	if _dirty:
+		_texture.update(_data)
+		_dirty = false
+	flush_elevation()
+
+func _exit_tree() -> void:
+	if is_instance_valid(_grid):
+		if _grid.tile_changed.is_connected(_on_tile_changed):
+			_grid.tile_changed.disconnect(_on_tile_changed)
+		if _grid.elevation_changed.is_connected(_on_elevation_changed):
+			_grid.elevation_changed.disconnect(_on_elevation_changed)
+		if _grid.vertex_elevation_changed.is_connected(_on_vertex_elevation_changed):
+			_grid.vertex_elevation_changed.disconnect(_on_vertex_elevation_changed)
+	if EventBus.theme_changed.is_connected(_on_theme_changed):
+		EventBus.theme_changed.disconnect(_on_theme_changed)
+	if EventBus.load_completed.is_connected(_on_load_completed):
+		EventBus.load_completed.disconnect(_on_load_completed)
+	if PerformanceSettings.profile_changed.is_connected(_on_performance_profile_changed):
+		PerformanceSettings.profile_changed.disconnect(_on_performance_profile_changed)

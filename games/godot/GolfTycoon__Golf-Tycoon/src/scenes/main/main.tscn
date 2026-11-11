@@ -1,0 +1,115 @@
+[gd_scene format=3 uid="uid://dj8qvx2f3c5hy"]
+
+[ext_resource type="Script" path="res://scripts/main/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/utils/isometric_camera.gd" id="2_camera"]
+[ext_resource type="Script" path="res://scripts/terrain/terrain_grid.gd" id="3_terrain"]
+[ext_resource type="Script" path="res://scripts/managers/golfer_manager.gd" id="5_golfer_manager"]
+[ext_resource type="Script" path="res://scripts/managers/ball_manager.gd" id="6_ball_manager"]
+[ext_resource type="Script" path="res://scripts/managers/hole_manager.gd" id="7_hole_manager"]
+[ext_resource type="Theme" path="res://assets/themes/game_theme.tres" id="8_theme"]
+
+[ext_resource type="Script" path="res://scripts/ui/components/pixel_circle_button.gd" id="11_circle"]
+[ext_resource type="Script" path="res://scripts/ui/components/bottom_control_dock.gd" id="12_dock"]
+[ext_resource type="Script" path="res://scripts/ui/fps_counter.gd" id="13_fps"]
+
+[node name="Main" type="Node2D" unique_id=1113796788]
+script = ExtResource("1_main")
+
+y_sort_enabled = true
+
+[node name="TerrainGrid" type="Node2D" parent="." unique_id=1340507277]
+script = ExtResource("3_terrain")
+y_sort_enabled = true
+
+[node name="Entities" type="Node2D" parent="." unique_id=1526930307]
+
+y_sort_enabled = true
+
+[node name="Golfers" type="Node2D" parent="Entities" unique_id=1588679359]
+y_sort_enabled = true
+
+[node name="Balls" type="Node2D" parent="Entities" unique_id=879523313]
+
+[node name="Buildings" type="Node2D" parent="Entities" unique_id=1083729395]
+
+[node name="GolferManager" type="Node" parent="." unique_id=345454709]
+script = ExtResource("5_golfer_manager")
+
+[node name="BallManager" type="Node" parent="." unique_id=1184613083]
+script = ExtResource("6_ball_manager")
+
+[node name="HoleManager" type="Node" parent="." unique_id=1695079183]
+script = ExtResource("7_hole_manager")
+
+[node name="Holes" type="Node2D" parent="." unique_id=1134261089]
+
+[node name="IsometricCamera" type="Camera2D" parent="." unique_id=581873074]
+position = Vector2(2000, 1000)
+script = ExtResource("2_camera")
+
+[node name="FpsCounter" type="CanvasLayer" parent="."]
+script = ExtResource("13_fps")
+
+[node name="Notices" type="CanvasLayer" parent="."]
+layer = 1
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=251056778]
+layer = 2
+
+[node name="HUD" type="Control" parent="UI" unique_id=295067700]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("8_theme")
+
+[node name="StatusColumnPlaceholder" type="VBoxContainer" parent="UI/HUD" unique_id=93667985]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -218.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 268.0
+grow_horizontal = 0
+
+[node name="BottomBar" type="HBoxContainer" parent="UI/HUD" unique_id=676395160]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -190.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="LeftControls" type="Control" parent="UI/HUD/BottomBar" unique_id=904583721]
+custom_minimum_size = Vector2(218, 190)
+layout_mode = 2
+script = ExtResource("12_dock")
+
+[node name="SpeedControls" type="Control" parent="UI/HUD/BottomBar/LeftControls" unique_id=1574521636]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="PauseBtn" type="Button" parent="UI/HUD/BottomBar/LeftControls/SpeedControls" unique_id=1287478317]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 0
+text = "||"
+script = ExtResource("11_circle")
+glyph = "pause"
+tooltip_text = "Pause simulation (Space)"
+accessibility_name = "Pause"
+
+[node name="SpeedBtn" type="Button" parent="UI/HUD/BottomBar/LeftControls/SpeedControls" unique_id=1738357492]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 0
+text = ">"
+script = ExtResource("11_circle")
+glyph = "play"
+tooltip_text = "Normal (1x) — click for Fast (3x)"
+accessibility_name = "Game speed: Normal"
