@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://dl1cxtc0le0i6"]
+
+[ext_resource type="Script" uid="uid://cm4febwo4egge" path="res://src/egg.gd" id="1_ir6tb"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ga8v5"]
+radius = 4.0
+
+[node name="Egg" type="CharacterBody3D" unique_id=1567905165]
+script = ExtResource("1_ir6tb")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2041098422]
+shape = SubResource("SphereShape3D_ga8v5")

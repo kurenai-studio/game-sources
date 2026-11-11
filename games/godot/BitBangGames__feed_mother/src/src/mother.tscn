@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://c2khbf16tet1x"]
+
+[ext_resource type="Script" uid="uid://dokfp2p50a55s" path="res://src/mother.gd" id="1_a4met"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_gmfve"]
+radius = 8.0
+
+[node name="Mother" type="CharacterBody3D" unique_id=67164482]
+script = ExtResource("1_a4met")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=751799867]
+shape = SubResource("SphereShape3D_gmfve")
+
+[node name="Timer" type="Timer" parent="." unique_id=523194320]
+wait_time = 60.0
+one_shot = true
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

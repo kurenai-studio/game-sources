@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://05xr0j2o1g8k"]
+
+[ext_resource type="LabelSettings" uid="uid://cwd2h0pgu7vpf" path="res://label_settings.tres" id="1_whxi8"]
+[ext_resource type="Texture2D" uid="uid://c5c4o2purwiw3" path="res://bkg/bkg_conway.png" id="2_mx57q"]
+[ext_resource type="Texture2D" uid="uid://cbn5gwq50e1x7" path="res://bkg/bkg_logo.png" id="3_vayli"]
+
+[node name="TitleScreen" type="Node" unique_id=820850003]
+
+[node name="BBGBox" type="Label" parent="." unique_id=1060925613]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -76.0
+offset_top = -13.0
+offset_right = 76.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "Hawktober Horrors
+2026 Bit Bang Games"
+label_settings = ExtResource("1_whxi8")
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="VersionBox" type="Label" parent="." unique_id=1853944485]
+offset_right = 152.0
+offset_bottom = 13.0
+text = "v1.0
+Code: GPLv3
+Assets: CC BY-SA"
+label_settings = ExtResource("1_whxi8")
+
+[node name="EndingsBox" type="Label" parent="." unique_id=1378020348]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -152.0
+offset_bottom = 13.0
+grow_horizontal = 0
+text = "Endings: TREE(3)/4"
+label_settings = ExtResource("1_whxi8")
+horizontal_alignment = 2
+
+[node name="Conway" type="Control" parent="." unique_id=64379571]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -72.0
+offset_right = -64.0
+offset_bottom = 8.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="Sprite2D" type="Sprite2D" parent="Conway" unique_id=383557447]
+position = Vector2(-4, -4)
+texture = ExtResource("2_mx57q")
+
+[node name="Logo" type="Control" parent="." unique_id=447182228]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Sprite2D" type="Sprite2D" parent="Logo" unique_id=1929595501]
+texture = ExtResource("3_vayli")
