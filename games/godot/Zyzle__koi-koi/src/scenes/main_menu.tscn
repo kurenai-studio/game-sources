@@ -1,0 +1,138 @@
+[gd_scene load_steps=10 format=3 uid="uid://cfl3c3f5tts75"]
+
+[ext_resource type="Script" uid="uid://db81lh136bsls" path="res://scripts/ui/main_menu.gd" id="1_jk1qb"]
+[ext_resource type="Texture2D" uid="uid://c2gqtoyben4go" path="res://assets/background.png" id="1_l6cm7"]
+[ext_resource type="Texture2D" uid="uid://bbs8db82dsyov" path="res://assets/logo.png" id="2_bqqt6"]
+[ext_resource type="Texture2D" uid="uid://xoru7450iri7" path="res://assets/cards_stack.png" id="2_ekxnf"]
+[ext_resource type="Texture2D" uid="uid://lri4v48rg5ud" path="res://assets/button_tan.png" id="3_tbmy8"]
+[ext_resource type="Texture2D" uid="uid://d0biplgag7uqi" path="res://assets/button_tan_pressed.png" id="4_jk1qb"]
+[ext_resource type="Theme" uid="uid://dxx5m48t8ucyq" path="res://koi_koi_theme.tres" id="5_5dd4i"]
+[ext_resource type="Texture2D" uid="uid://c5tvrxlapv37w" path="res://assets/button_red.png" id="6_lgwnu"]
+[ext_resource type="Texture2D" uid="uid://cv1ftv68rc66v" path="res://assets/button_red_pressed.png" id="7_flqon"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_jk1qb")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_l6cm7")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 120
+theme_override_constants/margin_top = 80
+theme_override_constants/margin_right = 120
+theme_override_constants/margin_bottom = 80
+
+[node name="ReferenceRect" type="ReferenceRect" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+texture = ExtResource("2_bqqt6")
+stretch_mode = 4
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+theme_override_constants/separation = 30
+alignment = 1
+
+[node name="NewGame" type="TextureButton" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(350, 140)
+layout_mode = 2
+texture_normal = ExtResource("3_tbmy8")
+texture_pressed = ExtResource("4_jk1qb")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer/NewGame"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -124.5
+offset_top = -32.5
+offset_right = 124.5
+offset_bottom = 32.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("5_5dd4i")
+theme_override_font_sizes/font_size = 50
+text = "New Game"
+
+[node name="ExitGame" type="TextureButton" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(350, 140)
+layout_mode = 2
+texture_normal = ExtResource("6_lgwnu")
+texture_pressed = ExtResource("7_flqon")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer/ExitGame"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("5_5dd4i")
+theme_override_font_sizes/font_size = 50
+text = "Exit"
+
+[node name="Label" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("5_5dd4i")
+theme_override_font_sizes/font_size = 35
+text = "v0.1.0"
+
+[node name="Label2" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("5_5dd4i")
+theme_override_font_sizes/font_size = 35
+text = "Zyzle.dev Games"
+
+[node name="CenterContainer" type="CenterContainer" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/HBoxContainer/CenterContainer"]
+layout_mode = 2
+texture = ExtResource("2_ekxnf")
+
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer/NewGame" to="." method="_on_new_game_pressed"]
+[connection signal="pressed" from="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer/ExitGame" to="." method="_on_exit_game_pressed"]

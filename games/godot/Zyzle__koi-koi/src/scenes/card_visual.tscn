@@ -1,0 +1,179 @@
+[gd_scene load_steps=12 format=3 uid="uid://b8sb31olc4481"]
+
+[ext_resource type="Script" uid="uid://bf5whjfoswtlu" path="res://scripts/ui/card_visual.gd" id="1_cgfjn"]
+[ext_resource type="Texture2D" uid="uid://den46ep2yks8e" path="res://assets/cardback.png" id="1_oc33x"]
+[ext_resource type="Texture2D" uid="uid://do25host4hbk4" path="res://assets/1-4.png" id="3_f0yfs"]
+[ext_resource type="Texture2D" uid="uid://bve1pi6fx8v7s" path="res://assets/cardback_n_0.png" id="3_oml8l"]
+[ext_resource type="Texture2D" uid="uid://bwxdehst5j58r" path="res://assets/neutral_point_light.webp" id="5_rmpoq"]
+
+[sub_resource type="OccluderPolygon2D" id="OccluderPolygon2D_welkc"]
+polygon = PackedVector2Array(-110, -180, 110, -180, 110, 180, -110, 180)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_cgfjn"]
+size = Vector2(220, 360)
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_rmpoq"]
+diffuse_texture = ExtResource("1_oc33x")
+normal_texture = ExtResource("3_oml8l")
+
+[sub_resource type="Animation" id="Animation_okp31"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CardBackImage:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CardBackImage:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("CardImage:visible")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("CardImage:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0.025, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_gn23t"]
+resource_name = "card_flip"
+length = 0.25
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("CardBackImage:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.125),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(0.025, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("CardBackImage:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.125),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [true, false]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("CardImage:visible")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.125),
+"transitions": PackedFloat32Array(1, 1),
+"update": 1,
+"values": [false, true]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("CardImage:scale")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0.125, 0.25),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(0.025, 1), Vector2(1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_1bta1"]
+_data = {
+&"RESET": SubResource("Animation_okp31"),
+&"card_flip": SubResource("Animation_gn23t")
+}
+
+[node name="CardVisual" type="Node2D"]
+scale = Vector2(0.5, 0.5)
+script = ExtResource("1_cgfjn")
+
+[node name="LightOccluder2D" type="LightOccluder2D" parent="."]
+visible = false
+occluder = SubResource("OccluderPolygon2D_welkc")
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+shape = SubResource("RectangleShape2D_cgfjn")
+disabled = true
+
+[node name="CardBackImage" type="Sprite2D" parent="."]
+texture = SubResource("CanvasTexture_rmpoq")
+
+[node name="CardImage" type="Sprite2D" parent="."]
+visible = false
+scale = Vector2(0.025, 1)
+texture = ExtResource("3_f0yfs")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_1bta1")
+}
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+visible = false
+position = Vector2(28, 266)
+scale = Vector2(4.203125, 3.4999998)
+editor_only = true
+energy = 10.58
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 0.5882353)
+shadow_filter = 1
+texture = ExtResource("5_rmpoq")
+height = 1.0
+
+[node name="PointLight2D2" type="PointLight2D" parent="."]
+visible = false
+z_index = 300
+z_as_relative = false
+position = Vector2(208, 108)
+color = Color(0.9289759, 0.65858614, 0.16423905, 1)
+energy = 0.36
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 0.6862745)
+shadow_filter = 1
+texture = ExtResource("5_rmpoq")
+texture_scale = 3.82
+height = 342.0
