@@ -1,0 +1,189 @@
+import pygame
+from ai import AI_OPTIONS
+from config import *
+import scoreboard
+
+
+def show_main_menu(renderer):
+    modes = [
+        {"name": "Single Player", "players": 1, "ai": False},
+        {"name": "Two Players", "players": 2, "ai": False},
+        {"name": "Player vs AI", "players": 2, "ai": True},
+    ]
+    buttons = [
+        {"text": "New Game", "action": "new_game", "rect": pygame.Rect(0, 0, 200, 60)},
+        {
+            "text": "Scoreboard",
+            "action": "scoreboard",
+            "rect": pygame.Rect(0, 0, 200, 60),
+        },
+        {"text": "Quit", "action": "quit", "rect": pygame.Rect(0, 0, 200, 60)},
+    ]
+
+    spacing = 100
+    start_y = (WINDOW_HEIGHT - len(buttons) * spacing) // 2
+
+    for i, b in enumerate(buttons):
+        b["rect"].centerx = WINDOW_WIDTH // 2
+        b["rect"].centery = start_y + i * spacing
+
+    selected_mode_idx = 0
+    selected_difficulty = "normal"
+    selected_ai_idx = 0
+    selected_lives = [0, 0]
+
+    def build_new_game_choice():
+        selected_mode = modes[selected_mode_idx]
+        selected_ai = AI_OPTIONS[selected_ai_idx]
+        return {
+            "action": "new_game",
+            "players": selected_mode["players"],
+            "ai": selected_mode["ai"],
+            "ai_type": selected_ai["id"],
+            "difficulty": selected_difficulty,
+            "lives": [LIVES_OPTIONS[selected_lives[i]] for i in range(selected_mode["players"])],
+        }
+
+    def lives_label(lives):
+        return "Off" if lives is None else str(lives)
+
+    while True:
+        renderer.clear()
+        mouse_pos = renderer.get_logical_mouse_pos()
+        mouse_click = False
+        clicked_pos = None
+
+        for event in (
+            pygame.event.get()
+        ):  # returns a list of event objects.each event object has a type atr
+            if renderer.handle_event(event):
+                continue
+            if event.type == pygame.QUIT:
+                return None
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    clicked_pos = renderer.to_logical_pos(event.pos)
+                    mouse_click = clicked_pos is not None
+
+        title = renderer.font_large.render("SNAKE GAME", True, (100, 255, 100))
+        renderer.screen.blit(title, (WINDOW_WIDTH // 2 - title.get_width() // 2, 30))
+
+        sub_y = 100
+        selected_mode = modes[selected_mode_idx]
+        mode_text = f"Mode: {selected_mode['name']}"
+        mode_surf = renderer.font_medium.render(mode_text, True, (255, 255, 255))
+        mode_rect = mode_surf.get_rect(
+            center=(WINDOW_WIDTH // 2, sub_y + mode_surf.get_height() // 2)
+        )
+        renderer.screen.blit(mode_surf, mode_rect)
+        sub_y += 40
+        diff_text = f"Difficulty: {selected_difficulty.capitalize()}"
+        diff_surf = renderer.font_medium.render(diff_text, True, (255, 255, 255))
+        diff_rect = diff_surf.get_rect(
+            center=(WINDOW_WIDTH // 2, sub_y + diff_surf.get_height() // 2)
+        )
+        renderer.screen.blit(diff_surf, diff_rect)
+        sub_y += 40
+        lives_rects = []
+        lives_count = selected_mode["players"]
+        for lives_index in range(lives_count):
+            if selected_mode["ai"] and lives_index == 1:
+                label = f"AI Lives: {lives_label(LIVES_OPTIONS[selected_lives[lives_index]])}"
+                color = COLORS["snake2_head"]
+            elif lives_count == 1:
+                label = f"Lives: {lives_label(LIVES_OPTIONS[selected_lives[lives_index]])}"
+                color = (255, 255, 255)
+            else:
+                label = f"P{lives_index + 1} Lives: {lives_label(LIVES_OPTIONS[selected_lives[lives_index]])}"
+                color = COLORS[f"snake{lives_index + 1}_head"]
+            lives_surf = renderer.font_medium.render(label, True, color)
+            lives_rect = lives_surf.get_rect(
+                center=(WINDOW_WIDTH // 2, sub_y + lives_surf.get_height() // 2)
+            )
+            renderer.screen.blit(lives_surf, lives_rect)
+            lives_rects.append((lives_index, lives_rect))
+            sub_y += 40
+
+        ai_rect = None
+        if selected_mode["ai"]:
+            selected_ai = AI_OPTIONS[selected_ai_idx]
+            ai_text = f"AI: {selected_ai['name']}"
+            ai_surf = renderer.font_medium.render(ai_text, True, COLORS["snake2_head"])
+            ai_rect = ai_surf.get_rect(
+                center=(WINDOW_WIDTH // 2, sub_y + ai_surf.get_height() // 2)
+            )
+            renderer.screen.blit(ai_surf, ai_rect)
+
+        if mouse_click and clicked_pos:
+            if mode_rect.collidepoint(clicked_pos):
+                selected_mode_idx = (selected_mode_idx + 1) % len(modes)
+                renderer.sound_button.play()
+                mouse_click = False
+            elif diff_rect.collidepoint(clicked_pos):
+                selected_difficulty = (
+                    "hard" if selected_difficulty == "normal" else "normal"
+                )
+                renderer.sound_button.play()
+                mouse_click = False
+            elif ai_rect and ai_rect.collidepoint(clicked_pos):
+                selected_ai_idx = (selected_ai_idx + 1) % len(AI_OPTIONS)
+                renderer.sound_button.play()
+                mouse_click = False
+            else:
+                for lives_index, lives_rect in lives_rects:
+                    if lives_rect.collidepoint(clicked_pos):
+                        selected_lives[lives_index] = (
+                            selected_lives[lives_index] + 1
+                        ) % len(LIVES_OPTIONS)
+                        renderer.sound_button.play()
+                        mouse_click = False
+                        break
+
+        for b in buttons:
+            hover = mouse_pos is not None and b["rect"].collidepoint(mouse_pos)
+            renderer.draw_button(b["rect"], b["text"], hover)
+            if mouse_click and hover:
+                renderer.sound_button.play()
+                if b["action"] == "new_game":
+                    return build_new_game_choice()
+                elif b["action"] == "scoreboard":
+                    result = scoreboard.show_scoreboard(renderer)
+                    if result is False:
+                        return None
+                elif b["action"] == "quit":
+                    return None
+
+        choice = None
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_m]:
+            selected_mode_idx = (selected_mode_idx + 1) % len(modes)
+            pygame.time.wait(200)
+        if keys[pygame.K_d]:
+            selected_difficulty = (
+                "hard" if selected_difficulty == "normal" else "normal"
+            )
+            pygame.time.wait(200)
+        if selected_mode["ai"] and keys[pygame.K_a]:
+            selected_ai_idx = (selected_ai_idx + 1) % len(AI_OPTIONS)
+            pygame.time.wait(200)
+        if keys[pygame.K_n]:
+            choice = "New game"
+            pygame.time.wait(200)
+        if keys[pygame.K_s]:
+            choice = "show scoreboard"
+            pygame.time.wait(200)
+        if keys[pygame.K_q]:
+            choice = "quit"
+            pygame.time.wait(200)
+
+        if choice:
+            if choice == "New game":
+                return build_new_game_choice()
+            elif choice == "show scoreboard":
+                result = scoreboard.show_scoreboard(renderer)
+                if result is False:
+                    return None
+            elif choice == "quit":
+                return None
+
+        renderer.update_display()
