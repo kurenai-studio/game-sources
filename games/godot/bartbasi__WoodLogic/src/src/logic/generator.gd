@@ -1,0 +1,1228 @@
+# WoodLogic. Copyright 2026 Play, Inc.
+# Free software under the GNU GPL v3 with additional terms: see LICENSE and NOTICE.
+class_name Generator
+extends RefCounted
+## Makes numbered, daily and relaxed levels (docs/ARCHITECTURE.md 4.4, GDD 6.3 to 6.6). The same
+## kind, number, band and version give the same level on every phone and PC: every choice comes
+## from a RandomNumberGenerator seeded by Seeds, lists are walked in a fixed order, and every
+## budget is a count. Safe on a worker thread once LevelCatalog.load_all() has run.
+##
+## Steps for one level:
+## 1. Plan: the tier (the sawtooth, the daily tier, or a seeded pick in a Relaxed band), its
+##    tray and least peak tray load (GDD 6.8), and the blueprint (G7, a pure function of kind,
+##    number and version: see blueprint_for).
+## 2. Up to VARIATIONS varied boards (mirrored, shifted, two layers swapped, a plank dropped),
+##    each checked against the blueprint rules (G2) and the tier's screws and layers (G1).
+## 3. Up to COLORINGS colorings per board, colored with intent (see _color). The novice plays
+##    each one first (G4, and G9a where the tier requires it); one that passes is searched with
+##    the tier's MAX_STATES and with the top of its tray use range as the cap (the range widened
+##    for its peak, see spec_for). A coloring is kept if the search completes, G1 to G6 hold,
+##    G10 holds (peak_holds, right after the search) and G9 where the tier requires it.
+##    Between tries the coloring pressure goes up when a level came out too easy (or its peak
+##    too low) and down when it came out too hard; a G9 failure leaves it alone (GDD 6.4.1).
+## 4. If no try is kept after MAX_ATTEMPTS tries or LEVEL_STATES states in all (G9_BUDGET times
+##    as many on a tier that requires G9 or a peak), a stored fallback level for the tier
+##    (exempt from G7; see _fall_back).
+##
+## Every number here counts toward GENERATOR_VERSION: changing one changes levels.
+
+const GENERATOR_VERSION := 7
+## Seed purposes for Seeds.derive.
+const VARY := 12
+const COLOR := 13
+const TIER := 14
+const PICK := 15
+const DAILY_ORDER := 16
+const SCHEDULE := 17
+const RELABEL := 18
+## Length of a Relaxed band's schedule, in levels.
+const RELAXED_SCHEDULE := 60
+## Length of the repeating part of the numbered levels' schedule (see numbered_schedule), a
+## multiple of 5, the sawtooth's period.
+const NUMBERED_PERIOD := 60
+const NUMBERED_ORDER := 19
+const FALLBACK_STREAM := 0x66616C6C
+const VARIATIONS := 12
+const COLORINGS := 5
+const MAX_ATTEMPTS := 60
+## Search budget per try, per tier (index tier - 1), in states, and for all the tries of one
+## level together. (See the Hard Stop 2 report for how they were picked.)
+const MAX_STATES: Array[int] = [20000, 20000, 20000, 30000, 30000, 40000, 60000, 60000, 80000, 80000]
+const LEVEL_STATES := 1200000
+## G9, the soft step into Hard (GDD 6.4.1). G9a: on SURVIVAL_TIERS the novice must survive at
+## least ceil(n / SURVIVAL_DIVISOR) taps of a level of n screws. G9b: on LATE_TRAY_TIERS the
+## solution's last tray use must come after the first LATE_TRAY_PART of its taps. Everywhere
+## else both are measured and reported, never required. A tier that requires either rule gets
+## G9_BUDGET times VARIATIONS, MAX_ATTEMPTS and LEVEL_STATES, for the colorings G9 turns down.
+## (Bart approved G9 at Hard Stop 2 for tiers 7 to 10. These lists are the designer's proposed
+## form in GDD 6.4.1, put to Bart: G9a on tiers 7 and 8 only, G9b reported only. Requiring G9a
+## on 9 and 10 too, or G9b anywhere, is a change to one list.)
+const SURVIVAL_TIERS: Array[int] = [7, 8]
+const LATE_TRAY_TIERS: Array[int] = []
+const SURVIVAL_DIVISOR := 3
+const LATE_TRAY_PART := 3
+const G9_BUDGET := 2
+## A tier that requires G9a and a peak (7 and 8) together gets this many times the base budget:
+## the novice, which must lose yet survive a third of the screws, turns down most colorings
+## there. Measured on version 6, levels 50 to 99 fell back 10 percent of the time with twice
+## the budget and 2 percent with three times.
+const HARD_BUDGET := 3
+## In _closeness, holding G9 outranks any tray use count.
+const G9_RANK := 100
+## Coloring pressure to start with, per tier (index tier - 1), and the most it goes to (see
+## _color).
+const START_PRESSURE: Array[int] = [0, 0, 0, 2, 2, 3, 4, 4, 6, 6]
+const MAX_PRESSURE := 10
+## A deep opening needs at least this many screws that are not free at the start, and judges
+## how deep a screw is by this many random removal orders.
+const MIN_DEEP := 2
+const DEPTH_SAMPLES := 1
+## Largest shift of a varied board, in gu.
+const SHIFT := 3
+## Percent chances (whole numbers, so no float decides a level) of swapping two layers and of
+## dropping a plank, from the second variation on.
+const SWAP_PERCENT := 30
+const DROP_PERCENT := 30
+
+
+## The plan for one level: what it is and where its randomness comes from.
+class Plan extends RefCounted:
+	var kind: int
+	var number: int
+	var band: String
+	var tier: int
+	var group: String
+	var slack: int
+	var seed_value: int
+	## Index into LevelCatalog.blueprints, or -1 if no blueprint suits the tier.
+	var blueprint: int = -1
+	## The level's tray slots and the least peak tray load G10 asks for (from its tier, GDD 6.8).
+	var tray: int = 5
+	var peak: int = 0
+
+
+## How a board was varied.
+class Variation extends RefCounted:
+	var mirror := false
+	var dx := 0
+	var dy := 0
+	## Layers swap and swap + 1 trade places (after a dropped plank's gap is closed); -1 none.
+	var swap := -1
+	## The plank dropped, or -1.
+	var drop := -1
+
+	func describe() -> String:
+		var parts := PackedStringArray()
+		if mirror:
+			parts.append("mirror")
+		if dx != 0 or dy != 0:
+			parts.append("shift %d,%d" % [dx, dy])
+		if swap >= 0:
+			parts.append("swap %d-%d" % [swap, swap + 1])
+		if drop >= 0:
+			parts.append("drop %d" % drop)
+		return " ".join(parts) if not parts.is_empty() else "as drawn"
+
+
+## Makes the level. Never null once LevelCatalog is loaded. stop (LevelPrefetcher passes one):
+## once it is requested, make gives up between tries or within a search and returns with
+## stopped set and no level, never a fallback in its place. Without a stop, or with one never
+## requested, the level is the same.
+static func make(kind: int, number: int, band: String, stop: GenerationStop = null) -> GeneratedLevel:
+	var started := Time.get_ticks_usec()
+	var out := GeneratedLevel.new()
+	var plan := plan_for(kind, number, band)
+	if plan.blueprint >= 0 and not _stopped(stop):
+		_try(plan, out, -1, stop)
+	if _stopped(stop):
+		out.level = null
+		out.solve = null
+		out.stopped = true
+	elif out.level == null:
+		_fall_back(plan, out)
+	@warning_ignore("integer_division")
+	out.gen_ms = (Time.get_ticks_usec() - started) / 1000
+	return out
+
+
+static func _stopped(stop: GenerationStop) -> bool:
+	return stop != null and stop.is_requested()
+
+
+## The plan for (kind, number, band). number is the level number, the date as yyyymmdd, or
+## the Relaxed stream index.
+static func plan_for(kind: int, number: int, band: String) -> Plan:
+	var plan := Plan.new()
+	plan.kind = kind
+	plan.number = number
+	plan.band = band if kind == LevelData.RELAXED else ""
+	match kind:
+		LevelData.DAILY:
+			plan.tier = Tuning.daily_tier
+			plan.group = Tuning.daily_group
+			plan.slack = Tuning.daily_slack
+			@warning_ignore("integer_division")
+			plan.seed_value = Seeds.daily(number / 10000, (number / 100) % 100, number % 100)
+		LevelData.RELAXED:
+			plan.tier = relaxed_tier(band, number)
+			plan.group = Tuning.tier(plan.tier).group
+			plan.slack = 0
+			plan.seed_value = Seeds.relaxed(band, number)
+		_:
+			plan.kind = LevelData.NUMBERED
+			plan.tier = Tuning.tier_for_level(number)
+			plan.group = Tuning.tier(plan.tier).group
+			plan.slack = Tuning.slack_for_level(number)
+			plan.seed_value = Seeds.numbered(number)
+	plan.tray = tray_for(plan.kind, plan.tier)
+	plan.peak = Tuning.tier(plan.tier).peak.x
+	plan.blueprint = blueprint_for(plan.kind, number, plan.band)
+	return plan
+
+
+## The tray a level of this kind and tier is played with (GDD 6.8): its tier's, or Relaxed's
+## own. Relaxed can't be lost, so a larger tray of its own only makes it kinder; it keeps its
+## tier's peak.
+static func tray_for(kind: int, tier: int) -> int:
+	if kind == LevelData.RELAXED and Tuning.relaxed_tray > 0:
+		return Tuning.relaxed_tray
+	return Tuning.tier(tier).tray
+
+
+## The tier of a Relaxed level (GDD 6.6), from the band's schedule (see relaxed_schedule).
+static func relaxed_tier(band: String, index: int) -> int:
+	var schedule: Array = LevelCatalog.relaxed_schedule.get(band, [])
+	if schedule.is_empty() or (schedule[1] as PackedInt32Array).is_empty():
+		var span: Vector2i = Tuning.relaxed.get(band, Vector2i(1, 3))
+		return span.x
+	var tiers: PackedInt32Array = schedule[1]
+	return tiers[posmod(index, tiers.size())]
+
+
+## A Relaxed band's schedule, built once by LevelCatalog.load_all(): [blueprints, tiers], one
+## entry per stream index, repeating every RELAXED_SCHEDULE levels. Built by a seeded walk:
+## at each index the tier picked so far the least often comes first (a seeded tie break, so
+## every tier of the band gets its share), then the blueprint for that tier used the least
+## that is not among the last R; a tier with no such blueprint gives way to the next. The walk
+## is kept only if it also holds G7 where the schedule wraps round, else the next seed is
+## tried.
+static func relaxed_schedule(band: String) -> Array:
+	var span: Vector2i = Tuning.relaxed.get(band, Vector2i(1, 3))
+	var r := maxi(Tuning.recent_blueprints_excluded, 1)
+	var length := RELAXED_SCHEDULE
+	for attempt: int in 64:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = Seeds.derive(Seeds.relaxed(band, -1), SCHEDULE, attempt)
+		var blueprints := PackedInt32Array()
+		var tiers := PackedInt32Array()
+		var tier_count := {}
+		var use_count := {}
+		var ok := true
+		for i: int in length:
+			var order: Array[int] = []
+			for t: int in range(span.x, span.y + 1):
+				order.append(t)
+			var ties := {}
+			for t: int in order:
+				ties[t] = rng.randi()
+			order.sort_custom(func(a: int, b: int) -> bool:
+				var ca: int = tier_count.get(a, 0)
+				var cb: int = tier_count.get(b, 0)
+				return ca < cb if ca != cb else int(ties[a]) < int(ties[b]))
+			var chosen := -1
+			var chosen_tier := -1
+			for t: int in order:
+				var best := -1
+				var best_key := 0
+				for b: int in LevelCatalog.suits[t - 1]:
+					var recent := false
+					for k: int in range(maxi(0, i - r), i):
+						recent = recent or blueprints[k] == b
+					if recent:
+						continue
+					var key: int = int(use_count.get(b, 0)) * 1000000 + rng.randi_range(0, 999999)
+					if best < 0 or key < best_key:
+						best = b
+						best_key = key
+				if best >= 0:
+					chosen = best
+					chosen_tier = t
+					break
+			if chosen < 0:
+				ok = false
+				break
+			blueprints.append(chosen)
+			tiers.append(chosen_tier)
+			tier_count[chosen_tier] = int(tier_count.get(chosen_tier, 0)) + 1
+			use_count[chosen] = int(use_count.get(chosen, 0)) + 1
+		if ok:
+			for i: int in length:
+				for k: int in range(1, r + 1):
+					ok = ok and blueprints[i] != blueprints[(i + k) % length]
+		if ok:
+			return [blueprints, tiers]
+	return [PackedInt32Array(), PackedInt32Array()]
+
+
+## The numbered levels' blueprints, built once by LevelCatalog.load_all(): [first level, first
+## level of the repeating part, blueprints], blueprints[i] for level first + i. From the
+## repeating part on (the level from which the sawtooth's tiers repeat every 5) the list
+## repeats every NUMBERED_PERIOD levels. Built like a Relaxed band's schedule: walking the
+## levels in order, each takes the blueprint suiting its tier that the walk has used least and
+## that is not among the last R (a seeded tie break); the walk is kept only if it also holds G7
+## where the repeating part wraps round, else the next seed is tried. Empty if no seed works.
+static func numbered_schedule() -> Array:
+	var r := maxi(Tuning.recent_blueprints_excluded, 1)
+	var first := Tuning.tutorial_levels + 1
+	var periodic := maxi(first, int(Tuning.sawtooth_ranges[-1][0]) if not Tuning.sawtooth_ranges.is_empty() else Tuning.sawtooth_bases[-1].x)
+	var length := periodic - first + NUMBERED_PERIOD
+	for attempt: int in 64:
+		var rng := RandomNumberGenerator.new()
+		rng.seed = Seeds.derive(Seeds.mix(Seeds.NUMBERED, GENERATOR_VERSION), NUMBERED_ORDER, attempt)
+		var blueprints := PackedInt32Array()
+		var use_count := {}
+		var ok := true
+		for i: int in length:
+			var best := -1
+			var best_key := 0
+			for b: int in LevelCatalog.suits[Tuning.tier_for_level(first + i) - 1]:
+				var recent := false
+				for k: int in range(maxi(0, i - r), i):
+					recent = recent or blueprints[k] == b
+				if recent:
+					continue
+				var key: int = int(use_count.get(b, 0)) * 1000000 + rng.randi_range(0, 999999)
+				if best < 0 or key < best_key:
+					best = b
+					best_key = key
+			if best < 0:
+				ok = false
+				break
+			blueprints.append(best)
+			use_count[best] = int(use_count.get(best, 0)) + 1
+		# Where the repeating part starts over after its last level.
+		var from := periodic - first
+		for i: int in range(maxi(from, length - r), length):
+			for k: int in range(1, r + 1):
+				if ok and i + k >= length:
+					ok = blueprints[i] != blueprints[from + i + k - length]
+		if ok:
+			return [first, periodic, blueprints]
+	return [first, periodic, PackedInt32Array()]
+
+
+## G7 as a pure function of (kind, number, version), with no other level generated: numbered
+## levels follow numbered_schedule, the daily walks one seeded order of
+## LevelCatalog.daily_pool, one per day, so it repeats only after that many days (which needs
+## a pool of at least R + 1), and each Relaxed band follows its schedule (relaxed_schedule).
+## The schedules hold G7 by construction, wraps included; the tests check all three with the
+## shipped data.
+static func blueprint_for(kind: int, number: int, band: String) -> int:
+	if kind == LevelData.DAILY:
+		var list := LevelCatalog.daily_pool
+		if list.is_empty():
+			return -1
+		var order := _shuffled(list, Seeds.mix(Seeds.DAILY, GENERATOR_VERSION + DAILY_ORDER))
+		@warning_ignore("integer_division")
+		var day := Seeds.day_number(number / 10000, (number / 100) % 100, number % 100)
+		return order[posmod(day, order.size())]
+	if kind == LevelData.RELAXED:
+		var schedule: Array = LevelCatalog.relaxed_schedule.get(band, [])
+		if schedule.is_empty() or (schedule[0] as PackedInt32Array).is_empty():
+			return -1
+		var blueprints: PackedInt32Array = schedule[0]
+		return blueprints[posmod(number, blueprints.size())]
+	var numbered := LevelCatalog.numbered_schedule
+	if numbered.is_empty() or (numbered[2] as PackedInt32Array).is_empty():
+		return -1
+	var first: int = numbered[0]
+	var periodic: int = numbered[1]
+	var n := maxi(number, first)
+	return (numbered[2] as PackedInt32Array)[n - first if n < periodic else periodic - first + posmod(n - periodic, NUMBERED_PERIOD)]
+
+
+static func _shuffled(list: PackedInt32Array, seed_value: int) -> PackedInt32Array:
+	var out := list.duplicate()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	for i: int in range(out.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var t := out[i]
+		out[i] = out[j]
+		out[j] = t
+	return out
+
+
+## G9a's least survival for a level of this many screws: ceil(screws / SURVIVAL_DIVISOR) taps.
+static func survival_needed(screws: int) -> int:
+	@warning_ignore("integer_division")
+	return (screws + SURVIVAL_DIVISOR - 1) / SURVIVAL_DIVISOR
+
+
+## G9a: the novice survives at least survival_needed taps.
+static func survives(level: LevelData, r: SolveResult) -> bool:
+	return r.novice_taps >= survival_needed(level.screw_count())
+
+
+## G9b: the solution's tray uses are not all in the first third: its last tray use's tap number
+## p has 3p > n. A solution with no tray use passes.
+static func late_tray(level: LevelData, r: SolveResult) -> bool:
+	return r.last_tray_use == 0 or r.last_tray_use * LATE_TRAY_PART > level.screw_count()
+
+
+## G9 as this tier requires it (true on a tier that requires neither rule).
+static func g9_holds(tier: int, level: LevelData, r: SolveResult) -> bool:
+	return (not SURVIVAL_TIERS.has(tier) or survives(level, r)) and (not LATE_TRAY_TIERS.has(tier) or late_tray(level, r))
+
+
+## How many times the base budget (VARIATIONS, MAX_ATTEMPTS, LEVEL_STATES) a tier gets: G9_BUDGET
+## on a tier that requires G9 or a peak (G10), HARD_BUDGET on one that requires both G9a and a
+## peak.
+static func budget_scale(tier: int) -> int:
+	var peak := Tuning.tier(tier).peak.x >= 1
+	if SURVIVAL_TIERS.has(tier) and peak:
+		return HARD_BUDGET
+	return G9_BUDGET if SURVIVAL_TIERS.has(tier) or LATE_TRAY_TIERS.has(tier) or peak else 1
+
+
+## The fewest tray uses the generator accepts on a tier (G3): the tier's range, widened to
+## [max(low, P), max(high, P + 1)] for its least peak P of 1 or more (a peak of P needs at
+## least P tray uses, and one more leaves room above the least). The same for every kind of
+## level: a daily or Relaxed plan has its tier's peak too.
+static func acceptance_range(tier: int) -> Vector2i:
+	var base := Tuning.tier(tier)
+	var peak := base.peak.x
+	if peak <= 0:
+		return base.tray_uses
+	return Vector2i(maxi(base.tray_uses.x, peak), maxi(base.tray_uses.y, peak + 1))
+
+
+## The tray use cap of the generator's acceptance search on a tier (the top of
+## acceptance_range): a level whose every solution needs more is turned down. For checking a
+## saved level the same way it was accepted.
+static func acceptance_cap(tier: int) -> int:
+	return acceptance_range(tier).y
+
+
+## The tier row a plan works with: its tier's, with the fewest tray use range of
+## acceptance_range.
+static func spec_for(plan: Plan) -> Tuning.TierSpec:
+	var base := Tuning.tier(plan.tier)
+	var spec := Tuning.TierSpec.new()
+	spec.tier = base.tier
+	spec.group = base.group
+	spec.screws = base.screws
+	spec.colors = base.colors
+	spec.layers = base.layers
+	spec.novice = base.novice
+	spec.covered_pct = base.covered_pct
+	spec.tray = plan.tray
+	spec.peak = base.peak
+	spec.tray_uses = acceptance_range(plan.tier)
+	return spec
+
+
+## G10 (GDD 6.8): every solution holds at least `peak` screws in the tray at once. r is the
+## level's fewest tray use solve. G10a: its own peak (r.peak_tray) reaches `peak`, a replay. G10b,
+## for a peak of 2 or more: no solution exists with a tray of peak - 1 slots. (A solution whose
+## most crowded moment holds L screws fits a tray of L slots, and a tray of L slots holds no
+## more, so the least peak over every solution is the smallest tray that still has one.) A
+## peak of 1 needs nothing more: r has a tray use, so every solution does. 1 holds, 0 does not,
+## -1 the search stopped at max_states.
+static func peak_holds(level: LevelData, r: SolveResult, peak: int, max_states: int) -> int:
+	return _peak_check(level, r, peak, max_states).x
+
+
+## peak_holds, and the states G10b searched: Vector2i(answer, states), so _try can count them
+## toward the level's state budget.
+static func _peak_check(level: LevelData, r: SolveResult, peak: int, max_states: int, stop: GenerationStop = null) -> Vector2i:
+	if peak <= 0:
+		return Vector2i(1, 0)
+	if r.peak_tray < peak:
+		return Vector2i(0, 0)
+	if peak == 1:
+		return Vector2i(1, 0)
+	var small := Solver.search_only(with_tray(level, peak - 1), max_states, true, -1, stop)
+	return Vector2i(0 if small.solved else (1 if small.complete else -1), small.states)
+
+
+## The least peak tray load over every solution of a solved level: the smallest tray, from
+## `from` up to the solution's own peak, that still has a solution. -1 if a search stopped at
+## max_states. For tools and tests (one search per tray size tried).
+static func least_peak(level: LevelData, r: SolveResult, from: int, max_states: int) -> int:
+	for slots: int in range(maxi(from, 0), r.peak_tray):
+		if slots == 0:
+			# No tray at all: a solution exists exactly when one needs no tray use.
+			if r.fewest_tray_uses == 0:
+				return 0
+			continue
+		var s := Solver.search_only(with_tray(level, slots), max_states)
+		if not s.complete:
+			return -1
+		if s.solved:
+			return slots
+	return r.peak_tray
+
+
+## The same level with a tray of this many slots, 1 to LevelData.MAX_TRAY (for G10's searches
+## and the tools).
+static func with_tray(level: LevelData, slots: int) -> LevelData:
+	var errors := PackedStringArray()
+	return level.with_colors(level.screw_colors, level.queue, errors, {"tray": slots})
+
+
+## G4: the novice result is the one the tier wants.
+static func _novice_right(spec: Tuning.TierSpec, r: SolveResult) -> bool:
+	return not ((spec.novice == Tuning.NOVICE_WIN and not r.novice_won) or (spec.novice == Tuning.NOVICE_LOSE and r.novice_won))
+
+
+## How near a measured, solved try came to the tier, for the closest try: holding G9 as the
+## tier requires it comes first, then the most tray uses, then the novice result the tier wants
+## (GDD 6.4.1). On a tier that requires no G9 every try gets G9_RANK, so only the rest counts.
+## (_try only searches colorings that already pass G4 and G9a, so among its tries this ranks by
+## G9b where required, then tray uses.)
+static func _closeness(plan: Plan, spec: Tuning.TierSpec, level: LevelData, r: SolveResult) -> int:
+	return (G9_RANK if g9_holds(plan.tier, level, r) else 0) + r.fewest_tray_uses * 2 + (1 if _novice_right(spec, r) else 0)
+
+
+## Steps 2 and 3. Tries at most max_attempts (by default the tier's MAX_ATTEMPTS times
+## budget_scale); on success out.level is set. Whatever happens, out.closest keeps the solved
+## try that came nearest the tier (see _closeness), as a last resort. Returns early once stop
+## is requested (make then throws everything away).
+static func _try(plan: Plan, out: GeneratedLevel, max_attempts: int = -1, stop: GenerationStop = null) -> void:
+	var bp := LevelCatalog.blueprints[plan.blueprint]
+	var spec := spec_for(plan)
+	var budget: int = MAX_STATES[plan.tier - 1]
+	var scale := budget_scale(plan.tier)
+	var variations := VARIATIONS * scale
+	var level_states := LEVEL_STATES * scale
+	if max_attempts < 0:
+		max_attempts = MAX_ATTEMPTS * scale
+	# A deep opening's depth (an even pressure) sets about how many screws must wait at once, so a
+	# peak of 2 or more starts at the smallest even pressure of at least the peak.
+	var start: int = START_PRESSURE[plan.tier - 1]
+	if plan.peak >= 2:
+		start = maxi(start, mini(MAX_PRESSURE, plan.peak + plan.peak % 2))
+	var pressure := start
+	var closest_score := -1
+	for v: int in variations:
+		if out.attempts >= max_attempts or _stopped(stop):
+			return
+		var rng := RandomNumberGenerator.new()
+		rng.seed = Seeds.derive(plan.seed_value, VARY, v)
+		var va := _choose_variation(bp, spec, rng, v)
+		var board := _vary(bp, va, plan.tray)
+		if not _fits_tier(board, spec) or not BlueprintValidator.check(board).is_empty():
+			out.attempts += 1
+			out.rejected_boards += 1
+			continue
+		for c: int in COLORINGS:
+			if out.attempts >= max_attempts or out.total_states >= level_states or _stopped(stop):
+				return
+			out.attempts += 1
+			var crng := RandomNumberGenerator.new()
+			crng.seed = Seeds.derive(plan.seed_value, COLOR, v * 16 + c)
+			var level := _color(board, spec, pressure, crng)
+			if level == null:
+				out.rejected_colorings += 1
+				continue
+			# G4 and G9a depend on the coloring alone (one novice playout, no search), so they are
+			# checked first and a coloring they turn down is never searched. On the hard tiers most
+			# colorings that would come out too easy are ones the novice wins, so this saves most
+			# of the searches there. The rules are the same as checking after the search; only
+			# the order of the walk differs. A G9 failure keeps the pressure (GDD 6.4.1).
+			var novice := SolveResult.new()
+			Solver.measure(level, novice, false)
+			if not _novice_right(spec, novice):
+				out.novice_wrong += 1
+				if spec.novice == Tuning.NOVICE_WIN:
+					pressure = maxi(0, pressure - 1)
+				else:
+					pressure = _harder(pressure, start, spec)
+				continue
+			if SURVIVAL_TIERS.has(plan.tier) and not survives(level, novice):
+				out.short_survival += 1
+				continue
+			var r := Solver.search_only(level, budget, true, spec.tray_uses.y, stop)
+			r.novice_won = novice.novice_won
+			r.novice_taps = novice.novice_taps
+			r.ms += novice.ms
+			out.total_states += r.states
+			if not r.complete or not r.solved:
+				if not r.complete:
+					out.over_budget += 1
+				else:
+					out.over_cap += 1
+				pressure = maxi(0, pressure - 1)
+				continue
+			var score := _closeness(plan, spec, level, r)
+			if score > closest_score:
+				closest_score = score
+				out.closest = _finish(level, plan, r.fewest_tray_uses)
+				out.closest_solve = r
+				out.closest_variation = va.describe()
+			# G3.
+			if r.fewest_tray_uses < spec.tray_uses.x:
+				out.too_easy += 1
+				pressure = _harder(pressure, start, spec)
+				continue
+			# G10, right after the search: the replay (G10a), then the search at peak - 1 slots
+			# (G10b). A peak too low raises the pressure, like a too easy coloring.
+			var check := _peak_check(level, r, plan.peak, budget, stop)
+			out.total_states += check.y
+			var peak := check.x
+			if peak == 0:
+				out.low_peak += 1
+				pressure = _harder(pressure, start, spec)
+				continue
+			if peak < 0:
+				out.peak_unknown += 1
+				continue
+			# G9b needs the solution.
+			if LATE_TRAY_TIERS.has(plan.tier) and not late_tray(level, r):
+				out.early_tray += 1
+				continue
+			# The trap measure decides nothing, so only the level kept gets it.
+			Solver.measure(level, r)
+			out.level = _finish(level, plan, r.fewest_tray_uses)
+			out.solve = r
+			out.variation = va.describe()
+			out.pressure = pressure
+			return
+
+
+## The next pressure after a try came out too easy. Tiers that need two or more tray uses
+## only get them from deep openings (even levels, see _color), so they step by two. After the
+## top it starts over at the level's first pressure, start.
+static func _harder(pressure: int, start: int, spec: Tuning.TierSpec) -> int:
+	var step := 2 if spec.tray_uses.x >= 2 else 1
+	return pressure + step if pressure + step <= MAX_PRESSURE else start
+
+
+static func _choose_variation(bp: LevelData, spec: Tuning.TierSpec, rng: RandomNumberGenerator, v: int) -> Variation:
+	var va := Variation.new()
+	va.mirror = rng.randi_range(0, 1) == 1
+	va.dx = rng.randi_range(-SHIFT, SHIFT)
+	va.dy = rng.randi_range(-SHIFT, SHIFT)
+	if v == 0:
+		va.dx = 0
+		va.dy = 0
+		return va
+	if rng.randi_range(0, 99) < DROP_PERCENT:
+		var n := bp.screw_count()
+		var options := PackedInt32Array()
+		for p: int in bp.planks.size():
+			var h := bp.planks[p].hole_count()
+			if h % Tuning.box_slots == 0 and n - h >= spec.screws.x and n - h <= spec.screws.y:
+				options.append(p)
+		if not options.is_empty():
+			va.drop = options[rng.randi_range(0, options.size() - 1)]
+	if rng.randi_range(0, 99) < SWAP_PERCENT and bp.layer_count() >= 2:
+		va.swap = rng.randi_range(0, bp.layer_count() - 2)
+	return va
+
+
+## The varied board. Layers are renumbered to close a dropped plank's gap, then swapped; the
+## shift is kept inside the room the board has (B4 and B7).
+static func _vary(bp: LevelData, va: Variation, tray: int = 0) -> LevelData:
+	var kept: Array[PlankData] = []
+	for p: int in bp.planks.size():
+		if p != va.drop:
+			kept.append(bp.planks[p])
+	var used := PackedInt32Array([0, 0, 0, 0, 0])
+	for p: PlankData in kept:
+		used[p.layer] = 1
+	var layer_map := PackedInt32Array([0, 0, 0, 0, 0])
+	var next := 0
+	for layer: int in 5:
+		if used[layer] == 1:
+			layer_map[layer] = next
+			next += 1
+	if va.swap >= 0 and va.swap + 1 < next:
+		for layer: int in 5:
+			if layer_map[layer] == va.swap:
+				layer_map[layer] = va.swap + 1
+			elif layer_map[layer] == va.swap + 1:
+				layer_map[layer] = va.swap
+	else:
+		va.swap = -1
+	# Room to shift, after mirroring.
+	var lo_x := -INF
+	var hi_x := INF
+	var lo_y := -INF
+	var hi_y := INF
+	for p: PlankData in kept:
+		var b := Geom.bounds(p.outline_xy)
+		var min_x := LevelData.BOARD_W - b[2] if va.mirror else b[0]
+		var max_x := LevelData.BOARD_W - b[0] if va.mirror else b[2]
+		lo_x = maxf(lo_x, -min_x)
+		hi_x = minf(hi_x, LevelData.BOARD_W - max_x)
+		lo_y = maxf(lo_y, -b[1])
+		hi_y = minf(hi_y, LevelData.BOARD_H - b[3])
+		for h: Vector2 in p.holes:
+			var x := LevelData.BOARD_W - h.x if va.mirror else h.x
+			lo_x = maxf(lo_x, BlueprintValidator.SCREW_INSET - x)
+			hi_x = minf(hi_x, LevelData.BOARD_W - BlueprintValidator.SCREW_INSET - x)
+			lo_y = maxf(lo_y, BlueprintValidator.SCREW_INSET - h.y)
+			hi_y = minf(hi_y, LevelData.BOARD_H - BlueprintValidator.SCREW_INSET - h.y)
+	va.dx = clampi(va.dx, int(ceilf(lo_x)), int(floorf(hi_x))) if ceilf(lo_x) <= floorf(hi_x) else 0
+	va.dy = clampi(va.dy, int(ceilf(lo_y)), int(floorf(hi_y))) if ceilf(lo_y) <= floorf(hi_y) else 0
+	var planks: Array[PlankData] = []
+	for p: PlankData in kept:
+		planks.append(p.transformed(va.mirror, va.dx, va.dy, layer_map[p.layer]))
+	return LevelData.from_planks(bp.id, bp.name, bp.blueprint_kind, planks, tray)
+
+
+## G1 for the board: screws and layers in the tier's ranges.
+static func _fits_tier(board: LevelData, spec: Tuning.TierSpec) -> bool:
+	var n := board.screw_count()
+	var layers := board.layer_count()
+	return n >= spec.screws.x and n <= spec.screws.y and layers >= spec.layers.x and layers <= spec.layers.y and n % Tuning.box_slots == 0
+
+
+## Colors with intent (GDD 6.5), at a pressure level from 0 (none) up. Every coloring starts
+## from a random order of taking screws off the board, each free when taken.
+## - Pressure 0, and odd levels: a planned solution. Walking the order, screws go into the open
+##   boxes, except that up to `pressure` key screws (whose removal frees others) are sent to the
+##   tray with the color of a box at least two arrivals away. The walk is a solution with that
+##   many tray uses, so the level is solvable by construction; the solver then finds the fewest.
+## - Even levels from 2: a deep opening. The two open boxes get one screw that is free at the
+##   start (G5) and five that only come free after `pressure` removals, so the screws in the way
+##   belong to later boxes and must wait in the tray. If the board has no such screws, the
+##   planned solution is used instead.
+## The queue never has a color twice in a row (G6), and at the start some free screw fits an
+## open box (G5), or the coloring is rejected (null).
+static func _color(board: LevelData, spec: Tuning.TierSpec, pressure: int, rng: RandomNumberGenerator) -> LevelData:
+	var g := board.geometry
+	var n := g.screw_count
+	var slots := Tuning.box_slots
+	@warning_ignore("integer_division")
+	var boxes := n / slots
+	var top := mini(mini(spec.colors.y, boxes), LevelData.MAX_COLORS)
+	if top < spec.colors.x or top < 1 or boxes < 1:
+		return null
+	var color_count := rng.randi_range(spec.colors.x, top)
+	var queue := _box_colors(boxes, color_count, rng)
+	if queue.is_empty():
+		return null
+	var color := PackedInt32Array()
+	if pressure >= 2 and pressure % 2 == 0:
+		color = _deep_opening(g, queue, pressure, rng)
+	if color.is_empty():
+		color = _planned(g, queue, pressure, rng, board.tray_size)
+	if color.is_empty():
+		return null
+	# G5: some screw free at the start fits an open box.
+	var all := (1 << n) - 1
+	var start_free := all & ~g.covered(all)
+	var fits := false
+	for s: int in n:
+		if start_free & (1 << s) and (color[s] == queue[0] or (boxes > 1 and color[s] == queue[1])):
+			fits = true
+	if not fits:
+		return null
+	var errors := PackedStringArray()
+	return board.with_colors(color, queue, errors)
+
+
+## A random order of taking every screw off the board, each one free when it is taken.
+## free_at gets, per screw, the number of removals after which it is first free.
+static func _removal_order(g: BoardGeometry, rng: RandomNumberGenerator, free_at: PackedInt32Array) -> PackedInt32Array:
+	var n := g.screw_count
+	free_at.resize(n)
+	free_at.fill(-1)
+	var on := (1 << n) - 1
+	var loose := on & ~g.covered(on)
+	var order := PackedInt32Array()
+	var choices := PackedInt32Array()
+	while on != 0:
+		choices.clear()
+		for s: int in n:
+			if loose & (1 << s):
+				choices.append(s)
+				if free_at[s] < 0:
+					free_at[s] = order.size()
+		var s := choices[rng.randi_range(0, choices.size() - 1)]
+		order.append(s)
+		on &= ~(1 << s)
+		loose = on & ~g.covered(on)
+	return order
+
+
+## The planned solution (see _color). Empty if it cannot be built.
+static func _planned(g: BoardGeometry, queue: PackedInt32Array, trays: int, rng: RandomNumberGenerator, tray: int = 5) -> PackedInt32Array:
+	var n := g.screw_count
+	var boxes := queue.size()
+	var free_at := PackedInt32Array()
+	var order := _removal_order(g, rng, free_at)
+	var room := PackedInt32Array()
+	room.resize(boxes)
+	room.fill(Tuning.box_slots)
+	var reserved := PackedInt32Array()
+	reserved.resize(boxes)
+	var color := PackedInt32Array()
+	color.resize(n)
+	color.fill(-1)
+	var open := PackedInt32Array()
+	for p: int in Tuning.open_boxes:
+		open.append(p if p < boxes else -1)
+	var next := mini(Tuning.open_boxes, boxes)
+	var waiting := 0
+	var trayed := 0
+	for i: int in n:
+		var s := order[i]
+		# Its removal frees a screw that was not free before it.
+		var key := false
+		for t: int in n:
+			if free_at[t] == i + 1:
+				key = true
+		var target := -1
+		if key and trayed < trays and waiting < tray - 1 and i > 0:
+			var options := PackedInt32Array()
+			for j: int in range(next + 1, boxes):
+				if room[j] == 0 or options.size() >= 3:
+					continue
+				var clash := false
+				for k: int in range(next, j):
+					clash = clash or queue[k] == queue[j]
+				for p: int in open.size():
+					clash = clash or (open[p] >= 0 and queue[open[p]] == queue[j])
+				if not clash:
+					options.append(j)
+			if not options.is_empty():
+				target = options[rng.randi_range(0, options.size() - 1)]
+		if target >= 0:
+			color[s] = queue[target]
+			room[target] -= 1
+			reserved[target] += 1
+			waiting += 1
+			trayed += 1
+			continue
+		var best := -1
+		for p: int in open.size():
+			if open[p] >= 0 and room[open[p]] > 0 and (best < 0 or room[open[p]] < room[open[best]]):
+				best = p
+		if best < 0:
+			return PackedInt32Array()
+		color[s] = queue[open[best]]
+		room[open[best]] -= 1
+		while open[best] >= 0 and room[open[best]] == 0:
+			if next < boxes:
+				open[best] = next
+				waiting -= reserved[next]
+				next += 1
+			else:
+				open[best] = -1
+	return color
+
+
+## The deep opening (see _color). Empty if the board has no such screws.
+static func _deep_opening(g: BoardGeometry, queue: PackedInt32Array, depth: int, rng: RandomNumberGenerator) -> PackedInt32Array:
+	var n := g.screw_count
+	var slots := Tuning.box_slots
+	var opening_size := mini(Tuning.open_boxes, queue.size()) * slots
+	var free_at := PackedInt32Array()
+	var order := _removal_order(g, rng, free_at)
+	# How deep a screw really is: the fewest removals before it was free, over several random
+	# orders (a player looks for the short way in).
+	for _k: int in DEPTH_SAMPLES - 1:
+		var other := PackedInt32Array()
+		_removal_order(g, rng, other)
+		for s: int in n:
+			free_at[s] = mini(free_at[s], other[s])
+	var opening := PackedInt32Array()
+	for s: int in order:
+		if free_at[s] == 0:
+			opening.append(s)
+			break
+	# The screws that come free at `depth` removals or later, earliest first; then, if there are
+	# too few, the deepest of the rest that are not free at the start; then free ones.
+	var deep: Array[int] = []
+	var shallow: Array[int] = []
+	var loose: Array[int] = []
+	for s: int in order:
+		if opening.has(s):
+			continue
+		if free_at[s] >= depth:
+			deep.append(s)
+		elif free_at[s] > 0:
+			shallow.append(s)
+		else:
+			loose.append(s)
+	deep.sort_custom(func(a: int, b: int) -> bool: return free_at[a] < free_at[b] if free_at[a] != free_at[b] else a < b)
+	shallow.sort_custom(func(a: int, b: int) -> bool: return free_at[a] > free_at[b] if free_at[a] != free_at[b] else a < b)
+	if deep.size() + shallow.size() < MIN_DEEP:
+		return PackedInt32Array()
+	for list: Array[int] in [deep, shallow, loose]:
+		for s: int in list:
+			if opening.size() < opening_size:
+				opening.append(s)
+	if opening.size() < opening_size:
+		return PackedInt32Array()
+	var sorted := opening.duplicate()
+	for s: int in order:
+		if not opening.has(s):
+			sorted.append(s)
+	var color := PackedInt32Array()
+	color.resize(n)
+	for i: int in n:
+		@warning_ignore("integer_division")
+		color[sorted[i]] = queue[i / slots]
+	return color
+
+
+## A color for each box: every color at least once, no color twice in a row (G6).
+static func _box_colors(boxes: int, colors: int, rng: RandomNumberGenerator) -> PackedInt32Array:
+	var left := PackedInt32Array()
+	left.resize(colors)
+	left.fill(1)
+	@warning_ignore("integer_division")
+	var cap := (boxes + 1) / 2
+	for _i: int in boxes - colors:
+		var c := rng.randi_range(0, colors - 1)
+		for _j: int in colors:
+			if left[c] < cap:
+				break
+			c = (c + 1) % colors
+		left[c] += 1
+	var out := PackedInt32Array()
+	var prev := -1
+	for i: int in boxes:
+		var remaining := boxes - i
+		var urgent := -1
+		var total := 0
+		for c: int in colors:
+			if c != prev and left[c] > 0:
+				total += left[c]
+				if left[c] * 2 > remaining and urgent < 0:
+					urgent = c
+		if total == 0:
+			return PackedInt32Array()
+		var pick := urgent
+		if pick < 0:
+			var roll := rng.randi_range(0, total - 1)
+			for c: int in colors:
+				if c != prev and left[c] > 0:
+					if roll < left[c]:
+						pick = c
+						break
+					roll -= left[c]
+		out.append(pick)
+		left[pick] -= 1
+		prev = pick
+	return out
+
+
+## The accepted level with its play fields filled in.
+static func _finish(level: LevelData, plan: Plan, fewest: int) -> LevelData:
+	var errors := PackedStringArray()
+	return level.with_colors(level.screw_colors, level.queue, errors, {
+		"kind": plan.kind,
+		"number": plan.number,
+		"band": plan.band,
+		"tier": plan.tier,
+		"group": plan.group,
+		"generator": GENERATOR_VERSION,
+		"id": level_id(plan.kind, plan.number, plan.band),
+		"tray_par": fewest + plan.slack,
+		"par_time": Tuning.par_time_for(level.screw_count(), plan.group),
+	})
+
+
+## "numbered-42", "daily-20261019", "relaxed-easy-7".
+static func level_id(kind: int, number: int, band: String) -> String:
+	if kind == LevelData.RELAXED:
+		return "relaxed-%s-%d" % [band, number]
+	return "%s-%d" % [LevelData.KIND_NAMES[kind], number]
+
+
+## Builds stored fallback levels for a tier (tools/levels --fallback writes them to
+## src/logic/fallback/). It goes through the tier's blueprints in turn on its own seed stream,
+## with more tries per level, and keeps up to `count` levels, each on a different blueprint
+## while there are enough. Each is accepted by _try, so it holds every rule a generated level
+## of its tier holds, G9 included where the tier requires it. relaxed: made with Relaxed's tray
+## (tray_for) instead of the tier's, for the Relaxed pool (see stored_pool), on a seed stream of
+## its own.
+static func build_fallback(tier: int, count: int, max_attempts: int, relaxed: bool = false) -> Array[GeneratedLevel]:
+	var out: Array[GeneratedLevel] = []
+	var list := LevelCatalog.suits[tier - 1]
+	var used := PackedStringArray()
+	var stream := Seeds.mix(FALLBACK_STREAM, GENERATOR_VERSION)
+	if relaxed:
+		stream = Seeds.mix(stream, LevelData.RELAXED)
+	for k: int in maxi(list.size() * 12, count * 8):
+		if out.size() >= count:
+			break
+		var b := list[k % list.size()]
+		var id := LevelCatalog.blueprints[b].id
+		if used.has(id) and used.size() < list.size():
+			continue
+		var plan := Plan.new()
+		plan.kind = LevelData.NUMBERED
+		plan.number = 0
+		plan.band = ""
+		plan.tier = tier
+		plan.group = Tuning.tier(tier).group
+		plan.slack = 0
+		plan.seed_value = Seeds.derive(stream, tier, k)
+		plan.blueprint = b
+		plan.tray = tray_for(LevelData.RELAXED if relaxed else LevelData.NUMBERED, tier)
+		plan.peak = Tuning.tier(tier).peak.x
+		var g := GeneratedLevel.new()
+		_try(plan, g, max_attempts)
+		if g.level == null:
+			continue
+		var errors := PackedStringArray()
+		g.level = g.level.with_colors(g.level.screw_colors, g.level.queue, errors, {"id": "%sfallback-%d-%d" % ["relaxed-" if relaxed else "", tier, out.size() + 1]})
+		used.append(id)
+		out.append(g)
+	return out
+
+
+## Step 4. First a stored fallback level for the tier. If the tier has none, the closest try
+## (solved and proven, but outside the tier's ranges). If there was no such try either, a
+## stored fallback level of the nearest tier that has one. Only with no fallback files at all
+## and no solved try does the level stay null (and an error is logged).
+##
+## Which stored level is handed out: see stored_pool and stored_pick. Its colors are then
+## relabeled by a seeded permutation, the same on screws and queue, so two levels that use the
+## same stored level look different while every rule outcome (and so the stored solve) stays
+## exactly the same.
+static func _fall_back(plan: Plan, out: GeneratedLevel) -> void:
+	var own: Array = LevelCatalog.fallback[plan.tier - 1] if plan.tier >= 1 and plan.tier <= LevelCatalog.fallback.size() else []
+	if own.is_empty() and out.closest != null:
+		# _try measured only its novice; the trap too now that it is shown.
+		Solver.measure(out.closest, out.closest_solve)
+		out.level = out.closest
+		out.solve = out.closest_solve
+		out.fell_back = true
+		out.variation = "closest try " + out.closest_variation
+		return
+	var pool := stored_pool(plan.kind, plan.tier, plan.tray)
+	if pool.is_empty():
+		push_error("no fallback level for tier %d" % plan.tier)
+		return
+	var stored: GeneratedLevel = pool[stored_pick(plan.kind, plan.number, plan.band, {})]
+	var level := relabeled(stored.level, Seeds.derive(plan.seed_value, RELABEL, 0))
+	var solve := stored.solve
+	# A stored level keeps the tray it was made for, but grows to the plan's when that is larger
+	# (only when no stored level was made with the plan's tray, see stored_pool).
+	if plan.tray > level.tray_size:
+		level = with_tray(level, plan.tray)
+		solve = remeasured(level, stored.solve)
+	var fallback_plan := Plan.new()
+	fallback_plan.kind = plan.kind
+	fallback_plan.number = plan.number
+	fallback_plan.band = plan.band
+	fallback_plan.tier = level.tier
+	fallback_plan.group = plan.group if plan.kind == LevelData.DAILY else Tuning.tier(level.tier).group
+	fallback_plan.slack = plan.slack
+	out.level = _finish(level, fallback_plan, solve.fewest_tray_uses)
+	out.solve = solve
+	out.fell_back = true
+	out.variation = "fallback " + stored.variation
+
+
+## The stored levels a level of this kind, tier and tray draws on when it falls back: those of
+## fallback_tier(tier) made with this tray. A Relaxed level first looks in the Relaxed pool
+## (LevelCatalog.relaxed_fallback, made and measured with Relaxed's tray, so every rule holds
+## as it is played, G4 and G9a included), then in the tier's own. A pool of another tray is the
+## last resort: its levels grow to this tray (see _fall_back). Empty if no tier has any.
+static func stored_pool(kind: int, tier: int, tray: int) -> Array:
+	var pool_tier := fallback_tier(tier)
+	if pool_tier < 0:
+		return []
+	var lists: Array[Array] = [LevelCatalog.fallback[pool_tier - 1]]
+	if kind == LevelData.RELAXED and pool_tier <= LevelCatalog.relaxed_fallback.size():
+		lists.push_front(LevelCatalog.relaxed_fallback[pool_tier - 1])
+	for list: Array in lists:
+		var same: Array = []
+		for g: GeneratedLevel in list:
+			if g.level.tray_size == tray:
+				same.append(g)
+		if not same.is_empty():
+			return same
+	return LevelCatalog.fallback[pool_tier - 1]
+
+
+## Whether Relaxed levels of this tier get a Relaxed pool of stored levels (tools/levels
+## --fallback builds it): a Relaxed band plays the tier, and Relaxed's tray is not the tier's.
+static func needs_relaxed_pool(tier: int) -> bool:
+	if tray_for(LevelData.RELAXED, tier) == Tuning.tier(tier).tray:
+		return false
+	for band: String in Tuning.BANDS:
+		var span: Vector2i = Tuning.relaxed.get(band, Vector2i(1, 3))
+		if tier >= span.x and tier <= span.y:
+			return true
+	return false
+
+
+## A stored solve for a stored level grown to a larger tray (level is the grown one): the
+## stored solution still wins (more slots never break a solution) and its fewest tray uses is
+## an upper bound, but the novice and the trap measure are measured again on the level as it is
+## played.
+static func remeasured(level: LevelData, stored: SolveResult) -> SolveResult:
+	var r := SolveResult.new()
+	r.solved = stored.solved
+	r.complete = stored.complete
+	r.fewest_tray_uses = stored.fewest_tray_uses
+	r.solution = stored.solution
+	r.states = stored.states
+	r.last_tray_use = stored.last_tray_use
+	r.peak_tray = stored.peak_tray
+	Solver.measure(level, r)
+	return r
+
+
+## The tier whose stored levels serve a level of this tier: its own if it has any, otherwise
+## the nearest tier that has some (the lower one first), or -1 if none has any.
+static func fallback_tier(tier: int) -> int:
+	for distance: int in Tuning.tiers.size():
+		for t: int in [tier - distance, tier + distance]:
+			if t >= 1 and t <= LevelCatalog.fallback.size() and not LevelCatalog.fallback[t - 1].is_empty():
+				return t
+	return -1
+
+
+## The stored level (an index into stored_pool's list) this level hands out if it falls back.
+## Pure: it plans tiers and blueprints only and makes no level, so its answer does not depend on
+## whether this level or its neighbors really fall back.
+##
+## The pool is ordered by how far each stored level's blueprint is from its nearest planned use
+## in the same stream (R + 1 when it is not planned within R levels either side, so never next
+## to a level of the same blueprint while the pool has another), then by a seeded key. The
+## level takes the first stored level in that order that no lower ranked level within R of it,
+## in the same stream and drawing on the same pool, takes. A level's rank is its stream position
+## mod (R + 1), so two levels within R of each other never share a rank: of any two, one picks
+## knowing the other's pick, and so no two levels within R hand out the same stored level (GDD
+## 6.4.1). Ranks only go down, so it looks at most R steps away. That needs more stored levels
+## than lower ranked neighbors on the same pool: every day shares the daily tier's pool, so a
+## day can have 2R of them and that tier stores 2R + 1 levels (the tools/levels fallback option);
+## numbered and Relaxed levels have far fewer on their pool's 8. If all were taken it would use
+## the first in the order (tests check this never happens with the shipped pools). memo keeps
+## the picks made within one call, by stream position.
+static func stored_pick(kind: int, number: int, band: String, memo: Dictionary) -> int:
+	var at := stream_position(kind, number)
+	if memo.has(at):
+		return memo[at]
+	var plan := plan_for(kind, number, band)
+	var pool := stored_pool(kind, plan.tier, plan.tray)
+	if pool.is_empty():
+		return -1
+	var r := maxi(Tuning.recent_blueprints_excluded, 1)
+	var nearest := neighbor_distances(kind, number, band)
+	var far: Array[int] = []
+	var key: Array[int] = []
+	var order: Array[int] = []
+	for i: int in pool.size():
+		far.append(int(nearest.get((pool[i] as GeneratedLevel).level.blueprint_id, r + 1)))
+		key.append(Seeds.derive(plan.seed_value, PICK, i))
+		order.append(i)
+	order.sort_custom(func(a: int, b: int) -> bool:
+		if far[a] != far[b]:
+			return far[a] > far[b]
+		return key[a] < key[b] if key[a] != key[b] else a < b)
+	var taken := PackedInt32Array()
+	for k: int in range(-r, r + 1):
+		var other := at + k
+		if k == 0 or posmod(other, r + 1) >= posmod(at, r + 1) or not _in_stream(kind, other):
+			continue
+		var other_number := stream_number(kind, other)
+		var other_tier := tier_of(kind, other_number, band)
+		if stored_pool(kind, other_tier, tray_for(kind, other_tier)) == pool:
+			taken.append(stored_pick(kind, other_number, band, memo))
+	var pick := order[0]
+	for i: int in order:
+		if not taken.has(i):
+			pick = i
+			break
+	memo[at] = pick
+	return pick
+
+
+## A level's position in its stream: the level number, the Relaxed index, or for a daily (whose
+## number is yyyymmdd) the day number, so that neighbors are one apart.
+static func stream_position(kind: int, number: int) -> int:
+	if kind == LevelData.DAILY:
+		@warning_ignore("integer_division")
+		return Seeds.day_number(number / 10000, (number / 100) % 100, number % 100)
+	return number
+
+
+## The number of the level at a stream position (the inverse of stream_position).
+static func stream_number(kind: int, position: int) -> int:
+	return Seeds.date_of_day(position) if kind == LevelData.DAILY else position
+
+
+## The tier a level is planned at (as plan_for gives it), without the rest of the plan.
+static func tier_of(kind: int, number: int, band: String) -> int:
+	match kind:
+		LevelData.DAILY:
+			return Tuning.daily_tier
+		LevelData.RELAXED:
+			return relaxed_tier(band, number)
+	return Tuning.tier_for_level(number)
+
+
+## Whether a stream position is a level that can fall back (numbered levels after the tutorial,
+## Relaxed indices from 0, any day).
+static func _in_stream(kind: int, position: int) -> bool:
+	match kind:
+		LevelData.DAILY:
+			return true
+		LevelData.RELAXED:
+			return position >= 0
+	return position > Tuning.tutorial_levels
+
+
+## The blueprint ids planned for the R levels before and after this one in its stream (numbered
+## levels after the tutorial, days, or a Relaxed band's indices).
+static func neighbor_blueprints(kind: int, number: int, band: String) -> PackedStringArray:
+	return PackedStringArray(neighbor_distances(kind, number, band).keys())
+
+
+## For each blueprint planned within R levels either side of this one in its stream, how many
+## levels away its nearest planned use is (1 to R). Pure: only blueprint choices, no levels.
+static func neighbor_distances(kind: int, number: int, band: String) -> Dictionary:
+	var out := {}
+	var r := maxi(Tuning.recent_blueprints_excluded, 1)
+	for distance: int in range(1, r + 1):
+		for k: int in [-distance, distance]:
+			var b := -1
+			match kind:
+				LevelData.DAILY:
+					@warning_ignore("integer_division")
+					var day := Seeds.day_number(number / 10000, (number / 100) % 100, number % 100) + k
+					b = blueprint_for(LevelData.DAILY, Seeds.date_of_day(day), "")
+				LevelData.RELAXED:
+					if number + k >= 0:
+						b = blueprint_for(LevelData.RELAXED, number + k, band)
+				_:
+					if number + k > Tuning.tutorial_levels:
+						b = blueprint_for(LevelData.NUMBERED, number + k, "")
+			if b >= 0 and not out.has(LevelCatalog.blueprints[b].id):
+				out[LevelCatalog.blueprints[b].id] = distance
+	return out
+
+
+## The same level with its colors renamed by a seeded permutation of the colors it uses (on
+## screws and queue alike). Colors only matter by being equal or not, so every rule outcome is
+## unchanged.
+static func relabeled(level: LevelData, seed_value: int) -> LevelData:
+	var used := PackedInt32Array()
+	for c: int in level.queue:
+		if not used.has(c):
+			used.append(c)
+	used.sort()
+	var to := _shuffled(used, seed_value)
+	var map := {}
+	for i: int in used.size():
+		map[used[i]] = to[i]
+	var colors := PackedInt32Array()
+	for c: int in level.screw_colors:
+		colors.append(map[c])
+	var queue := PackedInt32Array()
+	for c: int in level.queue:
+		queue.append(map[c])
+	var errors := PackedStringArray()
+	return level.with_colors(colors, queue, errors)
