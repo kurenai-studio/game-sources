@@ -1,0 +1,674 @@
+# Changelog
+
+All notable changes to Long-Home will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added (sound)
+
+- **A sound for everything that happens.** 123 sound effects (257 files, 13.6 MB) in
+  `assets/audio`, replacing the placeholder beeps and noise. There is still no music.
+  - They are synthesized, not recorded: `tools/sfx/generate.py` (Python and numpy) builds each
+    from noise, resonances and small physical models, seeded by name so a render is repeatable.
+  - They were tuned by measurement and spectrogram, not by ear. Treat the set as a complete first
+    pass; any sound can be replaced by a recording by overwriting its file.
+- **Sounds by file name.** `SoundLibrary` scans `assets/audio`: `<id>_<NN>.wav` is variant NN of
+  sound `<id>`, variants never repeat back to back, and ids ending in `_loop` loop (the loop
+  points are in the files). `AudioService.play(id)` and `play_at(id, position)` play them from
+  pooled voices. With no files the library falls back to rough generated stand-ins.
+- **Wind in layers.** A low body, a rush on each side, a thin high hiss, howls, a whistle and
+  spindrift, each on its own curve of wind strength, so a gale is brighter and howls instead of
+  just being louder. Layers drift independently and swell together in gusts. Rain and sleet are
+  heard when they fall; snow is not. Prayer flags flap at the summit cairn and at base camp.
+- **Breath and heart.** Breath is played one inhale and one exhale at a time, so its pace and
+  depth follow fatigue, effort, altitude and fright continuously, across calm, hard and gasping
+  sets. A heartbeat appears only when things go badly (a slide out of control, a fall, a burial).
+- **Footsteps that know the ground and the footwear.** Nine surfaces; crampons bite ice and firm
+  snow and scrape over rock; a downclimb plants the axe on every other step.
+- **Motion.** Sliding on snow, ice and scree, the axe dragging when you brake, the pick biting in
+  a self-arrest, skis gliding and carving, and the air rushing past, all following your speed.
+- **Rope and gear.** Flaking the rope, building the anchor it is built from, the test tugs, the
+  rope through the device, a loaded anchor creaking, a snagged rope, the pull and the rope
+  coming down; straps, bindings, the probe, a snow pit dug and tapped, the airbag.
+- **Hazards.** A whumpf and shooting cracks underfoot; an avalanche heard where it is, with a
+  roar that follows the debris; caught and buried, the world is muffled and what is left is
+  your own breath and heart; a crevasse has its own reverb, drips and groaning ice.
+- **Menus.** Every button clicks without its screen asking: `UIAudioManager` wires any button
+  that enters the scene tree, and the planning tabs turn like pages. The map unfolds and folds,
+  and rustles while it is open; a compass in the pack is flipped open with it.
+- `tests/test_audio.gd` (139 checks) and `tests/test_audio_assets.py` (18 checks).
+
+### Changed
+
+- The Master bus has a peak guard. The mix now peaks around -7 dB in a storm (about -21 dB RMS);
+  it used to peak near -40 dB, which was close to inaudible.
+- Audio draws its random numbers from its own generator (`AudioService.roll`, `vary`), so a
+  gust or a footstep's pitch can no longer change what a seeded test, or the mountain, does
+  next. It used to draw from the global one, once a frame.
+- The avalanche's sounds moved out of `AvalancheSystem` into `HazardAudioManager`. They used to
+  be generated at the moment of the event, which stalled the frame an avalanche released on.
+- Removed `PlaceholderAudioLoader` and `AudioConfig` (replaced by `SoundLibrary`).
+
+### Fixed
+
+- **The loadout screen's summary never updated.** It read "0.0 kg" for any pack and showed no
+  requirement warnings or loadout effects: its labels were looked up by a node path that did not
+  exist. The avalanche-kit warning at Considerable danger is now actually shown.
+- A gale was the quietest wind: `GALE` had no entry in the wind-to-volume table.
+- Snow, overcast, partly cloudy and clearing weather never updated the ambience, so a storm's
+  sound stayed after the storm.
+- Footsteps played twice, from two systems with different rhythms, and the one in step with the
+  animation always played the same blip whatever the surface.
+- After any pause the wind stayed at its quietest until the weather next changed.
+- Rope, self-arrest and menu sounds never played: they listened for signals that do not exist.
+- The map made its unfold sound twice.
+
+### Added (avalanches)
+
+- **A snowpack for every day.** `AvalancheConditions` draws each attempt's day from the
+  mountain's climate:
+  - the last three days' snow, the wind that moved it, a buried weak layer, and the afternoon
+    warmth (the run's temperatures follow it)
+  - the avalanche problems that result: storm slab, wind slab on the lee aspects, persistent
+    slab, loose dry, wet loose and wet slab
+  - a danger rating per elevation band on the five-level scale, following the EAWS matrix idea
+  `AvalancheService` keeps the day until the run ends.
+- **The avalanche bulletin** (Planning, new *Avalanche* tab):
+  - danger by band in the bulletin colours, a headline, and each problem with an
+    aspect-and-elevation rose, likelihood, size and depth
+  - the snowpack, the freezing level, seracs, and travel advice
+  - the mountain select screen shows the day's danger, and the gear check asks for the avalanche
+    kit at Considerable and above
+- **Where slopes release.** `AvalancheField` lays the problems over the terrain on a 4 m grid.
+  - Slabs start on open snow of about 30° and up, most readily at 35-45°, on the problems'
+    aspects and elevations.
+  - Convex rolls are more sensitive, dense forest anchors the snow, and a noise field gives
+    slope-to-slope variability.
+  - The normal route stays off the start zones.
+- **Triggering, with warnings first.** The trigger hazard grows with the instability squared and
+  the load: a walker or kicked steps more than a skier, a crash or a hard landing most. Slabs
+  first give *whumpfs* and shooting cracks, and a collapse can release a steep slope nearby.
+- **Natural releases and seracs.** Naturals follow the danger (none at Low, several an hour at
+  High) and afternoon warmth (wet snow). Icefalls shed seracs. The last day's naturals have
+  already run when the descent starts, so their crowns and debris lie on the mountain.
+- **Avalanche flow.** `AvalancheFlow` runs snow parcels over the heightfield under the
+  Voellmy-Salm friction law, with size- and wetness-dependent friction.
+  - The track's snow is entrained into the flow.
+  - Debris is deposited where the snow stops and compacted.
+  - Snow can run off the mapped mountain; an apron at the map edge stands for the valley floor
+    beyond.
+  - Runout angles come out at 20-35°.
+- **Terrain edits by vertex.** `TerrainService.apply_height_deltas`:
+  - Applies changes as explicit vertex deltas and re-analyses only the touched vertices and their
+    neighbours.
+  - Updates cliff distances around new cliffs only.
+  - Queues mesh rebuilds a few chunks per frame, nearest the climber first.
+  - An avalanche's bed and debris now cost about 50 ms. Crevasse carving uses the same path.
+  - An edit never turns snow into rock.
+  - `terrain_service.modified` makes the next run reload a fresh mountain.
+- **Caught, buried, dug out.**
+  - A new `CAUGHT` movement state; the system holds the climber and carries them with the snow.
+  - Space pulls an airbag (in the first seconds), then swims. Pushing across the flow fights for
+    the edge.
+  - Trees, rocks and cliffs on the way injure. As the snow slows, Space makes an air pocket.
+  - The burial depth decides what follows: free, dig out stroke by stroke, or dig before the air
+    runs out (game minutes).
+  - Below a metre: a rescue if someone saw it (faster with a transceiver), with survival from the
+    burial-time curve. Otherwise the fatal sequence; its cause now reads "Buried in avalanche
+    debris".
+- **Avalanche gear** (new category): transceiver, shovel & probe (snow pits, faster digging,
+  probing crevasses), airbag. Added to the ski and heavy presets.
+- **Snow pit (V).** An extended column test where you stand (ECTP/ECTN/ECTX, the layer depth),
+  from the local snowpack.
+- **Planning tools.**
+  - Guidebook lines get an ATES class (Simple / Challenging / Complex) and the aspects of their
+    30-50° slopes.
+  - The map's slope shading now prints the avalanche classes (30°, 35°, 40°, 45°+), with a toggle
+    and legend.
+  - The Plan tab checks the line against the bulletin and runs Werner Munter's reduction method.
+- **HUD, scoring, moments.**
+  - The activity line and hints cover being caught, buried and digging a pit, and "V snow pit"
+    joins the hints.
+  - Triggering, being caught and burial cost style.
+  - The post-game moments recall whumpfs, cracks, pits, airbags and burials.
+  - Quick start takes `--avalanche=N`.
+- `tests/test_avalanche.gd` (76 checks).
+
+### Fixed
+
+- Fatal runs said only "Fatal incident"; they now name what happened (a fall, exposure,
+  injuries, an avalanche).
+
+### Added (glaciers and crevasses)
+
+- **A glacier on most mountains.** The generator lays a glacier tongue in the flank beside the
+  normal route. It is sized per peak by `MountainDatabase.glacier_extent`, and The Knife Edge has
+  none. Its RNG is separate, so the rest of each mountain is unchanged.
+  - The surface is smooth ice flowing down the fall line, and the cliff bands under it become
+    icefalls.
+  - Lateral moraines run along the edges.
+  - Below the equilibrium line the glacier is bare ice; above it, snow lies on top.
+  - `GlacierField` holds the coverage, the moraines and the crevasses.
+- **Crevasses.** Transverse rows (dense in the icefalls), marginal chevrons and a bergschrund.
+  Open slots are cut into the heightfield, several metres deep. Others lie hidden under snow
+  bridges of varying strength, which show only a faint sag.
+- **Bridges that give way.** `CrevasseSystem` sets the collapse hazard from bridge strength,
+  temperature and load (skis and glissades spread it). When a bridge goes,
+  `TerrainService.carve_crevasse_section` carves that stretch open at runtime, down to a debris
+  floor. It re-analyses and rebuilds only the chunks it touches (about 65 ms). The climber falls
+  in for real.
+- **Climbing out.** With an axe and crampons on, push against a wall to front-point out. It is
+  slow and tiring, and a tired climber can slip back. Without them, a long wait ends in a rescue.
+- **Probing (G).** Plunge the axe shaft or a ski pole ahead to find hollow snow. It leaves a dark
+  probe hole. Nothing is labelled on the mountain.
+- **Planning.**
+  - The topo maps shade the glacier and draw its open crevasses.
+  - Guidebook lines that cross the glacier grade higher, have slower book times, and carry the
+    note "crosses the glacier (probe ahead)". The survey prices glacier ground per style, and every
+    line goes round the icefalls.
+  - The route card asks for an axe to probe.
+  - The mountain select screen shows the glacier, and the gear check warns when the axe or
+    crampons are missing.
+- **Scoring and moments.** `crevasse_fall` and `crevasse_slip` incidents cost style. The
+  post-game screen recalls the fall, the climb out, and a probe that found a hollow.
+- **HUD.** The activity text covers probing, being in a slot and climbing out, with their own
+  hints, and "G probe" joins the hint line.
+- `tests/test_glacier.gd` (48 checks):
+  - generation per mountain and determinism
+  - corridor clearance and slope, surfaces, open depths and walkable bridges
+  - no trees on the ice, map symbols, route metrics and grades
+  - a live descent: probing, collapse hazards, a carved collapse, climbing out, and a rescue
+    without axe and crampons
+
+### Added (trees and boulders)
+
+- **Trees and boulders on every mountain.** `TerrainScatter` places them after each terrain
+  load, deterministically per peak, from the analysed terrain:
+  - low-poly conifers (three styles) grow in clumps below a treeline set by the mountain's
+    climate, and give way to wind-flattened krummholz and grey snags near the treeline
+  - boulders lie on scree and rock, pile up as talus under the cliff bands, and sit sparsely on
+    snow as erratics
+  - small rocks litter broken ground
+  - the corridor, the summit and base camp stay clear
+  - The Knife Edge grows about 1,200 trees; The Long Way Down about 60
+- **Rendering.** `ScatterMeshes` builds flat-shaded, vertex-coloured meshes in code, dusted with
+  snow by climate. They are drawn with one MultiMesh per variant, and the trees sway with the
+  wind.
+- **Swappable meshes.** A Mesh or model in `res://assets/scatter/` (`conifer_0.glb`,
+  `boulder.tres`, …) replaces a built mesh, fitted to size from its bounding box.
+- **Obstacles.** Trunks, snags and boulders over 0.9 m have colliders on a new obstacle physics
+  layer (the climber's mask now includes it; the camera's does not).
+  - Walking into one is harmless. At speed, it stops you: a knock over 3 m/s, an arm or leg
+    injury over 6 m/s, the body or an unhelmeted head over 11 m/s.
+  - Skiing into one is a crash, and sliding into one tumbles you.
+  - Each impact is an `obstacle_impact` incident and costs style in the route score.
+- **Natural anchors.** Sound conifers and boulders over 1.2 m take a sling and are the best
+  anchors around; a dead snag is a gamble.
+- **Maps** print woodland as a pale green tint under the contours and big boulders as a dark
+  stipple.
+- `tests/test_scatter.gd` (40 checks): placement rules, clear zones, grounding, determinism,
+  colliders, mesh overrides, anchors and map symbols. It also checks, in a live descent, that
+  you are stopped by a boulder at walking pace and hurt by a tree at speed.
+
+### Fixed
+
+- **Incidents and decisions now reach the run.** Systems announced them through
+  `EventBus.record_incident/record_decision`, but nothing put them in the run's history. The
+  post-game key moments were always empty, and the route score never saw the slips, slides or
+  abseils of a real run. `GameStateManager` now logs them into the active run (camera-shot
+  bookkeeping excluded).
+
+### Added (route planning, guidebook, route scoring, full route)
+
+- **A guidebook for every mountain.** `RouteSurvey` finds the lines a guidebook would print and
+  measures each with `RouteMetrics`:
+  - the *Normal Route*: the easiest way off, the generator's guaranteed corridor
+  - a *Face Direct*: down the fall line, with the cliff bands abseiled
+  - a snow *Couloir* or *Snowfield*: the ski and glissade line, clear of the cliffs
+  - a *Rib* or *Spur*: off to one side
+  Lines come from A* over a 4 m terrain grid with a cost per style, and near-duplicates are
+  dropped. The printed guide has the normal and direct lines; the others are hut-book notes,
+  learnt once you have been on the mountain.
+- **Accurate grades and book times.**
+  - Every line gets an IFAS grade (F, PD, AD, D, TD, ED with -/+) from its steepest sustained
+    20 m, raised for long steep ground, abseils, exposure and steep ice, plus a commitment grade
+    (I-VI) from its length.
+  - The pitch-by-pitch topo gives altitudes, length, angle and character, the abseils and the
+    shortest rope that makes them.
+  - Book times come from the game's own movement model (Tobler pace, the downclimbing speed, the
+    rope set-up and abseil timings) at a sustainable pace, in game minutes.
+- **Planning screen.**
+  - A *Guidebook* tab: the route list (✓ for lines you have climbed), the route card, and
+    *Follow this line*.
+  - The lines are inked on the paper map only. Nothing about a route is ever labelled or marked
+    on the 3D mountain.
+  - The *Plan* tab grades and times your own line for your own pack. It adds a day plan (start,
+    back by, sunset, daylight to spare) and rope warnings.
+- **Navigation gear** (new *Navigation* category; the presets carry it):
+  - *guidebook*: the route card beside the map on the mountain
+  - *topo map*: without it, `M` has nothing to pull out
+  - *compass*: much less position uncertainty in cloud and at night
+  - *altimeter*: height to the metre. Without one, the HUD and the maps estimate it to the
+    nearest 50 m contour.
+- **Route scoring and the logbook.** `RouteScorer` scores the line you actually travelled, with
+  the guidebook's own yardstick: line points (grade and height under control) × outcome ×
+  style (incidents) × pace (against the book time of the same line, for your pack) × plan
+  (share of the path on the planned line) × on-sight × daylight.
+  - The run records how each stretch was covered (on foot, climbing, on the rope, gliding, out
+    of control), so falls, tumbling slides and teleports earn no difficulty.
+  - Only abseils actually made count.
+  - Each mountain keeps its best score, a separate best for full routes, the lines climbed and
+    the last 25 entries.
+  - The resolution screen shows the line, style and score, and the post-game screen the
+    breakdown.
+- **Full route, unlocked by The Long Way Down.** Every mountain gets a *full route* toggle.
+  - You start at base camp at 05:00, fresh, climb to the summit and come home.
+  - Planning has an ascent leg and a descent leg, and a turnaround time.
+  - The summit is a stone cairn with prayer flags, with no label or beacon. Standing on top turns
+    you round (`RunContext.reach_summit`, `EventBus.summit_reached`).
+  - Base camp ends the run only after the summit. Coming back without it is a retreat.
+  - The HUD reads "Climbed" and "Summit" on the way up. Both legs are scored.
+  - Developer shortcut: `--quick-start --full-route`.
+- **Tests**:
+  - `tests/test_route_scoring.gd` (195 checks): grade bands, the guidebook on all five
+    mountains, book times, scoring rules, the logbook, the unlock.
+  - `tests/smoke_full_route.gd`: plans both legs from the guidebook, base camp → summit → base
+    camp, a retreat, and no `Label3D` anywhere on the mountain.
+
+### Fixed
+
+- The mountain select detail panel never filled in: it looked up an auto-named container by
+  path. It now keeps a reference, and its text wraps to the panel's width.
+
+### Added (mountaineering physics: footing, downclimbing, rappels, glissades, skis)
+
+- **One footing model.** `TractionModel` holds the effective friction of boots, crampons, a
+  sliding body, heels and spike, an axe arrest, and ski bases and edges on every surface. A stance
+  needs `tan(slope)` of grip plus a little per m/s, so each kind of footing's slope limit comes
+  out of the numbers instead of hard-coded zones. Boots skate on ice past about 7°; crampons ball
+  up in warm slush and scrape on rock. `tests/test_physics_model.gd` pins 45 real-world rules.
+- **Walking** follows Tobler's hiking function: steep descents are slower than the flat and
+  side slopes slow you. Soft snow and powder make you posthole (plunge-stepping down soft snow
+  is the quick way down), and crampons are slower on rock.
+- **Slips from the grip margin.** `PostureSystem` turns the margin into balance and into a
+  Poisson slip rate. Slips escalate into a slide (where a body cannot rest), a fall (off faces
+  steeper than 60°) or a heavy fall on the spot. A plunged axe, or the other holds while
+  downclimbing, catches many of them.
+- **Downclimbing** clings to the face: no gravity slide-off, and the climber moves one
+  placement at a time, about 0.3-0.5 m/s on snow, slower on steep rock and ice. They turn
+  side-on, then face in, as the angle grows. The axe and the hands (glove dexterity, cold
+  fingers) add grip; rock steeper than about 52° needs the rope.
+- **Crampons on and off** (`F`) and **skis or a splitboard on and off** (`T`) are timed jobs:
+  slower on steep ground and with cold hands, cancelled by being swept off your feet. You top
+  out with crampons on.
+- **Rappelling, end to end** (`R`). The climber finds an anchor within reach, builds it,
+  weight-tests it and threads a doubled rope (30-45 s), then rappels under brake-hand control:
+  push down the face, add Space to let it run fast, let go to brake. They can prusik back up,
+  walk across the face within the rope's swing, unclip on a ledge, or re-anchor at the knots.
+  The rope is pulled down afterwards and can snag for good. Anchors (horns, boulders, cracks,
+  screws, V-threads, pickets, bollards) are stable per location. Their hidden quality drives
+  the weight test and a per-second failure hazard under load, and jams are per metre of rope
+  run.
+- **Glissading and self-arrest.** Slides integrate on the slope plane in step with
+  `move_and_slide`. Heels and spike (`S`) brake hard on soft snow and little on ice, crampons
+  can catch and flip you, and rock and scree hit back. Slips, ski crashes and tumbles start
+  *uncontrolled* slides. Self-arrest (`Space`) is a roll onto the axe followed by real arrest
+  friction, and the pick can be torn out (and the axe lost) at speed.
+- **Skiing and snowboarding.** New `SKIS` and `SNOWBOARD` gear ("Ski & Board" category, a "Ski
+  Descent" preset) and a `SKIING` movement state run by `SkiPhysics`:
+  - the edges carry momentum round a carve until the turn asks more than the snow and legs can
+    hold, then skid and scrub speed
+  - `S` is a hockey stop and sideslip, `W` tucks or poles on the flat
+  - crashes come from speed, hard skids, ice and fatigue, and on steep ground they become a
+    slide; skis grind to a halt and take damage on rock
+- **Landings** are judged from the impact speed, cushioned by the surface: a hop is nothing,
+  about 3 m is a hard landing, about 6 m breaks something. A disabling injury ends the run with a
+  rescue instead of leaving the climber stuck in `INCAPACITATED` forever.
+- **Visible gear and poses**:
+  - skis or board under the boots, or strapped to the pack
+  - crampon plates, and the ice axe in hand
+  - sitting back in a glissade, face down on the axe in an arrest, into the face while
+    downclimbing, sitting back in the harness on rappel, crouched over skis
+- **HUD**: a "Feet" row (with gear-change progress), rope and ski activity in "Moving", and
+  contextual control hints while glissading, skiing or on the rope.
+- **Tests**:
+  - `tests/smoke_mechanics.gd`: downclimb, crampons, landings
+  - `tests/smoke_rappel.gd`: build, strip, rappel, pull
+  - `tests/smoke_ski.gd`: skis and `--board`
+  - `tests/smoke_slide.gd` rewritten: free glide, brake, arrest
+  - `tests/screenshot_tour.gd` gains `--gear`
+
+### Fixed
+
+- The terrain collider scaled its `HeightMapShape3D` non-uniformly by (cell, 1, cell), which
+  the physics engine does not support. Fast bodies hit the underside of the ground and stopped
+  dead; the shape is now scaled uniformly with pre-divided heights.
+- The climber walked backwards: the model faces -Z but the movement turned +Z toward the
+  direction of travel.
+- Landing damage never applied, because the state machine stood the climber up before the
+  landing was checked.
+- The rope system was never connected to the player: pressing `R` on steep ground left the
+  climber in `ROPING` forever.
+- Rappel jams and anchor failures were rolled per frame, so nearly every rappel jammed or
+  failed. Abandoning a rope also left it marked as deployed, which blocked every later
+  deployment.
+- Rock anchors were only generated on the `ROCK` surface, which the classifier never produces.
+- The glissade brake added a fixed 0.1 m/s² against 5+ m/s² of gravity, so it did nothing.
+  Slides also added a second gravity term, ignored collisions, and had ground friction applied
+  on top by the player controller.
+
+### Added (graphics: lighting, atmosphere and particles)
+
+- **Clouds and distant ranges.** `CloudLayer` is a wind-driven procedural cloud sheet above
+  the summit (one small shader, two seamless noise textures) whose coverage, softness and
+  colour follow the weather and the hour. `HorizonRange` rings the 640 m heightfield with two
+  parallax rows of snow-capped ridges and a hazy valley floor, so the world no longer ends at
+  a hard line of haze.
+- **Lighting and post-processing.** On Forward+ / Mobile the environment gains a soft bloom,
+  a touch of contrast and saturation, SSAO (Forward+), four blended shadow cascades out to
+  420 m, and volumetric murk near the climber once visibility drops; the Compatibility
+  renderer keeps its plain, acne-free setup. Renderer detection lives in
+  `EnvironmentVisuals.detect_rendering_method()`. A thin valley haze (height fog) pools below
+  the lowest terrain. The terrain material gets a triplanar noise normal map and a faint sheen
+  so snow and rock catch a low sun.
+- **Precipitation.** Snowflakes are soft billboard sprites that flutter instead of hard
+  five-segment spheres. Rain streaks (velocity-aligned, wind-slanted) replace snow when the air
+  at the climber is above +1.5 C, with sleet (both) in between; spindrift races across the
+  ground from about 9 m/s of wind. `EnvironmentVisuals.get_precipitation_form()` reports what
+  is falling.
+- **Slide spray and dust.** `PlayerSurfaceEffects` (in the player scene) trails snow spray or
+  dust behind a sliding or self-arresting climber, coloured by the surface underfoot and
+  scaled by speed; slide endings, hard landings, stumbles and micro-slips throw one-shot
+  bursts, and footsteps on loose ground leave small puffs.
+- `tests/screenshot_tour.gd` gains `--wind=<NAME>`, `--temperature=<C>` and `--slide`, so
+  storms, rain and the slide spray can be rendered to PNGs on either renderer.
+
+### Added (the game is now playable end to end)
+
+- **Rendered, walkable terrain.** `TerrainService` owns a `TerrainGenerator`, so every
+  mountain produces seam-exact meshes and `HeightMapShape3D` collision. A new
+  `ProceduralMountainGenerator` builds a 640 m mountain per mountain id (FastNoiseLite seeded
+  from the id, shaped by the mountain database: summit plateau, benches, slideable snow
+  slopes, downclimb faces, cliff bands scaled by exposure, gullies) with a guaranteed
+  sub-slide-angle corridor from summit to base camp. `CliffDistanceField` replaces the
+  O(cells x cliffs) search with an O(cells) chamfer transform.
+- **Sky, sun, fog and weather visuals.** `EnvironmentVisuals` (owned by `EnvironmentService`)
+  adds a procedural alpine sky, a sun light driven by `TimeService`, weather-driven fog and
+  snowfall particles, on both Forward+ and Compatibility renderers.
+- **A climber.** The player capsule is replaced by a primitive-built climber (jacket, helmet,
+  pack, limbs); the chase camera pivot is top-level and starts behind the climber.
+- **A goal.** `DescentGoal` builds a visible base camp (tent, flag, beacon beam) and completes
+  the run with `CLEAN_RETURN` / `INJURED_RETURN` on arrival (or `FATALITY` when falling out of
+  the world). Previously a run could only end by abandonment or a fatal event.
+- **Descent HUD** (`src/ui/hud/descent_hud.*`): elevation, descent progress, distance to base
+  camp, movement state, time and temperature, plus control hints (`H` toggles) and the
+  diegetic message channel.
+- **Run tracking.** `GameStateManager` feeds player position samples and elapsed time into
+  the `RunContext`, so distance, elevation progress and the post-game path are real.
+- **Godot-native tests**: `tests/check_scripts.gd` (every script compiles),
+  `tests/smoke_goal.gd` (menu → descent → base camp → resolution, headless),
+  `tests/smoke_walk.gd` (walks the climber down the corridor to base camp at 4x speed),
+  `tests/smoke_slide.gd` (starts a slide on the nearest slideable slope and lets it end),
+  `tests/ui_tour.gd` (presses every screen's real buttons and screenshots them),
+  `tests/screenshot_tour.gd` (renders the descent to PNGs, with weather/time overrides).
+
+### Changed
+
+- The debug quick start no longer runs on every debug build. It is opt-in:
+  `godot --path . -- --quick-start [--mountain=<id>]`, and it selects a real mountain.
+- Mouse capture is owned by `main.gd`: captured during `DESCENT`, visible in every other
+  state. `player_camera.gd` no longer toggles it or handles `Esc`.
+- Planning: the default summit-to-base line is analysed on entry, so **Begin Descent** is
+  available without placing waypoints; risky lines show a warning instead of blocking. The
+  topo map's summit/base markers use the terrain's real start and goal, and the forecast
+  panel shows the mountain's typical conditions before a run.
+- The player spawns on the summit plateau facing base camp; `run.start_elevation` and
+  `run.target_elevation` come from the terrain.
+
+### Balance
+
+- The guaranteed corridor tops out at 27° (a cautious walk); steeper sliding terrain lies
+  beside it. Walking speed is 2.4 m/s base and no longer collapses with stability.
+- Fatigue accrues about a third as fast; a full descent ends tired rather than collapsed.
+
+### Fixed
+
+#### Gameplay (the climber ground to a halt within ten seconds)
+- "Hesitation" counted any held movement key, drained stability to zero and, because speed
+  scaled with stability, stopped the climber dead. Hesitation is now input that produces no
+  movement.
+- BodyConditionService simulated a private BodyState nobody read and never received the
+  climber's activity, slope, weight or insulation, so the cold model treated a moving,
+  clothed climber as standing still naked (frostbite in minutes). It now adopts the run's
+  body state and samples the player and gear.
+- RecordingService read a non-existent `body_part` field on injuries.
+
+#### Compilation (95 of 111 scripts failed to load in Godot 4.2)
+- Added explicit static types wherever a variable was inferred from a `Variant`
+  (`Dictionary.get`, untyped array elements, enum `keys()[i]`, `pop_back`, `get_meta`);
+  Godot 4.2 rejects those at parse time and treats the inference warning as an error
+- `PackedFloat32Array` has no `min()`/`max()` in 4.2; `TextureRect.EXPAND_KEEP_ASPECT_CENTERED`
+  no longer exists; `TerrainService.get_all_chunks()` / `get_bounds()` were called but never
+  defined; `TopoMapGenerator.generate_map` takes `Vector3` bounds
+- `Array[Dictionary]` gear variant lists were assigned untyped literals (runtime error);
+  `get_meta()` with a null default errored on a missing key
+- The planning screen stayed visible over the world during a descent
+- Terrain mesh triangles were wound face-down; collision floated ~3000 m above the mesh;
+  chunk seams had cracks; freshly built meshes were destroyed on `terrain_loaded`
+- The drone camera's `look_at` spammed one error per frame when hovering above the player
+- Every map display regenerated the whole topo map on `terrain_loaded` (3.4 s each, four
+  displays); one cached map per terrain load with single-pass contours brings the
+  descent-start hitch from ~6 s to ~2.5 s
+- Space now also starts a slide from a standstill on slideable snow, not only while walking
+- Sunset/sunrise no longer jumps six times brighter and flips shadows: the sun and "moon"
+  branches meet at the horizon
+- Fog and snowfall snap to each run's configured weather instead of easing in from the
+  previous run's sky; snowfall intensity changes no longer wipe every flake
+- The sun disc is hidden through the light's sky mode, so Forward+ soft shadows keep their
+  penumbra
+- `TerrainCell.slope_direction` was the height gradient (uphill) while every consumer treated it
+  as downhill: slides pushed the climber into the slope and never moved the body, micro-slips
+  shoved uphill, and walking downhill got the uphill penalty. It now points downhill; slides
+  carry the climber and a self-arrest stops them, and the corridor walk is about twice as fast
+- Checking the map from the pause menu unpaused the whole simulation; a run ending while the
+  map was open could never reach the resolution screen and was recorded twice on abandon
+- Retry from the post-game screen left that screen covering the planning map and the climber
+  live at the old base camp; the climber is now frozen when a run ends, the post-game and
+  resolution screens are hidden when planning starts, and position samples are ignored until
+  the new run is anchored
+- Mountains never unlocked (nothing recorded runs in the mountain database); the loadout
+  screen kept the first mountain's requirements; waypoints survived onto the next mountain;
+  "Clear Route" disabled Begin Descent; the forecast panel read keys the weather service never
+  provides; the physical map kept the previous mountain and jumped to the corner after its
+  open animation; the map-check marker was drawn before layout and against the wrong rect;
+  the first post-game path was measured before layout
+- Weather (precipitation, fog, transitions) leaked from the previous run into the next; the
+  temperature was computed at a fixed 4000 m on every mountain; audio ducked at the resolution
+  screen was never restored; the fatal sequence read a non-existent drone field; the drone
+  never re-acquired the climber on later runs; a DEM's chunk layout stuck for the session;
+  the fatigue threshold event never fired on a second run
+- The sun disc appeared and vanished several times a day (luminance heuristic); it now follows
+  the weather and sun height
+- The terrain generator followed whichever camera it saw first (the drone's, parked near the
+  origin), and culled every chunk as "too far"; it now follows the live camera and never
+  distance-culls the mountain. The world is revealed only once the climber and camera are
+  placed, so a second run never flashes the previous base camp
+- Resuming from the pause menu re-entered `DESCENT` and rebuilt the whole descent
+  (respawning the player under every system that had cached it); one player node now lives
+  for the whole session and is reset between runs
+- The post-game panel stacked its moments list, insight and buttons on top of each other
+- One-shot 3D audio players were positioned before entering the tree (an engine error on
+  every footstep)
+
+#### Service Bootstrap (game was unplayable past the main menu)
+- Added a service bootstrapper in `main.gd`: 25 service classes (MountainDatabase,
+  GearDatabase, SaveManager, PlanningService, audio stack, Camera Director AI,
+  DroneService, replay/streamer tooling, BodyConditionService, SlideSystem,
+  RopeService, RiskDetectionService, fatal event systems, tutorial systems)
+  registered themselves with ServiceLocator but were never instantiated anywhere,
+  so mountain selection, gear loadout, saving, audio, body simulation, sliding
+  physics, risk detection and fatal events silently never came online
+- EnvironmentService now owns TimeService/WeatherService creation; `main.gd` no
+  longer creates duplicate instances that fought over the service registry
+- Environment is now seeded from the run's start conditions via
+  `EnvironmentService.initialize_run()`
+
+#### Planning Phase (flow dead-ended before descent)
+- Planning screen now builds its UI at `_ready()` - its `.tscn` is a bare root,
+  so every `@onready` node reference was null and `_setup_ui()` crashed
+- Terrain now loads for the selected mountain when the planning screen opens;
+  previously terrain only loaded at descent start, so the topo map was empty
+  and the route could never validate (Confirm button stayed disabled forever)
+- Topo map display regenerates when new terrain loads
+- Elevation profile draw callback is now actually connected
+
+#### Sliding
+- SlideSystem now starts/ends slide physics when the player state machine
+  enters/leaves SLIDING - `begin_slide()` previously had no callers
+- Removed duplicate `slide_started` emission from the player state machine
+  (SlideSystem is the single source, matching the earlier `slide_ended` fix)
+
+#### Other runtime fixes
+- PhysicalMap built its UI after requesting TerrainService; when the service was
+  already registered the callback fired synchronously and crashed on null UI nodes
+- Pause menu status panel and map check overlay info panel looked up
+  runtime-created containers by NodePath, which fails for auto-generated node
+  names - both now use direct references
+- Audio buses are created before the audio managers assign players to them
+- DroneCamera is now registered as a service (RecordingService requested it,
+  but it was never registered, silently disabling camera-track recording)
+- Tutorial instructor is now added to the scene tree when spawned
+
+## [0.1.0-alpha] - 2026-01-02
+
+### Added
+
+#### Core Architecture
+- Event-driven architecture with EventBus (69 signals for cross-system communication)
+- Service Locator pattern for dependency injection
+- Game State Manager for global state machine
+- Core data structures: RunContext, BodyState, GearState, StartConditions, Injury
+
+#### Player Systems
+- Player controller with CharacterBody3D-based movement
+- Multi-state player movement system (standing, walking, downclimbing, traversing, sliding, falling)
+- Posture system for stance tracking
+- Animation controller with procedural animations
+- First-person camera system
+- Footstep audio system with surface-aware sounds
+
+#### Sliding Mechanics
+- High-skill sliding system with control spectrum (Controlled → Marginal → Unstable → Lost)
+- Exit zone detection for slide recovery points
+- Slope angle and speed calculations
+- Control degradation based on terrain and fatigue
+
+#### Rope System
+- Rope deployment and rappelling mechanics
+- Anchor detection and quality assessment
+- Rope inventory management
+- Rappel controller with physics-based descent
+
+#### Terrain & World
+- Terrain service with DEM (Digital Elevation Model) support
+- Surface type detection (11 surface types including snow, ice, rock variants)
+- Terrain zone classification (walkable, steep, slideable, downclimb, rappel required, cliff)
+- Slope analysis and risk zone detection
+
+#### Environment Systems
+- Time service with day/night cycle
+- Weather service with 9 weather states (clear through whiteout)
+- Wind strength system (6 levels including gale)
+- Temperature system with feels-like calculations
+- Surface condition manager for dynamic terrain state
+
+#### Body Condition
+- Fatigue tracking with threshold-based warnings
+- Cold exposure system with body part tracking
+- Injury manager with localized damage
+- Diegetic feedback (breathing, visual effects, movement penalties)
+
+#### Camera & Drone
+- Drone camera system with documentary-style witness perspective
+- Camera Director AI with 5 shot intent types (Context, Tension, Commitment, Consequence, Release)
+- Signal detector for interesting moment identification
+- Imperfection engine for human-like camera behavior
+- Emotional rhythm engine for pacing
+- Drone battery management
+
+#### Fatal Event System
+- Ethical 5-phase death sequence (Moment of Error → Loss of Control → Vanishing → Aftermath → Acknowledgment)
+- Ethical constraints enforcing respectful death handling
+- Fatal audio controller for ambient sound management
+- Fatality detector for trigger conditions
+
+#### Audio System
+- Ambient audio manager with environmental soundscapes
+- Player audio manager (breathing, footsteps, gear sounds)
+- UI audio manager for interface feedback
+- Procedural audio generation
+- Audio ducking for dramatic moments
+
+#### User Interface
+- Main menu system
+- Mountain selection with multi-peak support
+- Gear loadout configuration
+- Route planning phase with topo map integration
+- Physical map (diegetic in-game map)
+- Self-check screen for body status
+- Pause menu with map review
+- Post-game screen with resolution display
+- Topo replay visualization for run analysis
+- Settings menu with streaming options
+- Statistics display
+
+#### Tutorial System
+- "Knife edge" opening sequence
+- Diegetic instructor system
+- Organic lesson learning mechanics
+
+#### Save & Progression
+- Save manager with profile persistence
+- Player profile tracking
+- Route memory for learned paths
+- Run history for session tracking
+- Progression tracker for achievements
+
+#### Streaming & Replay
+- Recording service for run capture
+- Replay player for playback
+- Highlight generator for key moments
+- Speedrun timer with split tracking
+- OBS integration with scene suggestions and markers
+- Streamer-friendly tools and configurations
+
+#### Risk Detection
+- Risk calculator for situation assessment
+- Risk zone analyzer for terrain danger identification
+- Fall predictor for outcome estimation
+- Risk feedback with diegetic warnings
+
+### Technical Details
+- **Engine**: Godot 4.2 (Forward Plus rendering)
+- **Language**: GDScript
+- **Resolution**: 1920x1080 with viewport stretching
+- **Physics**: 3D with 9.8 m/s² gravity
+- **Anti-aliasing**: MSAA 3D enabled
+- **Codebase**: 111 GDScript files, ~46,000 lines of code
+
+### Known Limitations
+- Audio uses placeholder sounds (real assets pending)
+- Tutorial instructor dialogue and interactive teaching moments incomplete
+- Scout drone (diegetic easy-mode recon) not yet implemented
+- Single sample mountain included (more mountains planned)
+- Avalanche and crevasse systems not yet implemented
+- Gear damage system not yet implemented
+- Accessibility features pending
+- Known bugs documented in AUDIT-REPORT.md (terrain zone classification, null safety, weather window)
+
+---
+
+*Long-Home - A mountaineering descent simulation about consequence, not conquest.*
