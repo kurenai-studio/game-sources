@@ -1,0 +1,255 @@
+[gd_scene load_steps=12 format=3 uid="uid://bek6v01gjjbck"]
+
+[ext_resource type="Texture2D" uid="uid://c2gqtoyben4go" path="res://assets/background.png" id="1_4spmm"]
+[ext_resource type="Script" uid="uid://lmuqjcyyuvqe" path="res://scripts/ui/game_settings.gd" id="1_l8xbd"]
+[ext_resource type="Theme" uid="uid://dxx5m48t8ucyq" path="res://koi_koi_theme.tres" id="2_wfddf"]
+[ext_resource type="Texture2D" uid="uid://j2q1fwg0wtsj" path="res://assets/button_blue.png" id="3_sp6kx"]
+[ext_resource type="ButtonGroup" uid="uid://y26u25jv36dt" path="res://scenes/game_settings_rounds_group.tres" id="3_y17bo"]
+[ext_resource type="Texture2D" uid="uid://cej358lula02q" path="res://assets/button_blue_pressed.png" id="4_y17bo"]
+[ext_resource type="Texture2D" uid="uid://lri4v48rg5ud" path="res://assets/button_tan.png" id="5_l8xbd"]
+[ext_resource type="Texture2D" uid="uid://d0biplgag7uqi" path="res://assets/button_tan_pressed.png" id="6_f0dju"]
+[ext_resource type="ButtonGroup" uid="uid://r3h766pm7ecc" path="res://scenes/game_settings_level_group.tres" id="6_y17bo"]
+[ext_resource type="Texture2D" uid="uid://c5tvrxlapv37w" path="res://assets/button_red.png" id="7_wbdjp"]
+[ext_resource type="Texture2D" uid="uid://cv1ftv68rc66v" path="res://assets/button_red_pressed.png" id="8_7k7sp"]
+
+[node name="GameSettings" type="Node2D"]
+script = ExtResource("1_l8xbd")
+rounds_group = ExtResource("3_y17bo")
+ai_level_group = ExtResource("6_y17bo")
+
+[node name="Control" type="Control" parent="."]
+custom_minimum_size = Vector2(1920, 1080)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_4spmm")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MarginContainer" type="MarginContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 120
+theme_override_constants/margin_top = 80
+theme_override_constants/margin_right = 120
+theme_override_constants/margin_bottom = 80
+
+[node name="ReferenceRect" type="ReferenceRect" parent="Control/MarginContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 70
+text = "Game Settings"
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 40
+text = "Rounds"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 124
+alignment = 1
+
+[node name="Rounds3" type="TextureButton" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+button_group = ExtResource("3_y17bo")
+texture_normal = ExtResource("3_sp6kx")
+texture_pressed = ExtResource("4_y17bo")
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer/Rounds3"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 70
+text = "3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Rounds6" type="TextureButton" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+button_group = ExtResource("3_y17bo")
+texture_normal = ExtResource("3_sp6kx")
+texture_pressed = ExtResource("4_y17bo")
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer/Rounds6"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 70
+text = "6"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Rounds12" type="TextureButton" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+button_group = ExtResource("3_y17bo")
+texture_normal = ExtResource("3_sp6kx")
+texture_pressed = ExtResource("4_y17bo")
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer/Rounds12"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 70
+text = "12"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MarginContainer2" type="MarginContainer" parent="Control/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/MarginContainer/VBoxContainer/MarginContainer2"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer"]
+layout_mode = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 40
+text = "Opponent Level"
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 124
+alignment = 1
+
+[node name="AIEasy" type="TextureButton" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+button_group = ExtResource("6_y17bo")
+texture_normal = ExtResource("5_l8xbd")
+texture_pressed = ExtResource("6_f0dju")
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer/HBoxContainer/AIEasy"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 70
+text = "Easy"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AIMed" type="TextureButton" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+button_group = ExtResource("6_y17bo")
+texture_normal = ExtResource("5_l8xbd")
+texture_pressed = ExtResource("6_f0dju")
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer/HBoxContainer/AIMed"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 70
+text = "Medium"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="AIHard" type="TextureButton" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+button_group = ExtResource("6_y17bo")
+texture_normal = ExtResource("5_l8xbd")
+texture_pressed = ExtResource("6_f0dju")
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer2/VBoxContainer/HBoxContainer/AIHard"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_wfddf")
+theme_override_font_sizes/font_size = 70
+text = "Hard"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MarginContainer3" type="MarginContainer" parent="Control/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CenterContainer" type="CenterContainer" parent="Control/MarginContainer/VBoxContainer/MarginContainer3"]
+layout_mode = 2
+
+[node name="GoButton" type="TextureButton" parent="Control/MarginContainer/VBoxContainer/MarginContainer3/CenterContainer"]
+layout_mode = 2
+theme = ExtResource("2_wfddf")
+texture_normal = ExtResource("7_wbdjp")
+texture_pressed = ExtResource("8_7k7sp")
+
+[node name="Label" type="Label" parent="Control/MarginContainer/VBoxContainer/MarginContainer3/CenterContainer/GoButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 70
+text = "Go!"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="Control/MarginContainer/VBoxContainer/MarginContainer3/CenterContainer/GoButton" to="." method="_on_go_button_pressed"]

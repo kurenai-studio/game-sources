@@ -1,0 +1,95 @@
+[gd_scene load_steps=11 format=3 uid="uid://caackk67eodkv"]
+
+[ext_resource type="Script" uid="uid://c6cbxr6nopwyu" path="res://scripts/core/game_manager.gd" id="1_o5qli"]
+[ext_resource type="Texture2D" uid="uid://c2gqtoyben4go" path="res://assets/background.png" id="1_sugp2"]
+[ext_resource type="Script" uid="uid://clriuypxdy4nq" path="res://scripts/ui/ui_manager.gd" id="2_0wfyh"]
+[ext_resource type="PackedScene" uid="uid://c6a35s5exauwp" path="res://scenes/slot.tscn" id="4_tbgi4"]
+[ext_resource type="Script" uid="uid://coecwasyllee8" path="res://scripts/ui/hand.gd" id="5_tefeu"]
+[ext_resource type="Script" uid="uid://clc37e2hhbfu" path="res://scripts/ui/deck.gd" id="5_tipki"]
+[ext_resource type="PackedScene" uid="uid://oo5xmuiry8rc" path="res://scenes/field.tscn" id="6_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://bcy54dv2wr8xn" path="res://scenes/capture_area.tscn" id="7_o6xl0"]
+[ext_resource type="Texture2D" uid="uid://bwxdehst5j58r" path="res://assets/neutral_point_light.webp" id="9_85g3d"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_ya4ey"]
+diffuse_texture = ExtResource("1_sugp2")
+
+[node name="Main" type="Node2D"]
+
+[node name="Backdrop" type="Control" parent="."]
+z_as_relative = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TextureRect" type="TextureRect" parent="Backdrop"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = SubResource("CanvasTexture_ya4ey")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Managers" type="Node" parent="."]
+
+[node name="GameManager" type="Node" parent="Managers"]
+script = ExtResource("1_o5qli")
+
+[node name="UIManager" type="Node" parent="Managers"]
+script = ExtResource("2_0wfyh")
+
+[node name="GameWorld" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="DeckSlot" parent="GameWorld" instance=ExtResource("4_tbgi4")]
+unique_name_in_owner = true
+position = Vector2(150, 540)
+script = ExtResource("5_tipki")
+
+[node name="PlayerHand" type="Marker2D" parent="GameWorld"]
+unique_name_in_owner = true
+position = Vector2(110, 960)
+gizmo_extents = 1000.0
+script = ExtResource("5_tefeu")
+
+[node name="OpponentHand" type="Marker2D" parent="GameWorld"]
+unique_name_in_owner = true
+position = Vector2(110, 120)
+gizmo_extents = 1000.0
+script = ExtResource("5_tefeu")
+
+[node name="Field" parent="GameWorld" instance=ExtResource("6_o6xl0")]
+unique_name_in_owner = true
+position = Vector2(600, 540)
+
+[node name="PlayerCaptureArea" parent="GameWorld" instance=ExtResource("7_o6xl0")]
+unique_name_in_owner = true
+position = Vector2(1540, 780)
+
+[node name="OpponentCaptureArea" parent="GameWorld" instance=ExtResource("7_o6xl0")]
+unique_name_in_owner = true
+position = Vector2(1540, 300)
+
+[node name="PointLight2D" type="PointLight2D" parent="GameWorld"]
+visible = false
+z_index = 300
+z_as_relative = false
+position = Vector2(959.50006, 539.49994)
+scale = Vector2(1.960283, 1.0992719)
+color = Color(0.9289759, 0.65858614, 0.16423905, 1)
+energy = 0.36
+shadow_enabled = true
+shadow_color = Color(0, 0, 0, 0.6862745)
+shadow_filter = 1
+texture = ExtResource("9_85g3d")
+texture_scale = 3.82
+height = 696.0
