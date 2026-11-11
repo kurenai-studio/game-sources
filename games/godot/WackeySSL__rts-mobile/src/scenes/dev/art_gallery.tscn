@@ -1,0 +1,134 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/view/art_gallery.gd" id="1_gallery"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_zoom"]
+font_size = 40
+font_color = Color(0.10980392, 0.12941177, 0.15294118, 1)
+
+[node name="ArtGallery" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gallery")
+team_a_color = Color(0.18431373, 0.5019608, 0.92941177, 1)
+team_b_color = Color(0.8980392, 0.28235295, 0.3019608, 1)
+turret_turn_speed = 0.5
+
+[node name="Grass" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.5
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.43529412, 0.56078434, 0.34117648, 1)
+
+[node name="ZoomRow" type="Control" parent="Grass"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.8
+anchor_right = 0.5
+anchor_bottom = 0.8
+mouse_filter = 2
+
+[node name="Zoom075" type="Node2D" parent="Grass/ZoomRow" groups=["gallery_team_a"]]
+position = Vector2(-208, 0)
+scale = Vector2(0.75, 0.75)
+
+[node name="Label075" type="Label" parent="Grass/ZoomRow"]
+layout_mode = 0
+offset_left = -258.0
+offset_top = 60.0
+offset_right = -158.0
+offset_bottom = 110.0
+label_settings = SubResource("LabelSettings_zoom")
+text = "0.75"
+horizontal_alignment = 1
+
+[node name="Zoom100" type="Node2D" parent="Grass/ZoomRow" groups=["gallery_team_a"]]
+
+[node name="Label100" type="Label" parent="Grass/ZoomRow"]
+layout_mode = 0
+offset_left = -50.0
+offset_top = 60.0
+offset_right = 50.0
+offset_bottom = 110.0
+label_settings = SubResource("LabelSettings_zoom")
+text = "1.0"
+horizontal_alignment = 1
+
+[node name="Zoom150" type="Node2D" parent="Grass/ZoomRow" groups=["gallery_team_a"]]
+position = Vector2(208, 0)
+scale = Vector2(1.5, 1.5)
+
+[node name="Label150" type="Label" parent="Grass/ZoomRow"]
+layout_mode = 0
+offset_left = 158.0
+offset_top = 60.0
+offset_right = 258.0
+offset_bottom = 110.0
+label_settings = SubResource("LabelSettings_zoom")
+text = "1.5"
+horizontal_alignment = 1
+
+[node name="Sand" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.8039216, 0.7254902, 0.56078434, 1)
+
+[node name="ZoomRow" type="Control" parent="Sand"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.8
+anchor_right = 0.5
+anchor_bottom = 0.8
+mouse_filter = 2
+
+[node name="Zoom075" type="Node2D" parent="Sand/ZoomRow" groups=["gallery_team_b"]]
+position = Vector2(-208, 0)
+scale = Vector2(0.75, 0.75)
+
+[node name="Zoom100" type="Node2D" parent="Sand/ZoomRow" groups=["gallery_team_b"]]
+
+[node name="Zoom150" type="Node2D" parent="Sand/ZoomRow" groups=["gallery_team_b"]]
+position = Vector2(208, 0)
+scale = Vector2(1.5, 1.5)
+
+[node name="BackButton" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 1
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 144.0
+offset_bottom = 144.0
+theme_override_font_sizes/font_size = 40
+text = "Back"
+
+[node name="PageButton" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -144.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 144.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 32
+text = "Units"

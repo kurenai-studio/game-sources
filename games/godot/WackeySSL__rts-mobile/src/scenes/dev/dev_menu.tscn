@@ -1,0 +1,187 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://game/ui/dev_menu.gd" id="1_menu"]
+[ext_resource type="Script" path="res://game/ui/HudTheme.gd" id="2_hud_theme"]
+[ext_resource type="Script" path="res://game/ui/SafeAreaMargin.gd" id="3_safe"]
+[ext_resource type="Theme" path="res://game/ui/theme.tres" id="4_theme"]
+[ext_resource type="Script" path="res://game/ui/DpMinSize.gd" id="5_dp"]
+
+[node name="DevMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu")
+
+[node name="HudTheme" type="Node" parent="."]
+script = ExtResource("2_hud_theme")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.10980392, 0.12941177, 0.15294118, 1)
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("4_theme")
+script = ExtResource("3_safe")
+
+[node name="Scroll" type="ScrollContainer" parent="SafeArea"]
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Center" type="CenterContainer" parent="SafeArea/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Column" type="VBoxContainer" parent="SafeArea/Scroll/Center"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="SafeArea/Scroll/Center/Column"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="SafeArea/Scroll/Center/Column/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"NumberLabel"
+text = "Dev menu"
+
+[node name="LevelLabel" type="Label" parent="SafeArea/Scroll/Center/Column/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Level: Normal"
+horizontal_alignment = 2
+
+[node name="LevelRow" type="HBoxContainer" parent="SafeArea/Scroll/Center/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="LevelEasyButton" type="Button" parent="SafeArea/Scroll/Center/Column/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Easy"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/LevelRow/LevelEasyButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(72, 48)
+
+[node name="LevelNormalButton" type="Button" parent="SafeArea/Scroll/Center/Column/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Normal"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/LevelRow/LevelNormalButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(72, 48)
+
+[node name="LevelHardButton" type="Button" parent="SafeArea/Scroll/Center/Column/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Hard"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/LevelRow/LevelHardButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(72, 48)
+
+[node name="Grid" type="GridContainer" parent="SafeArea/Scroll/Center/Column"]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 3
+
+[node name="SkirmishDerrickButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Skirmish (Derrick League)"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/SkirmishDerrickButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="SkirmishLumenButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Skirmish (Lumen Accord)"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/SkirmishLumenButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="TestMapButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Test map"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/TestMapButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="StrikeTestButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Strike test"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/StrikeTestButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="GalleryButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Art gallery"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/GalleryButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="TouchProbeButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Touch probe"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/TouchProbeButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="PerfArenaButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Perf arena"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/PerfArenaButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="PerfBasesButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Perf bases"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/PerfBasesButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)
+
+[node name="PerfAiButton" type="Button" parent="SafeArea/Scroll/Center/Column/Grid"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Perf AI"
+
+[node name="DpMinSize" type="Node" parent="SafeArea/Scroll/Center/Column/Grid/PerfAiButton"]
+script = ExtResource("5_dp")
+min_dp = Vector2(240, 48)

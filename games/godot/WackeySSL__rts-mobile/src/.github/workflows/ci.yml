@@ -1,0 +1,792 @@
+name: CI
+
+# "verify" is the only required check: format, lint, import, tests, sim smoke and the web
+# export, all through the scripts a developer runs locally. "android-debug-apk" (ADR 0005) follows it,
+# after it installs the NDK and builds the kernel libraries (ADR 0013 section 10), and on a push to main
+# "android-dev-release" publishes that APK as the rolling pre-release.
+# "android-perf-apk" (P51r) follows verify on a push to main and on a manual run and exports the release-template perf
+# APK of the gate, and on a push to main "android-perf-release" publishes it as the rolling pre-release
+# android-perf-release.
+# "native-clang" runs the native suites on a clang library (ADR 0013 section 10) and "determinism-arm64" (P51b) the
+# determinism suites on an arm64 Linux runner. "sanitizer-changes" and
+# "sanitizers" (P57) check the native code under UBSan and AddressSanitizer on pull requests that touch it.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    # An explicit shell makes GitHub run `bash --noprofile --norc -eo pipefail`, so a failing
+    # command before `| tee` fails the step.
+    shell: bash
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GDTOOLKIT_VERSION: "4.5.0"
+  SCONS_VERSION: "4.9.1"
+  CLANG_FORMAT_VERSION: "20.1.8"
+  # godot-cpp's SConstruct caches objects here, outside the workspace (the tree stays clean).
+  SCONS_CACHE: /home/runner/.cache/rts-mobile-scons
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    # The suite is about 4400 cases and verify ran 29-30 min on push runs (main 1a6209c was
+    # cancelled at 29:43); 45 leaves room for growth.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache Godot editor and web export templates
+        id: godot-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-${{ env.GODOT_VERSION }}
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64-web-${{ hashFiles('scripts/ci/install-godot.sh', 'scripts/ci/remote_zip.py') }}
+
+      - name: Install Godot (editor + web no-threads templates only)
+        run: bash scripts/ci/install-godot.sh
+
+      - name: Install gdtoolkit
+        run: pipx install "gdtoolkit==${GDTOOLKIT_VERSION}"
+
+      # Offline, against stub tools: the seed, the library check, build-native.sh's exit codes and ELF
+      # checks, install-ndk.sh against a stub sdkmanager and the C++ format check (ADR 0013 sections 8-10).
+      - name: Offline test of the native scripts
+        run: bash scripts/ci/test-native-scripts.sh
+
+      # The Android installer of cloud sessions (on demand, never part of CI or of the session setup) is
+      # tested here, offline, against stubs: the licence gate, the SHA-256 pin, JDK 17, the one NDK pin and a
+      # second run that downloads nothing.
+      - name: Offline test of the cloud Android installer
+        run: bash scripts/ci/test-install-android.sh
+
+      # verify.sh builds the C++ kernels first and checks their format last (ADR 0013 section 10).
+      - name: Install the native toolchain (SCons, clang-format, binutils)
+        run: |
+          pipx install "scons==${SCONS_VERSION}"
+          pipx install "clang-format==${CLANG_FORMAT_VERSION}"
+          sudo apt-get install -y --no-install-recommends binutils
+
+      # The native caches (ADR 0013 section 8). build-native.sh owns the pins and prints the key. The key
+      # is assigned first, so a failing build-native.sh fails this step with its own message (inside
+      # echo's argument it would write an empty key and fail one step later, in actions/cache).
+      - name: Read the native cache key
+        id: native-key
+        run: |
+          key="$(bash scripts/build-native.sh --print-cache-key)"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache godot-cpp and the SCons object cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-key.outputs.key }}
+
+      # On this fresh checkout verify.sh builds, seeds and imports with no retry: the fresh-clone
+      # import canary (ADR 0013 section 9).
+      - name: Verify (native build, format, lint, import, tests, C++ format, sim smoke, error scan)
+        run: bash scripts/verify.sh 2>&1 | tee "$RUNNER_TEMP/verify.log"
+
+      # ADR 0013 section 10: the native suites verify.sh ran must have passed. Never inside verify.sh.
+      - name: Check the native suites ran (check-native-tests.sh)
+        run: bash scripts/ci/check-native-tests.sh
+
+      # export-web.sh owns the export checks: Godot version, templates, error scan of its own log,
+      # non-empty artifacts, wasm size, threads off and the dev_menu custom feature.
+      - name: Export web build
+        run: bash scripts/export-web.sh
+
+      # verify.sh's dirty marker uses `git diff --quiet`, which misses untracked files such as a
+      # forgotten .gd.uid or .import file. build/ and reports/ are git-ignored.
+      - name: Clean-tree check (import, tests and export must not change the tree)
+        if: success()
+        run: |
+          out="$(git status --porcelain)"; [ -z "$out" ] || { echo "::error::import/test/export changed the tree"; echo "$out"; exit 1; }
+
+      # P51: the two PERF lines of tests/perf/test_sim_perf.gd, the GDScript one (PERF sim units=) and the native
+      # one (PERF sim impl=native), copied from the verify log. Without the SimKernels library the suite prints a
+      # plain note, which is no PERF line, so only the first shows.
+      # P96: the two PERF lines of tests/perf/test_base_arena_perf.gd (PERF bases units= and PERF bases impl=native
+      # units=), copied the same way under their own heading, after the PERF sim lines, which show as before. Report
+      # only: nothing gates on them. P190: every `WATCH ai ` line (tests/perf/test_ai_perf.gd, P189, and the
+      # determinism suite, P188), copied the same way under their own heading after the bases block, report only. The other WATCH lines (WATCH sim hash_bytes and
+      # WATCH bases hash_bytes among them) stay in the verify log; the summary copies none of them.
+      - name: Job summary
+        if: always()
+        env:
+          CACHE_HIT: ${{ steps.godot-cache.outputs.cache-hit }}
+        run: |
+          {
+            echo "Godot cache hit: ${CACHE_HIT:-false}"
+            echo
+            echo '```'
+            if [ -f "$RUNNER_TEMP/verify.log" ] && grep -q -x '===== VERIFY SUMMARY =====' "$RUNNER_TEMP/verify.log"; then
+              sed -n '/^===== VERIFY SUMMARY =====$/,$p' "$RUNNER_TEMP/verify.log"
+            else
+              echo "no VERIFY SUMMARY block (verify.sh did not finish)"
+            fi
+            echo '```'
+            echo
+            echo '```'
+            grep -a -E '^PERF sim (units=|impl=native)' "$RUNNER_TEMP/verify.log" 2>/dev/null || echo "no PERF line (the perf suite did not run)"
+            echo '```'
+            echo
+            echo '### PERF bases (the base arena, report only)'
+            echo
+            echo '```'
+            grep -a -E '^PERF bases (units=|impl=native units=)' "$RUNNER_TEMP/verify.log" 2>/dev/null || echo "no PERF bases line (the base arena perf suite did not run)"
+            echo '```'
+            echo
+            echo '### WATCH ai (the opponent AI, report-only lines)'
+            echo
+            echo '```'
+            grep -a -E '^WATCH ai ' "$RUNNER_TEMP/verify.log" 2>/dev/null || echo "no WATCH ai line (the AI perf suite did not run)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # P190b: the same report-only lines, one group each in a fixed place after the run (the REST API serves job logs,
+      # not job summaries; the Verify step's own output has them scattered). The step only prints and never fails the job.
+      - name: Job log lines
+        if: always()
+        run: |
+          log="$RUNNER_TEMP/verify.log"
+          echo "::group::VERIFY SUMMARY"
+          if [ -f "$log" ] && grep -q -x '===== VERIFY SUMMARY =====' "$log"; then
+            sed -n '/^===== VERIFY SUMMARY =====$/,$p' "$log" || true
+          else
+            echo "no VERIFY SUMMARY block (verify.sh did not finish)"
+          fi
+          echo "::endgroup::"
+          echo "::group::PERF sim"
+          grep -a -E '^PERF sim (units=|impl=native)' "$log" 2>/dev/null || echo "no PERF line (the perf suite did not run)"
+          echo "::endgroup::"
+          echo "::group::PERF bases"
+          grep -a -E '^PERF bases (units=|impl=native units=)' "$log" 2>/dev/null || echo "no PERF bases line (the base arena perf suite did not run)"
+          echo "::endgroup::"
+          echo "::group::WATCH ai"
+          grep -a -E '^WATCH ai ' "$log" 2>/dev/null || echo "no WATCH ai line (the AI perf suite did not run)"
+          echo "::endgroup::"
+          exit 0
+
+      - name: Upload web build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-${{ github.sha }}
+          path: build/web/
+          if-no-files-found: error
+          retention-days: 14
+
+  # ADR 0013 section 10: a clang -O3 library (the shipped build is NDK clang -O3, the other runs g++ -O2)
+  # running the tests/sim/native suites. Not required. gdUnit4 runs only when a suite exists
+  # (run-tests.sh exits 1 when no test ran): before P54 only the check runs. The golden hashes (P51) run in the
+  # same call, and the check requires them.
+  native-clang:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache Godot editor and web export templates
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-${{ env.GODOT_VERSION }}
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64-web-${{ hashFiles('scripts/ci/install-godot.sh', 'scripts/ci/remote_zip.py') }}
+
+      - name: Install Godot (editor + web no-threads templates only)
+        run: bash scripts/ci/install-godot.sh
+
+      - name: Install the native toolchain (SCons, clang, binutils)
+        run: |
+          pipx install "scons==${SCONS_VERSION}"
+          sudo apt-get install -y --no-install-recommends binutils clang
+
+      - name: Read the native cache key
+        id: native-key
+        run: |
+          key="$(bash scripts/build-native.sh --compiler clang --optimize speed --print-cache-key)"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache godot-cpp and the SCons object cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-key.outputs.key }}
+
+      - name: Build the library (clang, optimize=speed)
+        run: bash scripts/build-native.sh --compiler clang --optimize speed
+
+      # The sanitizer job's dump step, tests/sim/native/sanitizer/dump_states.gd, is a plain script and no
+      # GdUnitTestSuite (P57): this run and verify.sh's (res://tests) load it and drop it, as they drop any
+      # script that is no suite, and the check prunes sanitizer/ from its discovery.
+      # P51: the golden hashes (tests/perf/test_golden_hashes.gd, no clock and no probe) are in this one call:
+      # the check reads one results.xml, and run-tests.sh deletes the report of an earlier call.
+      - name: Run the native suites (gdUnit4), when discovery finds one
+        run: |
+          if [ -n "$(bash scripts/ci/check-native-tests.sh --list)" ]; then bash scripts/run-tests.sh -a res://tests/sim/native -a res://tests/perf/test_golden_hashes.gd; fi
+
+      - name: Check the native suites ran (check-native-tests.sh)
+        run: bash scripts/ci/check-native-tests.sh --require test_golden_hashes
+
+  # P51b (ADR 0013 section 10): the determinism suites on arm64 Linux, the architecture of the phone. The official
+  # Godot 4.7.2 Linux arm64 editor (install-godot.sh picks it on an arm64 host) loads a library that build-native.sh
+  # builds for the host with clang at the release optimisation (use_llvm=yes, optimize=speed). One run-tests.sh call
+  # plays the tests/sim/native suites, the two determinism suites, the golden hashes and the AI determinism suite (P188) under both implementations
+  # (none of them reads a clock, so this job times nothing and prints no PERF line), and the check requires the
+  # four suites that live outside tests/sim/native. Not required. Whether the repository may use the
+  # ubuntu-24.04-arm runner is shown by the run of this job.
+  determinism-arm64:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The key names the architecture: the editor differs, the web templates beside it do not.
+      - name: Cache Godot editor and web export templates
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-${{ env.GODOT_VERSION }}
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-linux-arm64-web-${{ hashFiles('scripts/ci/install-godot.sh', 'scripts/ci/remote_zip.py') }}
+
+      - name: Install Godot (arm64 editor + web no-threads templates only)
+        run: bash scripts/ci/install-godot.sh
+
+      - name: Install the native toolchain (SCons, clang, binutils)
+        run: |
+          pipx install "scons==${SCONS_VERSION}"
+          sudo apt-get install -y --no-install-recommends binutils clang
+
+      # --arch arm64 is the host's architecture: build-native.sh exits 2 on another one, so a runner that
+      # is not arm64 fails here and not in the editor.
+      - name: Read the native cache key
+        id: native-key
+        run: |
+          key="$(bash scripts/build-native.sh --arch arm64 --compiler clang --optimize speed --print-cache-key)"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache godot-cpp and the SCons object cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-key.outputs.key }}
+
+      - name: Build the library (arm64, clang, optimize=speed)
+        run: bash scripts/build-native.sh --arch arm64 --compiler clang --optimize speed
+
+      # One call, because check-native-tests.sh reads one results.xml and run-tests.sh deletes the report of an
+      # earlier call. No discovery gate as in native-clang: the suites exist since P54, and a folder that lost them
+      # fails the check's floor.
+      - name: Run the determinism suites (gdUnit4)
+        run: |
+          bash scripts/run-tests.sh -a res://tests/sim/native -a res://tests/sim/test_determinism.gd -a res://tests/sim/test_world_hash.gd -a res://tests/perf/test_golden_hashes.gd -a res://tests/ai/test_ai_determinism.gd
+
+      - name: Check the native suites ran (check-native-tests.sh)
+        run: bash scripts/ci/check-native-tests.sh --require test_golden_hashes --require test_determinism --require test_world_hash --require test_ai_determinism
+
+  # ADR 0013 section 10 (P57): the sanitizer job runs on a pull request that touches native/**, game/sim/**,
+  # data/** or tests/sim/native/**, because a World column, a rule or a twin change can break a kernel without
+  # touching native/. P57b adds the files that drive the job: scripts/build-native.sh (the UBSan build),
+  # scripts/ci/run-sanitizer-harness.sh, this file and tests/sim/support/** (the helpers that the dump step and the
+  # native suites load), so a pull request that changes only one of them runs it too. The other scripts the job runs
+  # (install-godot.sh with remote_zip.py, run-tests.sh, check-native-tests.sh, seed-extension-list.sh) stay out of
+  # PATTERN: the required verify job runs them on every pull request. This job decides that from the files of the
+  # merge commit against its first parent (the base), so `sanitizers` ends skipped when nothing matches, and a push
+  # to main or a manual run skips both. tests/project/test_ci_workflow.gd pins PATTERN.
+  sanitizer-changes:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.diff.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      # A diff that cannot be read counts as relevant. --no-renames lists both paths of a move, so that moving a file
+      # out of one of the folders counts as touching it.
+      - name: Does the pull request touch the native code or what it runs on
+        id: diff
+        env:
+          PATTERN: '^(native/|game/sim/|data/|tests/sim/native/|tests/sim/support/|scripts/build-native\.sh$|scripts/ci/run-sanitizer-harness\.sh$|\.github/workflows/ci\.yml$)'
+        run: |
+          relevant=true
+          if files="$(git diff --no-renames --name-only HEAD^1 HEAD)"; then
+            grep -Eq "$PATTERN" <<<"$files" || relevant=false
+          fi
+          echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+
+  # Not required. UBSan in the engine: g++ -O1 library without -fwrapv and with every report fatal (shared
+  # libubsan), loaded by headless Godot, which plays the real tests/sim/native lockstep suites on it. ASan out of
+  # the engine: a harness over core/ with no Godot header, fed the states that a GDScript step dumps from the
+  # seed-42 arena, plus crafted cases. It cannot see a use-after-free inside the engine's code (ADR 0013 section 10).
+  # Loading an ASan library into Godot (LD_PRELOAD) is not taken (P57). Blind spots: bind/ is instrumented for UBSan
+  # only; ArrayView clamps an index outside its window, so a lone index bug in core/ is a wrong answer that only the
+  # lockstep suites see; and nothing here sees a read of memory that was never written (no MemorySanitizer with g++).
+  sanitizers:
+    needs: sanitizer-changes
+    if: needs.sanitizer-changes.outputs.relevant == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache Godot editor and web export templates
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-${{ env.GODOT_VERSION }}
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64-web-${{ hashFiles('scripts/ci/install-godot.sh', 'scripts/ci/remote_zip.py') }}
+
+      - name: Install Godot (editor + web no-threads templates only)
+        run: bash scripts/ci/install-godot.sh
+
+      # g++ with libasan and libubsan is on the runner image.
+      - name: Install the native toolchain (SCons, binutils)
+        run: |
+          pipx install "scons==${SCONS_VERSION}"
+          sudo apt-get install -y --no-install-recommends binutils
+
+      - name: Read the native cache key
+        id: native-key
+        run: |
+          key="$(bash scripts/build-native.sh --sanitize undefined --print-cache-key)"
+          echo "key=$key" >> "$GITHUB_OUTPUT"
+
+      - name: Cache godot-cpp and the SCons object cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-key.outputs.key }}
+
+      - name: Build the UBSan library (g++ -O1, shared libubsan)
+        run: bash scripts/build-native.sh --sanitize undefined
+
+      - name: Run the native suites on the UBSan library (gdUnit4)
+        run: bash scripts/run-tests.sh -a res://tests/sim/native
+
+      - name: Check the native suites ran (check-native-tests.sh)
+        run: bash scripts/ci/check-native-tests.sh
+
+      # The runner randomises mappings with 32 bits, more than the AddressSanitizer of g++ 13 can place its shadow
+      # memory around (actions/runner-images#9491); 28 bits is what it was built for.
+      - name: Lower the address randomisation for AddressSanitizer
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
+
+      - name: Dump the arena's states and run the ASan harness over core/
+        run: bash scripts/ci/run-sanitizer-harness.sh "$RUNNER_TEMP/sanitizer"
+
+  # ADR 0005: a debug APK for real-device testing. Not a required check; `verify` stays the only one.
+  android-debug-apk:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      key_kind: ${{ steps.export-apk.outputs.kind }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # android-dev-release only runs on main, so its script is tested here on every run: offline,
+      # against a stub gh. A failure stops that job too, because it needs this one.
+      - name: Offline test of publish-dev-release.sh
+        run: bash scripts/ci/test-publish-dev-release.sh
+
+      # Both export scripts write a THIRD_PARTY_LICENSES.txt. This runs the real scripts against stub
+      # tools, offline, and checks that each appends the LLVM libc++ and godot-cpp licences and the OFL.txt
+      # of every font folder (P118b) with the same text (ADR 0005 section 5, ADR 0013 section 11), that both
+      # fail when a font folder has no OFL.txt or the pack or APK lacks it, and that export-android.sh runs
+      # its packed-library checks (readelf and nm stubs) on the right files, before the job spends time on
+      # a real export.
+      - name: Offline test of the export licence notices
+        run: bash scripts/ci/test-export-notices.sh
+
+      # Godot copies JAVA_HOME and ANDROID_HOME into its editor settings on its first run, so set
+      # them before any Godot call (ANDROID_HOME is the runner image's SDK already).
+      - name: Select JDK 17
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+
+      # The Android library is built with the NDK that build-native.sh pins (ADR 0013 section 8). install-ndk.sh
+      # reads that pin, finds the NDK in the SDK (the runner image may ship it) or installs it there with the
+      # SDK's sdkmanager, and appends ANDROID_NDK_ROOT to GITHUB_ENV for the steps below, which overrides the
+      # image's own. The NDK itself is never cached: the library caches below hold godot-cpp and the SCons
+      # objects, the Godot cache the editor and templates, and test_ci_workflow.gd checks that no other line
+      # of this job names the NDK or the SDK folder.
+      - name: Install the Android NDK (install-ndk.sh)
+        run: bash scripts/ci/install-ndk.sh
+
+      - name: Install the native toolchain (SCons, binutils)
+        run: |
+          pipx install "scons==${SCONS_VERSION}"
+          sudo apt-get install -y --no-install-recommends binutils
+
+      # The ELF and libc++ symbol checks that export-android.sh runs on the packed library (ADR 0013 section 10),
+      # offline on gcc-built fixtures, once with binutils and once with the llvm tools of the NDK installed above
+      # (the test fails, not skips, when CI has none).
+      - name: Offline test of the packed-library ELF checks
+        run: bash scripts/ci/test-android-elf.sh
+
+      # One cache per library, each under the key build-native.sh prints for exactly the flags of its build
+      # step below (the Android keys carry NDK_VERSION). The host's key is the verify job's: a hit once it saved.
+      - name: Read the native cache keys
+        id: native-keys
+        run: |
+          host="$(bash scripts/build-native.sh --print-cache-key)"
+          android_debug="$(bash scripts/build-native.sh --platform android --arch arm64 --target template_debug --print-cache-key)"
+          android_release="$(bash scripts/build-native.sh --platform android --arch arm64 --target template_release --print-cache-key)"
+          { echo "host=$host"; echo "android_debug=$android_debug"; echo "android_release=$android_release"; } >> "$GITHUB_OUTPUT"
+
+      - name: Cache godot-cpp and the SCons object cache (host library)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-keys.outputs.host }}
+
+      - name: Cache godot-cpp and the SCons object cache (Android template_debug)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-keys.outputs.android_debug }}
+
+      - name: Cache godot-cpp and the SCons object cache (Android template_release)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-keys.outputs.android_release }}
+
+      # The generated native/sim_kernels.gdextension names all six libraries (linux x86_64 and arm64, android
+      # arm64, each debug and release), so the host's Linux library comes first: without it the headless
+      # editor logs "Can't open dynamic library". --export-debug then packs android.debug.arm64 (the dev APK)
+      # and the release library is built for P51r's release export (android-perf-apk builds it again, under
+      # the same cache key). export-android.sh checks the packed debug library against the bytes built here
+      # (hash, ELF facts, libc++ symbols).
+      - name: Build the host library (linux, template_debug)
+        run: bash scripts/build-native.sh
+
+      - name: Build the Android library (arm64, template_debug)
+        run: bash scripts/build-native.sh --platform android --arch arm64 --target template_debug
+
+      - name: Build the Android library (arm64, template_release)
+        run: bash scripts/build-native.sh --platform android --arch arm64 --target template_release
+
+      - name: Cache Godot editor and export templates (web and Android debug)
+        id: godot-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-${{ env.GODOT_VERSION }}
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64-android-${{ hashFiles('scripts/ci/install-godot.sh', 'scripts/ci/remote_zip.py') }}
+
+      - name: Install Godot (editor, web and Android debug templates)
+        run: bash scripts/ci/install-godot.sh --android
+
+      # Each exit code of export-android.sh that a runner or secret change could hit must stay
+      # distinct: 3 wrong Godot, 4 template or toolchain missing, 5 no keystore.
+      - name: Negative checks of export-android.sh (exit codes 3, 4, 5)
+        run: |
+          expect() { want="$1"; shift; rc=0; out="$("$@" 2>&1)" || rc=$?; [ "$rc" = "$want" ] || { echo "$out"; echo "::error::expected exit $want, got $rc: $*"; exit 1; }; echo "ok: exit $rc: ${out%%$'\n'*}"; }
+          expect 3 env GODOT=/bin/true bash scripts/export-android.sh
+          expect 4 env XDG_DATA_HOME="$RUNNER_TEMP/no-templates" bash scripts/export-android.sh
+          expect 5 bash scripts/export-android.sh
+
+      # A key is generated per run. Only a push to main may use the optional stable key, so PR code
+      # never sees the secrets (ADR 0005 section 4). The password reaches the script by env only.
+      - name: Export debug APK
+        id: export-apk
+        env:
+          STABLE_KEYSTORE_B64: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.ANDROID_DEBUG_KEYSTORE_BASE64 || '' }}
+          STABLE_KEYSTORE_PASSWORD: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.ANDROID_DEBUG_KEYSTORE_PASSWORD || '' }}
+        run: |
+          umask 077
+          keystore="$RUNNER_TEMP/debug.keystore"
+          if [ -n "$STABLE_KEYSTORE_B64" ] && [ -n "$STABLE_KEYSTORE_PASSWORD" ]; then
+            printf '%s' "$STABLE_KEYSTORE_B64" | base64 -d > "$keystore"
+            password="$STABLE_KEYSTORE_PASSWORD"
+            kind=stable
+          else
+            keytool -genkeypair -keystore "$keystore" -alias androiddebugkey -keyalg RSA -keysize 2048 \
+              -validity 10000 -storepass android -keypass android -dname "CN=rts-mobile dev"
+            password=android
+            kind=generated
+          fi
+          echo "DEBUG_KEY_KIND=$kind" >> "$GITHUB_ENV"
+          echo "kind=$kind" >> "$GITHUB_OUTPUT"
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$keystore" \
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER="androiddebugkey" \
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD="$password" \
+          bash scripts/export-android.sh
+
+      # Same check as in verify: the import and the export must not change the tree.
+      - name: Clean-tree check
+        if: success()
+        run: |
+          out="$(git status --porcelain)"; [ -z "$out" ] || { echo "::error::import/export changed the tree"; echo "$out"; exit 1; }
+
+      - name: Job summary
+        if: always()
+        env:
+          CACHE_HIT: ${{ steps.godot-cache.outputs.cache-hit }}
+        run: |
+          apk=build/android/rts-mobile-debug.apk
+          {
+            echo "Godot cache hit: ${CACHE_HIT:-false}"
+            if [ -s "$apk" ]; then
+              echo "- APK: $(stat -c %s "$apk") bytes, SHA-256 \`$(sha256sum "$apk" | cut -d' ' -f1)\`, package dk.appcode.rts.dev"
+              echo "- Signing key: ${DEBUG_KEY_KIND:-unknown}."
+              [ "${DEBUG_KEY_KIND:-}" = stable ] || echo "- A generated key changes every run: uninstall the old APK first."
+              echo "- Install: unzip the artifact on the phone and open rts-mobile-debug.apk."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete debug keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/debug.keystore"
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rts-mobile-debug-apk-${{ github.sha }}
+          path: |
+            build/android/rts-mobile-debug.apk
+            build/android/THIRD_PARTY_LICENSES.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  # ADR 0005 section 6: the rolling pre-release android-dev-latest gives one stable phone URL. Only a
+  # push to main reaches it (never a pull request, a fork or a manual run), after android-debug-apk
+  # succeeded, and only this job holds contents: write. It publishes the APK that android-debug-apk
+  # built in this same run and never rebuilds it. The workflow-level group above already queues the
+  # push runs of main one after the other. The job-level group keeps two publishes from
+  # interleaving (delete + create) even if that ever changes.
+  android-dev-release:
+    needs: android-debug-apk
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !github.event.repository.fork
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: android-dev-latest
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/ci
+
+      - name: Download the debug APK of this run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rts-mobile-debug-apk-${{ github.sha }}
+          path: ${{ runner.temp }}/apk
+
+      # Deletes and recreates the pre-release, then downloads the stable URL and compares SHA-256.
+      - name: Replace the android-dev-latest pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY_KIND: ${{ needs.android-debug-apk.outputs.key_kind }}
+        run: bash scripts/ci/publish-dev-release.sh "$RUNNER_TEMP/apk"
+
+  # P51r (ADR 0012 section 4, ADR 0013 section 10): the perf APK that the gate measures, built with the release
+  # template as players get it, with the preset "Android perf" (custom feature dev_menu, so the dev menu is reachable
+  # where OS.is_debug_build() is false) and the kernels library of android.release.arm64. It runs after verify on a
+  # push to main and on a manual run, never on a pull request, and takes no real ad ID and no store key (monetization
+  # rules). The key is generated for the run and passed as the release keystore. export-android.sh --release checks the
+  # APK itself: the packed library is the one built here, no application-debuggable in aapt2 dump badging, the
+  # dev_menu feature in the pack and the engine library of the release template. Not a required check.
+  android-perf-apk:
+    needs: verify
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Godot copies JAVA_HOME and ANDROID_HOME into its editor settings on its first run, so set them before any
+      # Godot call (ANDROID_HOME is the runner image's SDK already).
+      - name: Select JDK 17
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+
+      - name: Install the Android NDK (install-ndk.sh)
+        run: bash scripts/ci/install-ndk.sh
+
+      - name: Install the native toolchain (SCons, binutils)
+        run: |
+          pipx install "scons==${SCONS_VERSION}"
+          sudo apt-get install -y --no-install-recommends binutils
+
+      # The generated .gdextension names all six libraries, so the host's Linux library comes first (as in
+      # android-debug-apk), then the one library this export packs: android.release.arm64 (template_release).
+      - name: Read the native cache keys
+        id: native-keys
+        run: |
+          host="$(bash scripts/build-native.sh --print-cache-key)"
+          android_release="$(bash scripts/build-native.sh --platform android --arch arm64 --target template_release --print-cache-key)"
+          { echo "host=$host"; echo "android_release=$android_release"; } >> "$GITHUB_OUTPUT"
+
+      - name: Cache godot-cpp and the SCons object cache (host library)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-keys.outputs.host }}
+
+      - name: Cache godot-cpp and the SCons object cache (Android template_release)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            native/godot-cpp
+            ${{ env.SCONS_CACHE }}
+          key: ${{ steps.native-keys.outputs.android_release }}
+
+      - name: Build the host library (linux, template_debug)
+        run: bash scripts/build-native.sh
+
+      - name: Build the Android library (arm64, template_release)
+        run: bash scripts/build-native.sh --platform android --arch arm64 --target template_release
+
+      - name: Cache Godot editor and export templates (web and Android release)
+        id: godot-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/opt/godot-${{ env.GODOT_VERSION }}
+            ~/.local/share/godot/export_templates/${{ env.GODOT_VERSION }}.stable
+          key: godot-${{ env.GODOT_VERSION }}-linux-x86_64-android-release-${{ hashFiles('scripts/ci/install-godot.sh', 'scripts/ci/remote_zip.py') }}
+
+      - name: Install Godot (editor, web and Android release templates)
+        run: bash scripts/ci/install-godot.sh --android-release
+
+      # The key is generated for this run and exists only in $RUNNER_TEMP (no secret is read; the stable key of the
+      # debug build is never used here). Godot reads it from the three GODOT_ANDROID_KEYSTORE_RELEASE_* variables. The
+      # password is random and masked, and reaches keytool and the script by env only. The last step deletes the file.
+      - name: Export perf APK (release template)
+        run: |
+          umask 077
+          keystore="$RUNNER_TEMP/perf.keystore"
+          password="$(openssl rand -hex 16)"
+          echo "::add-mask::$password"
+          PERF_KEY_PASSWORD="$password" keytool -genkeypair -keystore "$keystore" -alias perfkey -keyalg RSA \
+            -keysize 2048 -validity 10000 -storepass:env PERF_KEY_PASSWORD -keypass:env PERF_KEY_PASSWORD \
+            -dname "CN=rts-mobile perf"
+          GODOT_ANDROID_KEYSTORE_RELEASE_PATH="$keystore" \
+          GODOT_ANDROID_KEYSTORE_RELEASE_USER="perfkey" \
+          GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD="$password" \
+          bash scripts/export-android.sh --release
+
+      # Same check as in verify: the import and the export must not change the tree.
+      - name: Clean-tree check
+        if: success()
+        run: |
+          out="$(git status --porcelain)"; [ -z "$out" ] || { echo "::error::import/export changed the tree"; echo "$out"; exit 1; }
+
+      - name: Job summary
+        if: always()
+        env:
+          CACHE_HIT: ${{ steps.godot-cache.outputs.cache-hit }}
+        run: |
+          apk=build/android/rts-mobile-perf-release.apk
+          {
+            echo "Godot cache hit: ${CACHE_HIT:-false}"
+            if [ -s "$apk" ]; then
+              echo "- Perf APK (release template, dev menu): $(stat -c %s "$apk") bytes, SHA-256 \`$(sha256sum "$apk" | cut -d' ' -f1)\`, package dk.appcode.rts.dev"
+              echo "- Signed with a key generated for this run: uninstall the old rts-mobile build first."
+              echo "- On the phone: Dev, Perf arena; the card shows build: release."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload perf APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rts-mobile-perf-release-apk-${{ github.sha }}
+          path: |
+            build/android/rts-mobile-perf-release.apk
+            build/android/THIRD_PARTY_LICENSES.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Delete perf keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/perf.keystore"
+
+  # Michael's answer 3 in the Phase 2 plan (ADR 0012 section 4): android-perf-release is a rolling pre-release,
+  # updated on every merge to main like android-dev-latest and by the same rules (ADR 0005 section 6): only a push to
+  # main of the repository itself, after android-perf-apk, with contents: write on this job only. It publishes the APK
+  # that android-perf-apk built in this same run, and never rebuilds it.
+  android-perf-release:
+    needs: android-perf-apk
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !github.event.repository.fork
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: android-perf-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts/ci
+
+      - name: Download the perf APK of this run
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: rts-mobile-perf-release-apk-${{ github.sha }}
+          path: ${{ runner.temp }}/apk
+
+      # Deletes and recreates the pre-release, then downloads the stable URL and compares SHA-256.
+      - name: Replace the android-perf-release pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/ci/publish-dev-release.sh "$RUNNER_TEMP/apk" perf

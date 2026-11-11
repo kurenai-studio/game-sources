@@ -1,0 +1,454 @@
+class_name HealthBarLayer
+extends Node2D
+## Health bars over the units of the runner's published snapshot (assets/art/STYLE.md "Health
+## bars"). A bar shows over a unit that is selected (`unit_layer.is_ringed`) and over one that
+## lost hp within the last RECENT_MS (`unit_layer.hit_time_ms`, on the unit layer's frame clock).
+## Own bars are plain, enemy bars have a notch in the top edge, which is the cue that does not
+## rely on colour. Every bar is filled rects only and is drawn in one `_draw()` (ADR 0011 section
+## 3, z 30 in ADR 0023 section 2, over the sorted world). The layer reads `runner.snapshot` and
+## the unit layer's per-row answers, and it brings the unit layer's rows up to the snapshot once at
+## the start of a frame (`sync_rows`), so the tree order of the two layers does not matter.
+##
+## A unit that the unit layer does not show (an enemy in the fog) gets no bar, whatever its hp did.
+## A row with a footprint is a building (P115): its bar is the width of its footprint (24, 40 and
+## 56 dp for 1x1, 2x2 and 3x3, STYLE.md "Health bars"), centred on its footprint centre, and stands
+## the sheet's `bar_lift_px` above it (`building_layer.bar_lift_px`). It shows for the same few
+## seconds after a hit and while the building is selected (`building_layer.is_selected`, P115b), and
+## only while `building_layer.is_shown`: an enemy building whose footprint the fog hides has none.
+## A selected building also gets its frame (P115b, ADR 0023 section 3): four brackets round the
+## silhouette box (`building_layer.frame_box`), each arm FRAME_THICK_DP thick and at most
+## FRAME_ARM_DP long, white with a dark edge for an own building and the enemy bar's colour for an
+## enemy one.
+## The frames are planned after the bars, in the same arrays: the rects from `frame_first_rect()`
+## on, FRAME_RECTS for each of `frame_count()` frames, outline first.
+## A building a Dusk Array switched off (`offline_until` above the snapshot's tick, P112b, ADR
+## 0023 section 10) wears the offline glyph (`glyph_offline.svg`, GLYPH_DP square, amber) for as
+## long as it is off, hit or not, over the place of its bar and centred on its footprint centre; an
+## enemy one only while `building_layer.is_shown`. The glyphs are planned after the frames and
+## painted after the rects, as `glyph_count()` squares at `glyph_rect(i)`. While the local player's
+## published `power_used` is above its `power_made` (low power, P89, ADR 0025 section 8) every own
+## defence (a complete building with a weapon, power use or not) wears the offline glyph too, and
+## every other own building that uses power (`PowerConsumers`, the card's rows) wears the
+## low-power map
+## glyph (`glyph_low_power_map.svg`, tinted `low_power_color`), planned after the offline ones at
+## the same place; nothing is dimmed.
+##
+## A bar is sized in dp, so it looks the same at every zoom: world px per dp is the base px per dp
+## over the camera zoom. It is centred on its unit's projected ground point (`IsoProjection`, ADR
+## 0023 section 1), and its bottom edge is l x zoom + 1 dp above that point on the screen, l the
+## lift of the top of the unit's frame (`unit_layer.bar_lift_px`, the sheet's `bar_lift_px`). The
+## ring does not place it.
+## `_process` plans the rects of the frame in reused packed arrays and `_draw` paints that plan
+## through the same accessors, so a frame creates no object and tests read the plan (`rect_count`,
+## `rect_at`) and what was painted (`drawn_count`).
+
+const VEHICLE_WIDTH_DP: int = 22
+const INFANTRY_WIDTH_DP: int = 16
+## The width of each bar class: a vehicle, an infantry squad, then a 1x1, a 2x2 and a 3x3 building
+## (a larger footprint takes the last).
+const CLASS_WIDTH_DP: Array[int] = [VEHICLE_WIDTH_DP, INFANTRY_WIDTH_DP, 24, 40, 56]
+const INFANTRY_CLASS: int = 1
+const BUILDING_CLASS: int = 2  ## A 1x1 building's class; a footprint of n has class 1 + n.
+const HEIGHT_DP: int = 6
+const GAP_DP: int = 1  ## Between the bar's bottom edge and the sprite.
+const NOTCH_WIDTH_DP: int = 4  ## An enemy bar's notch, open in the top edge.
+const NOTCH_DEPTH_DP: int = 2
+const EDGE_DP: int = 1  ## The dark edge round the interior.
+const RECENT_MS: int = 3000  ## A hit unit shows its bar for this long (inclusive).
+const MAX_RECTS_PER_BAR: int = 6  ## An enemy bar: three edge rects and three fill rects.
+const SHAPE_STRIDE: int = 5  ## A shape lists rects as x, y, w, h and 0 (edge) or 1 (fill) in dp.
+const FRAME_ARM_DP: int = 12  ## The longest arm of a frame's bracket.
+const FRAME_THICK_DP: int = 2
+const FRAME_RECTS: int = 16  ## Two arms for each of four corners, each as an outline and a fill.
+## The offline glyph (assets/art/STYLE.md "Icons and glyphs": 32 dp for a glyph on the map, drawn
+## tinted with its seat) and its gap over the bar's place.
+const GLYPH: Texture2D = preload("res://assets/art/svg/icons/glyph_offline.svg")
+const LOW_GLYPH: Texture2D = preload("res://assets/art/svg/icons/glyph_low_power_map.svg")
+const GLYPH_DP: int = 32
+const GLYPH_GAP_DP: int = 1
+
+@export var runner: MatchRunner
+@export var unit_layer: UnitLayer  ## Gives the selection, the hit times, the camera and the clock.
+## Says which buildings are shown and how high their bars stand; null: no building has a bar.
+@export var building_layer: BuildingLayer
+## The look: the fills are not team colours (STYLE.md). They are exports of this world-space layer
+## and not theme items, like the team tints of `UnitLayer`, so a new palette edits them here.
+@export var edge_color: Color = Color("1C2127")
+@export var own_color: Color = Color("30A46C")  ## Fill of an own bar (ok).
+@export var enemy_color: Color = Color("F5A524")  ## Fill of an enemy bar (warning).
+@export var frame_color: Color = Color("FFFFFF")  ## Brackets of an own selected building.
+@export var glyph_color: Color = Color("F5A524")  ## The offline glyph's tint (STYLE.md, warning).
+## The low-power map glyph's tint (STYLE.md's tint table; the gallery's `GLYPH_TINTS` has it too).
+@export var low_power_color: Color = Color("FF8A1F")
+
+var _dp_px: float = 1.0  ## Base px per dp, read when the window changes.
+## Rect `i` of the frame: x, y, width and height in world px at 4i, and its colour. `_bars` holds
+## the unit row of bar `k`, and `_bar_first` the first rect of bar `k` (one past the last at `k`
+## = the bar count).
+var _geometry: PackedFloat32Array = PackedFloat32Array()
+var _colors: PackedColorArray = PackedColorArray()
+var _bars: PackedInt32Array = PackedInt32Array()
+var _bar_first: PackedInt32Array = PackedInt32Array()
+var _rects: int = 0
+var _bar_count: int = 0
+var _frames: int = 0
+var _frame_first: int = 0  ## The first rect of the frames, which follow the bars' last.
+var _none: PackedInt32Array = PackedInt32Array()  ## The selected buildings when there is no layer.
+var _drawn: int = 0  ## Rects the last _draw painted.
+var _glyph_at: PackedFloat32Array = PackedFloat32Array()  ## Top-left x, y of glyph `i` at 2i.
+var _glyphs: int = 0
+var _offline_glyphs: int = 0  ## The first glyphs are offline ones, the rest low-power ones.
+var _glyph_side: float = 0.0  ## World px, the same for every glyph of the frame.
+var _drawn_glyphs: int = 0
+## The shapes, own and enemy for each class (index class + enemy x CLASS_WIDTH_DP.size()), made
+## once: their rects (SHAPE_STRIDE ints each), the rect count and the width in dp.
+var _shapes: Array[PackedInt32Array] = []
+var _shape_rects: PackedInt32Array = PackedInt32Array()
+var _shape_width: PackedInt32Array = PackedInt32Array()
+
+@warning_ignore("integer_division")
+func _init() -> void:
+	for enemy: bool in [false, true]:
+		for width: int in CLASS_WIDTH_DP:
+			var shape: PackedInt32Array = _make_shape(enemy, width)
+			_shapes.append(shape)
+			_shape_rects.append(shape.size() / SHAPE_STRIDE)
+			_shape_width.append(width)
+
+
+func _ready() -> void:
+	get_viewport().size_changed.connect(_read_dp)
+	_read_dp()
+
+
+func _process(_delta: float) -> void:
+	var had_rects: bool = _rects > 0 or _glyphs > 0
+	_plan()
+	if had_rects or _rects > 0 or _glyphs > 0:
+		queue_redraw()
+
+
+## The end (exclusive, in dp from the bar's left edge) of the fill of a unit with `hp` of `max_hp`
+## on a bar `width` dp wide: the interior scaled by hp / max_hp and rounded, at least 1 dp while
+## the unit lives, so a living unit always shows some fill. Integer rounding, halves up.
+@warning_ignore("integer_division")
+static func fill_end_dp(hp: int, max_hp: int, width: int) -> int:
+	if hp <= 0 or max_hp <= 0:
+		return EDGE_DP
+	var inner: int = width - 2 * EDGE_DP
+	return EDGE_DP + maxi(1, (2 * inner * mini(hp, max_hp) + max_hp) / (2 * max_hp))
+
+
+## Rects planned for the last frame, and the bars they belong to.
+func rect_count() -> int:
+	return _rects
+
+
+## Rects the last `_draw` painted: the plan of the frame it ran after.
+func drawn_count() -> int:
+	return _drawn
+
+
+## The offline glyphs planned for the last frame, how many the last `_draw` painted, and glyph
+## `index`'s square in world px (layer coordinates).
+func glyph_count() -> int:
+	return _glyphs
+
+
+func drawn_glyphs() -> int:
+	return _drawn_glyphs
+
+
+## How many of the planned glyphs are offline ones; the rest (low power, P89) follow them.
+func offline_glyph_count() -> int:
+	return _offline_glyphs
+
+
+## Glyph `index`'s art and tint: the offline glyph in amber, then the low-power one in orange
+## (#FF8A1F).
+func glyph_texture(index: int) -> Texture2D:
+	return GLYPH if index < _offline_glyphs else LOW_GLYPH
+
+
+func glyph_tint(index: int) -> Color:
+	return glyph_color if index < _offline_glyphs else low_power_color
+
+
+func glyph_rect(index: int) -> Rect2:
+	return Rect2(_glyph_at[index * 2], _glyph_at[index * 2 + 1], _glyph_side, _glyph_side)
+
+
+func bar_count() -> int:
+	return _bar_count
+
+
+## The frames of selected buildings in the last plan, and the plan's index of their first rect.
+func frame_count() -> int:
+	return _frames
+
+
+func frame_first_rect() -> int:
+	return _frame_first
+
+
+## Rect `index` of the plan in world px (layer coordinates), and its colour.
+func rect_at(index: int) -> Rect2:
+	var at: int = index * 4
+	return Rect2(_geometry[at], _geometry[at + 1], _geometry[at + 2], _geometry[at + 3])
+
+
+func rect_color(index: int) -> Color:
+	return _colors[index]
+
+
+## The unit row of bar `bar`, and the range [first, end) of its rects in the plan.
+func bar_row(bar: int) -> int:
+	return _bars[bar]
+
+
+func bar_first_rect(bar: int) -> int:
+	return _bar_first[bar]
+
+
+func bar_end_rect(bar: int) -> int:
+	return _bar_first[bar + 1]
+
+
+## The rects of a bar `width` dp wide, own or enemy (STYLE.md "Health bars"), as SHAPE_STRIDE ints
+## each: the edge rects, then the fill rects of a full bar. Own: the box and its interior. Enemy:
+## two shoulders and the foot of a notch (NOTCH_WIDTH_DP wide, NOTCH_DEPTH_DP deep, open in the
+## top edge) for the edge, and for the fill a shoulder on each side of the notch over one strip.
+@warning_ignore("integer_division")
+static func _make_shape(enemy: bool, width: int) -> PackedInt32Array:
+	var inner: int = width - 2 * EDGE_DP
+	if not enemy:
+		return PackedInt32Array(
+			[0, 0, width, HEIGHT_DP, 0, EDGE_DP, EDGE_DP, inner, HEIGHT_DP - 2 * EDGE_DP, 1]
+		)
+	var shoulder: int = (width - NOTCH_WIDTH_DP) / 2
+	var arm: int = shoulder - 2 * EDGE_DP
+	var right: int = shoulder + NOTCH_WIDTH_DP
+	var strip_y: int = NOTCH_DEPTH_DP + EDGE_DP
+	return PackedInt32Array(
+		(
+			[0, 0, shoulder, HEIGHT_DP, 0]
+			+ [right, 0, shoulder, HEIGHT_DP, 0]
+			+ [shoulder, NOTCH_DEPTH_DP, NOTCH_WIDTH_DP, HEIGHT_DP - NOTCH_DEPTH_DP, 0]
+			+ [EDGE_DP, EDGE_DP, arm, NOTCH_DEPTH_DP, 1]
+			+ [right + EDGE_DP, EDGE_DP, arm, NOTCH_DEPTH_DP, 1]
+			+ [EDGE_DP, strip_y, inner, HEIGHT_DP - strip_y - EDGE_DP, 1]
+		)
+	)
+
+
+func _read_dp() -> void:  # dp changes with the window.
+	_dp_px = UiScale.base_px_per_dp()
+
+
+## Plans the bars of the frame from the snapshot, the selection and the hit times. Allocates
+## nothing in steady state: the arrays are only resized when there are more units than before.
+func _plan() -> void:
+	_rects = 0
+	_bar_count = 0
+	_frames = 0
+	_glyphs = 0
+	var snap: MatchSnapshot = runner.snapshot if runner != null else null
+	if snap == null or unit_layer == null or unit_layer.camera == null:
+		return
+	unit_layer.sync_rows()  # One sync for the loop: the per-row answers below do not sync.
+	if building_layer != null:
+		building_layer.sync_rows()
+	var count: int = snap.unit_id.size()
+	var chosen: PackedInt32Array = (
+		building_layer.selected_ids() if building_layer != null else _none
+	)
+	# Sized by _bar_first, which the closing write below reaches at [bar count] even for 0 units.
+	if _bar_first.size() < count + 1:
+		_bars.resize(count)
+		_bar_first.resize(count + 1)
+	var rect_room: int = count * MAX_RECTS_PER_BAR + chosen.size() * FRAME_RECTS
+	if _colors.size() < rect_room:
+		_geometry.resize(rect_room * 4)
+		_colors.resize(rect_room)
+	var unit: float = _dp_px / unit_layer.camera.zoom.x  # World px per dp.
+	var recent_since: int = int(unit_layer.clock.call()) - RECENT_MS
+	var local_player: int = runner.scenario.local_player if runner.scenario != null else 1
+	var alpha: float = runner.alpha()
+	var owners: PackedInt32Array = snap.owner
+	var types: PackedInt32Array = snap.type_index
+	var hps: PackedInt32Array = snap.hp
+	var max_hps: PackedInt32Array = snap.type_max_hp
+	var armours: PackedInt32Array = snap.type_armour
+	var prev_x: PackedInt32Array = snap.prev_pos_x
+	var prev_y: PackedInt32Array = snap.prev_pos_y
+	var cur_x: PackedInt32Array = snap.pos_x
+	var cur_y: PackedInt32Array = snap.pos_y
+	var geometry: PackedFloat32Array = _geometry
+	var colors: PackedColorArray = _colors
+	for row: int in count:
+		var hit: int = unit_layer.hit_time_ms(row)
+		var selected: bool = (
+			unit_layer.is_ringed(row) or (not chosen.is_empty() and building_layer.is_selected(row))
+		)
+		if not (selected or (hit >= 0 and hit >= recent_since)):
+			continue
+		var type: int = types[row]
+		var building: bool = WorldSort.is_building(snap, type)
+		if building:
+			if building_layer == null or not building_layer.is_shown(row):
+				continue  # No layer to say, or the fog hides the footprint.
+		elif not unit_layer.is_shown(row):
+			continue  # A rig the fog hides has no bar either (ADR 0010 section 2).
+		var klass: int = INFANTRY_CLASS if armours[type] == World.Armour.INFANTRY else 0
+		if building:
+			var last: int = CLASS_WIDTH_DP.size() - BUILDING_CLASS  # The largest footprint with a width.
+			klass = BUILDING_CLASS - 1 + clampi(snap.type_foot_w[type], 1, last)
+		var shape: int = (0 if owners[row] == local_player else CLASS_WIDTH_DP.size()) + klass
+		var width: int = _shape_width[shape]
+		var fill_end: int = fill_end_dp(hps[row], max_hps[type], width)
+		var fill_color: Color = enemy_color if shape >= CLASS_WIDTH_DP.size() else own_color
+		# The unit's ground point now, the way UnitLayer puts its rig (a building's is its
+		# footprint centre), and the bar's top-left corner, a lift above the top of its frame.
+		var place: Vector2 = IsoProjection.ground_to_px(prev_x[row], prev_y[row]).lerp(
+			IsoProjection.ground_to_px(cur_x[row], cur_y[row]), alpha
+		)
+		var left: float = place.x - 0.5 * width * unit
+		var lift: float = (
+			building_layer.bar_lift_px(row) if building else unit_layer.bar_lift_px(row)
+		)
+		var top: float = place.y - lift - (GAP_DP + HEIGHT_DP) * unit
+		_bars[_bar_count] = row
+		_bar_first[_bar_count] = _rects
+		_bar_count += 1
+		var rects: PackedInt32Array = _shapes[shape]
+		for at: int in range(0, _shape_rects[shape] * SHAPE_STRIDE, SHAPE_STRIDE):
+			var from: int = rects[at]
+			var to: int = from + rects[at + 2]
+			var is_fill: bool = rects[at + 4] == 1
+			if is_fill:
+				to = mini(to, fill_end)  # A fill rect is clipped to x < fill_end.
+				if to <= from:
+					continue
+			var out: int = _rects * 4
+			geometry[out] = left + from * unit
+			geometry[out + 1] = top + rects[at + 1] * unit
+			geometry[out + 2] = (to - from) * unit
+			geometry[out + 3] = rects[at + 3] * unit
+			colors[_rects] = fill_color if is_fill else edge_color
+			_rects += 1
+	_bar_first[_bar_count] = _rects
+	_plan_frames(snap, chosen, unit, local_player)
+	_plan_glyphs(snap, unit, local_player)
+
+
+## Plans the offline glyph of each shown building a blackout has switched off: its bottom edge
+## stands GLYPH_GAP_DP over the top of the bar's place, so a bar and a glyph never overlap. While
+## the local player uses more power than it makes (`power_used` over `power_made` of the snapshot),
+## every own building that uses power (`PowerConsumers`) gets the low-power glyph at the same
+## place, after the offline ones. A switched-off building uses none, so it never has both.
+func _plan_glyphs(snap: MatchSnapshot, unit: float, local_player: int) -> void:
+	_glyph_side = GLYPH_DP * unit
+	_offline_glyphs = 0
+	if building_layer == null:
+		return
+	var until: PackedInt32Array = snap.offline_until  # Aliased once: no property read per row.
+	var tick: int = snap.tick
+	var rise: float = (GAP_DP + HEIGHT_DP + GLYPH_GAP_DP + GLYPH_DP) * unit
+	for row: int in until.size():
+		if until[row] > tick and building_layer.is_shown(row):
+			_put_glyph(snap, row, rise)
+	_offline_glyphs = _glyphs
+	var made: PackedInt32Array = snap.power_made
+	var used: PackedInt32Array = snap.power_used
+	if local_player < 0 or local_player >= mini(made.size(), used.size()):
+		return
+	if used[local_player] <= made[local_player]:
+		return
+	# Low power: every own defence, a complete building with a weapon that no blackout holds off,
+	# holds its fire (`Combat.fire` reads no `type_power`), so it wears the offline glyph and joins
+	# the offline group; every other consumer follows with the low-power glyph.
+	var owners: PackedInt32Array = snap.owner
+	var weapons: PackedInt32Array = snap.type_weapon
+	var types: PackedInt32Array = snap.type_index
+	var foot: PackedInt32Array = snap.type_foot_w
+	var sites: PackedInt32Array = snap.build_left
+	for row: int in until.size():
+		var type: int = types[row]
+		if (
+			owners[row] == local_player
+			and weapons[type] >= 0
+			and foot[type] > 0
+			and sites[row] == 0
+			and until[row] <= tick
+		):
+			_put_glyph(snap, row, rise)
+	_offline_glyphs = _glyphs
+	for row: int in until.size():
+		if (
+			owners[row] == local_player
+			and weapons[types[row]] < 0
+			and PowerConsumers.is_consumer(snap, row)
+		):
+			_put_glyph(snap, row, rise)
+
+
+## Appends the glyph square of building `row`, `rise` over its footprint centre's ground point.
+func _put_glyph(snap: MatchSnapshot, row: int, rise: float) -> void:
+	if _glyph_at.size() < _glyphs * 2 + 2:
+		_glyph_at.resize(_glyph_at.size() + 16)
+	var place: Vector2 = IsoProjection.ground_to_px(snap.pos_x[row], snap.pos_y[row])
+	_glyph_at[_glyphs * 2] = place.x - 0.5 * _glyph_side
+	_glyph_at[_glyphs * 2 + 1] = place.y - building_layer.bar_lift_px(row) - rise
+	_glyphs += 1
+
+
+## Plans the frame of each selected building that is shown, after the bars.
+func _plan_frames(
+	snap: MatchSnapshot, chosen: PackedInt32Array, unit: float, local_player: int
+) -> void:
+	_frame_first = _rects
+	for id: int in chosen:
+		var row: int = snap.index_of(id)
+		if row < 0 or not building_layer.is_shown(row):
+			continue
+		var box: Rect2 = building_layer.frame_box(row)
+		var arm: float = minf(FRAME_ARM_DP * unit, 0.4 * minf(box.size.x, box.size.y))
+		var color: Color = frame_color if snap.owner[row] == local_player else enemy_color
+		var thick: float = FRAME_THICK_DP * unit
+		for outline: int in 2:  # The dark outline of every arm first, then the arms.
+			for arm_at: int in 8:  # Corner (top left, top right, ...) and its two arms.
+				var corner: int = arm_at >> 1
+				var way: Vector2 = Vector2(-1.0 if corner & 1 else 1.0, -1.0 if corner & 2 else 1.0)
+				var from: Vector2 = Vector2(
+					box.end.x if corner & 1 else box.position.x,
+					box.end.y if corner & 2 else box.position.y
+				)
+				var along: Vector2 = Vector2(arm, thick) if arm_at & 1 == 0 else Vector2(thick, arm)
+				var rect: Rect2 = Rect2(from, along * way).abs()
+				if outline == 0:
+					_put(rect.grow(EDGE_DP * unit), edge_color)
+				else:
+					_put(rect, color)
+		_frames += 1
+
+
+## Appends one rect to the plan.
+func _put(rect: Rect2, color: Color) -> void:
+	var out: int = _rects * 4
+	_geometry[out] = rect.position.x
+	_geometry[out + 1] = rect.position.y
+	_geometry[out + 2] = rect.size.x
+	_geometry[out + 3] = rect.size.y
+	_colors[_rects] = color
+	_rects += 1
+
+
+func _draw() -> void:
+	_drawn = 0
+	_drawn_glyphs = 0
+	for index: int in _rects:
+		draw_rect(rect_at(index), rect_color(index))
+		_drawn += 1
+	for index: int in _glyphs:
+		draw_texture_rect(glyph_texture(index), glyph_rect(index), false, glyph_tint(index))
+		_drawn_glyphs += 1

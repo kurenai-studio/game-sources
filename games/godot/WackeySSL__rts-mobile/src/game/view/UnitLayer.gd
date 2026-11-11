@@ -1,0 +1,1000 @@
+class_name UnitLayer
+extends Node2D
+## Draws every unit of the runner's published snapshot as a rig: a Node2D in the `WorldSort` with
+## the Sprite2D children Shadow, Hull and, for a type with turret art, Turret, regions of the
+## match's one atlas in white (ADR 0023 section 2: the team colour is in the atlas). It
+## only reads `runner.snapshot` (ADR 0012 section 3), afresh in every entry point and never kept
+## between them: each frame a rig stands at prev + (cur - prev) * runner.alpha() in px, projected
+## by `IsoProjection` (ADR 0023 section 1), and the hull turns toward the last direction the unit
+## moved in, as a grid angle (east on the grid is 0). A frame is the nearest of 16 (`d06` faces
+## grid +x; a squad has the even 8), and a region is written only when its index changes. A
+## turret turns on its own toward the unit's
+## target (`snapshot.target_row`, computed on the worker, so the layer never searches for a row) as
+## the target is drawn, at the bearing between the interpolated positions of the two rigs (ADR 0011
+## section 2), in every frame, and stands at the mount of the hull's frame; it follows the hull
+## while the unit has no target and stays where it
+## is for the ticks in which the target is gone but not yet replaced. A rig without a turret (a
+## squad) turns as a whole toward its target instead. The turns are view effects and never touch
+## the World. A type with no sheet, or an atlas that did not bake, gets a `Marker` drawn by
+## `_draw()` instead of sprites.
+## Rigs are the children of the sort node and follow their unit by id: a death moves its rig into
+## the pool, a new row takes a rig of its kind from the pool before it makes one (`rigs_made` stops
+## growing once the pool has warmed up), a new match pools all. The pool is a hidden child of the
+## layer, so a pooled rig is neither sorted nor drawn, and the tree frees it. A row whose type has a
+## footprint is a building: no rig (a null in every per-row list), no ring, no pick, no unit bar.
+## A selected unit has a Ring after the Shadow, under the sprites: the 2:1 ground ellipse of its
+## selection radius (`ui/selection_ellipse.svg`). The Shadow draws at z 2 and the Ring at 3, the
+## rest in the sort at 10, a tanker's cargo bar at 30 (ADR 0023 section 2), so all batch. The layer
+## also keeps, per row, the hp it last saw and the frame clock of the last hp drop
+## (`hit_time_ms`), which the health bars read together with `is_ringed`.
+## A tap picks a unit round its lifted centre: the ground point raised by its sheet's
+## `pick_lift_px`, half the frame's height (`fill_pick_snapshot`).
+## An enemy rig stands on a tile its owner's opponent may not see: the local player's fog hides it
+## there (`is_shown`, ADR 0010 section 2) by its `visible` flag alone, so a hidden rig keeps its
+## position, heading and frame and still answers `unit_screen_position`. Own rigs are always shown.
+## Life (ADR 0027, P136): a `SHOT` of a rig with a turret kicks the turret back along the aim and
+## rocks the hull with a heavy gun (`RigLife`, numbers in `life`), on child sprites only. The kick
+## is noted in `ticked` for a shooter the local player sees in that tick's fog and drawn on match
+## time (`LifeClock`), so a pause freezes it; the rig's own node, and so its sort key, pick and bar,
+## never moves.
+## Idle life (P140, P140b): a vehicle that drove half a step or more on an order, in view, rumbles:
+## its Hull and Turret shift by a fraction of a px (`RigLife.shake_offset`). One that stood still
+## with no target does not shake; with a turret it looks one frame aside now and then
+## (`look_side`). A stop, a move, a target and `reduced` calm the other effect to its rest at once.
+## Squad poses (P142): the walk cycle and idle frames of a squad's Hull are `SquadPoses`'s, fed from
+## the per-row walk table `_walk`.
+
+const RING_ART: String = "res://assets/art/svg/ui/selection_ellipse.svg"
+## The per-row sprites of `_layers`, at PARTS * row + part; the turret is null for a type without.
+const HULL: int = 0
+const TURRET: int = 1
+const SHADOW: int = 2
+const PARTS: int = 3
+const PART_NAMES: Array[StringName] = [&"hull", &"turret", &"shadow"]  ## Sheet parts, also nodes.
+const DRAW_ORDER: Array[int] = [SHADOW, HULL, TURRET]  ## Also the order of a rig's nodes.
+const MARKER_KIND: int = 1 << PARTS  ## A rig's kind has a bit for each part it holds, then this.
+## And then this for a vehicle's damage overlays (P161): a squad never takes a vehicle's rig.
+const DAMAGE_KIND: int = 1 << (PARTS + 1)
+const CARGO_KIND: int = 1 << (PARTS + 2)  ## And this for a tanker's cargo bar (P84b).
+const DIRECTIONS: int = 16  ## Steps of a full turn in a hull's frames (a squad has every other).
+const D_EAST: int = 6  ## The frame `d06` faces grid +x, and each step is 22.5 degrees from it.
+const NO_FRAME: int = -1
+const RING_PAD_MILLI: int = 50  ## The ring clears the selection radius by this much.
+const RING_MIN_DP: float = 18.0
+## The ellipse texture's horizontal centre-line semi-axis in its px (STYLE.md): its vertical one is
+## 36, so one scale gives the 2:1 ground ellipse.
+const RING_TEX_RX_PX: float = 72.0
+const NEVER_HIT: int = -1  ## What hit_time_ms answers for a unit whose hp has not dropped.
+## The life numbers when `life` is unset (ADR 0027 section 8).
+const DEFAULT_LIFE: LifeSettings = preload("res://data/life_settings.tres")
+## The view rect is grown by a tile before the idle life asks whether a rig is in it (ADR 0027
+## section 9), so a sprite whose foot is just off the edge keeps its rumble.
+const IDLE_MARGIN_PX: float = IsoProjection.HALF_W * 2.0
+
+## How fast a hull, a turret or a squad rig turns, in radians per second.
+@export var turn_rate: float = 12.0
+@export var runner: MatchRunner
+@export var camera: RtsCamera
+## The sorted world the rigs stand in and the atlas they draw from. A scene shares one with the
+## other layers; without one the layer makes its own, as a child.
+@export var world_sort: WorldSort
+## Shows every enemy rig whatever the fog says: the perf arena, and tests whose subject is not fog.
+@export var reveal_enemies: bool = false
+## The numbers of the unit life (recoil, rock); `data/life_settings.tres` when unset.
+@export var life: LifeSettings
+
+## The frame clock in ms that hit times are stamped by (the frame that saw the hp drop). Tests
+## replace it.
+var clock: Callable = Time.get_ticks_msec
+
+var _serial: int = -1  ## match_serial the rigs were made for.
+var _rows_version: int = -1  ## rows_version the rigs follow.
+var _ids: PackedInt32Array = PackedInt32Array()  ## Unit id of rig `i`.
+var _rigs: Array[Node2D] = []  ## Null for a building.
+var _live: int = 0  ## The rigs that are not null.
+## Hull, Turret and Shadow of rig `i` at 3i, 3i + 1 and 3i + 2; null for a type without a turret.
+var _layers: Array[Sprite2D] = []
+var _sheets: Array[IsoSheetDef] = []  ## The sheet of row `i`, null for a type that has none.
+## The frame index the hull and the turret of row `i` show, at 2i and 2i + 1 (NO_FRAME: none yet).
+var _frames: PackedInt32Array = PackedInt32Array()
+## The walk table of row `i` at `RigLife.WALK_INTS` * i (`RigLife.travel_step`), carried through
+## `_merge` by unit id like the hit times.
+var _walk: PackedInt32Array = PackedInt32Array()
+## Angles are grid angles: east on the grid is 0, grid +y is a quarter turn.
+var _heading: PackedFloat64Array = PackedFloat64Array()  ## Angle the hull shows now.
+var _aim: PackedFloat64Array = PackedFloat64Array()  ## Where the hull turns to.
+var _turret: PackedFloat64Array = PackedFloat64Array()  ## Angle the turret shows now.
+var _rings: Array[Ring] = []  ## Ring of row `i`, its rig's from the first time it is selected.
+var _ringed: PackedInt32Array = PackedInt32Array()  ## Rows whose ring shows.
+var _pool: Dictionary[int, Array] = {}  ## Rigs waiting for a unit, by kind: Arrays of Rig.
+var _pool_root: Node2D = null  ## The hidden node that the pooled rigs are children of.
+var _made: int = 0  ## Rigs made, which are the pool's misses.
+## hp of row `i` as the layer last saw it, and the clock at which it last fell (NEVER_HIT for
+## none). Both follow the rows by unit id like the rigs: rows compact on a death, so a plain
+## resize would move a later unit's hit time onto its neighbour.
+var _last_hp: PackedInt32Array = PackedInt32Array()
+var _hit_ms: PackedInt64Array = PackedInt64Array()
+var _hp_tick: int = -1  ## Tick of the snapshot whose hp is in _last_hp, -1 before the first.
+var _rig_life: RigLife = RigLife.new()  ## The kicks that run now (P136).
+var _poses: SquadPoses = null  ## Writes the squads' poses to their Hulls (P142), made in `_ready`.
+var _shot_check: Callable = _shot_seen  ## What `note_shots` asks, made once.
+var _turret_serial: int = -1  ## match_serial `_has_turret` was built for.
+var _has_turret: PackedByteArray = PackedByteArray()  ## Per type index: 1 for a turret on its art.
+var _ring_zoom: float = 1.0  ## Camera zoom the rings are sized for.
+var _damage_queue: Array[Rig] = []  ## Rigs whose overlays await a stage write, oldest first (P161).
+var _follow_writes: int = 0  ## Overlay follow writes since the last `_write_damage`.
+var _dp_px: float = UiScale.base_px_per_dp()  ## Base px per dp: start, selection, resize.
+
+
+## The ring texture as a 2:1 ground ellipse (the selection radius, `IsoProjection.ellipse_px`):
+## `radius` is its horizontal semi-axis in world px and the vertical one is half of it. The
+## texture's centre line has RING_TEX_RX_PX, and its strokes are baked, so they scale with the
+## ring. `unit` is the world px of one dp.
+class Ring:
+	extends Sprite2D
+
+	var radius: float = 0.0
+	var unit: float = 1.0
+
+
+## What stands in for art that is not on the atlas: the unit's ground ellipse in its owner's colour.
+class Marker:
+	extends Node2D
+
+	var colour: Color = Color.WHITE
+	var radius: float = 0.0
+
+	func _draw() -> void:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, IsoProjection.GROUND_FLATTEN))
+		draw_circle(Vector2.ZERO, radius, colour)
+
+
+## A unit's rig. `sprites` holds the Hull, Turret and Shadow (null for a part the sheet lacks) and
+## `kind` says which parts, so a rig in the pool fits any unit of its kind. The Ring is made once,
+## at the first selection, and stays the rig's child, hidden, whoever the rig belongs to.
+class Rig:
+	extends Node2D
+
+	var kind: int = 0
+	var sprites: Array[Sprite2D] = [null, null, null]
+	var marker: Marker = null
+	var ring: Ring = null
+	var turret_kick: Vector2 = Vector2.ZERO  ## What the Turret stands off its mount by life now.
+	var hull_kick: Vector2 = Vector2.ZERO  ## What the Hull stands off its rest by life now.
+	var idle: RigLife.Idle = RigLife.Idle.new()  ## The drive rumble and the look, on top of the kicks.
+	var pose: RigLife.Pose = RigLife.Pose.new()  ## What a squad's Hull shows (P142).
+	var damage: VehicleDamage.Parts = null  ## The Scar and Loose of a vehicle's Hull (P161).
+	var cargo: TankerCargo = null  ## A tanker's cargo bar (P84b).
+
+
+func _ready() -> void:
+	if world_sort == null:
+		world_sort = WorldSort.new()
+		world_sort.runner = runner
+		add_child(world_sort)
+	_pool_root = Node2D.new()
+	_pool_root.name = "Pool"
+	_pool_root.visible = false
+	add_child(_pool_root)
+	if life == null:
+		life = DEFAULT_LIFE
+	_rig_life.setup(life)
+	_poses = SquadPoses.new(world_sort, _rig_life)
+	if runner != null:
+		runner.ticked.connect(_on_ticked)
+	get_viewport().size_changed.connect(_resize_rings)
+	_sync_rigs()
+
+
+func _process(delta: float) -> void:
+	var snap: MatchSnapshot = _sync_rigs()
+	if snap != null:
+		_update_rigs(snap, delta)
+		_kick_rigs(snap)
+		_write_damage()
+		TankerCargo.follow_all(snap, _rigs, _dp_px, camera)
+		if not _ringed.is_empty() and camera.zoom.x != _ring_zoom:
+			_refresh_rings(snap)
+
+
+## The rigs, one for each row that is not a building.
+func rig_count() -> int:
+	return _live
+
+
+## The rigs made since the layer began, one for each unit that found none of its kind in the pool.
+func rigs_made() -> int:
+	return _made
+
+
+## The life sprite writes so far: one for each position the recoil set (ADR 0027 section 9's hook).
+func life_writes() -> int:
+	return _rig_life.writes
+
+
+## The kicks that run now, the rigs that are off their rest (a test hook). No sync.
+func kick_count() -> int:
+	return _rig_life.count()
+
+
+## The rig of unit row `row`, null for a building or a row out of range. No sync.
+func rig(row: int) -> Node2D:
+	return _rigs[row] if row >= 0 and row < _rigs.size() else null
+
+
+## The grid angles (radians, east on the grid 0) that the hull and the turret of row `row` show now:
+## the eased ones, whose 16 steps are the frames. No sync.
+func heading(row: int) -> float:
+	return _heading[row]
+
+
+func turret_angle(row: int) -> float:
+	return _turret[row]
+
+
+## The rigs shown and inside `view` (world px) now: what the perf card counts as drawn.
+func count_in(view: Rect2) -> int:
+	var count: int = 0
+	for node: Node2D in _rigs:
+		if node != null and node.visible and view.has_point(node.position):
+			count += 1
+	return count
+
+
+## Brings the rigs, the hp last seen and the hit times up to `runner.snapshot`, the sync that
+## the frame, `set_selected`, `unit_screen_position` and `fill_pick_snapshot` start with. Call it
+## once before a loop over `hit_time_ms` and `is_ringed`, which do not sync themselves: they
+## answer for the rows as the last entry point left them, and a synced accessor would cost 150
+## syncs a frame for the bars.
+func sync_rows() -> void:
+	_sync_rigs()
+
+
+## The frame clock (`clock`, ms) at which unit row `row` last lost hp, as seen between two
+## snapshots, or NEVER_HIT. A health bar shows for a few seconds after it (STYLE.md "Health bars").
+## No sync (see `sync_rows`): a caller that loops over rows of a snapshot that may be newer than
+## the last frame (inside `ticked`, or in a layer that runs before this one) calls it first.
+func hit_time_ms(row: int) -> int:
+	return _hit_ms[row] if row >= 0 and row < _hit_ms.size() else NEVER_HIT
+
+
+## Whether unit row `row` is in the selection as last given to `set_selected`.
+func is_ringed(row: int) -> bool:
+	return row >= 0 and row < _rings.size() and _rings[row] != null and _rings[row].visible
+
+
+## Where the bar of unit row `row` stands above its ground point: the top of its frame, the
+## `bar_lift_px` of its type's sheet (world px at zoom 1), the default of its class without a sheet.
+## Read from the snapshot's type table at the call, so it needs no sync; 0 for a row out of range.
+func bar_lift_px(row: int) -> float:
+	var snap: MatchSnapshot = runner.snapshot if runner != null else null
+	if snap == null or row < 0 or row >= snap.type_index.size():
+		return 0.0
+	var type: int = snap.type_index[row]
+	return SpriteLift.bar_lift_px(world_sort.sheet(snap.type_ids[type]), snap.type_armour[type])
+
+
+## Whether unit row `row` of `runner.snapshot` is drawn: an own unit always, an enemy one when its
+## tile is visible to the local player (the tile from `snapshot.cell_of`, at the unit's position
+## in the tick) or `reveal_enemies` is set. Both are read at the call, nothing is cached. Like
+## `hit_time_ms` it does not sync, and a row out of range is not shown.
+func is_shown(row: int) -> bool:
+	var snap: MatchSnapshot = runner.snapshot if runner != null else null
+	if snap == null or row < 0 or row >= snap.owner.size():
+		return false
+	var player: int = FogLayer.local_player_of(runner)
+	return (
+		reveal_enemies
+		or snap.owner[row] == player
+		or FogLayer.is_seen(snap, player, snap.pos_x[row], snap.pos_y[row])
+	)
+
+
+## Where unit row `index` is on screen, in base px; a building's row answers where its position,
+## the footprint centre, is.
+func unit_screen_position(index: int) -> Vector2:
+	_sync_rigs()
+	return camera.world_to_screen(_row_position(index))
+
+
+## Rings exactly the units in `ids` at once. Unknown ids are skipped.
+func set_selected(ids: PackedInt32Array) -> void:
+	var snap: MatchSnapshot = _sync_rigs()
+	if snap == null:
+		return
+	for row: int in _ringed:
+		_rings[row].visible = false
+	_ringed.clear()
+	for id: int in ids:
+		var row: int = snap.index_of(id)
+		if row < 0 or _rigs[row] == null:  # An unknown id, or a building: no ring.
+			continue
+		if _rings[row] == null:
+			_rings[row] = _new_ring(row)
+		_rings[row].visible = true
+		_ringed.append(row)
+	_dp_px = UiScale.base_px_per_dp()
+	_refresh_rings(snap)
+
+
+## Fills `snap` for the Picker with every unit in row order: id, owner, type, centre on screen (base
+## px) and hit radius, the larger of `min_radius_px` and the horizontal semi-axis of the type's
+## selection ellipse at the camera zoom. The centre is the lifted one of ADR 0023 section 3: the
+## rig's ground point raised by the sheet's `pick_lift_px` (`SpriteLift.centre_lift_px`), at the
+## camera zoom. An enemy that `is_shown` would not draw is filled like
+## any other row, with its `pickable` entry 0, so the Picker skips it (P47p). The snapshot's arrays
+## are resized in place, so refilling one allocates nothing.
+func fill_pick_snapshot(snap: PickSnapshot, min_radius_px: float) -> void:
+	var source: MatchSnapshot = _sync_rigs()
+	var count: int = 0 if source == null else _rigs.size()
+	# Packed arrays are shared, not copied, by an assignment: the writes land in the PickSnapshot.
+	var out_ids: PackedInt32Array = snap.ids
+	var out_owners: PackedInt32Array = snap.owners
+	var out_types: PackedInt32Array = snap.type_index
+	var out_pos: PackedVector2Array = snap.screen_pos
+	var out_lift: PackedFloat32Array = snap.lift_px
+	var out_radius: PackedFloat32Array = snap.radius_px
+	var out_pickable: PackedByteArray = snap.pickable
+	out_ids.resize(count)
+	out_owners.resize(count)
+	out_types.resize(count)
+	out_pos.resize(count)
+	out_lift.resize(count)
+	out_radius.resize(count)
+	out_pickable.resize(count)
+	if count == 0:
+		return
+	var ids: PackedInt32Array = source.unit_id
+	var owners: PackedInt32Array = source.owner
+	var types: PackedInt32Array = source.type_index
+	var radii: PackedInt32Array = source.type_selection_radius
+	var armours: PackedInt32Array = source.type_armour
+	var rigs: Array[Node2D] = _rigs
+	var sheets: Array[IsoSheetDef] = _sheets
+	var zoom: float = camera.zoom.x
+	# is_shown's rule with the arrays aliased: an enemy is hidden when the tile of its position in
+	# this tick (`snapshot.cell_of`) is not visible to the local player.
+	var pos_x: PackedInt32Array = source.pos_x
+	var pos_y: PackedInt32Array = source.pos_y
+	var player: int = FogLayer.local_player_of(runner)
+	var fog: FogGrid = source.fog
+	var fogged: bool = not reveal_enemies and FogLayer.covers(fog, player)
+	var counts: PackedInt32Array = fog.visible
+	var counts_at: int = (player - 1) * fog.cells
+	for row: int in count:
+		var type: int = types[row]
+		var art_px: float = IsoProjection.ellipse_px(radii[type]).x * zoom
+		out_ids[row] = ids[row]
+		out_owners[row] = owners[row]
+		out_types[row] = type
+		var lift: float = 0.0  # A building's row is not picked here: P115b picks it on its silhouette.
+		if rigs[row] != null:
+			var armour: int = armours[type] if type < armours.size() else World.Armour.LIGHT
+			lift = SpriteLift.centre_lift_px(sheets[row], armour)
+		out_pos[row] = camera.world_to_screen(_row_position(row) - Vector2(0.0, lift))
+		out_lift[row] = lift * zoom
+		out_radius[row] = maxf(min_radius_px, art_px)
+		var seen: bool = not fogged or owners[row] == player
+		if not seen:
+			seen = counts[counts_at + source.cell_of(pos_x[row], pos_y[row])] > 0
+		out_pickable[row] = 1 if seen and rigs[row] != null else 0
+
+
+## Reads `runner.snapshot` afresh and brings the rigs up to it: all new for another match_serial,
+## merged by unit id when rows_version changed. Returns the snapshot, null while there is none.
+func _sync_rigs() -> MatchSnapshot:
+	var snap: MatchSnapshot = runner.snapshot if runner != null else null
+	if snap == null:
+		return null
+	world_sort.sync()  # The atlas of the match, before any rig is dressed from it.
+	var new_match: bool = snap.match_serial != _serial
+	if new_match or snap.rows_version != _rows_version:
+		if new_match:
+			_clear_rigs()
+		_serial = snap.match_serial
+		_rows_version = snap.rows_version
+		_merge(snap)
+	if snap.tick != _hp_tick:
+		_note_hits(snap)
+	return snap
+
+
+func _clear_rigs() -> void:
+	for node: Node2D in _rigs:
+		if node != null:
+			_pool_rig(node)
+	_ids.clear()
+	_rigs.clear()
+	_live = 0
+	_layers.clear()
+	_sheets.clear()
+	_frames.clear()
+	_walk.clear()
+	_rings.clear()
+	_ringed.clear()
+	_heading.clear()
+	_aim.clear()
+	_turret.clear()
+	_last_hp.clear()
+	_hit_ms.clear()
+	_hp_tick = -1
+
+
+## Makes the rigs the rows of `snap` by a merge walk over the ascending ids: a unit that is still
+## there keeps its rig (position, heading, ring), one that is gone loses it, and a new one gets a
+## rig at its position, with the heading 0, no ring, its hp as the last one seen and no hit.
+func _merge(snap: MatchSnapshot) -> void:
+	var ids: PackedInt32Array = snap.unit_id
+	var types: PackedInt32Array = snap.type_index
+	var count: int = ids.size()
+	var old_ids: PackedInt32Array = _ids
+	var old_count: int = old_ids.size()
+	var rigs: Array[Node2D] = []
+	var layers: Array[Sprite2D] = []
+	var sheets: Array[IsoSheetDef] = []
+	var frames: PackedInt32Array = PackedInt32Array()
+	var walk: PackedInt32Array = PackedInt32Array()
+	var rings: Array[Ring] = []
+	var ringed: PackedInt32Array = PackedInt32Array()
+	var heading: PackedFloat64Array = PackedFloat64Array()
+	var aim: PackedFloat64Array = PackedFloat64Array()
+	var turret: PackedFloat64Array = PackedFloat64Array()
+	var last_hp: PackedInt32Array = PackedInt32Array()
+	var hit_ms: PackedInt64Array = PackedInt64Array()
+	rings.resize(count)
+	heading.resize(count)
+	aim.resize(count)
+	turret.resize(count)
+	last_hp.resize(count)
+	hit_ms.resize(count)
+	var old: int = 0
+	for row: int in count:
+		while old < old_count and old_ids[old] < ids[row]:
+			_drop_rig(old)
+			old += 1
+		if old < old_count and old_ids[old] == ids[row]:
+			rigs.append(_rigs[old])
+			for part: int in PARTS:
+				layers.append(_layers[old * PARTS + part])
+			sheets.append(_sheets[old])
+			frames.append_array(_frames.slice(old * 2, old * 2 + 2))
+			walk.append_array(_walk.slice(old * RigLife.WALK_INTS, (old + 1) * RigLife.WALK_INTS))
+			heading[row] = _heading[old]
+			aim[row] = _aim[old]
+			turret[row] = _turret[old]
+			rings[row] = _rings[old]
+			last_hp[row] = _last_hp[old]
+			hit_ms[row] = _hit_ms[old]
+			if rings[row] != null and rings[row].visible:
+				ringed.append(row)
+			old += 1
+		else:
+			var node: Node2D = null  # A building has no rig, but keeps the per-row stride.
+			if WorldSort.is_building(snap, types[row]):
+				layers.resize(layers.size() + PARTS)
+				sheets.append(null)
+				frames.append_array([NO_FRAME, NO_FRAME])
+				walk.append_array([0, 0, -1, 0, 0])
+			else:
+				node = _new_rig(snap, row, layers, sheets, frames)
+				var stride: int = sheets[row].stride_milli if sheets[row] != null else 0
+				walk.append_array([0, 0, -1, LifeClock.pick(ids[row], 0, stride), 0])
+				world_sort.add_child(node)  # Other nodes of the sort stand beside it.
+				rings[row] = (node as Rig).ring  # A pooled rig brings its hidden Ring, if it has one.
+			rigs.append(node)
+			last_hp[row] = snap.hp[row]
+			hit_ms[row] = NEVER_HIT
+	while old < old_count:
+		_drop_rig(old)
+		old += 1
+	_ids = ids.duplicate()  # Not the snapshot's own array: _clear_rigs() writes it.
+	_rigs = rigs
+	_live = rigs.size() - rigs.count(null)
+	_layers = layers
+	_sheets = sheets
+	_frames = frames
+	_walk = walk
+	_rings = rings
+	_ringed = ringed
+	_heading = heading
+	_aim = aim
+	_turret = turret
+	_last_hp = last_hp
+	_hit_ms = hit_ms
+	_update_rigs(snap, 0.0)
+
+
+## Stamps the clock on every row whose hp is lower than the layer last saw it, and remembers the
+## new hp. A drop between two snapshots is the hit: it covers every tick since the last frame, and
+## damage from any source (a hitscan shot now, a shell that lands later).
+func _note_hits(snap: MatchSnapshot) -> void:
+	_hp_tick = snap.tick
+	var hp: PackedInt32Array = snap.hp
+	var last_hp: PackedInt32Array = _last_hp
+	var hit_ms: PackedInt64Array = _hit_ms
+	var now: int = NEVER_HIT
+	for row: int in hp.size():
+		if hp[row] != last_hp[row]:
+			if hp[row] < last_hp[row]:
+				if now == NEVER_HIT:
+					now = clock.call()
+				hit_ms[row] = now
+			_note_stage(snap, row)
+		last_hp[row] = hp[row]
+
+
+## Notes the damage stage of vehicle row `row` after its hp changed (P161), queueing the write.
+func _note_stage(snap: MatchSnapshot, row: int) -> void:
+	var rig: Rig = _rigs[row] as Rig
+	if rig != null and rig.damage != null:
+		var max_hp: int = snap.type_max_hp[snap.type_index[row]]
+		rig.damage.want = VehicleDamage.stage_of(snap.hp[row], max_hp, life.vehicle_stage_percent)
+		_queue_damage(rig)
+
+
+## Queues `rig` for a stage write when it shows another stage than it wants and is shown (a hidden
+## enemy writes nothing; it is queued again when it turns visible).
+func _queue_damage(rig: Rig) -> void:
+	var parts: VehicleDamage.Parts = rig.damage
+	if parts.want != parts.shown and not parts.queued and rig.visible:
+		parts.queued = true
+		_damage_queue.append(rig)
+
+
+## Writes the queued stage changes, oldest first, while the next one's cost fits what is left of the
+## vehicles' share of `damage_writes_per_frame` after this frame's follow writes (never deferred).
+func _write_damage() -> void:
+	var left: int = life.damage_writes_per_frame - life.damage_building_writes - _follow_writes
+	_follow_writes = 0
+	while not _damage_queue.is_empty():
+		var rig: Rig = _damage_queue[0]
+		var parts: VehicleDamage.Parts = rig.damage
+		if rig.visible and parts.want != parts.shown:
+			var cost: int = VehicleDamage.cost(parts.shown, parts.want, life.damage_loose)
+			if cost > left:
+				break
+			left -= cost
+			_rig_life.writes += VehicleDamage.apply(
+				parts, world_sort, parts.want, life.damage_loose
+			)
+		parts.queued = false
+		_damage_queue.remove_at(0)
+
+
+func _drop_rig(old: int) -> void:
+	if _rigs[old] != null:
+		_pool_rig(_rigs[old])
+
+
+## Takes `node` out of the sort and into the pool of its kind, under the hidden pool node. A Ring it
+## has stays, hidden, for the next unit of the rig.
+func _pool_rig(node: Node2D) -> void:
+	var rig: Rig = node as Rig
+	world_sort.remove_child(rig)
+	if rig.damage != null and rig.damage.queued:
+		rig.damage.queued = false
+		_damage_queue.erase(rig)
+	if rig.ring != null:
+		rig.ring.visible = false
+	_pool_root.add_child(rig)
+	if not _pool.has(rig.kind):
+		_pool[rig.kind] = []
+	_pool[rig.kind].append(rig)
+
+
+## Where row `row` is in world px: its rig's place, or its position for a row with no rig.
+func _row_position(row: int) -> Vector2:
+	if _rigs[row] != null:
+		return _rigs[row].global_position
+	var snap: MatchSnapshot = runner.snapshot
+	return to_global(IsoProjection.ground_to_px(snap.pos_x[row], snap.pos_y[row]))
+
+
+## The rig of unit row `row` of `snap`, facing east (`d06`): one of its kind from the pool, or a new
+## one, with the children Shadow, Hull and Turret on the atlas, where the sheet has the part, and a
+## Marker where there is no art. It appends the sprites (null for a missing part) to `layers`, its
+## sheet to `sheets` and its frames to `frames`. The Shadow draws at z 2, under the rings and the
+## fog, and the rest at the sort's z (a tanker's cargo bar at 30).
+func _new_rig(
+	snap: MatchSnapshot,
+	row: int,
+	layers: Array[Sprite2D],
+	sheets: Array[IsoSheetDef],
+	frames: PackedInt32Array
+) -> Node2D:
+	var type: int = snap.type_index[row]
+	var owner_id: int = snap.owner[row]
+	var sheet: IsoSheetDef = world_sort.sheet(snap.type_ids[type])
+	var kind: int = _kind_of(sheet, snap.type_armour[type], snap.type_harvest[type])
+	var rig: Rig = _take_rig(kind)
+	if rig == null:
+		rig = _make_rig(kind)
+	rig.name = "Unit%d" % snap.unit_id[row]
+	var hull_base: int = -1
+	for part: int in DRAW_ORDER:
+		if rig.sprites[part] != null:
+			world_sort.dress(rig.sprites[part], sheet, PART_NAMES[part])
+			var base: int = world_sort.show_frame(
+				rig.sprites[part], sheet, PART_NAMES[part], D_EAST, owner_id
+			)
+			hull_base = base if part == HULL else hull_base
+	_poses.dress(rig.pose, sheet, hull_base, owner_id)
+	if rig.damage != null:  # Out of the pool or new: the scales of this type, the stage of now.
+		VehicleDamage.dress(
+			rig.damage, world_sort, rig.sprites[HULL], sheet, snap.unit_id[row], owner_id
+		)
+		rig.damage.want = VehicleDamage.stage_of(
+			snap.hp[row], snap.type_max_hp[type], life.vehicle_stage_percent
+		)
+		_queue_damage(rig)
+	TankerCargo.clear(rig.cargo)
+	rig.turret_kick = Vector2.ZERO  # A rig out of the pool may have been kicked, shaken or turned.
+	rig.hull_kick = Vector2.ZERO
+	rig.idle.reset()
+	rig.idle.turns = rig.sprites[TURRET] != null and sheet.counts[TURRET] == DIRECTIONS
+	if rig.sprites[HULL] != null:
+		rig.sprites[HULL].position = Vector2.ZERO
+	if rig.sprites[TURRET] != null:
+		rig.sprites[TURRET].position = sheet.mount(D_EAST) * WorldSort.ART_SCALE
+	if rig.marker != null:
+		rig.marker.colour = world_sort.mid_colour(owner_id)
+		rig.marker.radius = IsoProjection.ellipse_px(snap.type_selection_radius[type]).x
+		rig.marker.queue_redraw()
+	layers.append_array(rig.sprites)
+	sheets.append(sheet)
+	frames.append_array([D_EAST, D_EAST])
+	return rig
+
+
+## What a rig for `sheet` holds: a bit for each part it has, the Marker's without a sheet or atlas,
+## the cargo bar's for a type with a cargo `capacity`, and the damage overlays' for a hull of any
+## armour but infantry that has a scar and the neutral sheet to draw it from.
+func _kind_of(sheet: IsoSheetDef, armour: int, capacity: int) -> int:
+	var kind: int = CARGO_KIND if capacity > 0 else 0
+	for part: int in PARTS:
+		if sheet != null and sheet.has_part(PART_NAMES[part]):
+			kind |= 1 << part
+	if sheet == null or world_sort.atlas.is_empty():
+		kind |= MARKER_KIND
+	elif (
+		armour != World.Armour.INFANTRY
+		and sheet.scar_milli > 0
+		and (kind & (1 << HULL)) != 0
+		and world_sort.neutral_sheet() != null
+	):
+		kind |= DAMAGE_KIND
+	return kind
+
+
+## A rig of `kind` out of the pool, null when there is none.
+func _take_rig(kind: int) -> Rig:
+	var idle: Array = _pool.get(kind, [])
+	if idle.is_empty():
+		return null
+	var rig: Rig = idle.pop_back() as Rig
+	_pool_root.remove_child(rig)
+	return rig
+
+
+## A new rig with the children of `kind` (Shadow, Hull, Turret, Marker), not yet dressed.
+func _make_rig(kind: int) -> Rig:
+	_made += 1
+	var rig: Rig = Rig.new()
+	rig.kind = kind
+	for part: int in DRAW_ORDER:
+		if kind & (1 << part) != 0:
+			rig.sprites[part] = Sprite2D.new()
+			rig.sprites[part].name = String(PART_NAMES[part]).capitalize()
+			rig.add_child(rig.sprites[part])
+	if kind & DAMAGE_KIND != 0:
+		rig.damage = VehicleDamage.make(rig.sprites[HULL])
+	rig.cargo = TankerCargo.make(rig) if kind & CARGO_KIND != 0 else null
+	if rig.sprites[SHADOW] != null:
+		rig.sprites[SHADOW].z_index = WorldSort.Z_SHADOW - WorldSort.Z_SORT
+	if kind & MARKER_KIND != 0:
+		rig.marker = Marker.new()
+		rig.marker.name = "Marker"
+		rig.add_child(rig.marker)
+	return rig
+
+
+## The Ring of row `row`, its rig's child after the Shadow and under the sprites, at z 3. A rig
+## makes its Ring once and keeps it through the pool.
+func _new_ring(row: int) -> Ring:
+	var rig: Rig = _rigs[row] as Rig
+	if rig.ring == null:
+		rig.ring = Ring.new()
+		rig.ring.name = "Ring"
+		rig.ring.texture = load(RING_ART)
+		rig.ring.z_index = WorldSort.Z_RING
+		rig.ring.z_as_relative = false
+		rig.add_child(rig.ring)
+		rig.move_child(rig.ring, mini(1, rig.get_child_count() - 1))
+	return rig.ring
+
+
+func _resize_rings() -> void:  # dp changes with the window.
+	_dp_px = UiScale.base_px_per_dp()
+	var snap: MatchSnapshot = _sync_rigs()
+	if snap != null:
+		_refresh_rings(snap)
+
+
+## A dp size divided by the zoom is world px, so rings are sized again when the zoom changes.
+func _refresh_rings(snap: MatchSnapshot) -> void:
+	if _ringed.is_empty():
+		return
+	_ring_zoom = camera.zoom.x
+	var unit: float = _dp_px / _ring_zoom
+	var types: PackedInt32Array = snap.type_index
+	var radii: PackedInt32Array = snap.type_selection_radius
+	for row: int in _ringed:
+		var ring: Ring = _rings[row]
+		var semi: Vector2 = IsoProjection.ellipse_px(radii[types[row]] + RING_PAD_MILLI)
+		var grow: float = maxf(1.0, RING_MIN_DP * unit / semi.x)  # The smallest ring: RING_MIN_DP.
+		ring.radius = semi.x * grow
+		ring.unit = unit
+		ring.scale = Vector2.ONE * (semi.x * grow / RING_TEX_RX_PX)
+
+
+## The frame index (`d<NN>`) of grid angle `angle` among the `counts` frames of a part: `d06` faces
+## angle 0 and each step is a full turn over 16 (a squad's 8 frames are the even ones).
+@warning_ignore("integer_division")
+static func frame_of(angle: float, counts: int) -> int:
+	return posmod(roundi(angle * counts / TAU) * (DIRECTIONS / counts) + D_EAST, DIRECTIONS)
+
+
+## Places the rigs and turns what they show. Allocates nothing: it only sets properties.
+func _update_rigs(snap: MatchSnapshot, delta: float) -> void:
+	var alpha: float = runner.alpha()
+	var step: float = turn_rate * delta
+	var prev_x: PackedInt32Array = snap.prev_pos_x
+	var prev_y: PackedInt32Array = snap.prev_pos_y
+	var cur_x: PackedInt32Array = snap.pos_x
+	var cur_y: PackedInt32Array = snap.pos_y
+	var types: PackedInt32Array = snap.type_index
+	var speeds: PackedInt32Array = snap.type_speed
+	var targets: PackedInt32Array = snap.target
+	var target_rows: PackedInt32Array = snap.target_row
+	var ids: PackedInt32Array = snap.unit_id
+	var rigs: Array[Node2D] = _rigs
+	var layers: Array[Sprite2D] = _layers
+	# The fog hides an enemy rig on a tile the local player does not see. The tile is the one of
+	# the unit's position in this tick (`snapshot.cell_of`), so the flag changes per tick.
+	var owners: PackedInt32Array = snap.owner
+	var player: int = FogLayer.local_player_of(runner)
+	var fog: FogGrid = snap.fog
+	var fogged: bool = not reveal_enemies and FogLayer.covers(fog, player)
+	var counts: PackedInt32Array = fog.visible
+	var counts_at: int = (player - 1) * fog.cells
+	# Idle life (P140): the view rect, grown by a tile, and the clock that never goes back.
+	var view: Rect2 = Rect2()  # Without a camera nothing is in view.
+	if camera != null:
+		view = camera.visible_world_rect().grow(IDLE_MARGIN_PX)
+	var idle_ms: float = _rig_life.idle_clock(snap, alpha)
+	var armours: PackedInt32Array = snap.type_armour
+	var orders: PackedInt32Array = snap.order
+	var reduced: bool = life.reduced
+	_poses.begin(snap.tick, alpha, idle_ms, _walk, ids, targets)
+	for row: int in rigs.size():
+		if rigs[row] == null:
+			continue  # A building: BuildingLayer draws it.
+		var from: Vector2 = IsoProjection.ground_to_px(prev_x[row], prev_y[row])
+		var to: Vector2 = IsoProjection.ground_to_px(cur_x[row], cur_y[row])
+		var at: Vector2 = from.lerp(to, alpha)
+		if rigs[row].position != at:
+			rigs[row].position = at
+		var shown: bool = true
+		if fogged and owners[row] != player:
+			shown = counts[counts_at + snap.cell_of(cur_x[row], cur_y[row])] > 0
+		if rigs[row].visible != shown:
+			rigs[row].visible = shown
+			if shown and (rigs[row] as Rig).damage != null:
+				var seen: VehicleDamage.Parts = (rigs[row] as Rig).damage
+				if seen.stale:  # Turned while hidden: placed at the frame of now, never deferred.
+					var placed: int = VehicleDamage.place(seen, life.damage_loose)
+					_follow_writes += placed
+					_rig_life.writes += placed
+				_queue_damage(rigs[row] as Rig)  # A stage that changed meanwhile.
+		# A unit that stood still last tick keeps its heading. So does one that moved under half a
+		# full step: the step onto its goal is an integer remainder and can point anywhere.
+		var moved_x: int = cur_x[row] - prev_x[row]
+		var moved_y: int = cur_y[row] - prev_y[row]
+		var moved: int = moved_x * moved_x + moved_y * moved_y
+		var speed: int = speeds[types[row]]
+		var walking: bool = moved > 0 and 4 * moved >= speed * speed
+		if walking:
+			_aim[row] = atan2(float(moved_y), float(moved_x))
+		var posed: RigLife.Pose = (rigs[row] as Rig).pose
+		if posed.quarter > 0:  # A squad with poses (P142).
+			var hull: Sprite2D = layers[row * PARTS + HULL]
+			_poses.step(
+				row,
+				posed,
+				(rigs[row] as Rig).idle,
+				hull,
+				moved,
+				walking,
+				shown and view.has_point(at)
+			)
+		var stands: bool = (  # A vehicle that stood still with no target is idle.
+			moved == 0
+			and targets[row] == 0
+			and armours[types[row]] != World.Armour.INFANTRY
+			and not reduced
+		)
+		# A vehicle that drove at least half a step in the last tick on an order rumbles (P140b). A
+		# unit with no order that the separation pushes (up to half a step a tick, for about a
+		# second after it arrives) and a creep under half a step are neither driving nor standing.
+		var drives: bool = (
+			walking
+			and orders[row] != World.Order.IDLE
+			and armours[types[row]] != World.Armour.INFANTRY
+			and not reduced
+		)
+		var idle: RigLife.Idle = (rigs[row] as Rig).idle
+		if stands or drives or idle.live:  # A rig that is at rest and fires is not asked.
+			var changed: int = _rig_life.idle_step(
+				idle, ids[row], idle_ms, stands, drives, shown and view.has_point(at)
+			)
+			if changed != 0:
+				_apply_idle(row, changed, owners[row])
+		var seen: int = target_rows[row]
+		var turret: Sprite2D = layers[row * PARTS + TURRET]
+		var bearing: float = 0.0  # To the target as drawn, from rig to rig, on the grid.
+		if seen >= 0:
+			bearing = atan2(
+				lerpf(prev_y[seen], cur_y[seen], alpha) - lerpf(prev_y[row], cur_y[row], alpha),
+				lerpf(prev_x[seen], cur_x[seen], alpha) - lerpf(prev_x[row], cur_x[row], alpha)
+			)
+			if turret == null:
+				_aim[row] = bearing  # No turret to swing: the whole rig faces its target.
+		if _heading[row] != _aim[row]:
+			# Not rotate_toward: after a turn through +-PI it ends at the aim +- TAU, never equal.
+			var turn: float = angle_difference(_heading[row], _aim[row])
+			_heading[row] = _aim[row] if absf(turn) <= step else _heading[row] + signf(turn) * step
+			_show_hull(row, owners[row])
+		if turret == null:
+			continue
+		# The turret follows the hull while there is no target, and eases to the bearing of one.
+		# A target that is gone but still held (`target` not yet replaced by the sim) leaves it.
+		var want: float = _heading[row]
+		if seen >= 0:
+			want = bearing
+		elif targets[row] != 0:
+			want = _turret[row]
+		if _turret[row] != want:
+			var swing: float = angle_difference(_turret[row], want)
+			_turret[row] = want if absf(swing) <= step else _turret[row] + signf(swing) * step
+			_show_turret(row, owners[row])
+
+
+## Shows the hull frame (and its shadow's) of row `row`'s heading, and the turret at that frame's
+## mount. A region is written only when the frame index changed.
+func _show_hull(row: int, owner_id: int) -> void:
+	var sheet: IsoSheetDef = _sheets[row]
+	if sheet == null:
+		return
+	var dir: int = frame_of(_heading[row], sheet.counts[HULL])  # The hull is the first part.
+	if dir == _frames[row * 2]:
+		return
+	_frames[row * 2] = dir
+	var at: int = row * PARTS
+	var rig: Rig = _rigs[row] as Rig
+	_poses.turn(rig.pose, _layers[at + HULL], sheet, dir, owner_id)
+	if rig.damage != null:  # The overlays follow the hull's frame (P161).
+		var followed: int = VehicleDamage.follow(rig.damage, dir, life.damage_loose, rig.visible)
+		_follow_writes += followed
+		_rig_life.writes += followed
+	world_sort.show_frame(_layers[at + SHADOW], sheet, PART_NAMES[SHADOW], dir, owner_id)
+	if _layers[at + TURRET] != null:  # On its mount, off it by the recoil and the shake that run.
+		_layers[at + TURRET].position = (
+			sheet.mount(dir) * WorldSort.ART_SCALE + rig.turret_kick + rig.idle.shake
+		)
+
+
+## Shows the turret frame of row `row`'s turret angle, written only when the frame index changed.
+func _show_turret(row: int, owner_id: int) -> void:
+	var sheet: IsoSheetDef = _sheets[row]
+	if sheet == null:
+		return
+	var aside: int = (_rigs[row] as Rig).idle.look  # An idle look: one frame off the aim.
+	var dir: int = posmod(frame_of(_turret[row], sheet.counts[TURRET]) + aside, DIRECTIONS)
+	if dir == _frames[row * 2 + 1]:  # The turret is the second part.
+		return
+	_frames[row * 2 + 1] = dir
+	world_sort.show_frame(_layers[row * PARTS + TURRET], sheet, PART_NAMES[TURRET], dir, owner_id)
+
+
+## Notes the kicks of one tick's SHOT records, once per tick (`ticked`, also each tick of a frame
+## that plays several): a shooter with a turret that the local player may see, as `is_shown` says
+## it, by the tile of its position in this tick's fog. A hidden enemy's shot kicks nothing, so
+## nothing it does is drawn. The frame draws the kicks (`_kick_rigs`).
+func _on_ticked(_tick: int) -> void:
+	var snap: MatchSnapshot = runner.snapshot
+	if snap == null:
+		return
+	_rig_life.note_shots(snap, true, _shot_check)
+
+
+## [SHOT, shooter id, shooter x, shooter y, ...]: whether it kicks, when the shooter is a unit whose
+## art has a turret (a squad has none) and the local player sees its tile or owns it.
+func _shot_seen(snap: MatchSnapshot, at: int) -> bool:
+	var events: PackedInt32Array = snap.events
+	var row: int = snap.index_of(events[at + 1])
+	if row < 0:
+		return false
+	if _turret_serial != snap.match_serial:
+		_build_turret_table(snap)
+	var type: int = snap.type_index[row]
+	if type >= _has_turret.size() or _has_turret[type] == 0:
+		return false
+	var player: int = FogLayer.local_player_of(runner)
+	return (
+		reveal_enemies
+		or snap.owner[row] == player
+		or FogLayer.is_seen(snap, player, events[at + 2], events[at + 3])
+	)
+
+
+## Which types of `snap` have a turret on their sheet, once for each match.
+func _build_turret_table(snap: MatchSnapshot) -> void:
+	_turret_serial = snap.match_serial
+	world_sort.sync()  # The sheets are those of the baked atlas.
+	_has_turret.resize(snap.type_ids.size())
+	for type: int in _has_turret.size():
+		var sheet: IsoSheetDef = world_sort.sheet(snap.type_ids[type])
+		_has_turret[type] = 1 if sheet != null and sheet.has_part(PART_NAMES[TURRET]) else 0
+
+
+## Draws the kicks at match time (`LifeClock`, which a pause stops): the offsets of every kick that
+## runs, written to the Turret and the Hull of its rig only when they changed. A kick whose rig is
+## gone, or has no turret on the atlas, ends.
+func _kick_rigs(snap: MatchSnapshot) -> void:
+	_rig_life.follow(snap.match_serial)
+	if _rig_life.count() == 0:
+		return
+	var live: int = _rig_life.advance(LifeClock.ms(snap, runner.alpha()))
+	for slot: int in live:
+		var row: int = snap.index_of(_rig_life.id_at(slot))
+		if row < 0 or row >= _rigs.size() or _rigs[row] == null or _sheets[row] == null:
+			_rig_life.end(slot)
+		elif _layers[row * PARTS + TURRET] == null:
+			_rig_life.end(slot)
+		else:
+			_apply_kick(row, _rig_life.turret_offset(slot), _rig_life.hull_offset(slot))
+	_rig_life.sweep()
+
+
+## Puts the Turret of row `row` at its mount plus `turret_offset` and its Hull at `hull_offset`,
+## each only when it is not there already.
+func _apply_kick(row: int, turret_offset: Vector2, hull_offset: Vector2) -> void:
+	var rig: Rig = _rigs[row] as Rig
+	var at: int = row * PARTS
+	if hull_offset != rig.hull_kick and _layers[at + HULL] != null:  # A sheet may lack the Hull.
+		rig.hull_kick = hull_offset
+		_layers[at + HULL].position = hull_offset + rig.idle.shake
+		_rig_life.writes += 1
+	if turret_offset != rig.turret_kick:
+		rig.turret_kick = turret_offset
+		var mount: Vector2 = _sheets[row].mount(_frames[row * 2]) * WorldSort.ART_SCALE
+		_layers[at + TURRET].position = mount + turret_offset + rig.idle.shake
+		_rig_life.writes += 1
+
+
+## Writes what `RigLife.idle_step` changed for row `row`: the shake moves the Hull and the Turret
+## off their rest (on top of the kicks), a look changes the Turret's region.
+func _apply_idle(row: int, changed: int, owner_id: int) -> void:
+	var rig: Rig = _rigs[row] as Rig
+	var at: int = row * PARTS
+	if (changed & RigLife.CHANGED_SHAKE) != 0:
+		if _layers[at + HULL] != null:
+			_layers[at + HULL].position = rig.hull_kick + rig.idle.shake
+			_rig_life.writes += 1
+		if _layers[at + TURRET] != null:
+			var mount: Vector2 = _sheets[row].mount(_frames[row * 2]) * WorldSort.ART_SCALE
+			_layers[at + TURRET].position = mount + rig.turret_kick + rig.idle.shake
+			_rig_life.writes += 1
+	if (changed & RigLife.CHANGED_LOOK) != 0:
+		_show_turret(row, owner_id)
+		_rig_life.writes += 1

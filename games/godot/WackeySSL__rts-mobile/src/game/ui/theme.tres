@@ -1,0 +1,810 @@
+; The HUD's one Theme (plan row P58, Michael's decision of 2026-10-15): the look of the HUD's
+; Controls lives here, so a new look is this file alone (STYLE.md "Reskin"). It holds the fonts,
+; the font sizes, the command bar chip's backdrop, the HUD v2 tokens and accent pairs (P118, ADR
+; 0025 section 13) and the colours of the selection box and anchor. The text and button colours
+; and the Button StyleBoxes are the engine's defaults and are not in this file: a restyle adds
+; them here (Label/colors/font_color, Button/styles/normal) with no code change. main.tscn sets
+; the theme on the Controls under Hud (Hud/SafeArea and Hud/BoxOverlay); every Control below
+; inherits it, and so does a HUD root added later with this theme on it. A new font goes under
+; assets/art/fonts/ (CREDITS.md row; its licence text beside every build (P118b) and, from
+; Phase 5's settings on, in its Licences screen) and is referenced from here only: the scan of
+; tests/project/test_ui_theme_scan.gd flags a font named in any other script, scene or resource.
+; The backdrop has a palette row in STYLE.md ("HUD panel backdrop"); this file is its value of
+; record. BoxOverlay's fill and outline are also FeedbackStyle.FILL and OUTLINE, which the
+; world-space move markers draw with (game/view): a new palette changes both.
+;
+; Fonts (P118, SIL OFL 1.1, the unmodified upstream files of assets/art/fonts/): Chakra Petch is
+; the body and number face, weight 500 as the theme's default font, 600 for NumberLabel and
+; 700 for the numbers that sit across a bar or a plate (PowerNumber, ItemCost). The file has no
+; OpenType tnum (checked in P118), so the digits of a number that changes keep fixed slots in
+; code (P119), not a font feature. Big Shoulders Display ExtraBold (800: upstream's ExtraBold
+; instance, whose OS/2 weight class is 733 and which Godot reads as 700, so the face is chosen by
+; file and never by weight), the condensed upper-case display cut, is the face of buttons and
+; titles in three size classes (CapsButton, CapsTitle, CapsBigTitle), each its own FontVariation
+; whose spacing_glyph is the tracking in whole base px: the dp step turns the font size into px and
+; leaves the tracking. ADR 0025 section 13 asks 6 to 14 % of the size. One whole-px tracking cannot
+; hold that over the profiles' dp-to-px ratios of 1.0 to 2.37, so it is held on the phones (ratios
+; 1.75 to 2.37: 7.1 to 10.3 %) and not on the tablet (13.3 to 14.3 %) or the desktop window (16.7 to
+; 18.2 %), which sit above the band; tests/ui/test_ui_theme_fonts.gd pins all three. The three
+; tracking entries are listed in metadata/base_px, but they are inert today: the dp step reads only
+; font_sizes/ and styles/ and never touches a font, so the entries mark what a later step that
+; scales fonts must leave alone. HudTokens holds the colours of ADR 0025 section 13, HudPanel the flat panel (no blur, a flat box is cheap on a weak phone),
+; AccentRenew and AccentFossil the accent of each side (accent, light and the text on the accent,
+; read with get_theme_color by the faction's id). The design's fixed enemy colour #FF9446 is not
+; a token. Palette rows: STYLE.md "Palette".
+;
+; Sizes are dp: HudTheme.gd turns every font size and every StyleBox size (content margins,
+; corner radii, border widths, expand margins, shadows, a line's thickness and grow) into px on a
+; resize and gives the HUD roots that copy as their theme. Not scaled: a StyleBoxTexture's texture
+; margins (they cut the picture, in texture px), the theme's constants (a font's outline_size too:
+; layout stays in code, in dp through UiScale) and the StyleBox properties that are not sizes:
+; skew (a shear ratio, the same angle on every screen), corner_detail (a count) and
+; anti_aliasing_size (the soft edge, 1 px). Scale a constant in HudTheme.scaled() before putting
+; one here. An entry that stays in base px is listed in metadata/base_px by its path in this file.
+; Type variations (DevButton, NumberLabel, SelectionPanel, EnemyHealth, PerfCard, SidebarTab,
+; PowerBar, PowerBarLow, PowerNumber, PowerNumberLow, ItemTile, ItemCost, ItemCostLow, ItemBanner,
+; ItemCaption, ItemSash, StrikeButton, StrikeConfirm, BuildButton, ReadyBadge, HudPanel, CapsButton,
+; CapsTitle, CapsBigTitle, EconomyPill, EconomyPillLow, PillWord, AttackTitle, EconomyChipLoss,
+; EconomyChipGain, EconomyConsumer, ResultScreen, Scrim, and the pause menu's PauseHud, PauseCard,
+; PauseBadge, PauseBadgeFossil, PauseCheck, PauseMuted, PauseButton, PausePrimary,
+; PausePrimaryFossil, PauseDanger, PauseChip, PauseChipFossil, PauseChipOff) are set by
+; theme_type_variation on the node, in main.tscn or at build in the script (the power bar's two
+; pairs switch with the low-power state, the cost of an item tile with its money).
+; The tabs of the build sidebar get their tints from the icon colours of SidebarTab; the glyphs of
+; the economy pill (EconomyPill.gd) read HudTokens with get_theme_color.
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontFile" path="res://assets/art/fonts/chakra-petch/ChakraPetch-Medium.ttf" id="1_chakra_500"]
+[ext_resource type="FontFile" path="res://assets/art/fonts/chakra-petch/ChakraPetch-SemiBold.ttf" id="2_chakra_600"]
+[ext_resource type="FontFile" path="res://assets/art/fonts/chakra-petch/ChakraPetch-Bold.ttf" id="3_chakra_700"]
+[ext_resource type="FontFile" path="res://assets/art/fonts/big-shoulders/BigShouldersDisplay-ExtraBold.ttf" id="4_shoulders_800"]
+
+; Big Shoulders Display ExtraBold at the three size classes: the tracking in whole base px (the
+; font size of each class is under CapsButton, CapsTitle and CapsBigTitle below, in dp).
+[sub_resource type="FontVariation" id="FontVariation_caps_button"]
+base_font = ExtResource("4_shoulders_800")
+spacing_glyph = 4
+
+[sub_resource type="FontVariation" id="FontVariation_caps_title"]
+base_font = ExtResource("4_shoulders_800")
+spacing_glyph = 5
+
+[sub_resource type="FontVariation" id="FontVariation_caps_big_title"]
+base_font = ExtResource("4_shoulders_800")
+spacing_glyph = 6
+
+; The word "LOW POWER" of the economy pill (PillWord): the same face at 14 dp, so its tracking is
+; 3 base px (the 4 of CapsButton is tuned for 22 dp and would be 14 to 16 % of the size here).
+[sub_resource type="FontVariation" id="FontVariation_pill_word"]
+base_font = ExtResource("4_shoulders_800")
+spacing_glyph = 3
+
+; The title of the attack toast (AttackToast.gd): the same face at 16 dp with 3 px tracking (ADR 0025
+; section 13's 6 to 14 % band), so that the longest building name ("TURBINE HALL UNDER ATTACK") fits.
+[sub_resource type="FontVariation" id="FontVariation_attack_title"]
+base_font = ExtResource("4_shoulders_800")
+spacing_glyph = 3
+
+; The HUD v2 panel (ADR 0025 section 13): rgba(10, 14, 17, 0.84), a flat box with no blur, a 1 dp
+; edge in #2C383E, 8 dp corners and 8 dp inside.
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hud_panel"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.03921569, 0.05490196, 0.06666667, 0.84)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17254902, 0.21960784, 0.24313725, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+; The economy pill (EconomyPill.gd, P119): the HUD panel's colour and edge with 4 dp at the sides and
+; none above and below, so its tap areas are the pill's whole 48 dp height. On low power the edge is
+; danger red and 2 dp thick, a shape as well as a colour (the word and the triangle are the others).
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+content_margin_left = 4.0
+content_margin_top = 0.0
+content_margin_right = 4.0
+content_margin_bottom = 0.0
+bg_color = Color(0.03921569, 0.05490196, 0.06666667, 0.84)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17254902, 0.21960784, 0.24313725, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+; The chips of the economy pill (EconomyPill.gd, EconomyCard.gd, P119b): a spend chip in the danger
+; red and an income chip in the ok green under the credits, with 6 dp corners; the card's consumer
+; chips on the panel's edge colour. The digits on the red and the green are PowerNumberLow's (dark,
+; 5.9:1 on the red).
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip_loss"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(1, 0.35294118, 0.23529412, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip_gain"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.43137255, 0.8627451, 0.37254902, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_consumer"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.17254902, 0.21960784, 0.24313725, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_low"]
+content_margin_left = 4.0
+content_margin_top = 0.0
+content_margin_right = 4.0
+content_margin_bottom = 0.0
+bg_color = Color(0.03921569, 0.05490196, 0.06666667, 0.84)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.35294118, 0.23529412, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backdrop"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.06, 0.08, 0.11, 0.78)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+; An enemy building's health bar on the command bar chip: the warning amber fill (the enemy bar of
+; HealthBarLayer, #F5A524).
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_enemy_fill"]
+bg_color = Color(0.96078431, 0.64705882, 0.14117647, 1)
+
+; A build tab at rest: a dark plate with a thin grey edge. The open tab (pressed) is lighter, with a
+; white edge and a thick white bar at its foot, so that it differs by shape and not by colour alone.
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.11, 0.13, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.3, 0.3, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_open"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.22, 0.26, 0.31, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 6
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
+
+; The Ready badge of the collapsed build menu (BuildSidebar, ADR 0024 section 9): the READY banner's green
+; as a plate that holds the card's picture and the word, 4 dp above and below and 8 dp at the sides.
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.18823529, 0.64313725, 0.42352941, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_badge_pressed"]
+content_margin_left = 8.0
+content_margin_top = 4.0
+content_margin_right = 8.0
+content_margin_bottom = 4.0
+bg_color = Color(0.18823529, 0.64313725, 0.42352941, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+; The power bar: a dark track with a green fill, and a danger red fill on low power (HudTokens danger,
+; ADR 0025 section 3).
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_track"]
+bg_color = Color(0.11, 0.13, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.3, 0.3, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_power"]
+bg_color = Color(0.18823529, 0.64313725, 0.42352941, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_low_power"]
+bg_color = Color(1, 0.35294118, 0.23529412, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+; A build item tile (ItemTile) is the tab's plate, and the open tab's while the finger is on it. The cost
+; and the count sit on a dark plate; the "Ready" banner is the power bar's green.
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_plate"]
+content_margin_left = 4.0
+content_margin_right = 4.0
+bg_color = Color(0.06, 0.08, 0.11, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+; The scrim over the field behind the result screen and a confirm (ModalFrame.gd, plan P90): the panel
+; colour at 70 %, so the field shows through and the dialog is plainly on top.
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_scrim"]
+bg_color = Color(0.03921569, 0.05490196, 0.06666667, 0.7)
+
+; The pause menu's look (PauseMenu.gd, P124b, Michael's design of 2026-11-05; the dim is the usual
+; Scrim). PauseCard: the card's plate, the panel's colour a little lighter, a 1 dp edge, 12 dp
+; corners and 12 dp inside. PauseBadge: the round plate of the emblem (24 dp corners on a 48 dp
+; square). PauseCheck: the empty circle of an open objective, a 2 dp muted line on nothing.
+; PauseButton: a dark plate with a 1 dp edge and 16 dp in front of the glyph, 8 dp corners.
+; PausePrimary is the accent's fill with dark type, PauseDanger the same plate with the danger
+; red on word and glyph. PauseChip and PauseChipOff: the toggle chips, the accent's light on the
+; plate while on, the muted grey on a dimmer plate while off. PauseMuted: the small grey caps line
+; and foot. PauseHud: the clear modulate of the HUD controls under the menu. The three accent
+; pieces (PausePrimary, PauseBadge, PauseChip) come twice: the Lumen Accord's cyan (the design's)
+; and, as "...Fossil", the Derrick League's orange, both read from AccentRenew and AccentFossil's
+; values (ADR 0025 section 13).
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_card"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.05882353, 0.07843137, 0.09411765, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17254902, 0.21960784, 0.24313725, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_badge"]
+bg_color = Color(0.07058824, 0.09411765, 0.11372549, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.12156863, 0.65098039, 0.78431373, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_badge_fossil"]
+bg_color = Color(0.07058824, 0.09411765, 0.11372549, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.87843137, 0.4627451, 0.15686275, 1)
+corner_radius_top_left = 24
+corner_radius_top_right = 24
+corner_radius_bottom_right = 24
+corner_radius_bottom_left = 24
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_check"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_plate"]
+content_margin_left = 16.0
+content_margin_top = 0.0
+content_margin_right = 16.0
+content_margin_bottom = 0.0
+bg_color = Color(0.07058824, 0.09411765, 0.11372549, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17254902, 0.21960784, 0.24313725, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_plate_down"]
+content_margin_left = 16.0
+content_margin_top = 0.0
+content_margin_right = 16.0
+content_margin_bottom = 0.0
+bg_color = Color(0.11764706, 0.15294118, 0.18039216, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_primary"]
+content_margin_left = 16.0
+content_margin_top = 0.0
+content_margin_right = 16.0
+content_margin_bottom = 0.0
+bg_color = Color(0.12156863, 0.65098039, 0.78431373, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.12156863, 0.65098039, 0.78431373, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_primary_down"]
+content_margin_left = 16.0
+content_margin_top = 0.0
+content_margin_right = 16.0
+content_margin_bottom = 0.0
+bg_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_primary_fossil"]
+content_margin_left = 16.0
+content_margin_top = 0.0
+content_margin_right = 16.0
+content_margin_bottom = 0.0
+bg_color = Color(0.87843137, 0.4627451, 0.15686275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.87843137, 0.4627451, 0.15686275, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_primary_fossil_down"]
+content_margin_left = 16.0
+content_margin_top = 0.0
+content_margin_right = 16.0
+content_margin_bottom = 0.0
+bg_color = Color(1, 0.63529412, 0.36078431, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.63529412, 0.36078431, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_chip_off"]
+content_margin_left = 16.0
+content_margin_top = 0.0
+content_margin_right = 16.0
+content_margin_bottom = 0.0
+bg_color = Color(0.05882353, 0.07843137, 0.09411765, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17254902, 0.21960784, 0.24313725, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pause_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[resource]
+; The body face: Chakra Petch 500 (the file's header says where the other weights go).
+default_font = ExtResource("1_chakra_500")
+; The long-press anchor and the selection box (BoxOverlay.gd): fill, dark pass, stroke.
+BoxOverlay/colors/fill = Color(1, 1, 1, 0.15)
+BoxOverlay/colors/outline = Color(0.10980392, 0.12941177, 0.15294118, 1)
+BoxOverlay/colors/stroke = Color(1, 1, 1, 1)
+; The default Button face, 18 dp (the group column draws Labels on its plates instead).
+Button/font_sizes/font_size = 18
+; The Dev button of the main screen: 40 base px, not dp (see metadata/base_px).
+DevButton/base_type = &"Button"
+DevButton/font_sizes/font_size = 40
+; The labels' size, 16 dp, and the command bar chip's count (NumberLabel), 20 dp.
+Label/font_sizes/font_size = 16
+NumberLabel/base_type = &"Label"
+NumberLabel/font_sizes/font_size = 20
+NumberLabel/fonts/font = ExtResource("2_chakra_600")
+; The command bar chip's backdrop (the variation keeps its old name, SelectionPanel).
+SelectionPanel/base_type = &"PanelContainer"
+SelectionPanel/styles/panel = SubResource("StyleBoxFlat_backdrop")
+; An enemy building's chip (P115b's look, CommandBar.ENEMY_BAR and FRAME): the health bar is amber,
+; the brackets round its picture are amber on a dark outline, and the bar's notch is cut in the
+; outline's dark.
+EnemyHealth/base_type = &"ProgressBar"
+EnemyHealth/styles/fill = SubResource("StyleBoxFlat_enemy_fill")
+SelectionFrame/colors/enemy = Color(0.96078431, 0.64705882, 0.14117647, 1)
+SelectionFrame/colors/edge = Color(0.10980392, 0.12941176, 0.15294118, 1)
+; The perf card's backdrop (PerfHud.gd, a developer tool): the same box as the command bar chip's.
+PerfCard/base_type = &"PanelContainer"
+PerfCard/styles/panel = SubResource("StyleBoxFlat_backdrop")
+; The minimap's camera frame (Minimap.gd, plan P88; RadarScope.gd draws the same frame, P121): a white line
+; on a dark edge, so it reads on every terrain. The picture's tint is white, so the texels show as painted.
+Minimap/base_type = &"Control"
+Minimap/colors/frame = Color(1, 1, 1, 1)
+Minimap/colors/frame_edge = Color(0.06, 0.08, 0.11, 0.9)
+Minimap/colors/picture = Color(1, 1, 1, 1)
+; The three tabs: the icon is tinted #9AA5B1 at rest and white when the tab is open.
+SidebarTab/base_type = &"Button"
+SidebarTab/colors/icon_focus_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+SidebarTab/colors/icon_hover_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+SidebarTab/colors/icon_hover_pressed_color = Color(1, 1, 1, 1)
+SidebarTab/colors/icon_normal_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+SidebarTab/colors/icon_pressed_color = Color(1, 1, 1, 1)
+SidebarTab/styles/focus = SubResource("StyleBoxEmpty_focus")
+SidebarTab/styles/hover = SubResource("StyleBoxFlat_tab")
+SidebarTab/styles/hover_pressed = SubResource("StyleBoxFlat_tab_open")
+SidebarTab/styles/normal = SubResource("StyleBoxFlat_tab")
+SidebarTab/styles/pressed = SubResource("StyleBoxFlat_tab_open")
+; BUILD (BuildButton.gd, ADR 0025 section 4, plan P120c): the grey of its ring while no queue head advances
+; (stalled). The button draws itself; the colour is read by this type's name.
+BuildButton/base_type = &"Button"
+BuildButton/colors/ring_stalled = Color(0.60392157, 0.64705882, 0.69411765, 1)
+; The Ready chip beside BUILD (BuildButton.gd, ADR 0025 section 4; ADR 0024 section 9's badge): the READY banner's plate, the item's card and the
+; word in the banner's 14 dp dark type (5.8:1 on the green); a white edge while the finger is on it.
+ReadyBadge/base_type = &"Button"
+ReadyBadge/colors/font_color = Color(0.06, 0.08, 0.11, 1)
+ReadyBadge/colors/font_focus_color = Color(0.06, 0.08, 0.11, 1)
+ReadyBadge/colors/font_hover_color = Color(0.06, 0.08, 0.11, 1)
+ReadyBadge/colors/font_hover_pressed_color = Color(0.06, 0.08, 0.11, 1)
+ReadyBadge/colors/font_pressed_color = Color(0.06, 0.08, 0.11, 1)
+ReadyBadge/font_sizes/font_size = 14
+ReadyBadge/styles/focus = SubResource("StyleBoxEmpty_focus")
+ReadyBadge/styles/hover = SubResource("StyleBoxFlat_badge")
+ReadyBadge/styles/hover_pressed = SubResource("StyleBoxFlat_badge_pressed")
+ReadyBadge/styles/normal = SubResource("StyleBoxFlat_badge")
+ReadyBadge/styles/pressed = SubResource("StyleBoxFlat_badge_pressed")
+; The build item tiles (ItemTile.gd, plan P85b): the icon (dimmed behind a padlock), the fill that rises
+; over it with the head's progress, the padlock (#9AA5B1) and the stripes of a tile that cannot take an
+; item (the warning amber, half clear). The cost and the count are 18 dp numbers on a plate (the cost
+; amber when the money is short), the banner is 14 dp, dark on the green (5.8:1). The name under the
+; plate of a landscape card is 14 dp, white on the tile's dark plate.
+; A locked card's sash (ItemSash, P120j): the band (#D9E0E8) with a dark edge line, the missing
+; building's name on it in Chakra Petch Bold 14 dp, dark on the light (13.8:1), one line that a test
+; pins against ItemTile.sash_room_px; the seal is a dark disc with a white padlock. The tile draws
+; them.
+ItemTile/base_type = &"Button"
+ItemTile/colors/fill = Color(1, 1, 1, 0.4)
+ItemTile/colors/icon = Color(1, 1, 1, 1)
+ItemTile/colors/icon_locked = Color(1, 1, 1, 0.4)
+ItemTile/colors/lock = Color(0.60392157, 0.64705882, 0.69411765, 1)
+ItemTile/colors/stripe = Color(0.96078431, 0.64705882, 0.14117647, 0.55)
+ItemTile/styles/hover = SubResource("StyleBoxFlat_tab")
+ItemTile/styles/hover_pressed = SubResource("StyleBoxFlat_tab_open")
+ItemTile/styles/normal = SubResource("StyleBoxFlat_tab")
+ItemTile/styles/pressed = SubResource("StyleBoxFlat_tab_open")
+ItemCost/base_type = &"NumberLabel"
+ItemCost/colors/font_color = Color(1, 1, 1, 1)
+ItemCost/font_sizes/font_size = 18
+ItemCost/fonts/font = ExtResource("3_chakra_700")
+ItemCost/styles/normal = SubResource("StyleBoxFlat_plate")
+ItemCostLow/base_type = &"ItemCost"
+ItemCostLow/colors/font_color = Color(0.96078431, 0.64705882, 0.14117647, 1)
+ItemBanner/base_type = &"Label"
+ItemBanner/colors/font_color = Color(0.06, 0.08, 0.11, 1)
+ItemBanner/font_sizes/font_size = 14
+ItemBanner/styles/normal = SubResource("StyleBoxFlat_power")
+ItemCaption/base_type = &"Label"
+ItemCaption/colors/font_color = Color(1, 1, 1, 1)
+ItemCaption/font_sizes/font_size = 14
+ItemSash/base_type = &"Label"
+ItemSash/colors/band = Color(0.85098039, 0.87843137, 0.90980392, 1)
+ItemSash/colors/edge = Color(0.06, 0.08, 0.11, 1)
+ItemSash/colors/font_color = Color(0.06, 0.08, 0.11, 1)
+ItemSash/colors/seal = Color(0.06, 0.08, 0.11, 1)
+ItemSash/colors/seal_glyph = Color(1, 1, 1, 1)
+ItemSash/font_sizes/font_size = 14
+ItemSash/fonts/font = ExtResource("3_chakra_700")
+; The strike controls (StrikeButton.gd, StrikeControls.gd, plan P112): the item tile's plates. The ring
+; around the strike button's card is drawn in these colours: the track, the charge so far and the full
+; ring of a strike that can fire (the power bar's green). The check mark is green, the X white.
+StrikeButton/base_type = &"ItemTile"
+StrikeButton/colors/ring_charge = Color(0.9, 0.93, 0.95, 1)
+StrikeButton/colors/ring_ready = Color(0.18823529, 0.64313725, 0.42352941, 1)
+StrikeButton/colors/ring_track = Color(0.3, 0.3, 0.3, 1)
+StrikeButton/styles/disabled = SubResource("StyleBoxFlat_tab")
+StrikeButton/styles/focus = SubResource("StyleBoxEmpty_focus")
+StrikeConfirm/base_type = &"StrikeButton"
+StrikeConfirm/colors/icon_hover_color = Color(0.18823529, 0.64313725, 0.42352941, 1)
+StrikeConfirm/colors/icon_hover_pressed_color = Color(0.18823529, 0.64313725, 0.42352941, 1)
+StrikeConfirm/colors/icon_normal_color = Color(0.18823529, 0.64313725, 0.42352941, 1)
+StrikeConfirm/colors/icon_pressed_color = Color(0.18823529, 0.64313725, 0.42352941, 1)
+; The power bar and its low-power look.
+PowerBar/base_type = &"ProgressBar"
+PowerBar/styles/background = SubResource("StyleBoxFlat_track")
+PowerBar/styles/fill = SubResource("StyleBoxFlat_power")
+PowerBarLow/base_type = &"ProgressBar"
+PowerBarLow/styles/background = SubResource("StyleBoxFlat_track")
+PowerBarLow/styles/fill = SubResource("StyleBoxFlat_low_power")
+; The numbers in the power bar, 18 dp (the least a HUD number may be). On the green bar they sit across
+; the fill and the dark track: white with a dark edge (the size of the edge is set in code, in dp), 3.2:1
+; against the fill without the edge. On low power the bar is full and danger red under all of them: dark and
+; with no edge, 5.9:1 against the red (WCAG AA asks 4.5:1).
+PowerNumber/base_type = &"NumberLabel"
+PowerNumber/colors/font_color = Color(1, 1, 1, 1)
+PowerNumber/colors/font_outline_color = Color(0.06, 0.08, 0.11, 1)
+PowerNumber/font_sizes/font_size = 18
+PowerNumber/fonts/font = ExtResource("3_chakra_700")
+PowerNumberLow/base_type = &"NumberLabel"
+PowerNumberLow/colors/font_color = Color(0.06, 0.08, 0.11, 1)
+PowerNumberLow/colors/font_outline_color = Color(0.06, 0.08, 0.11, 0)
+PowerNumberLow/font_sizes/font_size = 18
+PowerNumberLow/fonts/font = ExtResource("3_chakra_700")
+; The HUD v2 tokens (P118, ADR 0025 section 13; STYLE.md "Palette"): the panel's rgba(10, 14, 17,
+; 0.84) for a draw call that is not a StyleBox (the radar scope), its edge #2C383E, money and power
+; #F2C14E, danger #FF5A3C, ok and income #6EDC5F, and the text on the dark panel, white. The design's
+; fixed enemy colour #FF9446 is not a token: rows on the radar keep their team colours.
+HudTokens/base_type = &"Control"
+HudTokens/colors/border = Color(0.17254902, 0.21960784, 0.24313725, 1)
+HudTokens/colors/danger = Color(1, 0.35294118, 0.23529412, 1)
+HudTokens/colors/money = Color(0.94901961, 0.75686275, 0.30588235, 1)
+HudTokens/colors/ok = Color(0.43137255, 0.8627451, 0.37254902, 1)
+HudTokens/colors/panel = Color(0.03921569, 0.05490196, 0.06666667, 0.84)
+HudTokens/colors/text = Color(1, 1, 1, 1)
+HudPanel/base_type = &"PanelContainer"
+HudPanel/styles/panel = SubResource("StyleBoxFlat_hud_panel")
+; The accent of each side (ADR 0025 section 13): the faction of the local player's own rows, read as
+; get_theme_color(&"accent", &"AccentRenew") and so on. Accent never carries meaning alone. Lumen
+; Accord (renew): cyan, the design's values; the text on it is 5.9:1. Derrick League (fossil): orange
+; for its flare stacks and amber lamps, picked by the two checks of the ADR: the accent's hue is 25.4
+; degrees and the light's 25.8, each at least 16 degrees from danger (9.2) and from money (42.1),
+; and the text on the accent is 5.7:1 (4.5:1 asked). tests/ui/test_ui_theme_fonts.gd pins both.
+AccentRenew/base_type = &"Control"
+AccentRenew/colors/accent = Color(0.12156863, 0.65098039, 0.78431373, 1)
+AccentRenew/colors/light = Color(0.38431373, 0.83921569, 0.93333333, 1)
+AccentRenew/colors/on_accent = Color(0.01960784, 0.1254902, 0.16470588, 1)
+AccentFossil/base_type = &"Control"
+AccentFossil/colors/accent = Color(0.87843137, 0.4627451, 0.15686275, 1)
+AccentFossil/colors/light = Color(1, 0.63529412, 0.36078431, 1)
+AccentFossil/colors/on_accent = Color(0.16470588, 0.07843137, 0.01960784, 1)
+; Buttons and titles: Big Shoulders Display ExtraBold, upper case written in the text itself (a
+; Button has no case property, a Label has `uppercase`: one rule serves both), white. The size is
+; dp, the tracking base px (the file's header): a button 22 dp with 4 px, a title 28 dp with 5 px,
+; a big title 36 dp with 6 px.
+CapsButton/base_type = &"Button"
+CapsButton/colors/font_color = Color(1, 1, 1, 1)
+CapsButton/colors/font_focus_color = Color(1, 1, 1, 1)
+CapsButton/colors/font_hover_color = Color(1, 1, 1, 1)
+CapsButton/colors/font_hover_pressed_color = Color(1, 1, 1, 1)
+CapsButton/colors/font_pressed_color = Color(1, 1, 1, 1)
+CapsButton/font_sizes/font_size = 22
+CapsButton/fonts/font = SubResource("FontVariation_caps_button")
+CapsTitle/base_type = &"Label"
+CapsTitle/colors/font_color = Color(1, 1, 1, 1)
+CapsTitle/font_sizes/font_size = 28
+CapsTitle/fonts/font = SubResource("FontVariation_caps_title")
+CapsBigTitle/base_type = &"Label"
+CapsBigTitle/colors/font_color = Color(1, 1, 1, 1)
+CapsBigTitle/font_sizes/font_size = 36
+CapsBigTitle/fonts/font = SubResource("FontVariation_caps_big_title")
+; The economy pill (EconomyPill.gd, P119, ADR 0025 section 3): the HUD panel's look; on low power the
+; same with a thick danger red edge. PillWord is the word "LOW POWER" in the power bar: the caps face
+; at 14 dp (the body text's least), dark on the red bar (5.9:1).
+EconomyPill/base_type = &"PanelContainer"
+EconomyPill/styles/panel = SubResource("StyleBoxFlat_pill")
+; The low-power pulse (EconomyPill.gd, P89): the plate, edge and triangle breathe between pulse_full (white)
+; and pulse_dim (white at 0.6); the word stays at full strength.
+EconomyPill/colors/pulse_full = Color(1, 1, 1, 1)
+EconomyPill/colors/pulse_dim = Color(1, 1, 1, 0.6)
+EconomyPillLow/base_type = &"EconomyPill"
+EconomyPillLow/styles/panel = SubResource("StyleBoxFlat_pill_low")
+EconomyChipLoss/base_type = &"PanelContainer"
+EconomyChipLoss/styles/panel = SubResource("StyleBoxFlat_chip_loss")
+EconomyChipGain/base_type = &"PanelContainer"
+EconomyChipGain/styles/panel = SubResource("StyleBoxFlat_chip_gain")
+EconomyConsumer/base_type = &"PanelContainer"
+EconomyConsumer/styles/panel = SubResource("StyleBoxFlat_consumer")
+PillWord/base_type = &"Label"
+PillWord/colors/font_color = Color(0.06, 0.08, 0.11, 1)
+PillWord/font_sizes/font_size = 14
+PillWord/fonts/font = SubResource("FontVariation_pill_word")
+AttackTitle/base_type = &"Label"
+AttackTitle/colors/font_color = Color(1, 1, 1, 1)
+AttackTitle/font_sizes/font_size = 16
+AttackTitle/fonts/font = SubResource("FontVariation_attack_title")
+; The result screen (ResultScreen.gd, plan P90): the tint of the emblem, STYLE.md "Icons and glyphs"
+; (glyph_victory #30A46C, glyph_defeat #E5484D, glyph_draw #9AA5B1); the word beside it says the rest.
+ResultScreen/base_type = &"Control"
+ResultScreen/colors/defeat = Color(0.8980392, 0.28235295, 0.3019608, 1)
+ResultScreen/colors/draw = Color(0.60392157, 0.64705882, 0.69411765, 1)
+ResultScreen/colors/victory = Color(0.18823529, 0.64313725, 0.42352941, 1)
+Scrim/base_type = &"PanelContainer"
+Scrim/styles/panel = SubResource("StyleBoxFlat_scrim")
+; The pause menu (PauseMenu.gd, P124b): see the block of sub-resources above.
+PauseHud/base_type = &"Control"
+PauseHud/colors/hidden = Color(1, 1, 1, 0)
+PauseCard/base_type = &"PanelContainer"
+PauseCard/styles/panel = SubResource("StyleBoxFlat_pause_card")
+PauseBadge/base_type = &"PanelContainer"
+PauseBadge/styles/panel = SubResource("StyleBoxFlat_pause_badge")
+PauseBadgeFossil/base_type = &"PauseBadge"
+PauseBadgeFossil/styles/panel = SubResource("StyleBoxFlat_pause_badge_fossil")
+PauseCheck/base_type = &"PanelContainer"
+PauseCheck/styles/panel = SubResource("StyleBoxFlat_pause_check")
+PauseMuted/base_type = &"Label"
+PauseMuted/colors/font_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseMuted/font_sizes/font_size = 14
+PauseButton/base_type = &"CapsButton"
+PauseButton/styles/focus = SubResource("StyleBoxFlat_pause_focus")
+PauseButton/styles/hover = SubResource("StyleBoxFlat_pause_plate")
+PauseButton/styles/hover_pressed = SubResource("StyleBoxFlat_pause_plate_down")
+PauseButton/styles/normal = SubResource("StyleBoxFlat_pause_plate")
+PauseButton/styles/pressed = SubResource("StyleBoxFlat_pause_plate_down")
+PausePrimary/base_type = &"PauseButton"
+PausePrimary/colors/font_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/font_focus_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/font_hover_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/font_hover_pressed_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/font_pressed_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/icon_focus_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/icon_hover_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/icon_hover_pressed_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/icon_normal_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/colors/icon_pressed_color = Color(0.01960784, 0.1254902, 0.16470588, 1)
+PausePrimary/styles/hover = SubResource("StyleBoxFlat_pause_primary")
+PausePrimary/styles/hover_pressed = SubResource("StyleBoxFlat_pause_primary_down")
+PausePrimary/styles/normal = SubResource("StyleBoxFlat_pause_primary")
+PausePrimary/styles/pressed = SubResource("StyleBoxFlat_pause_primary_down")
+PausePrimaryFossil/base_type = &"PausePrimary"
+PausePrimaryFossil/colors/font_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/font_focus_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/font_hover_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/font_hover_pressed_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/font_pressed_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/icon_focus_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/icon_hover_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/icon_hover_pressed_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/icon_normal_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/colors/icon_pressed_color = Color(0.16470588, 0.07843137, 0.01960784, 1)
+PausePrimaryFossil/styles/hover = SubResource("StyleBoxFlat_pause_primary_fossil")
+PausePrimaryFossil/styles/hover_pressed = SubResource("StyleBoxFlat_pause_primary_fossil_down")
+PausePrimaryFossil/styles/normal = SubResource("StyleBoxFlat_pause_primary_fossil")
+PausePrimaryFossil/styles/pressed = SubResource("StyleBoxFlat_pause_primary_fossil_down")
+PauseDanger/base_type = &"PauseButton"
+PauseDanger/colors/font_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/font_focus_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/font_hover_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/font_hover_pressed_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/font_pressed_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/icon_focus_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/icon_hover_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/icon_hover_pressed_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/icon_normal_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseDanger/colors/icon_pressed_color = Color(1, 0.35294118, 0.23529412, 1)
+PauseChip/base_type = &"PauseButton"
+PauseChip/font_sizes/font_size = 18
+PauseChip/colors/font_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/font_focus_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/font_hover_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/font_hover_pressed_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/font_pressed_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/icon_focus_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/icon_hover_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/icon_hover_pressed_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/icon_normal_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChip/colors/icon_pressed_color = Color(0.38431373, 0.83921569, 0.93333333, 1)
+PauseChipFossil/base_type = &"PauseChip"
+PauseChipFossil/colors/font_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/font_focus_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/font_hover_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/font_hover_pressed_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/font_pressed_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/icon_focus_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/icon_hover_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/icon_hover_pressed_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/icon_normal_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipFossil/colors/icon_pressed_color = Color(1, 0.63529412, 0.36078431, 1)
+PauseChipOff/base_type = &"PauseChip"
+PauseChipOff/colors/font_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/font_focus_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/font_hover_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/font_hover_pressed_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/font_pressed_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/icon_focus_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/icon_hover_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/icon_hover_pressed_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/icon_normal_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/colors/icon_pressed_color = Color(0.60392157, 0.64705882, 0.69411765, 1)
+PauseChipOff/styles/hover = SubResource("StyleBoxFlat_pause_chip_off")
+PauseChipOff/styles/normal = SubResource("StyleBoxFlat_pause_chip_off")
+metadata/base_px = PackedStringArray("DevButton/font_sizes/font_size", "CapsButton/fonts/font", "CapsTitle/fonts/font", "CapsBigTitle/fonts/font", "PillWord/fonts/font", "AttackTitle/fonts/font")
